@@ -26,7 +26,7 @@ export default function HomeScreen({ onStartBanding }: Props) {
   return (
     <div style={styles.page}>
       <div style={styles.hero}>
-        <div style={styles.iconPlaceholder}>🐦</div>
+        <img src="icons/icon-192.png" alt="BirdNerd" style={styles.icon} />
         <h1 style={styles.title}>BirdNerd</h1>
         <p style={styles.subtitle}>Bird banding data collection</p>
       </div>
@@ -42,7 +42,7 @@ export default function HomeScreen({ onStartBanding }: Props) {
           <p style={styles.installTitle}>📲 Save to Home Screen</p>
           {isIOS() ? (
             <ol style={styles.installSteps}>
-              <li>Tap the <strong>Share</strong> button in Safari <span style={styles.icon}>⬆️</span></li>
+              <li>Tap the <strong>Share</strong> button in Safari <span style={styles.inlineIcon}>⬆️</span></li>
               <li>Scroll down and tap <strong>"Add to Home Screen"</strong></li>
               <li>Tap <strong>Add</strong> — done!</li>
             </ol>
@@ -78,10 +78,12 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: 'center',
     gap: '0.5rem',
   },
-  iconPlaceholder: {
-    fontSize: '5rem',
-    lineHeight: 1,
+  icon: {
+    width: '140px',
+    height: '140px',
+    objectFit: 'contain',
     marginBottom: '0.5rem',
+    filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.3))',
   },
   title: {
     margin: 0,
@@ -133,7 +135,7 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: 1.8,
     fontSize: '0.95rem',
   },
-  icon: {
+  inlineIcon: {
     display: 'inline-block',
   },
   installNote: {
