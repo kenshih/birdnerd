@@ -87,5 +87,51 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 - Phase 1: local only; export and sync added in later phases
 
 ## Phases
-- Phase 1: Simple end-to-end experience viewable in browser and iPhone
-- More phases TBD as we refine
+
+### Phase 1 — Done ✓
+- Offline-only, no login
+- Species autocomplete (placeholder CA list)
+- Sessions + records stored in IndexedDB
+- PWA installable on iPhone/iPad
+- Two stations: GCFS (Galindo Creek) + MCFS (Mitchell Canyon)
+
+### Phase 2 — Deploy & Polish
+
+**Deployment & Access**
+- Deploy to GitHub Pages so Hallie and team can access publicly
+- Add a route / flow that guides users through "Save to Home Screen" (automate/explain the iOS add-to-homescreen UX)
+
+**Home Screen & Branding (placeholder)**
+- Add a simple home screen / landing page within the app
+- Placeholder icon/branding (real graphics come later)
+
+**Import / Export**
+- Download records as CSV (match existing banding sheet workflow)
+- Upload / import CSV (ingest data from existing sheets)
+
+### Backlog (unordered — to be prioritized into phases)
+
+**Data & Fields**
+- Add WRP (Wolfe-Ryder-Pyle) field to bird record
+- MVP validation from dataset (soft warnings: season/sex/molt/age inconsistencies)
+- Bander field: dropdown of known banders + allow manual entry (combobox style)
+
+**Media**
+- Ability to capture photo and attach to a record
+- Speech-to-text (STT) input for field entry
+
+**Branding**
+- Get graphics — convert bird drawings or photos into clean vector assets for icons, splash, UI
+
+**Auth & Multi-tenancy**
+- Login / authentication (email or Google via Supabase Auth)
+- Supabase integration for central cloud storage + sync
+- Multi-tenant data model: data scoped to an **Organization** (e.g. a field station group)
+- Organizations as a top-level principle: each org manages their own stations, banders, and records
+- Allow other organizations to adopt the app and keep their data fully separate
+
+**Utility / Toolkit Direction**
+- Consider expanding BirdNerd from data-capture-only into a field toolkit:
+  - Standalone band code lookup tool
+  - Scientific name / definition lookup (fold in existing app)
+  - Possibly a second lighter "in-the-field" utility mode alongside the banding data capture
