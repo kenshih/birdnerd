@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import type { BirdRecord, Session } from '../types'
-import { getRecordsBySession, deleteRecord } from '../db'
+import { getRecordsBySession, deleteRecord, saveRecord } from '../db'
 import BirdRecordForm from './BirdRecordForm'
 import { exportSessionCSV } from '../utils/exportCsv'
+import { parseCSV } from '../utils/importCsv'
 
 interface Props {
   session: Session
@@ -14,6 +15,30 @@ type View = { mode: 'list' } | { mode: 'form'; record?: BirdRecord }
 export default function SessionView({ session, onBack }: Props) {
   const [records, setRecords] = useState<BirdRecord[]>([])
   const [view, setView] = useState<View>({ mode: 'list' })
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    const text = await file.text()
+    const { records, skippedHeaders, rowCount } = parseCSV(text)
+    if (rowCount === 0) { alert('No records found in file.'); return }
+    const msg = skippedHeaders.length
+      ? `Import ${rowCount} record(s)?\n\nUnknown columns ignored: ${skippedHeaders.join(', ')}`
+      : `Import ${rowCount} record(s) into this session?`
+    if (!confirm(msg)) return
+    const now = new Date().toISOString()
+    for (const partial of records) {
+      await saveRecord({
+        ...partial,
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        sessionId: session.id,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+    await loadRecords()
+  }
 
   async function loadRecords() {
     const r = await getRecordsBySession(session.id)
@@ -52,6 +77,10 @@ export default function SessionView({ session, onBack }: Props) {
             ↓ Export CSV
           </button>
         )}
+        <label style={secondaryBtnStyle}>
+          ↑ Import CSV
+          <input type="file" accept=".csv,text/csv" onChange={handleImport} style={{ display: 'none' }} />
+        </label>
       </div>
 
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>
@@ -129,6 +158,7 @@ const secondaryBtnStyle: React.CSSProperties = {
   padding: '0.6rem 1.2rem',
   fontSize: '1rem',
   cursor: 'pointer',
+  display: 'inline-block',
 }
 
 const recordRowStyle: React.CSSProperties = {

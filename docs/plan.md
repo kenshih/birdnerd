@@ -107,7 +107,7 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 
 **Import / Export**
 - ✅ Download records as CSV (match existing banding sheet workflow)
-- Upload / import CSV (ingest data from existing sheets)
+- ✅ Upload / import CSV (ingest data from existing sheets)
 
 ### Backlog (unordered — to be prioritized into phases)
 
