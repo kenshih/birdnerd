@@ -98,15 +98,15 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 ### Phase 2 — Deploy & Polish
 
 **Deployment & Access**
-- Deploy to GitHub Pages so Hallie and team can access publicly
-- Add a route / flow that guides users through "Save to Home Screen" (automate/explain the iOS add-to-homescreen UX)
+- ✅ Deploy to GitHub Pages so Hallie and team can access publicly
+- ✅ Add a route / flow that guides users through "Save to Home Screen" (automate/explain the iOS add-to-homescreen UX)
 
 **Home Screen & Branding (placeholder)**
-- Add a simple home screen / landing page within the app
-- Placeholder icon/branding (real graphics come later)
+- ✅ Add a simple home screen / landing page within the app
+- ✅ Placeholder icon/branding — real bird-in-hand icon added
 
 **Import / Export**
-- Download records as CSV (match existing banding sheet workflow)
+- ✅ Download records as CSV (match existing banding sheet workflow)
 - Upload / import CSV (ingest data from existing sheets)
 
 ### Backlog (unordered — to be prioritized into phases)

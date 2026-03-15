@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { BirdRecord, Session } from '../types'
 import { getRecordsBySession, deleteRecord } from '../db'
 import BirdRecordForm from './BirdRecordForm'
+import { exportSessionCSV } from '../utils/exportCsv'
 
 interface Props {
   session: Session
@@ -42,12 +43,16 @@ export default function SessionView({ session, onBack }: Props) {
       </div>
       <p style={{ color: '#555', fontSize: '0.85rem', marginTop: 0, marginBottom: '1rem' }}>{session.date}</p>
 
-      <button
-        onClick={() => setView({ mode: 'form' })}
-        style={btnStyle}
-      >
-        + New Bird Record
-      </button>
+      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+        <button onClick={() => setView({ mode: 'form' })} style={btnStyle}>
+          + New Bird Record
+        </button>
+        {records.length > 0 && (
+          <button onClick={() => exportSessionCSV(session, records)} style={secondaryBtnStyle}>
+            ↓ Export CSV
+          </button>
+        )}
+      </div>
 
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>
         {records.map(r => (
@@ -115,6 +120,16 @@ const smallBtnStyle = (bg: string): React.CSSProperties => ({
   fontSize: '0.8rem',
   cursor: 'pointer',
 })
+
+const secondaryBtnStyle: React.CSSProperties = {
+  background: '#fff',
+  color: '#2d6a4f',
+  border: '1.5px solid #2d6a4f',
+  borderRadius: 6,
+  padding: '0.6rem 1.2rem',
+  fontSize: '1rem',
+  cursor: 'pointer',
+}
 
 const recordRowStyle: React.CSSProperties = {
   background: '#fff',
