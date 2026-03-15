@@ -53,7 +53,7 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 - UI shows: alpha code + common name together for verification
 - Data stored: alpha code only
 - **Phase 1:** Placeholder list of common CA species only (species-level codes, no subspecies)
-- **Future:** Expand list; add subspecies support (e.g. GCSP Gambel's vs. Puget Sound White-crowned Sparrow) — some subspecies have distinct codes, others may need a subspecies field
+- **Future:** Expand list; add subspecies support (e.g. GCSP Gambelii vs. Pugetensis White-crowned Sparrow) — some subspecies have distinct codes, others may need a subspecies field
 
 ## Technology
 - **Frontend:** React + TypeScript + Vite
