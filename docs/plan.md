@@ -88,26 +88,26 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 
 ## Phases
 
-### Phase 1 — Done ✓
+### Phase 1 — Done ✅
 - Offline-only, no login
 - Species autocomplete (placeholder CA list)
 - Sessions + records stored in IndexedDB
 - PWA installable on iPhone/iPad
 - Two stations: GCFS (Galindo Creek) + MCFS (Mitchell Canyon)
 
-### Phase 2 — Deploy & Polish
+### Phase 2 — Deploy & Polish ✅
 
 **Deployment & Access**
-- ✅ Deploy to GitHub Pages so Hallie and team can access publicly
-- ✅ Add a route / flow that guides users through "Save to Home Screen" (automate/explain the iOS add-to-homescreen UX)
+- Deploy to GitHub Pages so Hallie and team can access publicly
+- Add a route / flow that guides users through "Save to Home Screen" (automate/explain the iOS add-to-homescreen UX)
 
 **Home Screen & Branding (placeholder)**
-- ✅ Add a simple home screen / landing page within the app
-- ✅ Placeholder icon/branding — real bird-in-hand icon added
+- Add a simple home screen / landing page within the app
+- Placeholder icon/branding — real bird-in-hand icon added
 
 **Import / Export**
-- ✅ Download records as CSV (match existing banding sheet workflow)
-- ✅ Upload / import CSV (ingest data from existing sheets)
+- Download records as CSV (match existing banding sheet workflow)
+- Upload / import CSV (ingest data from existing sheets)
 
 ### Backlog (unordered — to be prioritized into phases)
 
