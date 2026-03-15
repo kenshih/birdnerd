@@ -5,6 +5,7 @@ import { STATIONS } from '../data/codes'
 
 interface Props {
   onSelectSession: (session: Session) => void
+  onHome: () => void
 }
 
 function generateId(): string {
@@ -15,7 +16,7 @@ function todayISO(): string {
   return new Date().toISOString().split('T')[0]!
 }
 
-export default function SessionList({ onSelectSession }: Props) {
+export default function SessionList({ onSelectSession, onHome }: Props) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [showNew, setShowNew] = useState(false)
   const [newStation, setNewStation] = useState(STATIONS[0]?.code ?? '')
@@ -40,8 +41,10 @@ export default function SessionList({ onSelectSession }: Props) {
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <h1 style={{ fontSize: '1.4rem', marginBottom: '0.5rem' }}>BirdNerd</h1>
-      <h2 style={{ fontSize: '1rem', color: '#555', marginBottom: '1rem' }}>Banding Sessions</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+        <button onClick={onHome} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', padding: 0, lineHeight: 1 }} aria-label="Home">🏠</button>
+        <h1 style={{ fontSize: '1.4rem', margin: 0 }}>Banding Sessions</h1>
+      </div>
 
       <button
         onClick={() => setShowNew(true)}
