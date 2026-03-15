@@ -37,8 +37,8 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 ## Data Organization
 - **Session** = Station + Date (top-level grouping)
 - **Station:** Multiple supported (currently 2; designed for other stations to adopt the app)
-- **Banders:** Tracked per record but not a top-level hierarchy; multiple banders per session
-- Records belong to a session; bander name captured per bird or per session as needed
+- **Banders:** Session-level roster selected at session open (master bander + day's banders); roster drives the per-record bander dropdown; master bander always included
+- Records belong to a session; bander captured per bird from the session roster (or manual entry)
 
 ## UX / App Feel
 - Installable as home screen icon on iPhone/iPad/Android — looks and feels like a native app
@@ -114,7 +114,8 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 **Data & Fields**
 - Add WRP (Wolfe-Ryder-Pyle) field to bird record
 - MVP validation from dataset (soft warnings: season/sex/molt/age inconsistencies)
-- Bander field: dropdown of known banders + allow manual entry (combobox style)
+- **Bander workflow on session open:** select master bander (currently only Hallie) + variable number of additional banders for that day — this roster populates the per-record bander dropdown; master bander is always included in the dropdown since she regularly steps in to band herself
+- Bander field on record: dropdown from session roster + allow manual entry (combobox style)
 
 **Media**
 - Ability to capture photo and attach to a record

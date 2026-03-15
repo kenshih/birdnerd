@@ -16,7 +16,7 @@ export default defineConfig({
         background_color: '#ffffff',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
+        start_url: '/birdnerd/',
         icons: [
           {
             src: 'icons/icon-192.png',
@@ -41,6 +41,5 @@ export default defineConfig({
       },
     }),
   ],
-  // For GitHub Pages deployment under a repo subdirectory, set base to '/birdnerd/'
-  // base: '/birdnerd/',
+  base: '/birdnerd/',
 })
