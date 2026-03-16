@@ -61,7 +61,9 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 - **Forms/Validation:** React Hook Form
 - **Hosting:** GitHub Pages (static, free)
 - **Backend/Sync:** Offline-first to start; Supabase to be added later
-- **Storage:** Local (IndexedDB or localStorage) for offline data
+- **Storage:** Local (IndexedDB) for offline; Supabase (Postgres) for cloud sync
+- **API:** REST or GraphQL API to be defined when cloud sync is added; client code to be generated from schema (OpenAPI or GraphQL)
+- **No SSR:** Client-side rendering only — no server-side rendering, ever. All data fetching happens in the browser.
 
 ## Validation
 - **Soft warnings/flags only** — no hard blocks
@@ -116,9 +118,10 @@ Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and
 - MVP validation from dataset (soft warnings: season/sex/molt/age inconsistencies)
 - **Bander workflow on session open:** select master bander (currently only Hallie) + variable number of additional banders for that day — this roster populates the per-record bander dropdown; master bander is always included in the dropdown since she regularly steps in to band herself
 - Bander field on record: dropdown from session roster + allow manual entry (combobox style)
+- Some existing free-form fields have known code/description sets — convert these to combobox style (preset codes + free entry) rather than plain text
 
 **Media**
-- Ability to capture photo and attach to a record
+- Photo capture attached to a bird record; each photo labelled with a combobox (e.g. WING, TAIL, HEAD) — label options are a preset list + free entry
 - Speech-to-text (STT) input for field entry
 
 **Branding**

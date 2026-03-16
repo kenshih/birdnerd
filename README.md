@@ -1,5 +1,7 @@
 # BirdNerd
 
+https://kenshih.github.io/birdnerd/
+
 A Progressive Web App for bird banders collecting field data, following protocols like MAPS/IBP.
 
 Targets iPhone and iPad (installable as a home screen app), with Android support. Works fully offline.
