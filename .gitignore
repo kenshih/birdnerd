@@ -143,3 +143,6 @@ vite.config.ts.timestamp-*
 
 # claude local
 .claude
+
+# move
+nogit
