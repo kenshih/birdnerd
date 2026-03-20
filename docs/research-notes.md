@@ -230,7 +230,7 @@ Complete reference tables for:
 
 ## Open Questions
 
-1. **GCBS vs GCFS**: Doc uses GCBS for Galindo Creek. Ken confirmed GCFS is correct for the app. Is GCBS the BBL code and GCFS the app code? Or was GCBS an older code?
+1. **Galindo Creek location code**: Updated to use GCBS (Galindo Creek Banding Station) as the official 4-letter code for the app.
 
 2. **Blood Sample validation**: Doc says "validate Status is 518" but the status codes don't include 518 — likely means Status 318 (healthy + banded + blood sample)?
 

@@ -57,6 +57,6 @@ export const CAPTURE_STATUS_CODES = [
 ]
 
 export const STATIONS = [
-  { code: 'GCFS', name: 'Galindo Creek Field Station' },
+  { code: 'GCBS', name: 'Galindo Creek Banding Station' },
   { code: 'MCFS', name: 'Mitchell Canyon Field Station' },
 ]

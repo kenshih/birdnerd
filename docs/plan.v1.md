@@ -4,7 +4,7 @@
 A Progressive Web App for bird banders collecting data in the field, primarily at stations following protocols like MAPS/IBP. Targets iPhone/iPad first, Android support desired. Works online and offline gracefully.
 
 ## Core Data Record (per bird)
-Fields per banding event, based on MAPS/IBP protocol sheet (Location: GCFS, 2026):
+Fields per banding event, based on MAPS/IBP protocol sheet (Location: GCBS, 2026):
 
 | Field | Notes |
 |---|---|
@@ -29,7 +29,7 @@ Fields per banding event, based on MAPS/IBP protocol sheet (Location: GCFS, 2026
 | Status | |
 | Capture Time | |
 | Date (MO/DAY) | |
-| Station | e.g. GCFS |
+| Station | e.g. GCBS |
 | Net | Net number/ID |
 
 Validation datasets will flag inconsistencies (season, sex, molt, age, etc.) and give gentle warnings.

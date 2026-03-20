@@ -1,6 +1,6 @@
 bandNumber,speciesCode,age,sex,howAged,howSexed,bbpCode,skull,cp,bp,fat,bodyMolt,ffMolt,tfMolt,ffWear,moltLimitsPlumage,wing,bodyMass,status,captureTime,date,station,net,bander,notes
-1261-12345,SOSP,5,M,S,CP,N,6,2,,2,0,0,0,1,,63,18.2,N,06:42,2026-03-15,GCFS,3,Hallie,nice bird
-1261-12346,WIWA,2,F,P,,N,3,,1,1,1,0,0,2,,48,8.1,N,07:15,2026-03-15,GCFS,1,Ken,
-1261-12347,WCSP,5,U,S,,R,6,,,3,0,0,0,1,,72,25.4,R,07:33,2026-03-15,GCFS,2,Hallie,recapture from last week
-1261-12348,SWTH,2,U,,,N,2,,,1,2,1,0,3,,,,N,08:01,2026-03-15,GCFS,4,,escaped before mass
-1261-12349,AMGO,4,M,S,CP,N,6,1,,2,0,0,0,1,,75,13.8,N,08:22,2026-03-15,GCFS,3,Ken,
+1261-12345,SOSP,5,M,S,CP,N,6,2,,2,0,0,0,1,,63,18.2,N,06:42,2026-03-15,GCBS,3,Hallie,nice bird
+1261-12346,WIWA,2,F,P,,N,3,,1,1,1,0,0,2,,48,8.1,N,07:15,2026-03-15,GCBS,1,Ken,
+1261-12347,WCSP,5,U,S,,R,6,,,3,0,0,0,1,,72,25.4,R,07:33,2026-03-15,GCBS,2,Hallie,recapture from last week
+1261-12348,SWTH,2,U,,,N,2,,,1,2,1,0,3,,,,N,08:01,2026-03-15,GCBS,4,,escaped before mass
+1261-12349,AMGO,4,M,S,CP,N,6,1,,2,0,0,0,1,,75,13.8,N,08:22,2026-03-15,GCBS,3,Ken,

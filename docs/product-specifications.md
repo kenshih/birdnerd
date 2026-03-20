@@ -30,7 +30,13 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 ---
 
-## 3. Data Model Summary
+## 3. Screens & User Experience
+
+For comprehensive screen layouts, wireframes, and interaction patterns, see [docs/ux-spec.md](ux-spec.md).
+
+---
+
+## 4. Data Model Summary
 
 The app uses **14 core entities** organized by function: operational (field station data), session (banding session data), reference (static lookups), and immutable (audit log). For complete field-level schema definitions, see [tech-spec.md § 2 Data Model](tech-spec.md#2-data-model).
 
@@ -289,84 +295,6 @@ For detailed field definitions, constraints, and data types, see [tech-spec.md �
 2. **Audit Timestamps:** Operational and reference entities have `created` (insertion time) and `updated` (modification time). This supports change tracking and conflict resolution for offline sync.
 3. **Immutable Tables:** ChangeLog has only `id` and `created` (no `updated`). New records document changes; records are never deleted or modified.
 4. **Future Tables:** Any additions must follow the same convention.
-
----
-
-## 4. Screens & UX
-
-### 4.1 Home Screen
-Navigation hub with buttons for each module:
-1. **Banding Data Collection** (primary — 90% of field time)
-2. **Session Data**
-3. **Band Inventory**
-4. **Project Location Data**
-5. **View Data / Export**
-6. **Report Bugs / Give Feedback**
-
-Future additions: Photo Log, Datasheet Addendums.
-
-### 4.2 Banding Data Collection (Main Form)
-
-**Layout:** Single scrollable form. Banders skip around freely (waiting for scale, pliers, ruler, master bander input). All fields accessible at once — no wizard.
-
-**Suggested section grouping (from Hallie's doc):**
-1. **Identity** — Band Number, Code, Species
-2. **Age and Sex** — Age, How Aged, WRP, Sex, How Sexed
-3. **Condition** — Skull, BP, CP, Fat, Body Molt, FF Molt, FF Wear, Juv Body Plumage
-4. **Molt Limits and Plumage** — table layout (PCovs, SCovs, PP, SS, Tert, Rec, Body Plum, Non-Feather)
-5. **Morphometrics and Status** — Wing, Tail, Tarsus, Culmen, Other, Mass, Status, Disposition
-6. **Additional Information** — Session ID, Bander, Capture Time, Release Time, Net, Note, Feather Pull, Blood Sample
-
-**Band Number UX flow:**
-1. User selects from dropdown of available bands OR types to search
-2. If band is in inventory and unused → proceed normally (Code defaults to New)
-3. If band is in inventory and deployed → show encounter history table + alert → Code must be R (Recapture) or compatible
-4. If band is NOT in inventory → "FOREIGN RECAPTURE" alert → Code = F
-5. User can select "UNBANDED" → Code = U, Status not required
-6. On selection, display band size + type for verification
-
-**Key UX details:**
-- Species entry: type common name, ALPHA code auto-populates (or vice versa) — combobox style
-- Release Time: "tap to fill" button auto-fills current device time
-- Notes: auto-populate when certain validation-triggering selections are made; user can add more
-- Checkboxes for Feather Pull and Blood Sample (default unchecked = NO)
-- All fields optional in Phase 1 (soft warnings only). Required fields (*) enforced in later phase.
-
-### 4.3 Session Data
-
-**List view:** Log of old sessions. Referenceable, modifiable, exportable.
-**Create view:** Form for new session with all Session fields:
-  - **Master Bander:** Dropdown populated from Bander table (organized by role: Master Banders first, then Sub-permittees, etc.)
-  - **Session Participants:** Checkboxes or multi-select for all active banders at the organization, linked to SessionBanderLog
-  - Weather readings at session open and close
-  - Notes
-**Linked:** Each session shows its associated banding records.
-
-### 4.4 Band Inventory
-
-**Overview:** Quick stats by band size + type (deployed vs remaining).
-**List view:** All issued bands, searchable/filterable.
-**Detail view (future):** Click band → full encounter history.
-**Add bands:** Bulk add by series (prefix + range).
-
-### 4.5 Project Location Data
-
-**List view:** All locations for the organization.
-**Create/Edit view:** Form with fields from Section 3.1 (name, coordinates, country, state, remarks, etc.).
-**Net Management:** Within location detail, manage nets (mist nets and traps):
-  - List of nets with their labels (e.g., "N-01", "Trap-A")
-  - Add/edit/delete nets — defines the pool available for SessionNetLog
-  - Nets are location-specific and reused across sessions
-**Future:** GPS auto-capture.
-
-### 4.6 Export
-
-**Current:** CSV export of banding records.
-**Future:**
-- Agency-specific formats (BBL upload format: 58 columns; R upload: 60 columns)
-- The spreadsheet's formula mappings document exactly how internal codes map to BBL codes (e.g. IBP How Aged single-letter → BBL 2-letter codes)
-- IBP format, CDFW format
-- Different agencies use different codes for the same data — export must translate
 
 ---
 
