@@ -219,6 +219,12 @@ Goal: Export in agency-specific formats.
 - Color band resighting data collection
 - Bander Location ID reconciliation (app code vs BBL code)
 - Admin dashboard (org management, user role assignment, data import/export)
+- Session results rollups (New/Unbanded/Recaptured/Daily Total/Year Total) as derived metrics on session summary; Phase 5c/5d UI feature, not a data model change
+- Protocol-specific forms and validations (Mist-netting, Trapping, Nest-box Monitoring, Rehabbed-Bird, etc.)
+- Per-net/trap/nest metadata (type, coordinates within location, additional type-specific fields)
+- Session effort remarks presets (closed early due to wind/predators, opened late due to temp, etc.)
+- Rehab records: capture location vs release location (record both or allow override)
+- Band history: link band replacement/additional band events to the band timeline
 
 **Branding**
 - Vector art from bird drawings/photos for icons, splash, UI
@@ -229,3 +235,10 @@ Goal: Export in agency-specific formats.
 - Finalize Status code UX (composite vs. builder)
 - Finalize IBP vs BBL internal storage strategy
 - Finalize Bander ID format on records (initials vs. full name)
+- BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
+- Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, and `weight_time`?
+- Bill measurements: add `bill_length`, `bill_width`, `bill_height` (BBL upload has these in addition to culmen)
+- Recapture fields: add `how_obtained`, `present_condition`, `second_band_number`, `reward_band_number`, `replaced_band_number`
+- Nest/effort fields: add `net_nest_cavity_designator`, `net_nest_cavity_number`, `plot_id`, `sweep_number`, `nest_location`
+- Sampling/tests fields: add `genetic_sample`, `other_tests`, `tracheal_swab`, `mouth_swab`, `cloacal_swab`, `ectoparasites_present`, `ectoparasites_collected`
+- User-defined fields: do we support BBL `User Field 1-5`, or map to notes/extra metadata?
