@@ -5,12 +5,16 @@ erDiagram
     Organization {
         string id
         string name
+        datetime created
+        datetime updated
     }
 
     Person {
         string id
         string name
         string initials
+        datetime created
+        datetime updated
     }
 
     User {
@@ -18,12 +22,16 @@ erDiagram
         string person_id
         string email
         string display_name
+        datetime created
+        datetime updated
     }
 
     Bander {
         string id
         string person_id
         string organization_id
+        datetime created
+        datetime updated
     }
 
     Location {
@@ -36,6 +44,8 @@ erDiagram
         string country
         string state_province
         string remarks
+        datetime created
+        datetime updated
     }
 
     Session {
@@ -50,12 +60,16 @@ erDiagram
         datetime open_time
         datetime close_time
         string notes
+        datetime created
+        datetime updated
     }
 
     Net {
         string id
         string location_id
         string label
+        datetime created
+        datetime updated
     }
 
     SessionNetLog {
@@ -63,12 +77,16 @@ erDiagram
         string session_id
         string net_id
         string remarks
+        datetime created
+        datetime updated
     }
 
     SessionBanderLog {
         string id
         string session_id
         string bander_id
+        datetime created
+        datetime updated
     }
 
     WeatherReading {
@@ -78,6 +96,8 @@ erDiagram
         number wind
         number cloud_cover
         string precipitation
+        datetime created
+        datetime updated
     }
 
     Species {
@@ -87,6 +107,8 @@ erDiagram
         string sci_name
         string french_name
         string spanish_name
+        datetime created
+        datetime updated
     }
 
     BandingRecord {
@@ -133,6 +155,8 @@ erDiagram
         string notes
         boolean feather_pull
         boolean blood_sample
+        datetime created
+        datetime updated
     }
 
     Band {
@@ -143,6 +167,8 @@ erDiagram
         string band_type
         string current_species
         string deployment_date
+        datetime created
+        datetime updated
     }
 
     CodeTable {
@@ -150,6 +176,8 @@ erDiagram
         string code_type
         string code
         string description
+        datetime created
+        datetime updated
     }
 
     Organization ||--o{ Location : owns

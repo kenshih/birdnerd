@@ -51,12 +51,16 @@ erDiagram
     Organization {
         string id
         string name
+        datetime created
+        datetime updated
     }
 
     Person {
         string id
         string name
         string initials
+        datetime created
+        datetime updated
     }
 
     User {
@@ -64,12 +68,16 @@ erDiagram
         string person_id
         string email
         string display_name
+        datetime created
+        datetime updated
     }
 
     Bander {
         string id
         string person_id
         string organization_id
+        datetime created
+        datetime updated
     }
 
     Location {
@@ -82,6 +90,8 @@ erDiagram
         string country
         string state_province
         string remarks
+        datetime created
+        datetime updated
     }
 
     Session {
@@ -96,12 +106,16 @@ erDiagram
         datetime open_time
         datetime close_time
         string notes
+        datetime created
+        datetime updated
     }
 
     Net {
         string id
         string location_id
         string label
+        datetime created
+        datetime updated
     }
 
     SessionNetLog {
@@ -109,12 +123,16 @@ erDiagram
         string session_id
         string net_id
         string remarks
+        datetime created
+        datetime updated
     }
 
     SessionBanderLog {
         string id
         string session_id
         string bander_id
+        datetime created
+        datetime updated
     }
 
     WeatherReading {
@@ -124,6 +142,8 @@ erDiagram
         number wind
         number cloud_cover
         string precipitation
+        datetime created
+        datetime updated
     }
 
     Species {
@@ -133,6 +153,8 @@ erDiagram
         string sci_name
         string french_name
         string spanish_name
+        datetime created
+        datetime updated
     }
 
     BandingRecord {
@@ -179,6 +201,8 @@ erDiagram
         string notes
         boolean feather_pull
         boolean blood_sample
+        datetime created
+        datetime updated
     }
 
     Band {
@@ -189,6 +213,8 @@ erDiagram
         string band_type
         string current_species
         string deployment_date
+        datetime created
+        datetime updated
     }
 
     CodeTable {
@@ -196,6 +222,8 @@ erDiagram
         string code_type
         string code
         string description
+        datetime created
+        datetime updated
     }
 
     Organization ||--o{ Location : owns
@@ -237,6 +265,8 @@ Top-level tenant. Each organization manages their own locations, banders, and re
 |-------|------|-------|
 | id | string | Internal ID |
 | name | string | Organization name (e.g., "Salton Sea Science Consortium") |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### Location (Project Location / Banding Site)
 A banding site registered with BBL, owned by an organization.
@@ -253,6 +283,8 @@ A banding site registered with BBL, owned by an organization.
 | stateProvince | string | |
 | remarks | string | |
 | organizationId | string | FK to Organization |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### Session
 Metadata for a single banding session (day × location × protocol).
@@ -270,6 +302,8 @@ Metadata for a single banding session (day × location × protocol).
 | openTime | datetime | When nets opened |
 | closeTime | datetime | When nets closed |
 | notes | string | Session-level notes |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### Net
 A single mist net or trap at a location.
@@ -279,6 +313,8 @@ A single mist net or trap at a location.
 | id | string | Internal ID |
 | locationId | string | FK to Location |
 | label | string | Net identifier (e.g., "N-01", "Trap-A") |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### SessionNetLog
 Per-net effort tracking within a session. Links nets to sessions and records open/close times and remarks.
@@ -291,6 +327,8 @@ Per-net effort tracking within a session. Links nets to sessions and records ope
 | remarks | string? | Remarks code or text (wind, predators, low temps, etc.) |
 | openTime | datetime? | When this net opened (may differ from session open) |
 | closeTime | datetime? | When this net closed (may differ from session close) |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### WeatherReading
 Weather conditions at a point in time (session open or session close).
@@ -303,6 +341,8 @@ Weather conditions at a point in time (session open or session close).
 | wind | number | Beaufort scale or mph |
 | cloudCover | number | Percentage (0–100) |
 | precipitation | enum? | clear, fog, thick fog, drizzle, rain, snow |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### Band
 A USGS BBL-issued band in inventory.
@@ -316,6 +356,8 @@ A USGS BBL-issued band in inventory.
 | bandType | string | (e.g., "Standard", "Buffy", "Giant") |
 | currentSpecies | string? | ALPHA code if currently deployed |
 | deploymentDate | date? | ISO date of first deployment |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### BandingRecord (the main record)
 One record per band encounter (deployment, recapture, etc.).
@@ -371,6 +413,8 @@ One record per band encounter (deployment, recapture, etc.).
 | notes | string | | May auto-populate from validation triggers |
 | featherPull | boolean | | Default: false |
 | bloodSample | boolean | | Default: false |
+| created | datetime | | Timestamp of record creation |
+| updated | datetime | | Timestamp of last update |
 
 *† Not required if corresponding Age/Sex = U. OT (Other) requires a note.*
 *‡ Required if SK selected in How Aged.*
@@ -386,6 +430,8 @@ Individual human: basis for users and banders.
 | id | string | Internal ID |
 | name | string | Full name |
 | initials | string | 2-3 letter identifier (e.g., "HD", "TS") |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### User
 User account login and profile (future — auth phase).
@@ -396,6 +442,8 @@ User account login and profile (future — auth phase).
 | personId | string | FK to Person |
 | email | string | Login email |
 | displayName | string | Name to show in app |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 #### Bander
 Bander registry: links a person to an organization with role and status.
@@ -407,6 +455,8 @@ Bander registry: links a person to an organization with role and status.
 | organizationId | string | FK to Organization |
 | role | enum | Master Bander, Sub-permittee, Bander, Trainee |
 | active | boolean | Active/inactive status (default: true) |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 **Note:** `role` and `active` fields should be added to the ER diagram (not yet reflected).
 
@@ -418,6 +468,8 @@ Tracks which banders worked a specific session.
 | id | string | Internal ID |
 | sessionId | string | FK to Session |
 | banderId | string | FK to Bander |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 ### 3.3 Reference Data
 
@@ -432,6 +484,8 @@ Source: MASTER BANDING DATA.xlsx → SPECIES sheet (1,323 species).
 | sciName | string | Scientific name (e.g., "Sitta carolinensis") |
 | frenchName | string | French common name |
 | spanishName | string | Spanish common name |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 Replace current placeholder CA list with this authoritative BBL list.
 
@@ -444,6 +498,8 @@ Static lookup tables stored as reference data in the app. Sourced from MASTER BA
 | codeType | string | Lookup table name (see list below) |
 | code | string | The code value |
 | description | string | Human-readable description |
+| created | datetime | Timestamp of record creation |
+| updated | datetime | Timestamp of last update |
 
 **Code types included:**
 - **Age codes** (8 codes + valid age pairings)
