@@ -1,5 +1,20 @@
 # BirdNerd Entities
 
+## Color Coding Conventions
+
+The ER diagram uses colors to categorize entity types:
+
+- **Pink** — General BirdNerd operational entities (core business objects)
+  - Organization, Person, User, Bander, Location, Net, Band, BandingRecord
+- **Orange** — Session-related data (tracking one banding session and its participants/efforts)
+  - Session, SessionNetLog, SessionBanderLog, WeatherReading
+  - *Note: May be split into separate schema in future phases for multi-tenant data isolation*
+- **Green** — Reference data from canonical external sources (imported, read-mostly)
+  - Species (from USGS BBL master list)
+  - CodeTable (from USGS BBL LOOKUPS sheet)
+- **White** — Immutable audit/change log data (append-only, no updates or deletes)
+  - ChangeLog (complete record of all entity changes)
+
 ```mermaid
 erDiagram
     Organization {
@@ -180,10 +195,20 @@ erDiagram
         datetime updated
     }
 
+    ChangeLog {
+        string id
+        datetime created
+        string person_id
+        string change_type
+        string entity
+        json detail
+    }
+
     Organization ||--o{ Location : owns
     Organization ||--o{ Bander : includes
     Person ||--o{ Bander : assigned
     Person ||--o{ User : has
+    Person ||--o{ ChangeLog : makes
 
     Location ||--o{ Net : includes
     Location ||--o{ Session : hosts
@@ -205,7 +230,78 @@ erDiagram
     CodeTable ||--o{ BandingRecord : validates
 
     classDef entitySpec fill:#ffd1dc,stroke:#333,stroke-width:1px,color:#000
+    classDef sessionData fill:#ffe4b5,stroke:#ff8c00,stroke-width:1px,color:#000
     classDef referenceData fill:#b7e4c7,stroke:#2f6f3e,stroke-width:1px,color:#000
-    class Organization,Location,Session,WeatherReading,Band,BandingRecord entitySpec
+    classDef immutable fill:#ffffff,stroke:#666,stroke-width:2px,color:#000
+    
+    class Organization,Person,User,Bander,Location,Net,Band,BandingRecord entitySpec
+    class Session,SessionNetLog,SessionBanderLog,WeatherReading sessionData
     class Species,CodeTable referenceData
+    class ChangeLog immutable
+```
+
+---
+
+## Data Flow Diagram
+
+```mermaid
+graph LR
+    subgraph Onboard["🔧 Onboarding & Management"]
+        A1["Location & Nets<br/>Setup geographic<br/>and equipment"]
+        A2["Band Inventory<br/>Import/manage<br/>band stock"]
+        A3["Reference Data<br/>Species, CodeTable<br/>auto-import"]
+    end
+
+    subgraph Entry["📝 Data Entry"]
+        A4["Banding Data Form<br/>BandingRecord<br/>in the field"]
+        A5["Session Setup<br/>Session metadata<br/>Weather, effort"]
+        A6["CSV Import<br/>Legacy data<br/>migration"]
+    end
+
+    subgraph Model["🗄️ BirdNerd Database"]
+        B[("BirdNerd<br/>14 entities<br/>+ ChangeLog<br/>IndexedDB ↔ Supabase")]
+    end
+
+    subgraph Upload["📤 Agency Uploads"]
+        C1["BBL Format<br/>58 columns<br/>USGS submission"]
+        C2["IBP / CDFW<br/>Code translation<br/>Agency-specific"]
+    end
+
+    subgraph Views["📊 BirdNerd Views"]
+        C3["CSV Export<br/>Standard format<br/>all records"]
+        C4["Session Reports<br/>Effort summary<br/>Record counts"]
+        C5["Band History<br/>Encounter timeline<br/>Recaptures"]
+    end
+
+    subgraph Analysis["🔬 Analysis Database"]
+        C6["Analysis DB<br/>Validation checks<br/>Derived stats"]
+    end
+
+    A1 --> B
+    A2 --> B
+    A3 --> B
+    A4 --> B
+    A5 --> B
+    A6 --> B
+
+    B --> C1
+    B --> C2
+    B --> C3
+    B --> C4
+    B --> C5
+    B --> C6
+
+    classDef onboardBox fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+    classDef entryBox fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
+    classDef modelBox fill:#ffd1dc,stroke:#c2185b,stroke-width:3px,color:#000
+    classDef uploadBox fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#000
+    classDef viewBox fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
+    classDef analysisBox fill:#f3e5f5,stroke:#6a1b9a,stroke-width:2px,color:#000
+    
+    class A1,A2,A3 onboardBox
+    class A4,A5,A6 entryBox
+    class B modelBox
+    class C1,C2 uploadBox
+    class C3,C4,C5 viewBox
+    class C6 analysisBox
 ```

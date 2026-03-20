@@ -58,7 +58,15 @@ docs/
   banding.log.book.page.JPG   Reference banding sheet
 ```
 
+## Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [docs/product-specifications.md](docs/product-specifications.md) | Product vision, UX specs, screens, validation rules, entity overview |
+| [docs/tech-spec.md](docs/tech-spec.md) | Architecture, data model (full schema), code systems, deployment, security |
+| [docs/entities.md](docs/entities.md) | ER diagram, entity relationships, color-coded organization |
+| [docs/plan.v3.md](docs/plan.v3.md) | Development roadmap phases 3-9 |
+
 ## See also
 
-- [docs/plan.md](docs/plan.md) — full project plan and roadmap
 - [CONTRIBUTING.md](CONTRIBUTING.md) — development guidelines
