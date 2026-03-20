@@ -39,75 +39,283 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 ## 3. Data Model
 
-### 3.1 Core Entities
+The data model is organized by entity type:
+- **Specification Entities** (pink) — Core operational data for this field station
+- **Reference Data** (green) — Lookup tables and validation data
+- **Supporting** (other colors) — Administrative and tracking entities
 
-#### Organization (future)
-Top-level tenant. Each org manages their own stations, banders, and records.
+### ER Diagram
 
-#### Project Location
-A banding site registered with BBL.
+```mermaid
+erDiagram
+    Organization {
+        string id
+        string name
+    }
+
+    Person {
+        string id
+        string name
+        string initials
+    }
+
+    User {
+        string id
+        string person_id
+        string email
+        string display_name
+    }
+
+    Bander {
+        string id
+        string person_id
+        string organization_id
+    }
+
+    Location {
+        string id
+        string bander_location_id
+        string bbl_location_id
+        string name
+        number latitude
+        number longitude
+        string country
+        string state_province
+        string remarks
+    }
+
+    Session {
+        string id
+        string location_id
+        date session_date
+        string protocol
+        string maps_period
+        string master_bander_id
+        string weather_open_id
+        string weather_close_id
+        datetime open_time
+        datetime close_time
+        string notes
+    }
+
+    Net {
+        string id
+        string location_id
+        string label
+    }
+
+    SessionNetLog {
+        string id
+        string session_id
+        string net_id
+        string remarks
+    }
+
+    SessionBanderLog {
+        string id
+        string session_id
+        string bander_id
+    }
+
+    WeatherReading {
+        string id
+        string reading_type
+        number temperature
+        number wind
+        number cloud_cover
+        string precipitation
+    }
+
+    Species {
+        string id
+        string alpha_code
+        string species_name
+        string sci_name
+        string french_name
+        string spanish_name
+    }
+
+    BandingRecord {
+        string id
+        string session_id
+        string band_number
+        string species_id
+        string capture_code
+        string age
+        string how_aged
+        string how_aged2
+        string wrp
+        string sex
+        string how_sexed
+        string how_sexed2
+        string skull
+        string brood_patch
+        string cloacal_protuberance
+        string fat
+        string body_molt
+        string ff_molt
+        string ff_wear
+        string juv_body_plumage
+        string p_covs
+        string s_covs
+        string pp
+        string ss
+        string tert
+        string rec
+        string body_plum
+        string non_feather
+        number wing
+        number tail
+        number tarsus
+        number exposed_culmen
+        number other_measurement
+        number body_mass
+        string status
+        string disposition
+        string bander_id
+        string capture_time
+        string release_time
+        string net_id
+        string notes
+        boolean feather_pull
+        boolean blood_sample
+    }
+
+    Band {
+        string id
+        string band_number
+        string status
+        number band_size
+        string band_type
+        string current_species
+        string deployment_date
+    }
+
+    CodeTable {
+        string id
+        string code_type
+        string code
+        string description
+    }
+
+    Organization ||--o{ Location : owns
+    Organization ||--o{ Bander : includes
+    Person ||--o{ Bander : assigned
+    Person ||--o{ User : has
+
+    Location ||--o{ Net : includes
+    Location ||--o{ Session : hosts
+    Session ||--o{ SessionNetLog : includes
+    Session ||--o{ SessionBanderLog : includes
+    Session ||--o{ WeatherReading : records
+    Session ||--o{ BandingRecord : contains
+
+    Net ||--o{ SessionNetLog : logs
+
+    Bander ||--o{ SessionBanderLog : assigned
+
+    Bander ||..o{ Session : leads
+    Bander ||..o{ BandingRecord : recorded_by
+
+    Species ||--o{ BandingRecord : identifies
+    Band ||--o{ BandingRecord : assigned
+
+    CodeTable ||--o{ BandingRecord : validates
+
+    classDef entitySpec fill:#ffd1dc,stroke:#333,stroke-width:1px,color:#000
+    classDef referenceData fill:#b7e4c7,stroke:#2f6f3e,stroke-width:1px,color:#000
+    class Organization,Location,Session,WeatherReading,Band,BandingRecord entitySpec
+    class Species,CodeTable referenceData
+```
+
+### 3.1 Specification Entities (Field Station Data)
+
+#### Organization
+Top-level tenant. Each organization manages their own locations, banders, and records.
 
 | Field | Type | Notes |
 |-------|------|-------|
 | id | string | Internal ID |
-| banderLocationId | string(4) | 4-letter ALPHA code (e.g. GCFS) |
+| name | string | Organization name (e.g., "Salton Sea Science Consortium") |
+
+#### Location (Project Location / Banding Site)
+A banding site registered with BBL, owned by an organization.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| banderLocationId | string(4) | 4-letter ALPHA code (e.g., GCFS) — local identifier |
 | bblLocationId | string(6) | Issued by BBL after submission; nullable |
-| name | string | Display name (e.g. "Galindo Creek Field Station") |
+| name | string | Display name (e.g., "Galindo Creek Field Station") |
 | latitude | number | Decimal degrees |
 | longitude | number | Decimal degrees |
 | country | string | |
 | stateProvince | string | |
 | remarks | string | |
+| organizationId | string | FK to Organization |
 
 #### Session
-Metadata for a banding session at a location on a date.
+Metadata for a single banding session (day × location × protocol).
 
 | Field | Type | Notes |
 |-------|------|-------|
 | id | string | Auto-generated session ID |
-| locationId | string | FK to Project Location |
-| date | string | ISO date (YYYY-MM-DD) |
-| protocol | enum | MAPS, Non-MAPS, Burrowing Owl, Rehabbed-Bird, Saw-whet Owl, etc. |
-| mapsPeriod | number? | MAPS period number if applicable |
-| masterBander | string | Bander ID for the session's master bander |
-| banders | string[] | Bander IDs for all banders working this session |
-| effort | NetEffort[] | See below |
-| weatherOpen | WeatherReading | At session open |
-| weatherClose | WeatherReading | At session close |
-| notes | string | |
+| locationId | string | FK to Location |
+| sessionDate | date | ISO date (YYYY-MM-DD) |
+| protocol | string | MAPS, Non-MAPS, Burrowing Owl, Rehabbed-Bird, Saw-whet Owl, etc. |
+| mapsPeriod | number? | MAPS period number if applicable (1–10) |
+| masterBanderId | string | FK to Bander (session lead) |
+| weatherOpenId | string | FK to WeatherReading (at session open) |
+| weatherCloseId | string | FK to WeatherReading (at session close) |
+| openTime | datetime | When nets opened |
+| closeTime | datetime | When nets closed |
+| notes | string | Session-level notes |
 
-#### NetEffort
-Per-net effort tracking within a session.
+#### Net
+A single mist net or trap at a location.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| netId | string | Net number/ID |
-| openTime | string | HH:mm |
-| closeTime | string | HH:mm |
-| netHours | number | Auto-calculated |
-| remarkCode | string? | Dropdown: wind, predators, low temps, etc. |
-| remarks | string? | Free text |
+| id | string | Internal ID |
+| locationId | string | FK to Location |
+| label | string | Net identifier (e.g., "N-01", "Trap-A") |
+
+#### SessionNetLog
+Per-net effort tracking within a session. Links nets to sessions and records open/close times and remarks.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| sessionId | string | FK to Session |
+| netId | string | FK to Net |
+| remarks | string? | Remarks code or text (wind, predators, low temps, etc.) |
+| openTime | datetime? | When this net opened (may differ from session open) |
+| closeTime | datetime? | When this net closed (may differ from session close) |
 
 #### WeatherReading
+Weather conditions at a point in time (session open or session close).
 
 | Field | Type | Notes |
 |-------|------|-------|
+| id | string | Internal ID |
+| readingType | enum | "session_open" or "session_close" |
 | temperature | number | Celsius |
 | wind | number | Beaufort scale or mph |
-| cloudCover | number | Percentage (0-100) |
-| precipitation | enum? | fog, thick fog, drizzle, rain |
+| cloudCover | number | Percentage (0–100) |
+| precipitation | enum? | clear, fog, thick fog, drizzle, rain, snow |
 
 #### Band
 A USGS BBL-issued band in inventory.
 
 | Field | Type | Notes |
 |-------|------|-------|
-| bandNumber | string | Format: XXXX-XXXXX(X) |
-| bandSize | number | |
-| bandType | string | |
+| id | string | Internal ID |
+| bandNumber | string | Format: XXXX-XXXXX(X) — unique identifier |
 | status | enum | available, deployed, destroyed, lost, replaced |
-| currentSpecies | string? | ALPHA code if deployed |
-| deploymentDate | string? | ISO date of first deployment |
+| bandSize | number | (e.g., 1.6, 2.0, 2.5) |
+| bandType | string | (e.g., "Standard", "Buffy", "Giant") |
+| currentSpecies | string? | ALPHA code if currently deployed |
+| deploymentDate | date? | ISO date of first deployment |
 
 #### BandingRecord (the main record)
 One record per band encounter (deployment, recapture, etc.).
@@ -117,11 +325,8 @@ One record per band encounter (deployment, recapture, etc.).
 | id | string | auto | Internal ID |
 | sessionId | string | * | FK to Session |
 | bandNumber | string | * | FK to Band, or "UNBANDED" |
+| speciesId | string | * | FK to Species (4-letter ALPHA code) |
 | captureCode | enum | * | 1/N=New, U=Unbanded, R=Recapture, F=Foreign, 4=Destroyed, 5=Replaced, 6=Added-to, 8=Lost, X=Mortality |
-| speciesCode | string | * | 4-letter ALPHA code |
-| speciesName | string | derived | Common name (display only, derived from code) |
-| bandSize | number | derived | Display only, from band inventory |
-| bandType | string | derived | Display only, from band inventory |
 | **Age & Sex** | | | |
 | age | enum | * | U, L, HY, AHY, SY, ASY, TY, ATY |
 | howAged | string | *† | Code from How Aged table (25 codes) |
@@ -155,14 +360,14 @@ One record per band encounter (deployment, recapture, etc.).
 | exposedCulmen | number | | mm (##.## precision) |
 | otherMeasurement | number | | mm (##.## precision) |
 | bodyMass | number | | g (##.# precision) |
-| **Status** | | | |
-| status | string | *§ | Composite code (e.g. 300, 318, 500, 700) |
-| disposition | string | | M, O, I, S, E, T, W, B, L, P, D |
+| **Status & Disposition** | | | |
+| status | string | *§ | Composite code (e.g., 300, 318, 500, 700) |
+| disposition | enum | | M, O, I, S, E, T, W, B, L, P, D |
 | **Metadata** | | | |
-| banderId | string | * | 2-letter initials or name |
+| banderId | string | * | FK to Bander; 2-letter initials or name |
 | captureTime | string | * | HH:mm |
 | releaseTime | string | * | HH:mm (tap to auto-fill current time) |
-| net | string | * | Net/trap number |
+| netId | string | * | FK to Net |
 | notes | string | | May auto-populate from validation triggers |
 | featherPull | boolean | | Default: false |
 | bloodSample | boolean | | Default: false |
@@ -171,34 +376,97 @@ One record per band encounter (deployment, recapture, etc.).
 *‡ Required if SK selected in How Aged.*
 *§ Not required if unbanded.*
 
-### 3.2 Reference Data
+### 3.2 Supporting Entities (Administrative)
+
+#### Person
+Individual human: basis for users and banders.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| name | string | Full name |
+| initials | string | 2-3 letter identifier (e.g., "HD", "TS") |
+
+#### User
+User account login and profile (future — auth phase).
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| personId | string | FK to Person |
+| email | string | Login email |
+| displayName | string | Name to show in app |
+
+#### Bander
+Bander registry: links a person to an organization with role and status.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| personId | string | FK to Person |
+| organizationId | string | FK to Organization |
+| role | enum | Master Bander, Sub-permittee, Bander, Trainee |
+| active | boolean | Active/inactive status (default: true) |
+
+**Note:** `role` and `active` fields should be added to the ER diagram (not yet reflected).
+
+#### SessionBanderLog
+Tracks which banders worked a specific session.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| sessionId | string | FK to Session |
+| banderId | string | FK to Bander |
+
+### 3.3 Reference Data
 
 #### Species List
 Source: MASTER BANDING DATA.xlsx → SPECIES sheet (1,323 species).
-Fields: SPECIES_ID, ALPHA_CODE, SPECIES_NAME, SCI_NAME, FRENCH_NAME, SPANISH_NAME.
+
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| alphaCode | string | 4-letter unique code (e.g., "WBNU") |
+| speciesName | string | Common name (e.g., "White-breasted Nuthatch") |
+| sciName | string | Scientific name (e.g., "Sitta carolinensis") |
+| frenchName | string | French common name |
+| spanishName | string | Spanish common name |
+
 Replace current placeholder CA list with this authoritative BBL list.
 
-#### Code Tables (from LOOKUPS sheet)
-All stored as static reference data in the app:
-- Age codes (8 codes + descriptions + comments + valid age pairings)
-- Sex codes (3 codes)
-- Disposition / Capture Code (10 codes including numeric and alpha)
-- How Aged (25 codes with descriptions, comments, and which ages they're valid with)
-- How Sexed (18 codes with descriptions and comments)
-- Bird Status (codes 2-9 with descriptions)
-- Bird Status Additional Info (codes 00-90 with descriptions — combined with base status to form composite)
-- How Captured (25 methods)
-- WRP Molt Cycle codes (~120+ codes with descriptions)
-- Hummingbird Band Prefixes (prefix → alpha mapping)
-- Molt Limits & Plumage codes (J, L, F, B, R, M, A, N, U)
+#### CodeTable (Lookups / Reference Data)
+Static lookup tables stored as reference data in the app. Sourced from MASTER BANDING DATA.xlsx → LOOKUPS sheet.
 
-#### Validation Datasets (future, tables to be provided by Hallie)
+| Field | Type | Notes |
+|-------|------|-------|
+| id | string | Internal ID |
+| codeType | string | Lookup table name (see list below) |
+| code | string | The code value |
+| description | string | Human-readable description |
+
+**Code types included:**
+- **Age codes** (8 codes + valid age pairings)
+- **Sex codes** (3 codes)
+- **Capture Code** (10 codes: N, U, R, F, numeric variants, etc.)
+- **How Aged** (25 codes with descriptions and valid age associations)
+- **How Sexed** (18 codes with descriptions)
+- **Bird Status** (base codes 2–9 with descriptions)
+- **Bird Status Additional Info** (codes 00–90 to form composite status)
+- **How Captured** (25 methods)
+- **WRP Molt Cycle** (~120+ codes with molt descriptions)
+- **Hummingbird Band Prefixes** (prefix → alpha code mapping)
+- **Molt Limits & Plumage** (J, L, F, B, R, M, A, N, U — left/right coverts, primaries, secondaries, tail, tertials, rectrices, body plumage, non-feather)
+
+### 3.4 Validation Datasets (future, to be provided)
+Reference ranges for morphometric validation and consistency checking:
 - Species × Band size mapping
 - Species × Wing range
 - Species × Tail range
 - Species × Tarsus range
 - Species × Culmen range
 - Species × Mass range
+
 
 ---
 
@@ -245,7 +513,11 @@ Future additions: Photo Log, Datasheet Addendums.
 ### 4.3 Session Data
 
 **List view:** Log of old sessions. Referenceable, modifiable, exportable.
-**Create view:** Form for new session with all Session fields.
+**Create view:** Form for new session with all Session fields:
+  - **Master Bander:** Dropdown populated from Bander table (organized by role: Master Banders first, then Sub-permittees, etc.)
+  - **Session Participants:** Checkboxes or multi-select for all active banders at the organization, linked to SessionBanderLog
+  - Weather readings at session open and close
+  - Notes
 **Linked:** Each session shows its associated banding records.
 
 ### 4.4 Band Inventory
@@ -257,8 +529,13 @@ Future additions: Photo Log, Datasheet Addendums.
 
 ### 4.5 Project Location Data
 
-**CRUD** for banding locations. Simple form with fields from Section 3.1.
-**Future:** GPS auto-capture, net/trap inventory per location.
+**List view:** All locations for the organization.
+**Create/Edit view:** Form with fields from Section 3.1 (name, coordinates, country, state, remarks, etc.).
+**Net Management:** Within location detail, manage nets (mist nets and traps):
+  - List of nets with their labels (e.g., "N-01", "Trap-A")
+  - Add/edit/delete nets — defines the pool available for SessionNetLog
+  - Nets are location-specific and reused across sessions
+**Future:** GPS auto-capture.
 
 ### 4.6 Export
 
@@ -335,15 +612,20 @@ Current known banders:
 
 ---
 
-## 8. Open Questions
+## 8. TODOs / Design Decisions to Resolve
 
-See [research-notes.md](research-notes.md) § Open Questions for the full list. Key decisions needed:
+**Administrative:**
+- [ ] Add `role` (Master Bander, Sub-permittee, Bander, Trainee) and `active` (boolean) fields to Bander entity in ER diagram
+- [ ] Reconsider whether `master_bander_id` should remain a FK on Session, or if all session leaders should be pulled from SessionBanderLog. Current design: FK is fine for efficiency, but may need alignment if session leadership logic evolves.
 
-1. **Status code UX**: Present as composite (300, 318, 500) or let users build from base + additional info?
-2. **IBP vs BBL storage**: Store IBP internally, derive BBL at export? (Recommended)
-3. **Band number format**: Numeric (115481501) or formatted (1154-81501)?
-4. **Bander ID format**: 2-letter initials, full name, or both?
-5. **Location codes**: Reconcile GCFS (app) vs GCBS (BBL submission) — same location, different systems?
-6. **Required fields timing**: When to start enforcing * required fields? Phase 3? Phase 4?
-7. **Empidonax / Selasphorus special forms**: What do these look like? When to implement?
-8. **Session ↔ Banding linkage**: How tight? Auto-populate session fields on banding form? Validate net against session's opened nets?
+**Operational & UX:**
+- [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
+- [ ] IBP vs BBL storage: Store IBP internally, derive BBL at export? (Recommended)
+- [ ] Band number format: Numeric (115481501) or formatted (1154-81501)?
+- [ ] Bander ID format on records: 2-letter initials, full name, or both?
+- [ ] Location codes: Reconcile GCFS (app) vs GCBS (BBL submission) — same location, different systems?
+- [ ] Required fields timing: When to start enforcing * required fields? Phase 3? Phase 4?
+- [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
+- [ ] Session ↔ Banding linkage: How tight? Auto-populate session fields on banding form? Validate net against session's opened nets?
+
+See also [research-notes.md](research-notes.md) § Open Questions for the full list.
