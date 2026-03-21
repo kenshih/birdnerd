@@ -64,37 +64,37 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ---
 
-## Phase 6 — Form UX Overhaul
-
-Goal: Reorganize the banding form for field usability.
-
-- Section grouping per spec: Identity → Age & Sex → Condition → Molt Limits → Morphometrics & Status → Additional Info
-- Combobox upgrade for fields with known code sets (How Aged, How Sexed, etc.) — show code + description
-- Release Time "tap to fill now" button
-- Net field updated to reference Net via dropdown (from nets defined at location level — depends on Phase 7)
-
----
-
-## Phase 7 — Location & Net Management
+## Phase 6 — Location & Net Management
 
 Goal: Establish locations as the geographic and equipment foundation for banding operations.
 
-**7a. Create Location CRUD**
+**6a. Create Location CRUD**
 - List all locations for the organization
 - Create/edit form: name, coordinates (lat/lon), country, state, bander location ID (4-letter code)
 - Remarks field
 - Form validation: BBL location ID initially nullable; filled in after submission to BBL
 
-**7b. Net Management (within Location)**
+**6b. Net Management (within Location)**
 - Location detail view includes net inventory
 - Add nets: label (e.g., "N-01", "Trap-A"), internal ID
 - Edit/delete nets
 - Nets are location-specific; reused across sessions
 - Display net count in location list view
 
-**7c. Data migration**
+**6c. Data migration**
 - Move from free-text station picker to Location dropdown on session form
 - Migrate existing session station names → Location records
+
+---
+
+## Phase 7 — Form UX Overhaul
+
+Goal: Reorganize the banding form for field usability.
+
+- Section grouping per spec: Identity → Age & Sex → Condition → Molt Limits → Morphometrics & Status → Additional Info
+- Combobox upgrade for fields with known code sets (How Aged, How Sexed, etc.) — show code + description
+- Release Time "tap to fill now" button
+- Net field updated to reference Net via dropdown (from nets defined at location level)
 
 ---
 
