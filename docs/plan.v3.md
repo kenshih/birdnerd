@@ -74,15 +74,13 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ---
 
-## Phase 7 — People & Roles
+### Phase 7 — People & Roles ✅
 
-Goal: Establish people as managed reference data (like Locations). People gain roles (Bander, Extractor, Data Entry, etc.) via association tables.
-
-- Top-level nav item on home screen: "People"
-- Person CRUD: initials, name, active/inactive
+- Person CRUD: initials, name, active/inactive toggle
 - Bander association: link Person → Bander with role (Master Bander, Sub-permittee, Bander, Trainee)
+- PersonDetail page: edit person info, add/update/remove bander role
 - Seed known people + bander roles (HD, JW, TS, JVD, LC) via seed.ts
-- IndexedDB stores for people and banders
+- IndexedDB v3 with people + banders stores, auto-seed on first load
 - Bander dropdown on BandingRecord form (replaces free-text initials)
 - Drives Session master bander + roster dropdowns (Phase 10)
 

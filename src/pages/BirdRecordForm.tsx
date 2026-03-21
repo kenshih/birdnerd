@@ -1,7 +1,7 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session } from '../types'
-import { saveRecord } from '../db'
+import { saveRecord, getPeople, getBanders } from '../db'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
@@ -35,8 +35,28 @@ const ALL_FIELDS: (keyof FormValues)[] = [
   'net', 'bander', 'featherPull', 'bloodSample', 'notes',
 ]
 
+interface BanderOption {
+  initials: string
+  name: string
+}
+
 export default function BirdRecordForm({ session, record, onSaved, onCancel }: Props) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
+  const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
+
+  useEffect(() => {
+    loadBanders()
+  }, [])
+
+  async function loadBanders() {
+    const [people, banders] = await Promise.all([getPeople(), getBanders()])
+    const banderPersonIds = new Set(banders.map(b => b.personId))
+    const activeBanders = people
+      .filter(p => p.active && banderPersonIds.has(p.id))
+      .sort((a, b) => a.initials.localeCompare(b.initials))
+      .map(p => ({ initials: p.initials, name: p.name }))
+    setBanderOptions(activeBanders)
+  }
 
   useEffect(() => {
     if (record) {
@@ -385,7 +405,12 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
               <input {...register('net')} placeholder="Net #" style={inputStyle} />
             </Field>
             <Field label="Bander">
-              <input {...register('bander')} placeholder="Initials" style={inputStyle} />
+              <select {...register('bander')} style={inputStyle}>
+                <option value="">—</option>
+                {banderOptions.map(b => (
+                  <option key={b.initials} value={b.initials}>{b.initials} — {b.name}</option>
+                ))}
+              </select>
             </Field>
           </Row>
         </Section>

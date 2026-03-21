@@ -91,3 +91,22 @@ export interface Net {
   createdAt: string
   updatedAt: string
 }
+
+export interface Person {
+  id: string
+  name: string
+  initials: string           // 2-3 letter code e.g. "HD"
+  active: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type BanderRole = 'Master Bander' | 'Sub-permittee' | 'Bander' | 'Trainee'
+
+export interface Bander {
+  id: string
+  personId: string           // FK to Person
+  role: BanderRole
+  createdAt: string
+  updatedAt: string
+}

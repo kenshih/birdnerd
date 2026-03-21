@@ -1,7 +1,7 @@
 // Centralized seed/default data for the app.
 // Swap this file for an empty config to start fresh.
 
-import type { Location, Net } from '../types'
+import type { Location, Net, Person, Bander } from '../types'
 
 export const SEED_LOCATIONS: Omit<Location, 'createdAt' | 'updatedAt'>[] = [
   {
@@ -40,4 +40,20 @@ export const SEED_NETS: Omit<Net, 'createdAt' | 'updatedAt'>[] = [
   { id: 'net-gcbs-8', locationId: 'loc-gcbs', label: '8' },
   { id: 'net-gcbs-9', locationId: 'loc-gcbs', label: '9' },
   { id: 'net-gcbs-10', locationId: 'loc-gcbs', label: '10' },
+]
+
+export const SEED_PEOPLE: Omit<Person, 'createdAt' | 'updatedAt'>[] = [
+  { id: 'person-hd', name: 'Hallie Daly', initials: 'HD', active: true },
+  { id: 'person-jw', name: 'Julie Woodruff', initials: 'JW', active: true },
+  { id: 'person-ts', name: 'Tatyana Soto-Bartzi', initials: 'TS', active: true },
+  { id: 'person-jvd', name: 'Joanna van Dyk', initials: 'JVD', active: true },
+  { id: 'person-lc', name: 'Lucas Corneliussen', initials: 'LC', active: true },
+]
+
+export const SEED_BANDERS: Omit<Bander, 'createdAt' | 'updatedAt'>[] = [
+  { id: 'bander-hd', personId: 'person-hd', role: 'Master Bander' },
+  { id: 'bander-jw', personId: 'person-jw', role: 'Sub-permittee' },
+  { id: 'bander-ts', personId: 'person-ts', role: 'Sub-permittee' },
+  { id: 'bander-jvd', personId: 'person-jvd', role: 'Sub-permittee' },
+  { id: 'bander-lc', personId: 'person-lc', role: 'Sub-permittee' },
 ]

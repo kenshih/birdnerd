@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Session, Location } from './types'
+import type { Session, Location, Person } from './types'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
 import SessionView from './pages/SessionView'
@@ -7,12 +7,15 @@ import PlaceholderPage from './pages/PlaceholderPage'
 import ExportPage from './pages/ExportPage'
 import LocationList from './pages/LocationList'
 import LocationDetail from './pages/LocationDetail'
+import PeopleList from './pages/PeopleList'
+import PersonDetail from './pages/PersonDetail'
 
 type AppView =
   | { mode: 'home' }
   | { mode: 'sessions' }
   | { mode: 'session'; session: Session }
   | { mode: 'banders' }
+  | { mode: 'person-detail'; person: Person }
   | { mode: 'band-inventory' }
   | { mode: 'locations' }
   | { mode: 'location-detail'; location: Location }
@@ -45,11 +48,20 @@ export default function App() {
     return <ExportPage onHome={goHome} />
   }
 
+  if (view.mode === 'person-detail') {
+    return (
+      <PersonDetail
+        person={view.person}
+        onBack={() => setView({ mode: 'banders' })}
+        onPersonUpdated={() => setView({ mode: 'banders' })}
+      />
+    )
+  }
+
   if (view.mode === 'banders') {
     return (
-      <PlaceholderPage
-        title="People"
-        description="Manage team members and their roles (Bander, Extractor, Data Entry, etc.)."
+      <PeopleList
+        onSelectPerson={person => setView({ mode: 'person-detail', person })}
         onHome={goHome}
       />
     )

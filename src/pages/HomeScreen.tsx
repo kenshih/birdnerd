@@ -15,7 +15,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { mode: 'sessions', label: 'Session Data', description: 'Create sessions and record bird encounters', enabled: true },
-  { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: false },
+  { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
   { mode: 'band-inventory', label: 'Band Inventory', description: 'Coming soon', enabled: false },
   { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
   { mode: 'export', label: 'View Data / Export', description: 'Browse records, export CSV', enabled: true },

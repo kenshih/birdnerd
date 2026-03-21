@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BirdRecord, Session, Location, Net } from '../types'
-import { SEED_LOCATIONS, SEED_NETS } from '../data/seed'
+import type { BirdRecord, Session, Location, Net, Person, Bander } from '../types'
+import { SEED_LOCATIONS, SEED_NETS, SEED_PEOPLE, SEED_BANDERS } from '../data/seed'
 
 interface BirdNerdDB extends DBSchema {
   sessions: {
@@ -23,13 +23,23 @@ interface BirdNerdDB extends DBSchema {
     value: Net
     indexes: { 'by-location': string }
   }
+  people: {
+    key: string
+    value: Person
+    indexes: { 'by-initials': string }
+  }
+  banders: {
+    key: string
+    value: Bander
+    indexes: { 'by-person': string }
+  }
 }
 
 let db: IDBPDatabase<BirdNerdDB> | null = null
 
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
-  db = await openDB<BirdNerdDB>('birdnerd', 2, {
+  db = await openDB<BirdNerdDB>('birdnerd', 3, {
     upgrade(database, oldVersion) {
       if (oldVersion < 1) {
         const sessionStore = database.createObjectStore('sessions', { keyPath: 'id' })
@@ -46,6 +56,14 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
         const netStore = database.createObjectStore('nets', { keyPath: 'id' })
         netStore.createIndex('by-location', 'locationId')
       }
+
+      if (oldVersion < 3) {
+        const peopleStore = database.createObjectStore('people', { keyPath: 'id' })
+        peopleStore.createIndex('by-initials', 'initials')
+
+        const banderStore = database.createObjectStore('banders', { keyPath: 'id' })
+        banderStore.createIndex('by-person', 'personId')
+      }
     },
   })
 
@@ -59,6 +77,20 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
     }
     for (const net of SEED_NETS) {
       await tx.objectStore('nets').put({ ...net, createdAt: now, updatedAt: now })
+    }
+    await tx.done
+  }
+
+  // Seed people and banders if empty
+  const existingPeople = await db.count('people')
+  if (existingPeople === 0 && SEED_PEOPLE.length > 0) {
+    const now = new Date().toISOString()
+    const tx = db.transaction(['people', 'banders'], 'readwrite')
+    for (const person of SEED_PEOPLE) {
+      await tx.objectStore('people').put({ ...person, createdAt: now, updatedAt: now })
+    }
+    for (const bander of SEED_BANDERS) {
+      await tx.objectStore('banders').put({ ...bander, createdAt: now, updatedAt: now })
     }
     await tx.done
   }
@@ -135,4 +167,54 @@ export async function saveNet(net: Net): Promise<void> {
 export async function deleteNet(id: string): Promise<void> {
   const db = await getDB()
   await db.delete('nets', id)
+}
+
+// People
+export async function getPeople(): Promise<Person[]> {
+  const db = await getDB()
+  return db.getAll('people')
+}
+
+export async function getPerson(id: string): Promise<Person | undefined> {
+  const db = await getDB()
+  return db.get('people', id)
+}
+
+export async function savePerson(person: Person): Promise<void> {
+  const db = await getDB()
+  await db.put('people', person)
+}
+
+export async function deletePerson(id: string): Promise<void> {
+  const db = await getDB()
+  // Also delete associated bander record
+  const banders = await db.getAllFromIndex('banders', 'by-person', id)
+  const tx = db.transaction(['people', 'banders'], 'readwrite')
+  for (const bander of banders) {
+    await tx.objectStore('banders').delete(bander.id)
+  }
+  await tx.objectStore('people').delete(id)
+  await tx.done
+}
+
+// Banders
+export async function getBanders(): Promise<Bander[]> {
+  const db = await getDB()
+  return db.getAll('banders')
+}
+
+export async function getBanderByPerson(personId: string): Promise<Bander | undefined> {
+  const db = await getDB()
+  const banders = await db.getAllFromIndex('banders', 'by-person', personId)
+  return banders[0]
+}
+
+export async function saveBander(bander: Bander): Promise<void> {
+  const db = await getDB()
+  await db.put('banders', bander)
+}
+
+export async function deleteBander(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('banders', id)
 }
