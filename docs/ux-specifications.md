@@ -14,23 +14,27 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 │         BirdNerd                    │
 │                                     │
 │  [Session Data]                     │
-│  [People]                           │
-│  [Band Inventory]                   │
-│  [Project Location Data]            │
 │  [View Data / Export]               │
+│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
+│  [Project Locations]                │
+│  [People & Roles]                   │
+│  [Band Inventory]                   │
+│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
 │                                     │
-│  Future: Photo Log, Addendums      │
+│  Future: Photo Log, Addendums       │
 └─────────────────────────────────────┘
 ```
+
+Buttons are grouped with subtle dividers: **field activities** (Session Data, View Data/Export), **back office** (Locations, People, Band Inventory), and **meta** (Feedback).
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
 | **Session Data** | Create/manage daily sessions, record bird encounters | Session List / Session Form |
+| **View Data / Export** | Review records, export to CSV/BBL/IBP | Data Table / Export Dialog |
+| **Project Locations** | Register locations, manage nets | Location List / Location Form |
 | **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
-| **Project Location Data** | Register locations, manage nets | Location List / Location Form |
-| **View Data / Export** | Review records, export to CSV/BBL/IBP | Data Table / Export Dialog |
 | **Report Bugs / Feedback** | Send feedback via email | Email client |
 
 ---

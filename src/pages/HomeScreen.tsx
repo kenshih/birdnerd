@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 type NavMode = 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'feedback'
 
@@ -14,11 +14,14 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  // Field activities
   { mode: 'sessions', label: 'Session Data', description: 'Create sessions and record bird encounters', enabled: true },
+  { mode: 'export', label: 'View Data / Export', description: 'Browse records, export CSV', enabled: true },
+  // Back office
+  { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
   { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
   { mode: 'band-inventory', label: 'Band Inventory', description: 'Coming soon', enabled: false },
-  { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
-  { mode: 'export', label: 'View Data / Export', description: 'Browse records, export CSV', enabled: true },
+  // Meta
   { mode: 'feedback', label: 'Report Bugs / Feedback', description: 'Send us an email', enabled: true },
 ]
 
@@ -49,15 +52,18 @@ export default function HomeScreen({ onNavigate }: Props) {
 
       <div style={styles.actions}>
         {NAV_ITEMS.map((item, i) => (
-          <button
-            key={i}
-            style={item.enabled ? styles.navBtn : styles.navBtnDisabled}
-            onClick={() => item.enabled && onNavigate(item.mode)}
-            disabled={!item.enabled}
-          >
-            <span style={styles.navLabel}>{item.label}</span>
-            <span style={styles.navDesc}>{item.description}</span>
-          </button>
+          <React.Fragment key={i}>
+            {i === 2 && <div style={styles.divider} />}
+            {i === 5 && <div style={styles.divider} />}
+            <button
+              style={item.enabled ? styles.navBtn : styles.navBtnDisabled}
+              onClick={() => item.enabled && onNavigate(item.mode)}
+              disabled={!item.enabled}
+            >
+              <span style={styles.navLabel}>{item.label}</span>
+              <span style={styles.navDesc}>{item.description}</span>
+            </button>
+          </React.Fragment>
         ))}
       </div>
 
@@ -127,6 +133,13 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
+  },
+  divider: {
+    width: '60%',
+    height: '1px',
+    background: 'rgba(255,255,255,0.2)',
+    alignSelf: 'center',
+    margin: '0.25rem 0',
   },
   navBtn: {
     width: '100%',
