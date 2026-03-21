@@ -26,7 +26,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Band Inventory** — Add, track, and manage band stock.
 
-**Export / Reports** — Export data in multiple formats (CSV, BBL, IBP), generate session summaries, view band history. JSON data bundle for full backup/restore of all managed data (locations, nets, people, banders, sessions, records).
+**Data Manager** — Browse records, export session data (CSV, BBL, IBP), generate session summaries, view band history. JSON data bundle for full backup/restore of all managed data (locations, nets, people, banders, sessions, records).
 
 ---
 
@@ -377,10 +377,8 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 ### 8.1 Data Model
 
-- [ ] Add `role` and `active` fields to Bander entity in ER diagram (already in tech-spec, not yet in entities.md mermaid)
 - [ ] Reconsider whether `master_bander_id` should remain a FK on Session, or if all session leaders should be pulled from SessionBanderLog
 - [ ] Band number format: Numeric (115481501) or formatted (1154-81501)?
-- [ ] Bander ID format on records: 2-letter initials, full name, or both?
 - [ ] BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
 - [ ] Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, `weight_time`?
 - [ ] Bill measurements: add `bill_length`, `bill_width`, `bill_height` (BBL upload has these in addition to culmen)?
@@ -391,27 +389,31 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 ### 8.2 UX & Workflow
 
+- [ ] JSON import merge mode: Currently replace-only; consider additive merge strategy for importing bundles without wiping existing data
 - [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
-- [ ] Required fields timing: When to start enforcing * required fields? Phase 3? Phase 4?
-- [ ] Session ↔ Banding linkage: How tight? Auto-populate session fields on banding form? Validate net against session's opened nets?
+- [ ] Required fields timing: When to start enforcing * required fields? (Target: Phase 11 Validation)
 - [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
 - [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
 - [ ] Status not required for unbanded birds (Hallie: "do NOT require Status entry if unbanded")
-- [ ] Session ID display on banding form: show date + location name, not raw ID
 - [ ] Protocol dropdown values: MAPS, Non-MAPS, Burrowing Owl Banding, Rehabbed-Bird Banding, Saw-whet Owl Banding (from Hallie's doc)
 - [ ] Precipitation enum values for weather: fog, thick fog, drizzle, rain (from Hallie's doc) -- perhaps let's not constrain this & leave it for open subjective notes rather than constrained values (we can give bander weather word cloud or somthing just to give them hints?)? from lat/lon arent the weather and vegetation info pretty detailed and robust?
 
 ### 8.3 Infrastructure
 
-- [ ] **Schema migration strategy:** Design a versioned migration system for IndexedDB that (a) handles incremental schema changes (new stores, new fields, backfills) as we add entities through Phases 3-9, and (b) ensures local schema maps cleanly to Postgres when Supabase arrives in Phase 10. idb supports version-based upgrades natively — formalize this into a migration runner with numbered migrations. Target: Phase 8 (after Location/Net entities exist in Phase 7, before Session expansion in Phase 9 adds WeatherReading, SessionNetLog, SessionBanderLog, Bander). Each IndexedDB migration should have a corresponding Postgres migration written alongside it for future use.
+- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. Target: Phase 14. See plan.v3.md.
+- [ ] **Multi-tenancy / Organization support:** When Organization entity becomes a first-class concept, update JSON bundle file naming convention to include org code (e.g., `birdnerd-GCBS-2026-03-21.json` instead of `birdnerd-2026-03-21.json`)
 
 ### 8.4 Code Systems
 
-- [ ] IBP vs BBL storage: Store IBP internally, derive BBL at export? (Recommended)
 - [ ] Blood Sample validation: Doc says "validate Status is 518" — likely means 318 (healthy + banded + blood sample). Confirm with Hallie.
 
-### 8.4 Resolved
+### 8.5 Resolved
 
 - [x] Galindo Creek location code: **GCBS** (Galindo Creek Banding Station) confirmed as the 4-letter code
-- [x] Personnel → Bander ID mapping: Bander registry with initials + full name + role (implemented in data model)
+- [x] Personnel → Bander ID mapping: Bander registry with initials + full name + role (implemented in Phase 7)
 - [x] Net/Trap linking: Nets defined at location level, referenced in SessionNetLog per session, banding records reference net via FK
+- [x] Add `role` and `active` fields to Bander entity (implemented in Phase 7 — Person has `active`, Bander has `role`)
+- [x] Bander ID format on records: 2-3 letter initials stored, dropdown shows initials + full name (implemented in Phase 7/8)
+- [x] Session ↔ Banding linkage: Session station auto-populates banding form, net dropdown from session's location nets (implemented in Phase 8)
+- [x] Session ID display on banding form: shows station code + date, not raw ID (implemented in Phase 8)
+- [x] IBP vs BBL storage: Store IBP internally, derive BBL at export (decided, coded in Phase 5)

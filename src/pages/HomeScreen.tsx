@@ -16,7 +16,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   // Field activities
   { mode: 'sessions', label: 'Session Data', description: 'Create sessions and record bird encounters', enabled: true },
-  { mode: 'export', label: 'View Data / Export', description: 'Browse records, export CSV', enabled: true },
+  { mode: 'export', label: 'Data Manager', description: 'Browse records, export CSV, backup & restore', enabled: true },
   // Back office
   { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
   { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },

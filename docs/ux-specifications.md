@@ -14,7 +14,7 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 │         BirdNerd                    │
 │                                     │
 │  [Session Data]                     │
-│  [View Data / Export]               │
+│  [Data Manager]               │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Project Locations]                │
 │  [People & Roles]                   │
@@ -26,12 +26,12 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 └─────────────────────────────────────┘
 ```
 
-Buttons are grouped with subtle dividers: **field activities** (Session Data, View Data/Export), **back office** (Locations, People, Band Inventory), and **meta** (Feedback).
+Buttons are grouped with subtle dividers: **field activities** (Session Data, Data Manager), **back office** (Locations, People, Band Inventory), and **meta** (Feedback).
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
 | **Session Data** | Create/manage daily sessions, record bird encounters | Session List / Session Form |
-| **View Data / Export** | Review records, export to CSV/BBL/IBP | Data Table / Export Dialog |
+| **Data Manager** | Browse records, export CSV, backup & restore | Data Manager (§7) |
 | **Project Locations** | Register locations, manage nets | Location List / Location Form |
 | **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
@@ -373,7 +373,36 @@ This ensures every page has a consistent way to return home, regardless of navig
 
 ---
 
-## 7. View Data & Export
+## 7. Data Manager
+
+### 7.0 Overview
+
+The Data Manager page has two sections: **Session Data** (per-session CSV export) and **Data Backup** (full JSON bundle import/export).
+
+```
+┌──────────────────────────────────────┐
+│  🏠 Data Manager                     │
+│                                      │
+│  3 sessions · 47 records             │
+│  [ ↓ Export All Records (CSV) ]      │
+│                                      │
+│  GCBS · 2026-03-19         12 recs   │
+│  GCBS · 2026-03-18         20 recs   │
+│  MCFS · 2026-03-15         15 recs   │
+│                                      │
+│  ── Data Backup ──────────────────── │
+│                                      │
+│  Full backup of all managed data:    │
+│  locations, nets, people, banders,   │
+│  sessions, and banding records.      │
+│                                      │
+│  [ ↓ Export Backup (JSON) ]          │
+│  [ ↑ Import Backup (JSON) ]         │
+│                                      │
+│  ⚠ Import replaces all data.        │
+│  Export a backup first.              │
+└──────────────────────────────────────┘
+```
 
 ### 7.1 Data Table (Browse Records)
 

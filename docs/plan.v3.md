@@ -97,29 +97,23 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ---
 
-## Phase 9 — Schema Migration & Data Portability
+## Phase 9 — JSON Data Bundle
 
-**Unit tests to add alongside migrations:**
-- Migration runner: each migration applies cleanly, version tracking works
-- Data integrity after migration (existing records survive schema changes)
-- JSON data bundle: export round-trip (export → import → data matches), version validation
+**Unit tests:**
+- Export round-trip (export → import → data matches)
+- Version field validation, forward compatibility check
+- Replace import mode (wipe + load)
+- Older version import with field mapping/defaults
 
-Goal: Formalize versioned schema migrations and add portable data backup/restore before the entity count grows significantly.
+Goal: Portable backup/restore for all managed data. This is the primary persistence strategy before Postgres — IndexedDB + JSON export can comfortably handle a single station for years (~3K records/year ≈ 3-6 MB/year; IndexedDB handles 100K+ rows fine).
 
-**9a. Schema Migration Framework**
-- Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
-- Retroactively capture Phases 3-8 schema changes as migrations
-- Write each migration with a corresponding Postgres migration (for Phase 13 Supabase cutover)
-- Design for dual-mode: local IndexedDB as primary, Postgres as sync target
-- See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
-
-**9b. JSON Data Bundle (export/import)**
+- Define bundle schema in `src/data/bundle-schema.ts` (TypeScript interface + `BUNDLE_VERSION` constant)
+- Version convention: integer starting at 1, incremented on field additions/removals/renames (see tech-spec § 6 for full rules)
 - Single JSON file covering all managed data: Locations, Nets, People, Banders, Sessions, BandingRecords
-- Versioned format with `version` field for forward compatibility
-- Export: download full data bundle from app
-- Import: merge or replace existing data, with version validation
-- Replace seed.ts hardcoded config with a bundled JSON file in this format (seed data becomes runtime-swappable)
-- Serves as pre-Postgres persistence strategy (single-user portable backup)
+- Export: always full export, file named `birdnerd-backup-YYYY-MM-DD.json`
+- Import: replace mode only (wipe existing data, load from bundle), with version validation (reject newer, migrate older)
+- Remove seed.ts — replace with a bundled JSON seed file in the same format, loaded at runtime on first launch
+- UI: add "Data Backup" section to the renamed "Data Manager" page (separate from existing CSV session export)
 - Future entities (Bands, etc.) added to the bundle as they are built
 - Existing CSV import/export for banding records remains independent (simpler per-session workflow)
 
@@ -190,29 +184,7 @@ Goal: Band lifecycle management per BBL requirements.
 
 ---
 
-## Phase 13 — Cloud Sync & Auth
-
-Goal: Move from offline-only to synced multi-user.
-
-**13a. Multi-tenant data model**
-- Organization as top-level unit (already modeled)
-- User entity for authentication (email + password via Supabase Auth)
-- Bander entity links Person → Organization
-- Record-level filters by organization (row-level security)
-
-**13b. Supabase integration**
-- Postgres backend for Organization, Person, User, Bander, Location, Session, Net, SessionNetLog, SessionBanderLog, WeatherReading, BandingRecord, Band (Species and CodeTable remain static resource files, not DB tables)
-- Auth: email or Google (Supabase Auth)
-- Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
-
-**13c. API & SDKs**
-- Auto-generate API (OpenAPI or GraphQL) from Postgres schema
-- Supabase client SDK (supabase-js) for real-time subscriptions (optional future)
-- No SSR — client-side rendering only
-
----
-
-## Phase 14 — Agency Export
+## Phase 13 — Agency Export
 
 **Unit tests to add alongside export:**
 - IBP → BBL code mappings (every field with dual coding)
@@ -227,6 +199,44 @@ Goal: Export in agency-specific formats.
 - CDFW format
 - Code translation layer (IBP codes stored internally → BBL/agency codes at export)
 - Export from banding records, optionally scoped by location/session/date range
+
+---
+
+## Phase 14 — Schema Migration Framework
+
+**Unit tests:**
+- Migration runner: each migration applies cleanly, version tracking works
+- Data integrity after migration (existing records survive schema changes)
+
+Goal: Formalize versioned schema migrations before adding cloud sync.
+
+- Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
+- Retroactively capture Phases 3-13 schema changes as migrations
+- Write each migration with a corresponding Postgres migration (for Phase 15 Supabase cutover)
+- See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
+
+---
+
+## Phase 15 — Cloud Sync & Auth
+
+Goal: Move from offline-only to synced multi-user. Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records.
+
+**15a. Multi-tenant data model**
+- Organization as top-level unit (already modeled)
+- User entity for authentication (email + password via Supabase Auth)
+- Bander entity links Person → Organization
+- Record-level filters by organization (row-level security)
+
+**15b. Supabase integration**
+- Postgres backend for all operational entities (Species and CodeTable remain static resource files)
+- Auth: email or Google (Supabase Auth)
+- Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
+- Import existing JSON data bundles into Postgres on first sync
+
+**15c. API & SDKs**
+- Auto-generate API (OpenAPI or GraphQL) from Postgres schema
+- Supabase client SDK (supabase-js) for real-time subscriptions (optional future)
+- No SSR — client-side rendering only
 
 ---
 

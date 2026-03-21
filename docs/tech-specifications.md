@@ -254,7 +254,30 @@ All seed/default data is centralized in a single config file (`src/data/seed.ts`
 - Supports offline operation in field
 - `created` and `updated` timestamps enable conflict resolution
 
-### Cloud Sync (Phase 8+)
+### Capacity & Scaling Estimates
+
+IndexedDB is a real embedded database and handles large datasets well. Estimated data volumes for a single banding station:
+
+| Timeframe | Records | JSON bundle size |
+|-----------|---------|-----------------|
+| Year 1 | ~3,000 | ~3–6 MB |
+| Year 5 | ~15,000 | ~15–30 MB |
+| Year 10 | ~30,000 | ~30–60 MB |
+
+Assumptions: ~50 birds/session, 2 sessions/week, 30 weeks/year, ~1–2 KB per record as JSON.
+
+**IndexedDB limits:** Comfortable up to ~100K+ rows. Browser storage quotas are generous (typically 50%+ of disk on modern browsers/PWAs).
+
+**JSON bundle limits:** Export/import starts feeling slow around ~50K+ records due to serialization. Splitting by year or session range could extend this.
+
+**When to move to Postgres (Phase 15):**
+- Multiple users or stations need shared/synced data
+- Server-side queries, reports, or dashboards are needed
+- Data volume exceeds ~100K records (unlikely for years at one station)
+
+For a single user or small team at one station, IndexedDB + JSON data bundles is a viable long-term strategy.
+
+### Cloud Sync (Phase 15+)
 
 - Supabase PostgreSQL backend
 - Sync from IndexedDB → Supabase when online
@@ -275,7 +298,7 @@ Tables provided by domain experts for validation:
 
 ## 5. API & Integration (Future)
 
-### OpenAPI / GraphQL (Phase 8+)
+### OpenAPI / GraphQL (Phase 15+)
 
 - Auto-generate from Postgres schema
 - REST and/or GraphQL endpoints
@@ -315,7 +338,17 @@ A single JSON file that contains all managed reference and operational data, pro
 
 **Not included:** Code tables and species list (static app resources, not user data).
 
-**Format:** JSON with a version field and per-entity arrays:
+**Schema definition:** `src/data/bundle-schema.ts` — TypeScript interface + version constant. This is the single source of truth for the bundle format.
+
+**Versioning convention:**
+- `version` is an integer, starting at `1`
+- Increment when entity fields are added, removed, or renamed
+- **Forward compatibility:** New fields are always optional — older bundles (lower version) can always be imported without error
+- **Backward compatibility:** The importer checks `version` and applies field mappings/defaults for older formats (e.g., if v2 adds a field, importing a v1 bundle fills that field with `undefined`)
+- **Breaking changes** (field renames, type changes) require a version bump and explicit migration logic in the importer
+- The current `BUNDLE_VERSION` constant in bundle-schema.ts is the authoritative version number
+
+**Format:**
 
 ```json
 {
@@ -334,12 +367,21 @@ A single JSON file that contains all managed reference and operational data, pro
 - **Backup/Restore:** Export all data before schema migrations or device changes
 - **Seed data replacement:** The app's seed.ts config will be replaced by a bundled JSON file in this format, making seed data swappable at runtime rather than build time
 - **Pre-Postgres persistence:** With a single user, export JSON as the portable data store between sessions/devices
-- **Data migration:** Import into Postgres when cloud sync arrives (Phase 13)
+- **Data migration:** Import into Postgres when cloud sync arrives (Phase 15)
+
+**Export behavior:**
+- Always full export — all entities included
+- File named `birdnerd-backup-YYYY-MM-DD.json` (future: include org code when multi-tenancy arrives)
 
 **Import behavior:**
-- On import, prompt user to merge or replace existing data
-- Validate version compatibility before importing
+- Replace mode only: wipe all existing data, load from bundle. User must confirm before proceeding.
+- Validate `version` field before importing — reject bundles with version > `BUNDLE_VERSION` (from a newer app)
+- Apply field mappings for bundles with version < `BUNDLE_VERSION` (from an older app)
 - Preserve existing CSV import/export for banding records (simpler workflow for session-level data exchange)
+
+**Seed data:**
+- On first launch (empty IndexedDB), the app loads a bundled JSON seed file in the same format (`public/data/seed.json`)
+- This replaces the hardcoded `src/data/seed.ts` config — seed data becomes a runtime asset, not a build-time constant
 
 ### Future: BBL & Legacy Data
 
@@ -356,7 +398,7 @@ A single JSON file that contains all managed reference and operational data, pro
 - GitHub Pages static hosting
 - Client-side rendering only (no Node.js backend required)
 
-### Future (Phase 8+)
+### Future (Phase 15+)
 
 - Supabase project (includes Postgres, Auth, Storage)
 - Environment variables for API endpoints, auth keys
@@ -378,7 +420,7 @@ A single JSON file that contains all managed reference and operational data, pro
 - Local-only data (no network transmission)
 - No authentication required
 
-### Future (Phase 8+)
+### Future (Phase 15+)
 
 - Supabase Auth (email/password, Google OAuth)
 - Row-level security policies (by Organization)

@@ -44,7 +44,7 @@ export default function ExportPage({ onHome }: Props) {
 
   return (
     <div style={styles.page}>
-      <PageHeader title="View Data / Export" onHome={onHome} />
+      <PageHeader title="Data Manager" onHome={onHome} />
 
       {loading ? (
         <p style={styles.loading}>Loading…</p>
