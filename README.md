@@ -63,8 +63,8 @@ docs/
 | Document | Purpose |
 |----------|---------|
 | [docs/product-specifications.md](docs/product-specifications.md) | Product vision, entity overview, validation rules |
-| [docs/ux-spec.md](docs/ux-spec.md) | Screens, layouts, wireframes, interaction patterns |
-| [docs/tech-spec.md](docs/tech-spec.md) | Architecture, data model (full schema), code systems, deployment, security |
+| [docs/ux-specifications.md](docs/ux-specifications.md) | Screens, layouts, wireframes, interaction patterns |
+| [docs/tech-specifications.md](docs/tech-specifications.md) | Architecture, data model (full schema), code systems, deployment, security |
 | [docs/entities.md](docs/entities.md) | ER diagram, entity relationships, color-coded organization |
 | [docs/plan.v3.md](docs/plan.v3.md) | Development roadmap phases 3-9 |
 

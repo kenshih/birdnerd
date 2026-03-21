@@ -1,6 +1,6 @@
 # BirdNerd — Product Specification
 
-**See also:** [tech-spec.md](tech-spec.md) (architecture, database schema, implementation details) | [entities.md](entities.md) (ER diagram) | [plan.v3.md](plan.v3.md) (development roadmap)
+**See also:** [tech-specifications.md](tech-specifications.md) (architecture, database schema, implementation details) | [entities.md](entities.md) (ER diagram) | [plan.v3.md](plan.v3.md) (development roadmap)
 
 ---
 
@@ -32,13 +32,13 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 ## 3. Screens & User Experience
 
-For comprehensive screen layouts, wireframes, and interaction patterns, see [docs/ux-spec.md](ux-spec.md).
+For comprehensive screen layouts, wireframes, and interaction patterns, see [docs/ux-specifications.md](ux-specifications.md).
 
 ---
 
 ## 4. Data Model Summary
 
-The app uses **14 core entities** organized by function: operational (field station data), session (banding session data), reference (static lookups), and immutable (audit log). For complete field-level schema definitions, see [tech-spec.md § 2 Data Model](tech-spec.md#2-data-model).
+The app uses **14 core entities** organized by function: operational (field station data), session (banding session data), reference (static lookups), and immutable (audit log). For complete field-level schema definitions, see [tech-specifications.md § 2 Data Model](tech-specifications.md#2-data-model).
 
 ### 3.1 Entity Relationship Diagram
 
@@ -277,7 +277,7 @@ erDiagram
 
 **Immutable (White):** ChangeLog (append-only audit trail of all entity changes).
 
-For detailed field definitions, constraints, and data types, see [tech-spec.md § 2 Data Model](tech-spec.md#2-data-model).
+For detailed field definitions, constraints, and data types, see [tech-specifications.md § 2 Data Model](tech-specifications.md#2-data-model).
 
 ### 3.3 Key Product Concepts
 
@@ -362,20 +362,39 @@ Current known banders:
 
 ---
 
-## 8. TODOs / Design Decisions to Resolve
+## 8. Open Decisions & TODOs
 
-**Administrative:**
-- [ ] Add `role` (Master Bander, Sub-permittee, Bander, Trainee) and `active` (boolean) fields to Bander entity in ER diagram
-- [ ] Reconsider whether `master_bander_id` should remain a FK on Session, or if all session leaders should be pulled from SessionBanderLog. Current design: FK is fine for efficiency, but may need alignment if session leadership logic evolves.
+This is the **canonical list** of unresolved design decisions and outstanding TODOs. All other docs should point here rather than maintaining their own lists.
 
-**Operational & UX:**
-- [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
-- [ ] IBP vs BBL storage: Store IBP internally, derive BBL at export? (Recommended)
+### 8.1 Data Model
+
+- [ ] Add `role` and `active` fields to Bander entity in ER diagram (already in tech-spec, not yet in entities.md mermaid)
+- [ ] Reconsider whether `master_bander_id` should remain a FK on Session, or if all session leaders should be pulled from SessionBanderLog
 - [ ] Band number format: Numeric (115481501) or formatted (1154-81501)?
 - [ ] Bander ID format on records: 2-letter initials, full name, or both?
-- [ ] Location codes: Reconcile GCFS (app) vs GCBS (BBL submission) — same location, different systems?
-- [ ] Required fields timing: When to start enforcing * required fields? Phase 3? Phase 4?
-- [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
-- [ ] Session ↔ Banding linkage: How tight? Auto-populate session fields on banding form? Validate net against session's opened nets?
+- [ ] BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
+- [ ] Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, `weight_time`?
+- [ ] Bill measurements: add `bill_length`, `bill_width`, `bill_height` (BBL upload has these in addition to culmen)?
+- [ ] Recapture fields: add `how_obtained`, `present_condition`, `second_band_number`, `reward_band_number`, `replaced_band_number`?
+- [ ] Nest/effort fields: add `net_nest_cavity_designator`, `net_nest_cavity_number`, `plot_id`, `sweep_number`, `nest_location`?
+- [ ] Sampling/tests fields: add `genetic_sample`, `other_tests`, `tracheal_swab`, `mouth_swab`, `cloacal_swab`, `ectoparasites_present`, `ectoparasites_collected`?
+- [ ] User-defined fields: support BBL `User Field 1-5`, or map to notes/extra metadata?
 
-See also [research-notes.md](research-notes.md) § Open Questions for the full list.
+### 8.2 UX & Workflow
+
+- [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
+- [ ] Required fields timing: When to start enforcing * required fields? Phase 3? Phase 4?
+- [ ] Session ↔ Banding linkage: How tight? Auto-populate session fields on banding form? Validate net against session's opened nets?
+- [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
+- [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
+
+### 8.3 Code Systems
+
+- [ ] IBP vs BBL storage: Store IBP internally, derive BBL at export? (Recommended)
+- [ ] Blood Sample validation: Doc says "validate Status is 518" — likely means 318 (healthy + banded + blood sample). Confirm with Hallie.
+
+### 8.4 Resolved
+
+- [x] Galindo Creek location code: **GCBS** (Galindo Creek Banding Station) confirmed as the 4-letter code
+- [x] Personnel → Bander ID mapping: Bander registry with initials + full name + role (implemented in data model)
+- [x] Net/Trap linking: Nets defined at location level, referenced in SessionNetLog per session, banding records reference net via FK

@@ -1,5 +1,7 @@
 # BirdNerd Entities
 
+> **Note:** The diagrams below are easier to read in light mode (not dark mode).
+
 ## Color Coding Conventions
 
 The ER diagram uses colors to categorize entity types:
@@ -274,7 +276,7 @@ graph LR
     end
 
     subgraph Analysis["🔬 Analysis Database"]
-        C6["Analysis DB<br/>Validation checks<br/>Derived stats"]
+        C6[("Analysis DB<br/>Validation checks<br/>Derived stats")]
     end
 
     A1 --> B

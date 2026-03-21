@@ -2,7 +2,7 @@
 
 Informed by plan.v2, the updated entity model (entities.md), and the revised product specification.
 
-See also: [product-specifications.md](product-specifications.md) | [entities.md](entities.md) | [research-notes.md](research-notes.md) | [plan.v2.md](plan.v2.md)
+See also: [product-specifications.md](product-specifications.md) | [entities.md](entities.md) | [archives/research-notes.md](archives/research-notes.md) | [archives/plan.v2.md](archives/plan.v2.md)
 
 ---
 
@@ -229,16 +229,4 @@ Goal: Export in agency-specific formats.
 **Branding**
 - Vector art from bird drawings/photos for icons, splash, UI
 
-**Data Model Refinements (open questions in spec)**
-- Add `role` and `active` fields to Bander entity in ER diagram
-- Reconsider master_bander_id as FK vs. queryable from SessionBanderLog
-- Finalize Status code UX (composite vs. builder)
-- Finalize IBP vs BBL internal storage strategy
-- Finalize Bander ID format on records (initials vs. full name)
-- BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
-- Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, and `weight_time`?
-- Bill measurements: add `bill_length`, `bill_width`, `bill_height` (BBL upload has these in addition to culmen)
-- Recapture fields: add `how_obtained`, `present_condition`, `second_band_number`, `reward_band_number`, `replaced_band_number`
-- Nest/effort fields: add `net_nest_cavity_designator`, `net_nest_cavity_number`, `plot_id`, `sweep_number`, `nest_location`
-- Sampling/tests fields: add `genetic_sample`, `other_tests`, `tracheal_swab`, `mouth_swab`, `cloacal_swab`, `ectoparasites_present`, `ectoparasites_collected`
-- User-defined fields: do we support BBL `User Field 1-5`, or map to notes/extra metadata?
+**Open Decisions** — See [product-specifications.md § 8](product-specifications.md#8-open-decisions--todos) for the canonical list of unresolved design decisions (data model, UX, code systems).
