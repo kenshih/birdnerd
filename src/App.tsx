@@ -31,6 +31,7 @@ export default function App() {
       <SessionView
         session={view.session}
         onBack={() => setView({ mode: 'sessions' })}
+        onHome={goHome}
       />
     )
   }
@@ -54,6 +55,7 @@ export default function App() {
         person={view.person}
         onBack={() => setView({ mode: 'banders' })}
         onPersonUpdated={() => setView({ mode: 'banders' })}
+        onHome={goHome}
       />
     )
   }
@@ -83,6 +85,7 @@ export default function App() {
         location={view.location}
         onBack={() => setView({ mode: 'locations' })}
         onLocationUpdated={() => setView({ mode: 'locations' })}
+        onHome={goHome}
       />
     )
   }

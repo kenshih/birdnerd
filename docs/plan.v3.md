@@ -93,6 +93,7 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 - Net field upgraded to dropdown populated from session's location nets
 - Bander field as dropdown (from Phase 7)
 - Release Time "tap to fill now" (already done in Phase 5)
+- Consistent PageHeader component: birdhouse home icon on all pages, back + home on sub-pages
 
 ---
 

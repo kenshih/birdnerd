@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { BirdRecord, Session } from '../types'
 import { getSessions, getRecordsBySession } from '../db'
 import { exportSessionCSV } from '../utils/exportCsv'
+import PageHeader from '../components/PageHeader'
 
 interface Props {
   onHome: () => void
@@ -43,10 +44,7 @@ export default function ExportPage({ onHome }: Props) {
 
   return (
     <div style={styles.page}>
-      <div style={styles.header}>
-        <button onClick={onHome} style={styles.backBtn}>← Home</button>
-        <h1 style={styles.title}>View Data / Export</h1>
-      </div>
+      <PageHeader title="View Data / Export" onHome={onHome} />
 
       {loading ? (
         <p style={styles.loading}>Loading…</p>
@@ -101,25 +99,6 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '1rem',
     background: '#f5f5f5',
     color: '#1b4332',
-  },
-  header: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-  backBtn: {
-    padding: '0.4rem 0.8rem',
-    background: '#1b4332',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '6px',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-  },
-  title: {
-    margin: 0,
-    fontSize: '1.3rem',
-    fontWeight: 700,
   },
   loading: { textAlign: 'center' as const, opacity: 0.6 },
   empty: { textAlign: 'center' as const, opacity: 0.6, marginTop: '2rem' },

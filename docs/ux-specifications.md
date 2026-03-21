@@ -37,6 +37,17 @@ Buttons are grouped with subtle dividers: **field activities** (Session Data, Vi
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
 | **Report Bugs / Feedback** | Send feedback via email | Email client |
 
+### 1.1 Page Header (shared component)
+
+All pages use a consistent `PageHeader` component for navigation:
+
+- **Top-level pages** (Session List, Location List, People, Export): Birdhouse home icon (42px, from `icons/home-birdhouse.png`) on the left + page title
+- **Sub-pages** (Session View, Location Detail, Person Detail, Banding Form): "← Back" link on the left + page title + birdhouse home icon (34px, dimmed) on the right
+
+This ensures every page has a consistent way to return home, regardless of navigation depth.
+
+**Accessibility:** The home button must include `alt="Home"` on the image, `aria-label="Home"` on the button element, and `title="Home"` for hover tooltip on desktop.
+
 ---
 
 ## 2. Banding Data Collection Form

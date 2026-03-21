@@ -16,6 +16,7 @@ interface Props {
   record?: BirdRecord
   onSaved: () => void
   onCancel: () => void
+  onHome?: () => void
 }
 
 function generateId(): string {
@@ -41,7 +42,7 @@ interface BanderOption {
   name: string
 }
 
-export default function BirdRecordForm({ session, record, onSaved, onCancel }: Props) {
+export default function BirdRecordForm({ session, record, onSaved, onCancel, onHome }: Props) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
@@ -115,11 +116,18 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto', paddingBottom: '4rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button onClick={onCancel} style={backBtnStyle}>← Back</button>
-        <h2 style={{ margin: 0, fontSize: '1.1rem' }}>
-          {record ? 'Edit Record' : 'New Bird Record'}
-        </h2>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button onClick={onCancel} style={backBtnStyle}>← Back</button>
+          <h2 style={{ margin: 0, fontSize: '1.1rem' }}>
+            {record ? 'Edit Record' : 'New Bird Record'}
+          </h2>
+        </div>
+        {onHome && (
+          <button onClick={onHome} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }} aria-label="Home" title="Home">
+            <img src="icons/home-birdhouse.png" alt="Home" style={{ width: 34, height: 34, objectFit: 'contain', opacity: 0.7 }} />
+          </button>
+        )}
       </div>
       <p style={{ color: '#555', fontSize: '0.85rem', marginTop: 0 }}>
         {session.station} · {session.date}

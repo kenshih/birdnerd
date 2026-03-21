@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Session, Location } from '../types'
 import { getSessions, saveSession, getLocations } from '../db'
+import PageHeader from '../components/PageHeader'
 
 interface Props {
   onSelectSession: (session: Session) => void
@@ -51,10 +52,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button onClick={onHome} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', padding: 0, lineHeight: 1 }} aria-label="Home">&#x1F3E0;</button>
-        <h1 style={{ fontSize: '1.4rem', margin: 0 }}>Banding Sessions</h1>
-      </div>
+      <PageHeader title="Banding Sessions" onHome={onHome} />
 
       <button
         onClick={() => setShowNew(true)}

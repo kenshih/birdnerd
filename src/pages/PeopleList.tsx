@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import type { Person, Bander, BanderRole } from '../types'
 import { getPeople, savePerson, deletePerson, getBanders, saveBander } from '../db'
+import PageHeader from '../components/PageHeader'
 
 interface Props {
   onSelectPerson: (person: Person) => void
@@ -78,10 +79,7 @@ export default function PeopleList({ onSelectPerson, onHome }: Props) {
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button onClick={onHome} style={homeBtnStyle} aria-label="Home">&#x1F3E0;</button>
-        <h1 style={{ fontSize: '1.4rem', margin: 0 }}>People</h1>
-      </div>
+      <PageHeader title="People" onHome={onHome} />
 
       <button onClick={() => setShowNew(true)} style={btnStyle('#2d6a4f')}>
         + New Person
@@ -209,7 +207,3 @@ const deleteBtnStyle: React.CSSProperties = {
   padding: '0.75rem 0.75rem', cursor: 'pointer', color: '#c44', fontSize: '0.9rem',
 }
 
-const homeBtnStyle: React.CSSProperties = {
-  background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem',
-  padding: 0, lineHeight: 1,
-}

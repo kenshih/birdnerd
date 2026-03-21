@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react'
 import type { Person, Bander, BanderRole } from '../types'
 import { savePerson, getBanderByPerson, saveBander, deleteBander } from '../db'
+import PageHeader from '../components/PageHeader'
 
 interface Props {
   person: Person
   onBack: () => void
   onPersonUpdated: () => void
+  onHome: () => void
 }
 
 const ROLES: BanderRole[] = ['Master Bander', 'Sub-permittee', 'Bander', 'Trainee']
 
-export default function PersonDetail({ person, onBack, onPersonUpdated }: Props) {
+export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }: Props) {
   const [bander, setBander] = useState<Bander | null>(null)
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(personToForm(person))
@@ -74,10 +76,7 @@ export default function PersonDetail({ person, onBack, onPersonUpdated }: Props)
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button onClick={onBack} style={backBtnStyle}>&#x2190; Back</button>
-        <h1 style={{ fontSize: '1.4rem', margin: 0 }}>{person.initials} — {person.name}</h1>
-      </div>
+      <PageHeader title={`${person.initials} — ${person.name}`} onBack={onBack} onHome={onHome} />
 
       {/* Person info */}
       {editing ? (
@@ -182,11 +181,6 @@ const inputStyle: React.CSSProperties = {
 }
 
 const rowStyle: React.CSSProperties = { display: 'flex', gap: '0.5rem' }
-
-const backBtnStyle: React.CSSProperties = {
-  background: 'none', border: 'none', color: '#2d6a4f', fontSize: '1rem',
-  cursor: 'pointer', padding: '0.25rem 0',
-}
 
 const editBtnStyle: React.CSSProperties = {
   background: '#2d6a4f', color: '#fff', border: 'none', borderRadius: 6,

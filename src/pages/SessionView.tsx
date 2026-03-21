@@ -4,15 +4,17 @@ import { getRecordsBySession, deleteRecord, saveRecord } from '../db'
 import BirdRecordForm from './BirdRecordForm'
 import { exportSessionCSV } from '../utils/exportCsv'
 import { parseCSV } from '../utils/importCsv'
+import PageHeader from '../components/PageHeader'
 
 interface Props {
   session: Session
   onBack: () => void
+  onHome: () => void
 }
 
 type View = { mode: 'list' } | { mode: 'form'; record?: BirdRecord }
 
-export default function SessionView({ session, onBack }: Props) {
+export default function SessionView({ session, onBack, onHome }: Props) {
   const [records, setRecords] = useState<BirdRecord[]>([])
   const [view, setView] = useState<View>({ mode: 'list' })
 
@@ -56,17 +58,15 @@ export default function SessionView({ session, onBack }: Props) {
         record={view.record}
         onSaved={() => { loadRecords(); setView({ mode: 'list' }) }}
         onCancel={() => setView({ mode: 'list' })}
+        onHome={onHome}
       />
     )
   }
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-        <button onClick={onBack} style={backBtnStyle}>← Sessions</button>
-        <h2 style={{ margin: 0, fontSize: '1.1rem' }}>{session.station}</h2>
-      </div>
-      <p style={{ color: '#555', fontSize: '0.85rem', marginTop: 0, marginBottom: '1rem' }}>{session.date}</p>
+      <PageHeader title={session.station} onBack={onBack} backLabel="← Sessions" onHome={onHome} />
+      <p style={{ color: '#555', fontSize: '0.85rem', marginTop: '-0.75rem', marginBottom: '1rem' }}>{session.date}</p>
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
         <button onClick={() => setView({ mode: 'form' })} style={btnStyle}>
@@ -119,15 +119,6 @@ export default function SessionView({ session, onBack }: Props) {
       </ul>
     </div>
   )
-}
-
-const backBtnStyle: React.CSSProperties = {
-  background: 'none',
-  border: 'none',
-  color: '#2d6a4f',
-  fontSize: '1rem',
-  cursor: 'pointer',
-  padding: '0.25rem 0',
 }
 
 const btnStyle: React.CSSProperties = {

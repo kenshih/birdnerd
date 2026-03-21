@@ -12,7 +12,9 @@ export default function PlaceholderPage({ title, description, onHome }: Props) {
         <p style={styles.desc}>{description}</p>
         <p style={styles.badge}>Coming Soon</p>
       </div>
-      <button onClick={onHome} style={styles.backBtn}>← Home</button>
+      <button onClick={onHome} style={styles.homeBtn} aria-label="Home" title="Home">
+        <img src="icons/home-birdhouse.png" alt="Home" style={{ width: 46, height: 46, objectFit: 'contain' }} />
+      </button>
     </div>
   )
 }
@@ -60,13 +62,10 @@ const styles: Record<string, React.CSSProperties> = {
     letterSpacing: '0.04em',
     textTransform: 'uppercase' as const,
   },
-  backBtn: {
-    padding: '0.6rem 1.2rem',
-    background: 'rgba(255,255,255,0.15)',
-    color: '#fff',
+  homeBtn: {
+    background: 'none',
     border: 'none',
-    borderRadius: '8px',
     cursor: 'pointer',
-    fontSize: '0.9rem',
+    padding: 0,
   },
 }

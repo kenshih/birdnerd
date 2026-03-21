@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react'
 import type { Location, Net } from '../types'
 import { getNetsByLocation, saveNet, deleteNet, saveLocation } from '../db'
+import PageHeader from '../components/PageHeader'
 
 interface Props {
   location: Location
   onBack: () => void
   onLocationUpdated: () => void
+  onHome: () => void
 }
 
 function generateId(): string {
   return `net-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export default function LocationDetail({ location, onBack, onLocationUpdated }: Props) {
+export default function LocationDetail({ location, onBack, onLocationUpdated, onHome }: Props) {
   const [nets, setNets] = useState<Net[]>([])
   const [newLabel, setNewLabel] = useState('')
   const [editing, setEditing] = useState(false)
@@ -84,10 +86,7 @@ export default function LocationDetail({ location, onBack, onLocationUpdated }: 
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button onClick={onBack} style={backBtnStyle}>&#x2190; Back</button>
-        <h1 style={{ fontSize: '1.4rem', margin: 0 }}>{location.banderLocationId}</h1>
-      </div>
+      <PageHeader title={location.banderLocationId} onBack={onBack} onHome={onHome} />
 
       {/* Location details */}
       {editing ? (
@@ -210,11 +209,6 @@ const inputStyle: React.CSSProperties = {
 }
 
 const rowStyle: React.CSSProperties = { display: 'flex', gap: '0.5rem' }
-
-const backBtnStyle: React.CSSProperties = {
-  background: 'none', border: 'none', color: '#2d6a4f', fontSize: '1rem',
-  cursor: 'pointer', padding: '0.25rem 0',
-}
 
 const editBtnStyle: React.CSSProperties = {
   background: '#2d6a4f', color: '#fff', border: 'none', borderRadius: 6,
