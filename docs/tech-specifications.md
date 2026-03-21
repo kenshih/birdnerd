@@ -48,7 +48,7 @@ The complete data model with 14 entities organized by category. See [entities.md
 
 - **Pink (Operational):** Organization, Person, User, Bander, Location, Net, Band, BandingRecord
 - **Orange (Session):** Session, SessionNetLog, SessionBanderLog, WeatherReading
-- **Green (Reference):** Species, CodeTable
+- **Green (Reference):** Species, CodeTable — static resource files, not DB tables (no FK relationships)
 - **White (Immutable):** ChangeLog
 
 ### Core Entities
@@ -144,7 +144,7 @@ The complete data model with 14 entities organized by category. See [entities.md
 - **id** (string, PK)
 - **session_id** (FK to Session)
 - **band_number** (string or "UNBANDED", FK to Band)
-- **species_id** (FK to Species)
+- **species_code** (string, 4-letter alpha code — validated against static Species list, not a DB FK)
 - **capture_code** (enum: 1/N, U, R, F, 4, 5, 6, 8, X)
 - **age** (enum: U, L, HY, AHY, SY, ASY, TY, ATY)
 - **how_aged** (string, 25-code set)
@@ -355,7 +355,7 @@ Current capability:
 ### Caching
 
 - IndexedDB as local cache (all entities)
-- Browser in-memory caching for reference data (Species, CodeTable)
+- Species and CodeTable loaded from static resource files (not synced from DB)
 
 ### Pagination
 

@@ -157,7 +157,7 @@ erDiagram
         string id
         string session_id
         string band_number
-        string species_id
+        string species_code
         string capture_code
         string age
         string how_aged
@@ -251,10 +251,10 @@ erDiagram
     Bander ||..o{ Session : leads
     Bander ||..o{ BandingRecord : recorded_by
 
-    Species ||--o{ BandingRecord : identifies
+    Species }o..o{ BandingRecord : "code lookup (no FK)"
     Band ||--o{ BandingRecord : assigned
 
-    CodeTable ||--o{ BandingRecord : validates
+    CodeTable }o..o{ BandingRecord : "code lookup (no FK)"
 
     classDef entitySpec fill:#ffd1dc,stroke:#333,stroke-width:1px,color:#000
     classDef sessionData fill:#ffe4b5,stroke:#ff8c00,stroke-width:1px,color:#000

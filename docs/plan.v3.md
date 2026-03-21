@@ -186,7 +186,7 @@ Goal: Move from offline-only to synced multi-user.
 - Record-level filters by organization (row-level security)
 
 **12b. Supabase integration**
-- Postgres backend for Organization, Person, User, Bander, Location, Session, Net, SessionNetLog, SessionBanderLog, WeatherReading, BandingRecord, Band, Species, CodeTable
+- Postgres backend for Organization, Person, User, Bander, Location, Session, Net, SessionNetLog, SessionBanderLog, WeatherReading, BandingRecord, Band (Species and CodeTable remain static resource files, not DB tables)
 - Auth: email or Google (Supabase Auth)
 - Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
 
