@@ -388,7 +388,11 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
 - [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
 
-### 8.3 Code Systems
+### 8.3 Infrastructure
+
+- [ ] **Schema migration strategy:** Design a versioned migration system for IndexedDB that (a) handles incremental schema changes (new stores, new fields, backfills) as we add entities through Phases 3-9, and (b) ensures local schema maps cleanly to Postgres when Supabase arrives in Phase 10. idb supports version-based upgrades natively — formalize this into a migration runner with numbered migrations. Target: Phase 8 (after Location/Net entities exist in Phase 7, before Session expansion in Phase 9 adds WeatherReading, SessionNetLog, SessionBanderLog, Bander). Each IndexedDB migration should have a corresponding Postgres migration written alongside it for future use.
+
+### 8.4 Code Systems
 
 - [ ] IBP vs BBL storage: Store IBP internally, derive BBL at export? (Recommended)
 - [ ] Blood Sample validation: Doc says "validate Status is 518" — likely means 318 (healthy + banded + blood sample). Confirm with Hallie.

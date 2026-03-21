@@ -22,11 +22,50 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 
 ---
 
-## Phase 3 — Expand the Banding Form
+## Phase 3 — Full Species List
 
-Goal: Bring the banding data collection form to full spec coverage. This is where banders spend 90% of their time.
+Goal: Replace placeholder CA species list with the authoritative BBL list.
 
-**3a. Add missing fields to BandingRecord**
+- Import full 1,323-species BBL list from SPECIES sheet (ALPHA_CODE, SPECIES_NAME, SCI_NAME)
+- Keep autocomplete UX (type code or name)
+- Incremental IndexedDB schema: add new fields to BirdRecord as nullable (existing records unaffected)
+
+---
+
+## Phase 4 — Navigation Shell & Routing
+
+Goal: Scaffold the full app navigation structure so every future module has a home.
+
+- Update home screen to show all module buttons per UX spec:
+  - Banding Data Collection (active)
+  - Session Data (active — existing)
+  - Band Inventory (placeholder / coming soon)
+  - Project Locations (placeholder / coming soon)
+  - View Data / Export (placeholder / coming soon)
+  - Report Bugs / Feedback (placeholder / coming soon)
+- Add client-side routing (React Router or hash-based) for each module
+- Placeholder screens for unbuilt modules: simple "Coming Soon" with description of what's planned
+- Disabled/dimmed styling for placeholder buttons so users know what's coming vs what works
+- This phase is UI-only — no data model changes
+
+---
+
+## Phase 5 — Code Tables & New Fields
+
+Goal: Upgrade code tables to full BBL/IBP sets and add missing fields to the banding form.
+
+**5a. Upgrade code tables from LOOKUPS**
+- Replace placeholder code tables with full BBL/IBP code sets from MASTER BANDING DATA.xlsx LOOKUPS sheet
+- How Aged: 25 codes with descriptions and valid-age pairings
+- How Sexed: 18 codes with descriptions
+- WRP: ~120 codes with descriptions
+- Capture Status / Code: full set (1, U, R, F, 4, 5, 6, 8, X)
+- Fat: expand to 0-7 (currently 0-5 + T)
+- Bird Status codes (base + additional info composites)
+- Disposition codes
+- Molt Limits & Plumage codes (J, L, F, B, R, M, A, N, U)
+
+**5b. Add missing fields to BandingRecord**
 - Tail (mm), Tarsus (mm ##.##), Exposed Culmen (mm ##.##), Other measurement (mm ##.##)
 - Release Time (hh:mm with tap-to-fill-now button)
 - WRP molt cycle code (dropdown from full WRP code list)
@@ -38,72 +77,74 @@ Goal: Bring the banding data collection form to full spec coverage. This is wher
 - How Aged secondary, How Sexed secondary
 - Other measurement requires note
 
-**3b. Upgrade code tables from LOOKUPS**
-- Replace placeholder code tables with full BBL/IBP code sets from MASTER BANDING DATA.xlsx LOOKUPS sheet
-- How Aged: 25 codes with descriptions and valid-age pairings
-- How Sexed: 18 codes with descriptions
-- WRP: ~120 codes with descriptions
-- Capture Status / Code: full set (1, U, R, F, 4, 5, 6, 8, X)
-- Fat: expand to 0-7 (currently 0-5 + T)
-- Bird Status codes (base + additional info composites)
-- Disposition codes
-- Molt Limits & Plumage codes (J, L, F, B, R, M, A, N, U)
+---
 
-**3c. Replace species list**
-- Import full 1,323-species BBL list from SPECIES sheet (ALPHA_CODE, SPECIES_NAME, SCI_NAME)
-- Keep autocomplete UX (type code or name)
+## Phase 6 — Form UX Overhaul
 
-**3d. Form UX improvements**
+Goal: Reorganize the banding form for field usability.
+
 - Section grouping per spec: Identity → Age & Sex → Condition → Molt Limits → Morphometrics & Status → Additional Info
 - Combobox upgrade for fields with known code sets (How Aged, How Sexed, etc.) — show code + description
 - Release Time "tap to fill now" button
-- Updated to reference Net via dropdown (from nets defined at location level)
+- Net field updated to reference Net via dropdown (from nets defined at location level — depends on Phase 7)
 
 ---
 
-## Phase 4 — Location & Net Management
+## Phase 7 — Location & Net Management
 
 Goal: Establish locations as the geographic and equipment foundation for banding operations.
 
-**4a. Create Location CRUD**
+**7a. Create Location CRUD**
 - List all locations for the organization
 - Create/edit form: name, coordinates (lat/lon), country, state, bander location ID (4-letter code)
 - Remarks field
 - Form validation: BBL location ID initially nullable; filled in after submission to BBL
 
-**4b. Net Management (within Location)**
+**7b. Net Management (within Location)**
 - Location detail view includes net inventory
 - Add nets: label (e.g., "N-01", "Trap-A"), internal ID
 - Edit/delete nets
 - Nets are location-specific; reused across sessions
 - Display net count in location list view
 
-**4c. Data migration**
+**7c. Data migration**
 - Move from free-text station picker to Location dropdown on session form
 - Migrate existing session station names → Location records
 
 ---
 
-## Phase 5 — Session Data Expansion
+## Phase 8 — Schema Migration Framework
+
+Goal: Formalize versioned schema migrations before the entity count grows significantly.
+
+- Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
+- Retroactively capture Phases 3-7 schema changes as migrations
+- Write each migration with a corresponding Postgres migration (for Phase 12 Supabase cutover)
+- Design for dual-mode: local IndexedDB as primary, Postgres as sync target
+- See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
+
+---
+
+## Phase 9 — Session Data Expansion
 
 Goal: Build out session metadata to match the Banding Metadata Sheet and the entity model.
 
-**5a. Session form updates**
-- Location dropdown (from Phase 4)
+**9a. Session form updates**
+- Location dropdown (from Phase 7)
 - Protocol (dropdown: MAPS, Non-MAPS, etc.)
 - MAPS Period (numeric field)
 - Session Date (date picker)
-- Master Bander dropdown (from Bander registry — see 5b)
+- Master Bander dropdown (from Bander registry — see 9b)
 - Bander Roster: multi-select or checkboxes for SessionBanderLog (all active org banders)
 - Session open/close times (datetime)
 
-**5b. Bander Registry**
+**9b. Bander Registry**
 - Local bander records: initials, name, role (Master Bander, Sub-permittee, Bander, Trainee), active/inactive
 - Manage as a CRUD (Add/edit/delete banders)
 - Drives dropdowns on Session and BandingRecord forms
 - Initially seeded with known banders; extensible
 
-**5c. Weather & Effort Tracking**
+**9c. Weather & Effort Tracking**
 - Session: open and close weather readings (WeatherReading entity)
   - Temperature (C), Wind (Beaufort/mph), Cloud Cover (%), Precipitation (enum)
 - SessionNetLog: per-net effort tracking
@@ -112,13 +153,13 @@ Goal: Build out session metadata to match the Banding Metadata Sheet and the ent
   - Remarks per net (wind, predators, low temps, etc.)
 - Auto-calculated: net-hours per net and total session effort
 
-**5d. Session list & summary**
+**9d. Session list & summary**
 - Session list view: date, location, protocol, master bander, record count
 - Session detail: edit form, linked banding records, session-level stats (new/unbanded/recaptured counts from records)
 
 ---
 
-## Phase 6 — Validation (Soft Warnings)
+## Phase 10 — Validation (Soft Warnings)
 
 Goal: Implement priority validation rules (red items from specification).
 
@@ -136,7 +177,7 @@ Goal: Implement priority validation rules (red items from specification).
 
 ---
 
-## Phase 7 — Band Inventory
+## Phase 11 — Band Inventory
 
 Goal: Band lifecycle management per BBL requirements.
 
@@ -150,29 +191,29 @@ Goal: Band lifecycle management per BBL requirements.
 
 ---
 
-## Phase 8 — Cloud Sync & Auth
+## Phase 12 — Cloud Sync & Auth
 
 Goal: Move from offline-only to synced multi-user.
 
-**8a. Multi-tenant data model**
+**12a. Multi-tenant data model**
 - Organization as top-level unit (already modeled)
 - User entity for authentication (email + password via Supabase Auth)
 - Bander entity links Person → Organization
 - Record-level filters by organization (row-level security)
 
-**8b. Supabase integration**
+**12b. Supabase integration**
 - Postgres backend for Organization, Person, User, Bander, Location, Session, Net, SessionNetLog, SessionBanderLog, WeatherReading, BandingRecord, Band, Species, CodeTable
 - Auth: email or Google (Supabase Auth)
 - Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
 
-**8c. API & SDKs**
+**12c. API & SDKs**
 - Auto-generate API (OpenAPI or GraphQL) from Postgres schema
 - Supabase client SDK (supabase-js) for real-time subscriptions (optional future)
 - No SSR — client-side rendering only
 
 ---
 
-## Phase 9 — Agency Export
+## Phase 13 — Agency Export
 
 Goal: Export in agency-specific formats.
 
