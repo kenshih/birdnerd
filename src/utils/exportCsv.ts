@@ -1,10 +1,17 @@
 import type { BirdRecord, Session } from '../types'
 
 const HEADERS = [
-  'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howSexed',
-  'bbpCode', 'skull', 'cp', 'bp', 'fat', 'bodyMolt', 'ffMolt', 'tfMolt',
-  'ffWear', 'moltLimitsPlumage', 'wing', 'bodyMass', 'status',
-  'captureTime', 'date', 'station', 'net', 'bander', 'notes',
+  'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howAged2',
+  'howSexed', 'howSexed2', 'bbpCode', 'wrp',
+  'skull', 'cp', 'bp', 'fat', 'bodyMolt', 'ffMolt', 'tfMolt',
+  'ffWear', 'juvBodyPlumage',
+  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
+  'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
+  'moltLimitsPlumage',
+  'wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass',
+  'status', 'disposition',
+  'captureTime', 'releaseTime', 'date', 'station', 'net', 'bander',
+  'featherPull', 'bloodSample', 'notes',
 ]
 
 function escape(value: unknown): string {

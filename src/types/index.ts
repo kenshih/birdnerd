@@ -7,13 +7,18 @@ export interface Species {
 export interface BirdRecord {
   id: string
   sessionId: string
+  // Identity
   bandNumber?: string
   speciesCode?: string
   age?: string
   sex?: string
   howAged?: string
+  howAged2?: string
   howSexed?: string
-  bbpCode?: string
+  howSexed2?: string
+  bbpCode?: string      // capture status code
+  wrp?: string           // WRP molt cycle code
+  // Condition
   skull?: string
   cp?: string
   bp?: string
@@ -22,15 +27,37 @@ export interface BirdRecord {
   ffMolt?: string
   tfMolt?: string
   ffWear?: string
-  moltLimitsPlumage?: string
+  juvBodyPlumage?: string
+  // Molt Limits (per feather tract)
+  moltLimitsPCovs?: string
+  moltLimitsSCovs?: string
+  moltLimitsPP?: string
+  moltLimitsSS?: string
+  moltLimitsTert?: string
+  moltLimitsRec?: string
+  moltLimitsBodyPlum?: string
+  moltLimitsNonFeather?: string
+  moltLimitsPlumage?: string  // legacy free-text field
+  // Morphometrics
   wing?: number
+  tail?: number
+  tarsus?: number
+  exposedCulmen?: number
+  otherMeasurement?: number
   bodyMass?: number
+  // Status & Disposition
   status?: string
+  disposition?: string
+  // Logistics
   captureTime?: string
+  releaseTime?: string
   date?: string
   station?: string
   net?: string
   bander?: string
+  // Additional
+  featherPull?: boolean
+  bloodSample?: boolean
   notes?: string
   createdAt: string
   updatedAt: string

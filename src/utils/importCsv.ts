@@ -1,12 +1,20 @@
 import type { BirdRecord } from '../types'
 
-const NUMERIC_FIELDS = new Set(['wing', 'bodyMass'])
+const NUMERIC_FIELDS = new Set(['wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass'])
+const BOOLEAN_FIELDS = new Set(['featherPull', 'bloodSample'])
 
 const KNOWN_HEADERS = new Set([
-  'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howSexed',
-  'bbpCode', 'skull', 'cp', 'bp', 'fat', 'bodyMolt', 'ffMolt', 'tfMolt',
-  'ffWear', 'moltLimitsPlumage', 'wing', 'bodyMass', 'status',
-  'captureTime', 'date', 'station', 'net', 'bander', 'notes',
+  'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howAged2',
+  'howSexed', 'howSexed2', 'bbpCode', 'wrp',
+  'skull', 'cp', 'bp', 'fat', 'bodyMolt', 'ffMolt', 'tfMolt',
+  'ffWear', 'juvBodyPlumage',
+  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
+  'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
+  'moltLimitsPlumage',
+  'wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass',
+  'status', 'disposition',
+  'captureTime', 'releaseTime', 'date', 'station', 'net', 'bander',
+  'featherPull', 'bloodSample', 'notes',
 ])
 
 function parseCSVLine(line: string): string[] {
@@ -44,12 +52,18 @@ export function parseCSV(text: string): ImportResult {
 
   const records = lines.slice(1).map(line => {
     const values = parseCSVLine(line)
-    const record: Record<string, string | number | undefined> = {}
+    const record: Record<string, string | number | boolean | undefined> = {}
     headers.forEach((h, i) => {
       if (!KNOWN_HEADERS.has(h)) return
       const raw = values[i]?.trim()
       if (!raw) return
-      record[h] = NUMERIC_FIELDS.has(h) ? parseFloat(raw) || undefined : raw
+      if (NUMERIC_FIELDS.has(h)) {
+        record[h] = parseFloat(raw) || undefined
+      } else if (BOOLEAN_FIELDS.has(h)) {
+        record[h] = raw === 'true' || raw === '1'
+      } else {
+        record[h] = raw
+      }
     })
     return record as Omit<BirdRecord, 'id' | 'sessionId' | 'createdAt' | 'updatedAt'>
   })

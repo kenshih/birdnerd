@@ -100,6 +100,11 @@ Goal: Reorganize the banding form for field usability.
 
 ## Phase 8 — Schema Migration Framework
 
+**Unit tests to add alongside migrations:**
+- Migration runner: each migration applies cleanly, version tracking works
+- Data integrity after migration (existing records survive schema changes)
+
+
 Goal: Formalize versioned schema migrations before the entity count grows significantly.
 
 - Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
@@ -145,6 +150,12 @@ Goal: Build out session metadata to match the Banding Metadata Sheet and the ent
 ---
 
 ## Phase 10 — Validation (Soft Warnings)
+
+**Unit tests to add alongside validation:**
+- Validation rule logic (sex/CP/BP conflicts, required-field triggers, override mechanism)
+- CSV import/export round-trip (all field types: string, number, boolean)
+- IBP → BBL code translation (Phase 13 prerequisite)
+
 
 Goal: Implement priority validation rules (red items from specification).
 
@@ -199,6 +210,12 @@ Goal: Move from offline-only to synced multi-user.
 ---
 
 ## Phase 13 — Agency Export
+
+**Unit tests to add alongside export:**
+- IBP → BBL code mappings (every field with dual coding)
+- BBL upload format column ordering and value formatting
+- Edge cases: missing fields, unbanded records, mortality records
+
 
 Goal: Export in agency-specific formats.
 

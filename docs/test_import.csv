@@ -1,6 +1,6 @@
-bandNumber,speciesCode,age,sex,howAged,howSexed,bbpCode,skull,cp,bp,fat,bodyMolt,ffMolt,tfMolt,ffWear,moltLimitsPlumage,wing,bodyMass,status,captureTime,date,station,net,bander,notes
-1261-12345,SOSP,5,M,S,CP,N,6,2,,2,0,0,0,1,,63,18.2,N,06:42,2026-03-15,GCBS,3,Hallie,nice bird
-1261-12346,WIWA,2,F,P,,N,3,,1,1,1,0,0,2,,48,8.1,N,07:15,2026-03-15,GCBS,1,Ken,
-1261-12347,WCSP,5,U,S,,R,6,,,3,0,0,0,1,,72,25.4,R,07:33,2026-03-15,GCBS,2,Hallie,recapture from last week
-1261-12348,SWTH,2,U,,,N,2,,,1,2,1,0,3,,,,N,08:01,2026-03-15,GCBS,4,,escaped before mass
-1261-12349,AMGO,4,M,S,CP,N,6,1,,2,0,0,0,1,,75,13.8,N,08:22,2026-03-15,GCBS,3,Ken,
+bandNumber,speciesCode,age,sex,howAged,howAged2,howSexed,howSexed2,bbpCode,wrp,skull,cp,bp,fat,bodyMolt,ffMolt,tfMolt,ffWear,juvBodyPlumage,moltLimitsPCovs,moltLimitsSCovs,moltLimitsPP,moltLimitsSS,moltLimitsTert,moltLimitsRec,moltLimitsBodyPlum,moltLimitsNonFeather,moltLimitsPlumage,wing,tail,tarsus,exposedCulmen,otherMeasurement,bodyMass,status,disposition,captureTime,releaseTime,date,station,net,bander,featherPull,bloodSample,notes
+1261-12345,SOSP,5,M,SK,,CL,,1,SCB,6,2,,2,0,0,0,1,,B,B,B,B,B,B,B,B,,63,55,22.10,,18.2,300,,06:42,06:55,2026-03-15,GCBS,3,HD,false,false,nice bird
+1261-12346,WIWA,2,F,PL,,BP,,1,FCF,3,,1,1,1,0,0,2,1,J,J,J,J,L,J,J,J,,48,39,,,8.1,318,,07:15,07:28,2026-03-15,GCBS,1,KS,false,true,
+1261-12347,WCSP,5,U,SK,,NA,,R,DCB,6,,,3,0,0,0,1,,B,B,B,B,B,B,B,B,,72,,,,25.4,333,,07:33,07:45,2026-03-15,GCBS,2,HD,false,false,recapture from last week
+1261-12348,SWTH,2,U,,,,,1,FCJ,2,,,1,2,1,0,3,3,J,J,J,J,J,J,J,J,,,,,,,,E,08:01,,2026-03-15,GCBS,4,,false,false,escaped before mass
+1261-12349,AMGO,4,M,SK,,PL,,1,DCB,6,1,,2,0,0,0,1,,B,B,B,B,B,B,B,B,,75,52,,,13.8,300,,08:22,08:35,2026-03-15,GCBS,3,KS,true,false,feather pull for genetics

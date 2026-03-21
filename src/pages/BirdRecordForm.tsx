@@ -2,7 +2,12 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session } from '../types'
 import { saveRecord } from '../db'
-import { AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES, CAPTURE_STATUS_CODES } from '../data/codes'
+import {
+  AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
+  CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
+  CP_CODES, BP_CODES, FF_WEAR_CODES, BIRD_STATUS_CODES, DISPOSITION_CODES,
+  MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES,
+} from '../data/codes'
 import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
 
 interface Props {
@@ -18,38 +23,29 @@ function generateId(): string {
 
 type FormValues = Omit<BirdRecord, 'id' | 'sessionId' | 'createdAt' | 'updatedAt'>
 
+const ALL_FIELDS: (keyof FormValues)[] = [
+  'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howAged2',
+  'howSexed', 'howSexed2', 'bbpCode', 'wrp', 'skull', 'cp', 'bp', 'fat',
+  'bodyMolt', 'ffMolt', 'tfMolt', 'ffWear', 'juvBodyPlumage',
+  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
+  'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
+  'moltLimitsPlumage',
+  'wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass',
+  'status', 'disposition', 'captureTime', 'releaseTime', 'date', 'station',
+  'net', 'bander', 'featherPull', 'bloodSample', 'notes',
+]
+
 export default function BirdRecordForm({ session, record, onSaved, onCancel }: Props) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
 
   useEffect(() => {
     if (record) {
-      reset({
-        bandNumber: record.bandNumber,
-        speciesCode: record.speciesCode,
-        age: record.age,
-        sex: record.sex,
-        howAged: record.howAged,
-        howSexed: record.howSexed,
-        bbpCode: record.bbpCode,
-        skull: record.skull,
-        cp: record.cp,
-        bp: record.bp,
-        fat: record.fat,
-        bodyMolt: record.bodyMolt,
-        ffMolt: record.ffMolt,
-        tfMolt: record.tfMolt,
-        ffWear: record.ffWear,
-        moltLimitsPlumage: record.moltLimitsPlumage,
-        wing: record.wing,
-        bodyMass: record.bodyMass,
-        status: record.status,
-        captureTime: record.captureTime,
-        date: record.date,
-        station: record.station ?? session.station,
-        net: record.net,
-        bander: record.bander,
-        notes: record.notes,
-      })
+      const values: Record<string, unknown> = {}
+      for (const f of ALL_FIELDS) {
+        values[f] = record[f as keyof BirdRecord]
+      }
+      values.station = record.station ?? session.station
+      reset(values as FormValues)
     } else {
       reset({
         station: session.station,
@@ -59,6 +55,13 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
   }, [record, session, reset])
 
   const speciesCode = watch('speciesCode')
+
+  function fillNow(field: 'captureTime' | 'releaseTime') {
+    const now = new Date()
+    const hh = now.getHours().toString().padStart(2, '0')
+    const mm = now.getMinutes().toString().padStart(2, '0')
+    setValue(field, `${hh}:${mm}`)
+  }
 
   async function onSubmit(data: FormValues) {
     const now = new Date().toISOString()
@@ -86,6 +89,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        {/* ── Identity ── */}
         <Section title="Identity">
           <Field label="Band Number">
             <input {...register('bandNumber')} placeholder="e.g. 2305043898" style={inputStyle} />
@@ -112,51 +116,87 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
           </Row>
           <Row>
             <Field label="How Aged">
-              <input {...register('howAged')} placeholder="e.g. S, W" style={inputStyle} />
-            </Field>
-            <Field label="How Sexed">
-              <input {...register('howSexed')} placeholder="e.g. CP, P" style={inputStyle} />
-            </Field>
-          </Row>
-          <Field label="Capture Status">
-            <select {...register('bbpCode')} style={inputStyle}>
-              <option value="">—</option>
-              {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-            </select>
-          </Field>
-        </Section>
-
-        <Section title="Condition">
-          <Row>
-            <Field label="Skull (0–6/X)">
-              <select {...register('skull')} style={inputStyle}>
+              <select {...register('howAged')} style={inputStyle}>
                 <option value="">—</option>
-                {SKULL_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {HOW_AGED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
-            <Field label="Fat (0–5/T)">
+            <Field label="How Aged (2nd)">
+              <select {...register('howAged2')} style={inputStyle}>
+                <option value="">—</option>
+                {HOW_AGED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="How Sexed">
+              <select {...register('howSexed')} style={inputStyle}>
+                <option value="">—</option>
+                {HOW_SEXED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="How Sexed (2nd)">
+              <select {...register('howSexed2')} style={inputStyle}>
+                <option value="">—</option>
+                {HOW_SEXED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="Capture Status">
+              <select {...register('bbpCode')} style={inputStyle}>
+                <option value="">—</option>
+                {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="WRP">
+              <select {...register('wrp')} style={inputStyle}>
+                <option value="">—</option>
+                {WRP_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
+        </Section>
+
+        {/* ── Condition ── */}
+        <Section title="Condition">
+          <Row>
+            <Field label="Skull">
+              <select {...register('skull')} style={inputStyle}>
+                <option value="">—</option>
+                {SKULL_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Fat">
               <select {...register('fat')} style={inputStyle}>
                 <option value="">—</option>
-                {FAT_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {FAT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </Row>
           <Row>
             <Field label="CP">
-              <input {...register('cp')} placeholder="0–3" style={inputStyle} />
+              <select {...register('cp')} style={inputStyle}>
+                <option value="">—</option>
+                {CP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
             </Field>
             <Field label="BP">
-              <input {...register('bp')} placeholder="0–5" style={inputStyle} />
+              <select {...register('bp')} style={inputStyle}>
+                <option value="">—</option>
+                {BP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
             </Field>
           </Row>
         </Section>
 
+        {/* ── Molt ── */}
         <Section title="Molt">
           <Row>
             <Field label="Body Molt">
               <select {...register('bodyMolt')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
             <Field label="FF Molt">
@@ -168,15 +208,82 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
               <input {...register('tfMolt')} placeholder="e.g. T1-T3" style={inputStyle} />
             </Field>
             <Field label="FF Wear">
-              <input {...register('ffWear')} placeholder="1–5" style={inputStyle} />
+              <select {...register('ffWear')} style={inputStyle}>
+                <option value="">—</option>
+                {FF_WEAR_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
             </Field>
           </Row>
-          <Field label="Molt Limits & Plumage">
-            <input {...register('moltLimitsPlumage')} placeholder="Notes" style={inputStyle} />
+          <Field label="Juv Body Plumage">
+            <select {...register('juvBodyPlumage')} style={inputStyle}>
+              <option value="">—</option>
+              {JUV_BODY_PLUMAGE_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+            </select>
           </Field>
         </Section>
 
-        <Section title="Measurements">
+        {/* ── Molt Limits & Plumage ── */}
+        <Section title="Molt Limits & Plumage">
+          <Row>
+            <Field label="P Covs">
+              <select {...register('moltLimitsPCovs')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+            <Field label="S Covs">
+              <select {...register('moltLimitsSCovs')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="PP">
+              <select {...register('moltLimitsPP')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+            <Field label="SS">
+              <select {...register('moltLimitsSS')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="Tert">
+              <select {...register('moltLimitsTert')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+            <Field label="Rec">
+              <select {...register('moltLimitsRec')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="Body Plum">
+              <select {...register('moltLimitsBodyPlum')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+            <Field label="Non-Feather">
+              <select {...register('moltLimitsNonFeather')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
+            </Field>
+          </Row>
+        </Section>
+
+        {/* ── Morphometrics ── */}
+        <Section title="Morphometrics">
           <Row>
             <Field label="Wing (mm)">
               <input
@@ -187,6 +294,37 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
                 style={inputStyle}
               />
             </Field>
+            <Field label="Tail (mm)">
+              <input
+                {...register('tail', { valueAsNumber: true })}
+                type="number"
+                step="0.5"
+                placeholder="e.g. 55"
+                style={inputStyle}
+              />
+            </Field>
+          </Row>
+          <Row>
+            <Field label="Tarsus (mm)">
+              <input
+                {...register('tarsus', { valueAsNumber: true })}
+                type="number"
+                step="0.01"
+                placeholder="e.g. 22.50"
+                style={inputStyle}
+              />
+            </Field>
+            <Field label="Exp. Culmen (mm)">
+              <input
+                {...register('exposedCulmen', { valueAsNumber: true })}
+                type="number"
+                step="0.01"
+                placeholder="e.g. 11.20"
+                style={inputStyle}
+              />
+            </Field>
+          </Row>
+          <Row>
             <Field label="Body Mass (g)">
               <input
                 {...register('bodyMass', { valueAsNumber: true })}
@@ -196,24 +334,76 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
                 style={inputStyle}
               />
             </Field>
+            <Field label="Other Meas. (mm)">
+              <input
+                {...register('otherMeasurement', { valueAsNumber: true })}
+                type="number"
+                step="0.01"
+                placeholder="Add note"
+                style={inputStyle}
+              />
+            </Field>
           </Row>
         </Section>
 
+        {/* ── Status & Disposition ── */}
+        <Section title="Status & Disposition">
+          <Row>
+            <Field label="Status">
+              <select {...register('status')} style={inputStyle}>
+                <option value="">—</option>
+                {BIRD_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Disposition">
+              <select {...register('disposition')} style={inputStyle}>
+                <option value="">—</option>
+                {DISPOSITION_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
+        </Section>
+
+        {/* ── Logistics ── */}
         <Section title="Logistics">
           <Row>
             <Field label="Capture Time">
-              <input {...register('captureTime')} type="time" style={inputStyle} />
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <input {...register('captureTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
+                <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>
+              </div>
             </Field>
-            <Field label="Net">
-              <input {...register('net')} placeholder="Net #" style={inputStyle} />
+            <Field label="Release Time">
+              <div style={{ display: 'flex', gap: '0.25rem' }}>
+                <input {...register('releaseTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
+                <button type="button" onClick={() => fillNow('releaseTime')} style={nowBtnStyle}>Now</button>
+              </div>
             </Field>
           </Row>
           <Row>
-            <Field label="Status">
-              <input {...register('status')} placeholder="e.g. A" style={inputStyle} />
+            <Field label="Net">
+              <input {...register('net')} placeholder="Net #" style={inputStyle} />
             </Field>
             <Field label="Bander">
               <input {...register('bander')} placeholder="Initials" style={inputStyle} />
+            </Field>
+          </Row>
+        </Section>
+
+        {/* ── Additional ── */}
+        <Section title="Additional">
+          <Row>
+            <Field label="">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <input type="checkbox" {...register('featherPull')} />
+                Feather Pull
+              </label>
+            </Field>
+            <Field label="">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
+                <input type="checkbox" {...register('bloodSample')} />
+                Blood Sample
+              </label>
             </Field>
           </Row>
           <Field label="Notes">
@@ -248,9 +438,11 @@ function Row({ children }: { children: React.ReactNode }) {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '0.5rem' }}>
-      <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.2rem', color: '#333' }}>
-        {label}
-      </label>
+      {label && (
+        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.2rem', color: '#333' }}>
+          {label}
+        </label>
+      )}
       {children}
     </div>
   )
@@ -274,6 +466,17 @@ const btnStyle = (bg: string): React.CSSProperties => ({
   fontSize: '1rem',
   cursor: 'pointer',
 })
+
+const nowBtnStyle: React.CSSProperties = {
+  background: '#2d6a4f',
+  color: '#fff',
+  border: 'none',
+  borderRadius: 6,
+  padding: '0.45rem 0.6rem',
+  fontSize: '0.8rem',
+  cursor: 'pointer',
+  whiteSpace: 'nowrap',
+}
 
 const backBtnStyle: React.CSSProperties = {
   background: 'none',
