@@ -53,6 +53,7 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 - Tail (mm), Tarsus (mm ##.##), Exposed Culmen (mm ##.##), Other measurement (mm ##.##)
 - Release Time (hh:mm with tap-to-fill-now button)
 - WRP molt cycle code (dropdown from Hallie's 57-code subset + Other)
+- FF Wear upgrade: free text → select dropdown (0–5: None, Slight, Light, Moderate, Heavy, Excessive)
 - Juvenile Body Plumage (0-3)
 - Molt Limits & Plumage table (PCovs, SCovs, PP, SS, Tert, Rec, Body Plum, Non-Feather)
 - Disposition (M, O, I, S, E, T, W, B, L, P, D)
