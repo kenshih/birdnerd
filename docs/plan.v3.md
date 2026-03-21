@@ -20,33 +20,18 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 - Save-to-home-screen guidance
 - CSV export + CSV import
 
----
-
-## Phase 3 — Full Species List
-
-Goal: Replace placeholder CA species list with the authoritative BBL list.
-
-- Import full 1,323-species BBL list from SPECIES sheet (ALPHA_CODE, SPECIES_NAME, SCI_NAME)
+### Phase 3 — Full Species List ✅
+- Import full 1,219-species BBL list from SPECIES sheet (ALPHA_CODE, SPECIES_NAME, SCI_NAME)
+- Added sciName field to Species type
 - Keep autocomplete UX (type code or name)
-- Incremental IndexedDB schema: add new fields to BirdRecord as nullable (existing records unaffected)
 
----
-
-## Phase 4 — Navigation Shell & Routing
-
-Goal: Scaffold the full app navigation structure so every future module has a home.
-
-- Update home screen to show all module buttons per UX spec:
-  - Banding Data Collection (active)
-  - Session Data (active — existing)
-  - Band Inventory (placeholder / coming soon)
-  - Project Locations (placeholder / coming soon)
-  - View Data / Export (placeholder / coming soon)
-  - Report Bugs / Feedback (placeholder / coming soon)
-- Add client-side routing (React Router or hash-based) for each module
-- Placeholder screens for unbuilt modules: simple "Coming Soon" with description of what's planned
-- Disabled/dimmed styling for placeholder buttons so users know what's coming vs what works
-- This phase is UI-only — no data model changes
+### Phase 4 — Navigation Shell & Routing ✅
+- Home screen with all 6 module buttons (3 active, 3 disabled/coming-soon)
+- State-based routing in App.tsx for all modules
+- PlaceholderPage for unbuilt modules (Band Inventory, Locations, Feedback)
+- ExportPage with per-session and export-all CSV support
+- Disabled/dimmed styling for coming-soon buttons
+- Feedback button opens mailto (ks.birdnerd@pm.me)
 
 ---
 

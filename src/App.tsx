@@ -3,11 +3,21 @@ import type { Session } from './types'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
 import SessionView from './pages/SessionView'
+import PlaceholderPage from './pages/PlaceholderPage'
+import ExportPage from './pages/ExportPage'
 
-type AppView = { mode: 'home' } | { mode: 'sessions' } | { mode: 'session'; session: Session }
+type AppView =
+  | { mode: 'home' }
+  | { mode: 'sessions' }
+  | { mode: 'session'; session: Session }
+  | { mode: 'band-inventory' }
+  | { mode: 'locations' }
+  | { mode: 'export' }
+  | { mode: 'feedback' }
 
 export default function App() {
   const [view, setView] = useState<AppView>({ mode: 'home' })
+  const goHome = () => setView({ mode: 'home' })
 
   if (view.mode === 'session') {
     return (
@@ -22,10 +32,44 @@ export default function App() {
     return (
       <SessionList
         onSelectSession={session => setView({ mode: 'session', session })}
-        onHome={() => setView({ mode: 'home' })}
+        onHome={goHome}
       />
     )
   }
 
-  return <HomeScreen onStartBanding={() => setView({ mode: 'sessions' })} />
+  if (view.mode === 'export') {
+    return <ExportPage onHome={goHome} />
+  }
+
+  if (view.mode === 'band-inventory') {
+    return (
+      <PlaceholderPage
+        title="Band Inventory"
+        description="Add, track, and manage USGS BBL band stock. View deployed vs available bands by size and type."
+        onHome={goHome}
+      />
+    )
+  }
+
+  if (view.mode === 'locations') {
+    return (
+      <PlaceholderPage
+        title="Project Locations"
+        description="Register banding locations, manage nets and traps at each site."
+        onHome={goHome}
+      />
+    )
+  }
+
+  if (view.mode === 'feedback') {
+    window.location.href = 'mailto:ks.birdnerd@pm.me?subject=BirdNerd%20Feedback'
+    setView({ mode: 'home' })
+    return null
+  }
+
+  return (
+    <HomeScreen
+      onNavigate={(mode) => setView({ mode } as AppView)}
+    />
+  )
 }
