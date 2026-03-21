@@ -242,7 +242,7 @@ All imported from MASTER BANDING DATA.xlsx → LOOKUPS sheet:
 
 ### Seed Data
 
-All seed/default data is centralized in a single config file (`src/data/seed.ts`). This includes pre-populated locations, nets, banders, and any other reference data the app ships with. The seed file can be swapped for an empty config to start fresh (e.g., for new organizations or testing).
+All seed/default data is centralized in a single config file (`src/data/seed.ts`). This includes pre-populated locations, nets, people, banders, and any other reference data the app ships with. The seed file can be swapped for an empty config to start fresh (e.g., for new organizations or testing). In Phase 9, seed.ts will be replaced by a bundled JSON data file in the same format as the export bundle, making seed data runtime-swappable rather than build-time only.
 
 ---
 
@@ -293,13 +293,53 @@ Tables provided by domain experts for validation:
 
 ---
 
-## 6. Migration & Data Import (Phase 2+)
+## 6. Migration & Data Import
 
-### CSV Import
+### CSV Import (Sessions & Banding Records)
 
 Current capability:
 - Read CSV, validate columns, insert into local IndexedDB
 - Basic error reporting
+- Independent export/import per session or all sessions
+
+### JSON Data Bundle (Phase 9)
+
+A single JSON file that contains all managed reference and operational data, providing portable backup/restore before Postgres arrives.
+
+**Included entities (growing with each phase):**
+- Locations, Nets (Phase 9)
+- People, Banders (Phase 9)
+- Sessions, BandingRecords (Phase 9)
+- Bands (added in Phase 12)
+- Future entities added as they are built
+
+**Not included:** Code tables and species list (static app resources, not user data).
+
+**Format:** JSON with a version field and per-entity arrays:
+
+```json
+{
+  "version": 1,
+  "exportedAt": "2026-03-21T...",
+  "locations": [...],
+  "nets": [...],
+  "people": [...],
+  "banders": [...],
+  "sessions": [...],
+  "records": [...]
+}
+```
+
+**Use cases:**
+- **Backup/Restore:** Export all data before schema migrations or device changes
+- **Seed data replacement:** The app's seed.ts config will be replaced by a bundled JSON file in this format, making seed data swappable at runtime rather than build time
+- **Pre-Postgres persistence:** With a single user, export JSON as the portable data store between sessions/devices
+- **Data migration:** Import into Postgres when cloud sync arrives (Phase 13)
+
+**Import behavior:**
+- On import, prompt user to merge or replace existing data
+- Validate version compatibility before importing
+- Preserve existing CSV import/export for banding records (simpler workflow for session-level data exchange)
 
 ### Future: BBL & Legacy Data
 

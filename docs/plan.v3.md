@@ -97,19 +97,31 @@ Goal: Reorganize the banding form for field usability.
 
 ---
 
-## Phase 9 — Schema Migration Framework
+## Phase 9 — Schema Migration & Data Portability
 
 **Unit tests to add alongside migrations:**
 - Migration runner: each migration applies cleanly, version tracking works
 - Data integrity after migration (existing records survive schema changes)
+- JSON data bundle: export round-trip (export → import → data matches), version validation
 
-Goal: Formalize versioned schema migrations before the entity count grows significantly.
+Goal: Formalize versioned schema migrations and add portable data backup/restore before the entity count grows significantly.
 
+**9a. Schema Migration Framework**
 - Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
 - Retroactively capture Phases 3-8 schema changes as migrations
 - Write each migration with a corresponding Postgres migration (for Phase 13 Supabase cutover)
 - Design for dual-mode: local IndexedDB as primary, Postgres as sync target
 - See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
+
+**9b. JSON Data Bundle (export/import)**
+- Single JSON file covering all managed data: Locations, Nets, People, Banders, Sessions, BandingRecords
+- Versioned format with `version` field for forward compatibility
+- Export: download full data bundle from app
+- Import: merge or replace existing data, with version validation
+- Replace seed.ts hardcoded config with a bundled JSON file in this format (seed data becomes runtime-swappable)
+- Serves as pre-Postgres persistence strategy (single-user portable backup)
+- Future entities (Bands, etc.) added to the bundle as they are built
+- Existing CSV import/export for banding records remains independent (simpler per-session workflow)
 
 ---
 

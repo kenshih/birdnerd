@@ -26,7 +26,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Band Inventory** — Add, track, and manage band stock.
 
-**Export / Reports** — Export data in multiple formats (CSV, BBL, IBP), generate session summaries, view band history.
+**Export / Reports** — Export data in multiple formats (CSV, BBL, IBP), generate session summaries, view band history. JSON data bundle for full backup/restore of all managed data (locations, nets, people, banders, sessions, records).
 
 ---
 
