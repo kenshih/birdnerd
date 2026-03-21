@@ -14,6 +14,7 @@ The ER diagram uses colors to categorize entity types:
 - **Green** — Reference data from canonical external sources (imported, read-mostly)
   - Species (from USGS BBL master list)
   - CodeTable (from USGS BBL LOOKUPS sheet)
+  - Note: Right now I'm thinking of designing this NOT as database tables (so no db-level FK), but static resources with some decoupling from application code (e.g. resource files). For db codes, we'll just need to specify text length limits. Indeed, BandingRecord itself is a good candidate for schematized document store record where such codes would be part of their schema. This would allow for banding records from different protocols to use the same infrastructure.
 - **White** — Immutable audit/change log data (append-only, no updates or deletes)
   - ChangeLog (complete record of all entity changes)
 
