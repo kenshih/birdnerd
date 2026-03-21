@@ -345,15 +345,24 @@ Examples:
 
 ---
 
-## 7. Bander Registry
+## 7. People & Roles
 
-The app needs a bander registry (even before auth):
-- Bander initials (2-letter, used in data: HD, TS, etc.)
+People are the base entity for anyone involved in station operations. Roles (Bander, Extractor, Data Entry, etc.) are assigned via association tables, not baked into the Person record. This allows the same person to hold multiple roles and for the system to evolve beyond banding-specific workflows.
+
+**Person record:**
+- Initials (2-3 letter, used in data: HD, TS, etc.)
 - Full name
-- Role: Master Bander, Sub-permittee, Bander, Trainee
 - Active/inactive
 
-Current known banders:
+**Bander role (via Bander association table):**
+- Links Person → Organization
+- Role: Master Bander, Sub-permittee, Bander, Trainee
+- Drives bander dropdowns on Session and BandingRecord forms
+
+**Future roles** (not yet implemented):
+- Extractor, Data Entry, Scribe, Researcher, etc.
+
+**Current known people (seed data):**
 - HD — Hallie Daly (Master Bander)
 - JW — Julie Woodruff (Sub-permittee)
 - TS — Tatyana Soto-Bartzi (Sub-permittee)

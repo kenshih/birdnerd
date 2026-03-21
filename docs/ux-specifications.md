@@ -13,9 +13,8 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 ┌─────────────────────────────────────┐
 │         BirdNerd                    │
 │                                     │
-│  [Banding Data Collection]          │
-│                                     │
 │  [Session Data]                     │
+│  [People]                           │
 │  [Band Inventory]                   │
 │  [Project Location Data]            │
 │  [View Data / Export]               │
@@ -27,12 +26,12 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
-| **Banding Data Collection** | Primary workflow (90% of field time) | Banding Form |
-| **Session Data** | Create/manage daily sessions | Session List / Session Form |
+| **Session Data** | Create/manage daily sessions, record bird encounters | Session List / Session Form |
+| **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
 | **Project Location Data** | Register locations, manage nets | Location List / Location Form |
 | **View Data / Export** | Review records, export to CSV/BBL/IBP | Data Table / Export Dialog |
-| **Report Bugs / Feedback** | Email form (future integration) | Email client |
+| **Report Bugs / Feedback** | Send feedback via email | Email client |
 
 ---
 
@@ -324,9 +323,44 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 
 ---
 
-## 6. View Data & Export
+## 6. People
 
-### 6.1 Data Table (Browse Records)
+### 6.1 People List View
+
+```
+┌──────────────────────────────────────┐
+│  People                              │
+│                                      │
+│  HD  Hallie Daly                     │
+│      Master Bander · Active          │
+│                                      │
+│  JW  Julie Woodruff                  │
+│      Sub-permittee · Active          │
+│                                      │
+│  TS  Tatyana Soto-Bartzi            │
+│      Sub-permittee · Active          │
+│                                      │
+│  [ + Add Person ]                    │
+└──────────────────────────────────────┘
+```
+
+### 6.2 Person Detail / Edit
+
+| Field | Type | Notes |
+|-------|------|-------|
+| **Initials** | Text (2-3 char) | Used in banding records and session logs |
+| **Full Name** | Text | Display name |
+| **Active** | Toggle | Inactive people hidden from dropdowns |
+
+**Roles section (within person detail):**
+- Bander role: assign role (Master Bander, Sub-permittee, Bander, Trainee)
+- Future: additional role types (Extractor, Data Entry, Scribe, etc.)
+
+---
+
+## 7. View Data & Export
+
+### 7.1 Data Table (Browse Records)
 
 ```
 ┌──────────────────────────────────────────┐
@@ -347,7 +381,7 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 └──────────────────────────────────────────┘
 ```
 
-### 6.2 Export Dialog
+### 7.2 Export Dialog
 
 ```
 ┌──────────────────────────────────────┐
@@ -374,7 +408,7 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 
 ---
 
-## 7. Accessibility & Mobile Design
+## 8. Accessibility & Mobile Design
 
 - **iPhone/iPad first:** All screens tested at 375px width (iPhone SE) and 768px (iPad)
 - **Touch targets:** All buttons ≥44px × 44px for easy tapping
@@ -384,7 +418,7 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 
 ---
 
-## 8. Future Screen Ideas
+## 9. Future Screen Ideas
 
 - **Photo Log** — Attach photos to banding records
 - **Datasheet Addendums** — Field notes, special observations, protocols

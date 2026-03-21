@@ -74,7 +74,21 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ---
 
-## Phase 7 — Form UX Overhaul
+## Phase 7 — People & Roles
+
+Goal: Establish people as managed reference data (like Locations). People gain roles (Bander, Extractor, Data Entry, etc.) via association tables.
+
+- Top-level nav item on home screen: "People"
+- Person CRUD: initials, name, active/inactive
+- Bander association: link Person → Bander with role (Master Bander, Sub-permittee, Bander, Trainee)
+- Seed known people + bander roles (HD, JW, TS, JVD, LC) via seed.ts
+- IndexedDB stores for people and banders
+- Bander dropdown on BandingRecord form (replaces free-text initials)
+- Drives Session master bander + roster dropdowns (Phase 10)
+
+---
+
+## Phase 8 — Form UX Overhaul
 
 Goal: Reorganize the banding form for field usability.
 
@@ -85,43 +99,36 @@ Goal: Reorganize the banding form for field usability.
 
 ---
 
-## Phase 8 — Schema Migration Framework
+## Phase 9 — Schema Migration Framework
 
 **Unit tests to add alongside migrations:**
 - Migration runner: each migration applies cleanly, version tracking works
 - Data integrity after migration (existing records survive schema changes)
 
-
 Goal: Formalize versioned schema migrations before the entity count grows significantly.
 
 - Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
-- Retroactively capture Phases 3-7 schema changes as migrations
-- Write each migration with a corresponding Postgres migration (for Phase 12 Supabase cutover)
+- Retroactively capture Phases 3-8 schema changes as migrations
+- Write each migration with a corresponding Postgres migration (for Phase 13 Supabase cutover)
 - Design for dual-mode: local IndexedDB as primary, Postgres as sync target
 - See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
 
 ---
 
-## Phase 9 — Session Data Expansion
+## Phase 10 — Session Data Expansion
 
 Goal: Build out session metadata to match the Banding Metadata Sheet and the entity model.
 
-**9a. Session form updates**
-- Location dropdown (from Phase 7)
+**10a. Session form updates**
+- Location dropdown (from Phase 6)
 - Protocol (dropdown: MAPS, Non-MAPS, etc.)
 - MAPS Period (numeric field)
 - Session Date (date picker)
-- Master Bander dropdown (from Bander registry — see 9b)
+- Master Bander dropdown (from Bander registry, Phase 7)
 - Bander Roster: multi-select or checkboxes for SessionBanderLog (all active org banders)
 - Session open/close times (datetime)
 
-**9b. Bander Registry**
-- Local bander records: initials, name, role (Master Bander, Sub-permittee, Bander, Trainee), active/inactive
-- Manage as a CRUD (Add/edit/delete banders)
-- Drives dropdowns on Session and BandingRecord forms
-- Initially seeded with known banders; extensible
-
-**9c. Weather & Effort Tracking**
+**10b. Weather & Effort Tracking**
 - Session: open and close weather readings (WeatherReading entity)
   - Temperature (C), Wind (Beaufort/mph), Cloud Cover (%), Precipitation (enum)
 - SessionNetLog: per-net effort tracking
@@ -130,19 +137,18 @@ Goal: Build out session metadata to match the Banding Metadata Sheet and the ent
   - Remarks per net (wind, predators, low temps, etc.)
 - Auto-calculated: net-hours per net and total session effort
 
-**9d. Session list & summary**
+**10c. Session list & summary**
 - Session list view: date, location, protocol, master bander, record count
 - Session detail: edit form, linked banding records, session-level stats (new/unbanded/recaptured counts from records)
 
 ---
 
-## Phase 10 — Validation (Soft Warnings)
+## Phase 11 — Validation (Soft Warnings)
 
 **Unit tests to add alongside validation:**
 - Validation rule logic (sex/CP/BP conflicts, required-field triggers, override mechanism)
 - CSV import/export round-trip (all field types: string, number, boolean)
-- IBP → BBL code translation (Phase 13 prerequisite)
-
+- IBP → BBL code translation (Phase 14 prerequisite)
 
 Goal: Implement priority validation rules (red items from specification).
 
@@ -160,7 +166,7 @@ Goal: Implement priority validation rules (red items from specification).
 
 ---
 
-## Phase 11 — Band Inventory
+## Phase 12 — Band Inventory
 
 Goal: Band lifecycle management per BBL requirements.
 
@@ -174,35 +180,34 @@ Goal: Band lifecycle management per BBL requirements.
 
 ---
 
-## Phase 12 — Cloud Sync & Auth
+## Phase 13 — Cloud Sync & Auth
 
 Goal: Move from offline-only to synced multi-user.
 
-**12a. Multi-tenant data model**
+**13a. Multi-tenant data model**
 - Organization as top-level unit (already modeled)
 - User entity for authentication (email + password via Supabase Auth)
 - Bander entity links Person → Organization
 - Record-level filters by organization (row-level security)
 
-**12b. Supabase integration**
+**13b. Supabase integration**
 - Postgres backend for Organization, Person, User, Bander, Location, Session, Net, SessionNetLog, SessionBanderLog, WeatherReading, BandingRecord, Band (Species and CodeTable remain static resource files, not DB tables)
 - Auth: email or Google (Supabase Auth)
 - Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
 
-**12c. API & SDKs**
+**13c. API & SDKs**
 - Auto-generate API (OpenAPI or GraphQL) from Postgres schema
 - Supabase client SDK (supabase-js) for real-time subscriptions (optional future)
 - No SSR — client-side rendering only
 
 ---
 
-## Phase 13 — Agency Export
+## Phase 14 — Agency Export
 
 **Unit tests to add alongside export:**
 - IBP → BBL code mappings (every field with dual coding)
 - BBL upload format column ordering and value formatting
 - Edge cases: missing fields, unbanded records, mortality records
-
 
 Goal: Export in agency-specific formats.
 

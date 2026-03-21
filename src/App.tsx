@@ -12,6 +12,7 @@ type AppView =
   | { mode: 'home' }
   | { mode: 'sessions' }
   | { mode: 'session'; session: Session }
+  | { mode: 'banders' }
   | { mode: 'band-inventory' }
   | { mode: 'locations' }
   | { mode: 'location-detail'; location: Location }
@@ -42,6 +43,16 @@ export default function App() {
 
   if (view.mode === 'export') {
     return <ExportPage onHome={goHome} />
+  }
+
+  if (view.mode === 'banders') {
+    return (
+      <PlaceholderPage
+        title="People"
+        description="Manage team members and their roles (Bander, Extractor, Data Entry, etc.)."
+        onHome={goHome}
+      />
+    )
   }
 
   if (view.mode === 'band-inventory') {
