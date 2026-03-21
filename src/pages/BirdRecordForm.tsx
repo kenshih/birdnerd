@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import type { BirdRecord, Session } from '../types'
-import { saveRecord, getPeople, getBanders } from '../db'
+import type { BirdRecord, Session, Net } from '../types'
+import { saveRecord, getPeople, getBanders, getLocations, getNetsByLocation } from '../db'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
@@ -9,6 +9,7 @@ import {
   MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES,
 } from '../data/codes'
 import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
+import SearchableSelect from '../components/SearchableSelect'
 
 interface Props {
   session: Session
@@ -43,19 +44,34 @@ interface BanderOption {
 export default function BirdRecordForm({ session, record, onSaved, onCancel }: Props) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
+  const [netOptions, setNetOptions] = useState<Net[]>([])
 
   useEffect(() => {
-    loadBanders()
+    loadDropdownData()
   }, [])
 
-  async function loadBanders() {
+  async function loadDropdownData() {
+    // Load banders
     const [people, banders] = await Promise.all([getPeople(), getBanders()])
     const banderPersonIds = new Set(banders.map(b => b.personId))
-    const activeBanders = people
-      .filter(p => p.active && banderPersonIds.has(p.id))
-      .sort((a, b) => a.initials.localeCompare(b.initials))
-      .map(p => ({ initials: p.initials, name: p.name }))
-    setBanderOptions(activeBanders)
+    setBanderOptions(
+      people
+        .filter(p => p.active && banderPersonIds.has(p.id))
+        .sort((a, b) => a.initials.localeCompare(b.initials))
+        .map(p => ({ initials: p.initials, name: p.name }))
+    )
+
+    // Load nets for this session's location
+    const locations = await getLocations()
+    const loc = locations.find(l => l.banderLocationId === session.station)
+    if (loc) {
+      const nets = await getNetsByLocation(loc.id)
+      setNetOptions(nets.sort((a, b) => {
+        const aNum = parseInt(a.label), bNum = parseInt(b.label)
+        if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
+        return a.label.localeCompare(b.label)
+      }))
+    }
   }
 
   useEffect(() => {
@@ -75,6 +91,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
   }, [record, session, reset])
 
   const speciesCode = watch('speciesCode')
+  const wrpValue = watch('wrp')
 
   function fillNow(field: 'captureTime' | 'releaseTime') {
     const now = new Date()
@@ -121,6 +138,22 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
             />
           </Field>
           <Row>
+            <Field label="Capture Status">
+              <select {...register('bbpCode')} style={inputStyle}>
+                <option value="">—</option>
+                {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="WRP">
+              <SearchableSelect
+                options={WRP_CODES}
+                value={wrpValue ?? ''}
+                onChange={v => setValue('wrp', v)}
+                placeholder="Search WRP codes..."
+              />
+            </Field>
+          </Row>
+          <Row>
             <Field label="Age">
               <select {...register('age')} style={inputStyle}>
                 <option value="">—</option>
@@ -162,20 +195,6 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
               </select>
             </Field>
           </Row>
-          <Row>
-            <Field label="Capture Status">
-              <select {...register('bbpCode')} style={inputStyle}>
-                <option value="">—</option>
-                {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-              </select>
-            </Field>
-            <Field label="WRP">
-              <select {...register('wrp')} style={inputStyle}>
-                <option value="">—</option>
-                {WRP_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
-              </select>
-            </Field>
-          </Row>
         </Section>
 
         {/* ── Condition ── */}
@@ -208,10 +227,6 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
               </select>
             </Field>
           </Row>
-        </Section>
-
-        {/* ── Molt ── */}
-        <Section title="Molt">
           <Row>
             <Field label="Body Molt">
               <select {...register('bodyMolt')} style={inputStyle}>
@@ -219,19 +234,19 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
                 {MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="FF Molt">
-              <input {...register('ffMolt')} placeholder="e.g. A1-A3" style={inputStyle} />
-            </Field>
-          </Row>
-          <Row>
-            <Field label="TF Molt">
-              <input {...register('tfMolt')} placeholder="e.g. T1-T3" style={inputStyle} />
-            </Field>
             <Field label="FF Wear">
               <select {...register('ffWear')} style={inputStyle}>
                 <option value="">—</option>
                 {FF_WEAR_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="FF Molt">
+              <input {...register('ffMolt')} placeholder="e.g. A1-A3" style={inputStyle} />
+            </Field>
+            <Field label="TF Molt">
+              <input {...register('tfMolt')} placeholder="e.g. T1-T3" style={inputStyle} />
             </Field>
           </Row>
           <Field label="Juv Body Plumage">
@@ -302,8 +317,8 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
           </Row>
         </Section>
 
-        {/* ── Morphometrics ── */}
-        <Section title="Morphometrics">
+        {/* ── Morphometrics & Status ── */}
+        <Section title="Morphometrics & Status">
           <Row>
             <Field label="Wing (mm)">
               <input
@@ -364,10 +379,6 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
               />
             </Field>
           </Row>
-        </Section>
-
-        {/* ── Status & Disposition ── */}
-        <Section title="Status & Disposition">
           <Row>
             <Field label="Status">
               <select {...register('status')} style={inputStyle}>
@@ -384,8 +395,8 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
           </Row>
         </Section>
 
-        {/* ── Logistics ── */}
-        <Section title="Logistics">
+        {/* ── Additional ── */}
+        <Section title="Additional">
           <Row>
             <Field label="Capture Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -402,7 +413,12 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
           </Row>
           <Row>
             <Field label="Net">
-              <input {...register('net')} placeholder="Net #" style={inputStyle} />
+              <select {...register('net')} style={inputStyle}>
+                <option value="">—</option>
+                {netOptions.map(n => (
+                  <option key={n.id} value={n.label}>{n.label}</option>
+                ))}
+              </select>
             </Field>
             <Field label="Bander">
               <select {...register('bander')} style={inputStyle}>
@@ -413,10 +429,6 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel }: P
               </select>
             </Field>
           </Row>
-        </Section>
-
-        {/* ── Additional ── */}
-        <Section title="Additional">
           <Row>
             <Field label="">
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>

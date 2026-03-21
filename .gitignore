@@ -144,5 +144,8 @@ vite.config.ts.timestamp-*
 # claude local
 .claude
 
+# macOS
+.DS_Store
+
 # move
 nogit

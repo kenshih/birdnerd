@@ -86,14 +86,13 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ---
 
-## Phase 8 — Form UX Overhaul
+### Phase 8 — Form UX Overhaul ✅
 
-Goal: Reorganize the banding form for field usability.
-
-- Section grouping per spec: Identity → Age & Sex → Condition → Molt Limits → Morphometrics & Status → Additional Info
-- Combobox upgrade for fields with known code sets (How Aged, How Sexed, etc.) — show code + description
-- Release Time "tap to fill now" button
-- Net field updated to reference Net via dropdown (from nets defined at location level)
+- Section reorganization: Identity → Condition (absorbs Molt) → Molt Limits & Plumage → Morphometrics & Status → Additional
+- Searchable combobox (SearchableSelect component) for WRP (57 codes) with type-to-filter
+- Net field upgraded to dropdown populated from session's location nets
+- Bander field as dropdown (from Phase 7)
+- Release Time "tap to fill now" (already done in Phase 5)
 
 ---
 
