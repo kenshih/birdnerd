@@ -1,6 +1,7 @@
 export interface Species {
   code: string       // 4-letter alpha code e.g. "SOSP"
   commonName: string // e.g. "Song Sparrow"
+  sciName: string    // e.g. "Melospiza melodia"
 }
 
 export interface BirdRecord {
