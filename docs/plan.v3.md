@@ -37,23 +37,22 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 
 ## Phase 5 — Code Tables & New Fields
 
-Goal: Upgrade code tables to full BBL/IBP sets and add missing fields to the banding form.
+Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the banding form.
 
-**5a. Upgrade code tables from LOOKUPS**
-- Replace placeholder code tables with full BBL/IBP code sets from MASTER BANDING DATA.xlsx LOOKUPS sheet
-- How Aged: 25 codes with descriptions and valid-age pairings
-- How Sexed: 18 codes with descriptions
-- WRP: ~120 codes with descriptions
-- Capture Status / Code: full set (1, U, R, F, 4, 5, 6, 8, X)
-- Fat: expand to 0-7 (currently 0-5 + T)
-- Bird Status codes (base + additional info composites)
-- Disposition codes
+**5a. Upgrade code tables (from Hallie's doc, not full LOOKUPS)**
+- How Aged: 19 codes (BP, CC, CL, EG, EY, FB, FF, IC, LP, MB, MR, NA, NF, NL, NN, PL, RC, SK, OT)
+- How Sexed: 11 codes (BP, CC, CL, EG, EY, MB, NA, PL, TL, WL, OT)
+- WRP: 57 codes (FPJ…UUU) + Other — Hallie's station subset, not full ~120
+- Capture Status / Code: 1, U, R, F, 4, 5, 6, 8, X
+- Fat: 0–7 (0=None, 1=Trace, 2=Light, 3=Half, 4=Filled, 5=Bulging, 6=Gr. Bulging, 7=V. Excess)
+- Status: 300, 301, 318, 319, 333, 334, 380, 500, 700, "---" (Mortality), Other
+- Disposition: M, O, I, S, E, T, W, B, L, P, D
 - Molt Limits & Plumage codes (J, L, F, B, R, M, A, N, U)
 
 **5b. Add missing fields to BandingRecord**
 - Tail (mm), Tarsus (mm ##.##), Exposed Culmen (mm ##.##), Other measurement (mm ##.##)
 - Release Time (hh:mm with tap-to-fill-now button)
-- WRP molt cycle code (dropdown from full WRP code list)
+- WRP molt cycle code (dropdown from Hallie's 57-code subset + Other)
 - Juvenile Body Plumage (0-3)
 - Molt Limits & Plumage table (PCovs, SCovs, PP, SS, Tert, Rec, Body Plum, Non-Feather)
 - Disposition (M, O, I, S, E, T, W, B, L, P, D)

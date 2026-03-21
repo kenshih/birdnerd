@@ -114,12 +114,12 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 | **Capture Code** | Radio buttons (N, U, R, F, etc.) | Defaults based on band status. Restricted to valid options for selected band. |
 | **Species** | Autocomplete combobox | Type common name → ALPHA code auto-populates (or vice versa). Matches against 1,323 species from BBL. |
 | **Age** | Select | Options: U, L, HY, AHY, SY, ASY, TY, ATY. Makes How Aged optional if U. |
-| **How Aged** | Select (25 codes) | Only shown if Age ≠ U. Codes from CodeTable. "OT" (Other) requires note. |
+| **How Aged** | Select (19 codes) | BP, CC, CL, EG, EY, FB, FF, IC, LP, MB, MR, NA, NF, NL, NN, PL, RC, SK, OT. Only shown if Age ≠ U. "OT" requires note. |
 | **Sex** | Radio buttons (M, F, U) | Makes How Sexed optional if U. |
-| **How Sexed** | Select (18 codes) | Only shown if Sex ≠ U. Codes from CodeTable. "OT" (Other) requires note. |
+| **How Sexed** | Select (11 codes) | BP, CC, CL, EG, EY, MB, NA, PL, TL, WL, OT. Only shown if Sex ≠ U. "OT" requires note. |
 | **Molt fields** | Select (single letters/numbers) | Coded values per molt tables in CodeTable. |
 | **Morphometrics** | Number inputs | Wing/Tail in whole mm. Tarsus/Culmen/Other in ##.## precision. Mass in ##.# g. Validation: soft warnings if outside species range. |
-| **Status** | Composite code | Numeric (e.g., 300, 318, 500, 700). Built from base code + additional info. UI TBD: dropdown of presets vs. let user build? |
+| **Status** | Select | 300, 301, 318, 319, 333, 334, 380, 500, 700, "---" (Mortality), Other. 500 requires disposition + note. "---" requires note. |
 | **Release Time** | Time picker w/ button | "Tap to Fill" button populates current device time (HH:mm). |
 | **Notes** | Text area | Auto-populates when validation rules trigger. User can add/edit. |
 | **Feather Pull** | Checkbox | Default: unchecked (false). |
