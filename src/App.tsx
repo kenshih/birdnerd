@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import type { Session } from './types'
+import type { Session, Location } from './types'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
 import SessionView from './pages/SessionView'
 import PlaceholderPage from './pages/PlaceholderPage'
 import ExportPage from './pages/ExportPage'
+import LocationList from './pages/LocationList'
+import LocationDetail from './pages/LocationDetail'
 
 type AppView =
   | { mode: 'home' }
@@ -12,6 +14,7 @@ type AppView =
   | { mode: 'session'; session: Session }
   | { mode: 'band-inventory' }
   | { mode: 'locations' }
+  | { mode: 'location-detail'; location: Location }
   | { mode: 'export' }
   | { mode: 'feedback' }
 
@@ -51,11 +54,20 @@ export default function App() {
     )
   }
 
+  if (view.mode === 'location-detail') {
+    return (
+      <LocationDetail
+        location={view.location}
+        onBack={() => setView({ mode: 'locations' })}
+        onLocationUpdated={() => setView({ mode: 'locations' })}
+      />
+    )
+  }
+
   if (view.mode === 'locations') {
     return (
-      <PlaceholderPage
-        title="Project Locations"
-        description="Register banding locations, manage nets and traps at each site."
+      <LocationList
+        onSelectLocation={location => setView({ mode: 'location-detail', location })}
         onHome={goHome}
       />
     )

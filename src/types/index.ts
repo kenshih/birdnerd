@@ -69,3 +69,25 @@ export interface Session {
   date: string       // ISO date string "YYYY-MM-DD"
   createdAt: string
 }
+
+export interface Location {
+  id: string
+  banderLocationId: string   // 4-letter code e.g. "GCBS"
+  bblLocationId: string | null  // 6-letter BBL code, nullable until registered
+  name: string
+  latitude: number
+  longitude: number
+  country: string
+  stateProvince: string
+  remarks: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Net {
+  id: string
+  locationId: string         // FK to Location
+  label: string              // e.g. "1", "N-01", "Trap-A"
+  createdAt: string
+  updatedAt: string
+}

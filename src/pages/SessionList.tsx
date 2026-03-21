@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { Session } from '../types'
-import { getSessions, saveSession } from '../db'
-import { STATIONS } from '../data/codes'
+import type { Session, Location } from '../types'
+import { getSessions, saveSession, getLocations } from '../db'
 
 interface Props {
   onSelectSession: (session: Session) => void
@@ -18,12 +17,17 @@ function todayISO(): string {
 
 export default function SessionList({ onSelectSession, onHome }: Props) {
   const [sessions, setSessions] = useState<Session[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
   const [showNew, setShowNew] = useState(false)
-  const [newStation, setNewStation] = useState(STATIONS[0]?.code ?? '')
+  const [newStation, setNewStation] = useState('')
   const [newDate, setNewDate] = useState(todayISO())
 
   useEffect(() => {
     getSessions().then(setSessions)
+    getLocations().then(locs => {
+      setLocations(locs)
+      if (locs.length > 0) setNewStation(locs[0]!.banderLocationId)
+    })
   }, [])
 
   async function createSession() {
@@ -39,10 +43,16 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
     onSelectSession(session)
   }
 
+  // Find location name for display
+  function locationName(code: string): string {
+    const loc = locations.find(l => l.banderLocationId === code)
+    return loc ? loc.name : code
+  }
+
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-        <button onClick={onHome} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', padding: 0, lineHeight: 1 }} aria-label="Home">🏠</button>
+        <button onClick={onHome} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', padding: 0, lineHeight: 1 }} aria-label="Home">&#x1F3E0;</button>
         <h1 style={{ fontSize: '1.4rem', margin: 0 }}>Banding Sessions</h1>
       </div>
 
@@ -62,7 +72,12 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
             onChange={e => setNewStation(e.target.value)}
             style={inputStyle}
           >
-            {STATIONS.map(s => <option key={s.code} value={s.code}>{s.code} — {s.name}</option>)}
+            {locations.length === 0 && <option value="">No locations — add one first</option>}
+            {locations.map(loc => (
+              <option key={loc.id} value={loc.banderLocationId}>
+                {loc.banderLocationId} — {loc.name}
+              </option>
+            ))}
           </select>
 
           <label style={labelStyle}>Date</label>
@@ -74,7 +89,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
           />
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-            <button onClick={createSession} style={btnStyle('#2d6a4f')}>Create</button>
+            <button onClick={createSession} disabled={!newStation} style={btnStyle(newStation ? '#2d6a4f' : '#aaa')}>Create</button>
             <button onClick={() => setShowNew(false)} style={btnStyle('#888')}>Cancel</button>
           </div>
         </div>
@@ -87,7 +102,10 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
               onClick={() => onSelectSession(session)}
               style={sessionRowStyle}
             >
-              <span style={{ fontWeight: 600 }}>{session.station}</span>
+              <div>
+                <span style={{ fontWeight: 600 }}>{session.station}</span>
+                <span style={{ color: '#777', fontSize: '0.8rem', marginLeft: '0.5rem' }}>{locationName(session.station)}</span>
+              </div>
               <span style={{ color: '#555' }}>{session.date}</span>
             </button>
           </li>

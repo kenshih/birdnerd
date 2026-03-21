@@ -35,7 +35,7 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 
 ---
 
-## Phase 5 — Code Tables & New Fields
+### Phase 5 — Code Tables & New Fields ✅
 
 Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the banding form.
 
@@ -64,26 +64,13 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ---
 
-## Phase 6 — Location & Net Management
+### Phase 6 — Location & Net Management ✅
 
-Goal: Establish locations as the geographic and equipment foundation for banding operations.
-
-**6a. Create Location CRUD**
-- List all locations for the organization
-- Create/edit form: name, coordinates (lat/lon), country, state, bander location ID (4-letter code)
-- Remarks field
-- Form validation: BBL location ID initially nullable; filled in after submission to BBL
-
-**6b. Net Management (within Location)**
-- Location detail view includes net inventory
-- Add nets: label (e.g., "N-01", "Trap-A"), internal ID
-- Edit/delete nets
-- Nets are location-specific; reused across sessions
-- Display net count in location list view
-
-**6c. Data migration**
-- Move from free-text station picker to Location dropdown on session form
-- Migrate existing session station names → Location records
+- Location CRUD with bander ID (4-letter) + BBL ID (6-letter, nullable)
+- Net management within location detail (add/delete, sorted)
+- Centralized seed data config (src/data/seed.ts) — GCBS, MCFS, 10 nets
+- IndexedDB v2 with locations + nets stores, auto-seed on first load
+- Session station picker migrated from hardcoded STATIONS to Location dropdown
 
 ---
 
@@ -258,16 +245,11 @@ Goal: Export in agency-specific formats.
 - Lighter "in-the-field" utility mode
 
 **Platform**
-- Report bugs / give feedback mechanism
 - Color band resighting data collection
-- Bander Location ID reconciliation (app code vs BBL code)
 - Admin dashboard (org management, user role assignment, data import/export)
-- Session results rollups (New/Unbanded/Recaptured/Daily Total/Year Total) as derived metrics on session summary; Phase 5c/5d UI feature, not a data model change
 - Protocol-specific forms and validations (Mist-netting, Trapping, Nest-box Monitoring, Rehabbed-Bird, etc.)
 - Per-net/trap/nest metadata (type, coordinates within location, additional type-specific fields)
-- Session effort remarks presets (closed early due to wind/predators, opened late due to temp, etc.)
 - Rehab records: capture location vs release location (record both or allow override)
-- Band history: link band replacement/additional band events to the band timeline
 
 **Branding**
 - Vector art from bird drawings/photos for icons, splash, UI

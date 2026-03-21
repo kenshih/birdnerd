@@ -30,7 +30,8 @@ npm run dev -- --host  # also expose on local network (for iPhone testing)
 ## Code Organization
 
 - `src/types/` — shared TypeScript interfaces (edit here first when adding fields)
-- `src/data/` — species list and code tables (update species here, verify codes against IBP)
+- `src/data/` — species list, code tables, and seed data (update species here, verify codes against IBP)
+  - `src/data/seed.ts` — centralized seed/default data (locations, nets, etc.). Pre-populates IndexedDB on first load. Swap for an empty config to start fresh for new organizations or testing.
 - `src/db/` — IndexedDB read/write functions
 - `src/pages/` — top-level screen components
 - `src/components/` — reusable UI components

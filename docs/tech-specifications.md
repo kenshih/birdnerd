@@ -240,6 +240,10 @@ All imported from MASTER BANDING DATA.xlsx → LOOKUPS sheet:
 - **Hummingbird Band Prefixes** (prefix → alpha mapping)
 - **Molt Limits & Plumage** (J, L, F, B, R, M, A, N, U)
 
+### Seed Data
+
+All seed/default data is centralized in a single config file (`src/data/seed.ts`). This includes pre-populated locations, nets, banders, and any other reference data the app ships with. The seed file can be swapped for an empty config to start fresh (e.g., for new organizations or testing).
+
 ---
 
 ## 4. Offline & Sync Strategy
