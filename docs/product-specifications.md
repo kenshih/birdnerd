@@ -387,6 +387,10 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [ ] Session ↔ Banding linkage: How tight? Auto-populate session fields on banding form? Validate net against session's opened nets?
 - [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
 - [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
+- [ ] Status not required for unbanded birds (Hallie: "do NOT require Status entry if unbanded")
+- [ ] Session ID display on banding form: show date + location name, not raw ID
+- [ ] Protocol dropdown values: MAPS, Non-MAPS, Burrowing Owl Banding, Rehabbed-Bird Banding, Saw-whet Owl Banding (from Hallie's doc)
+- [ ] Precipitation enum values for weather: fog, thick fog, drizzle, rain (from Hallie's doc) -- perhaps let's not constrain this & leave it for open subjective notes rather than constrained values (we can give bander weather word cloud or somthing just to give them hints?)? from lat/lon arent the weather and vegetation info pretty detailed and robust?
 
 ### 8.3 Infrastructure
 
