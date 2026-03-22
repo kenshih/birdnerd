@@ -95,9 +95,7 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 - Release Time "tap to fill now" (already done in Phase 5)
 - Consistent PageHeader component: birdhouse home icon on all pages, back + home on sub-pages
 
----
-
-## Phase 9 — JSON Data Bundle
+### Phase 9 — JSON Data Bundle ✅
 
 **Tests (vitest + fake-indexeddb):** ✅
 - `validateBundle`: accepts valid bundles, rejects null/non-object/missing-version/newer-version/missing-arrays/non-array-entities
