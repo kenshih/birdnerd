@@ -1,6 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 import type { BirdRecord, Session, Location, Net, Person, Bander } from '../types'
-import { SEED_LOCATIONS, SEED_NETS, SEED_PEOPLE, SEED_BANDERS } from '../data/seed'
+import { loadSeedData } from '../utils/dataBundle'
 
 interface BirdNerdDB extends DBSchema {
   sessions: {
@@ -67,32 +67,15 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
     },
   })
 
-  // Seed locations and nets if empty
-  const existingLocations = await db.count('locations')
-  if (existingLocations === 0 && SEED_LOCATIONS.length > 0) {
-    const now = new Date().toISOString()
-    const tx = db.transaction(['locations', 'nets'], 'readwrite')
-    for (const loc of SEED_LOCATIONS) {
-      await tx.objectStore('locations').put({ ...loc, createdAt: now, updatedAt: now })
-    }
-    for (const net of SEED_NETS) {
-      await tx.objectStore('nets').put({ ...net, createdAt: now, updatedAt: now })
-    }
-    await tx.done
-  }
-
-  // Seed people and banders if empty
-  const existingPeople = await db.count('people')
-  if (existingPeople === 0 && SEED_PEOPLE.length > 0) {
-    const now = new Date().toISOString()
-    const tx = db.transaction(['people', 'banders'], 'readwrite')
-    for (const person of SEED_PEOPLE) {
-      await tx.objectStore('people').put({ ...person, createdAt: now, updatedAt: now })
-    }
-    for (const bander of SEED_BANDERS) {
-      await tx.objectStore('banders').put({ ...bander, createdAt: now, updatedAt: now })
-    }
-    await tx.done
+  // Seed from seed.json on first launch (all stores empty)
+  const counts = await Promise.all([
+    db.count('locations'),
+    db.count('people'),
+    db.count('sessions'),
+  ])
+  const isEmpty = counts.every(c => c === 0)
+  if (isEmpty) {
+    await loadSeedData()
   }
 
   return db
