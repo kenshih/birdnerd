@@ -4,7 +4,7 @@ import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
 import SessionView from './pages/SessionView'
 import PlaceholderPage from './pages/PlaceholderPage'
-import ExportPage from './pages/ExportPage'
+import DataManagerPage from './pages/DataManagerPage'
 import LocationList from './pages/LocationList'
 import LocationDetail from './pages/LocationDetail'
 import PeopleList from './pages/PeopleList'
@@ -46,7 +46,7 @@ export default function App() {
   }
 
   if (view.mode === 'export') {
-    return <ExportPage onHome={goHome} />
+    return <DataManagerPage onHome={goHome} />
   }
 
   if (view.mode === 'person-detail') {

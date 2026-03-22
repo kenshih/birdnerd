@@ -37,6 +37,14 @@ interface BirdNerdDB extends DBSchema {
 
 let db: IDBPDatabase<BirdNerdDB> | null = null
 
+/** Close and reset the cached DB connection. Used by tests for isolation. */
+export function resetDB() {
+  if (db) {
+    db.close()
+    db = null
+  }
+}
+
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
   db = await openDB<BirdNerdDB>('birdnerd', 3, {

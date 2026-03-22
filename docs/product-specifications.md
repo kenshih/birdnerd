@@ -389,6 +389,7 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 ### 8.2 UX & Workflow
 
+- [ ] Remove "Load Example Data (for Hallie)" button from Data Manager once real data is in use
 - [ ] JSON import merge mode: Currently replace-only; consider additive merge strategy for importing bundles without wiping existing data
 - [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
 - [ ] Required fields timing: When to start enforcing * required fields? (Target: Phase 11 Validation)

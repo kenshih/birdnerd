@@ -30,8 +30,9 @@ npm run dev -- --host  # also expose on local network (for iPhone testing)
 ## Code Organization
 
 - `src/types/` — shared TypeScript interfaces (edit here first when adding fields)
-- `src/data/` — species list, code tables, and seed data (update species here, verify codes against IBP)
-  - `src/data/seed.ts` — centralized seed/default data (locations, nets, etc.). Pre-populates IndexedDB on first load. Swap for an empty config to start fresh for new organizations or testing.
+- `src/data/` — species list, code tables, bundle schema (update species here, verify codes against IBP)
+  - `src/data/bundle-schema.ts` — DataBundle TypeScript interface + `BUNDLE_VERSION` constant (single source of truth for the backup format)
+  - `public/data/seed.json` — seed data loaded at runtime on first launch (same format as backup bundles)
 - `src/db/` — IndexedDB read/write functions
 - `src/pages/` — top-level screen components
 - `src/components/` — reusable UI components
@@ -41,6 +42,24 @@ npm run dev -- --host  # also expose on local network (for iPhone testing)
 1. Add it to `BirdRecord` in `src/types/index.ts`
 2. Add the input to `BirdRecordForm.tsx`
 3. Add any code table to `src/data/codes.ts` if needed
+
+## Testing
+
+```bash
+npm test              # run tests in watch mode (re-runs on file changes)
+npx vitest run        # single run (CI-friendly)
+```
+
+**Stack:** [Vitest](https://vitest.dev/) + [fake-indexeddb](https://github.com/nicedoc/fake-indexeddb) for IndexedDB integration tests.
+
+**Conventions:**
+- Test files live **next to the code they test**, named `*.test.ts` (e.g., `src/utils/dataBundle.test.ts` tests `src/utils/dataBundle.ts`)
+- `src/test/` is for **test infrastructure only** — setup files, shared fixtures, helpers. Not for test cases.
+
+**Writing new tests:**
+- Pure utility functions: test directly, no special setup needed
+- Functions that use IndexedDB: call `resetDB()` and `indexedDB.deleteDatabase('birdnerd')` in `beforeEach` for isolation
+- Mock `fetch` globally if your test triggers `getDB()` (which auto-seeds from seed.json on first call)
 
 ## Deployment (GitHub Pages)
 

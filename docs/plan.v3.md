@@ -99,11 +99,11 @@ Goal: Upgrade code tables to Hallie's curated sets and add missing fields to the
 
 ## Phase 9 — JSON Data Bundle
 
-**Unit tests:**
-- Export round-trip (export → import → data matches)
-- Version field validation, forward compatibility check
-- Replace import mode (wipe + load)
-- Older version import with field mapping/defaults
+**Tests (vitest + fake-indexeddb):** ✅
+- `validateBundle`: accepts valid bundles, rejects null/non-object/missing-version/newer-version/missing-arrays/non-array-entities
+- Export round-trip: export → import → all 6 entity types match
+- Replace mode: import wipes existing data, only imported data remains
+- Empty bundle import: clears all stores gracefully
 
 Goal: Portable backup/restore for all managed data. This is the primary persistence strategy before Postgres — IndexedDB + JSON export can comfortably handle a single station for years (~3K records/year ≈ 3-6 MB/year; IndexedDB handles 100K+ rows fine).
 
@@ -116,6 +116,7 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 - UI: add "Data Backup" section to the renamed "Data Manager" page (separate from existing CSV session export)
 - Future entities (Bands, etc.) added to the bundle as they are built
 - Existing CSV import/export for banding records remains independent (simpler per-session workflow)
+- "Load Example Data (for Hallie)" button on Data Manager page — loads `public/data/example-data.json` (seed + sample session) for demo/testing purposes (temporary — remove once real data is in use)
 
 ---
 

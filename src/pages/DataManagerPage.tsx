@@ -89,6 +89,25 @@ export default function ExportPage({ onHome }: Props) {
     }
   }
 
+  async function handleLoadExample() {
+    const ok = confirm(
+      'This will replace ALL existing data with example data (seed + sample session).\n\nContinue?'
+    )
+    if (!ok) return
+    try {
+      const resp = await fetch(import.meta.env.BASE_URL + 'data/example-data.json')
+      if (!resp.ok) { setImportStatus('Could not load example data file.'); return }
+      const data = await resp.json()
+      const error = validateBundle(data)
+      if (error) { setImportStatus(error); return }
+      await importDataBundle(data)
+      setImportStatus('Example data loaded successfully.')
+      await loadData()
+    } catch {
+      setImportStatus('Failed to load example data.')
+    }
+  }
+
   return (
     <div style={styles.page}>
       <PageHeader title="Data Manager" onHome={onHome} />
@@ -168,6 +187,12 @@ export default function ExportPage({ onHome }: Props) {
             {importStatus && (
               <p style={styles.importStatus}>{importStatus}</p>
             )}
+
+            {/* TODO: Remove this button once Hallie has real data */}
+            <div style={styles.divider} />
+            <button onClick={handleLoadExample} style={styles.exampleBtn}>
+              Load Example Data (for Hallie)
+            </button>
           </div>
         </>
       )}
@@ -292,5 +317,15 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     fontSize: '0.85rem',
     color: '#155724',
+  },
+  exampleBtn: {
+    padding: '0.7rem',
+    background: '#e9ecef',
+    color: '#495057',
+    border: '1px dashed #adb5bd',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '0.85rem',
+    fontWeight: 500,
   },
 }
