@@ -9,7 +9,7 @@ The ER diagram uses colors to categorize entity types:
 - **Pink** — General BirdNerd operational entities (core business objects)
   - Organization, Person, User, Bander, Location, Net, Band, BandingRecord
 - **Orange** — Session-related data (tracking one banding session and its participants/efforts)
-  - Session, SessionNetLog, SessionBanderLog, WeatherReading
+  - Session (includes flattened weather readings), SessionNetLog, SessionBanderLog
   - *Note: May be split into separate schema in future phases for multi-tenant data isolation*
 - **Green** — Reference data from canonical external sources (imported, read-mostly)
   - Species (from USGS BBL master list)
@@ -73,10 +73,16 @@ erDiagram
         string protocol
         string maps_period
         string master_bander_id
-        string weather_open_id
-        string weather_close_id
         datetime open_time
         datetime close_time
+        number open_temp
+        number open_wind
+        number open_cloud_cover
+        string open_precipitation
+        number close_temp
+        number close_wind
+        number close_cloud_cover
+        string close_precipitation
         string notes
         datetime created
         datetime updated
@@ -103,17 +109,6 @@ erDiagram
         string id
         string session_id
         string bander_id
-        datetime created
-        datetime updated
-    }
-
-    WeatherReading {
-        string id
-        string reading_type
-        number temperature
-        number wind
-        number cloud_cover
-        string precipitation
         datetime created
         datetime updated
     }
@@ -217,7 +212,6 @@ erDiagram
     Location ||--o{ Session : hosts
     Session ||--o{ SessionNetLog : includes
     Session ||--o{ SessionBanderLog : includes
-    Session ||--o{ WeatherReading : records
     Session ||--o{ BandingRecord : contains
 
     Net ||--o{ SessionNetLog : logs
@@ -238,7 +232,7 @@ erDiagram
     classDef immutable fill:#ffffff,stroke:#666,stroke-width:2px,color:#000
     
     class Organization,Person,User,Bander,Location,Net,Band,BandingRecord entitySpec
-    class Session,SessionNetLog,SessionBanderLog,WeatherReading sessionData
+    class Session,SessionNetLog,SessionBanderLog sessionData
     class Species,CodeTable referenceData
     class ChangeLog immutable
 ```
@@ -262,7 +256,7 @@ graph LR
     end
 
     subgraph Model["🗄️ BirdNerd Database"]
-        B[("BirdNerd<br/>14 entities<br/>+ ChangeLog<br/>IndexedDB ↔ Supabase")]
+        B[("BirdNerd<br/>13 entities<br/>+ ChangeLog<br/>IndexedDB ↔ Supabase")]
     end
 
     subgraph Upload["📤 Agency Uploads"]

@@ -118,9 +118,11 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 ---
 
-## Phase 10 — Session Data Expansion
+## Phase 10 — Session Form & Views
 
-Goal: Build out session metadata to match the Banding Metadata Sheet and the entity model.
+Goal: Expand session metadata and build list/detail views.
+
+**Breaking change:** Rename `Session.station` → `Session.locationId` (FK to Location). This is a clean-slate change — update `birdnerd-full-sample.json` and bump bundle version. Existing sessions will need re-import via JSON bundle.
 
 **10a. Session form updates**
 - Location dropdown (from Phase 6)
@@ -131,27 +133,34 @@ Goal: Build out session metadata to match the Banding Metadata Sheet and the ent
 - Bander Roster: multi-select or checkboxes for SessionBanderLog (all active org banders)
 - Session open/close times (datetime)
 
-**10b. Weather & Effort Tracking**
-- Session: open and close weather readings (WeatherReading entity)
-  - Temperature (C), Wind (Beaufort/mph), Cloud Cover (%), Precipitation (enum)
+**10b. Session list & summary**
+- Session list view: date, location, protocol, master bander, record count
+- Session detail: edit form, linked banding records, session-level stats (new/unbanded/recaptured counts from records)
+- Session delete with cascade confirmation (deletes banding records + bander log entries; see ux-spec § 1.2)
+- All form fields soft-required (highlighted but always saveable; see ux-spec § 1.3)
+
+---
+
+## Phase 11 — Weather & Effort Tracking
+
+Goal: Per-session weather and per-net effort logging.
+
+- Weather fields on Session (flattened, no separate entity):
+  - open/close: Temperature (C), Wind (Beaufort), Cloud Cover (%), Precipitation (enum)
 - SessionNetLog: per-net effort tracking
   - Which nets opened (from location inventory)
   - Open/close time per net (may differ from session times)
   - Remarks per net (wind, predators, low temps, etc.)
 - Auto-calculated: net-hours per net and total session effort
 
-**10c. Session list & summary**
-- Session list view: date, location, protocol, master bander, record count
-- Session detail: edit form, linked banding records, session-level stats (new/unbanded/recaptured counts from records)
-
 ---
 
-## Phase 11 — Validation (Soft Warnings)
+## Phase 12 — Validation (Soft Warnings)
 
 **Unit tests to add alongside validation:**
 - Validation rule logic (sex/CP/BP conflicts, required-field triggers, override mechanism)
 - CSV import/export round-trip (all field types: string, number, boolean)
-- IBP → BBL code translation (Phase 14 prerequisite)
+- IBP → BBL code translation (Phase 15 prerequisite)
 
 Goal: Implement priority validation rules (red items from specification).
 
@@ -169,7 +178,7 @@ Goal: Implement priority validation rules (red items from specification).
 
 ---
 
-## Phase 12 — Band Inventory
+## Phase 13 — Band Inventory
 
 Goal: Band lifecycle management per BBL requirements.
 
@@ -183,7 +192,7 @@ Goal: Band lifecycle management per BBL requirements.
 
 ---
 
-## Phase 13 — Photo Capture (Web Share)
+## Phase 14 — Photo Capture (Web Share)
 
 Goal: Attach photos to banding records without app-side storage — use the device camera, auto-name the file, and share to Google Drive (or any target) via the Web Share API.
 
@@ -199,7 +208,7 @@ Goal: Attach photos to banding records without app-side storage — use the devi
 
 ---
 
-## Phase 14 — Agency Export
+## Phase 15 — Agency Export
 
 **Unit tests to add alongside export:**
 - IBP → BBL code mappings (every field with dual coding)

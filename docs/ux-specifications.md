@@ -49,6 +49,30 @@ This ensures every page has a consistent way to return home, regardless of navig
 
 **Accessibility:** The home button must include `alt="Home"` on the image, `aria-label="Home"` on the button element, and `title="Home"` for hover tooltip on desktop.
 
+### 1.2 Cascade Delete Confirmation
+
+When deleting an entity that has dependent data, show a confirmation dialog that explains what will be deleted:
+
+```
+┌──────────────────────────────────────┐
+│  Delete Session?                     │
+│                                      │
+│  This will also delete:              │
+│  • 42 banding records                │
+│  • 3 bander log entries              │
+│                                      │
+│  This cannot be undone.              │
+│                                      │
+│  [Cancel]  [Delete]                  │
+└──────────────────────────────────────┘
+```
+
+Applies to: Session (→ records, bander logs), Location (→ nets), Person (→ bander associations). Always list the count and type of dependent records.
+
+### 1.3 Soft-Required Fields
+
+Fields marked "soft-required" are visually highlighted (e.g., subtle border or label indicator) but do not block saving. The form can always be submitted with partial data. Enforcement of required fields is deferred to the Validation phase (Phase 12).
+
 ---
 
 ## 2. Banding Data Collection Form
@@ -217,16 +241,16 @@ Triggered from within a banding record. No photos are stored in the app — only
 
 | Field | Type | Source | Notes |
 |-------|------|--------|-------|
-| **Location** | Dropdown | Location table | Required. Locked to one organization. |
-| **Session Date** | Date picker | User input | Required. ISO format (YYYY-MM-DD). |
-| **Protocol** | Select | CodeTable | Required. Options: MAPS, Non-MAPS, Burrowing Owl, Rehabbed-Bird, Saw-whet Owl, etc. |
+| **Location** | Dropdown | Location table | Soft-required. Locked to one organization. |
+| **Session Date** | Date picker | User input | Soft-required. ISO format (YYYY-MM-DD). |
+| **Protocol** | Select | CodeTable | Soft-required. Options: MAPS, Non-MAPS, Burrowing Owl, Rehabbed-Bird, Saw-whet Owl, etc. |
 | **MAPS Period** | Number input | User input | Optional. 1–10 if MAPS protocol. |
-| **Open Time** | Time picker | User input | Required. When nets opened. |
-| **Close Time** | Time picker | User input | Required. When nets closed. |
-| **Master Bander** | Dropdown | Bander table, sorted by role | Required. Dropdown shows: Master Banders first, then Sub-permittees, then Banders. Active only. |
-| **Session Participants** | Multi-select checkboxes | Bander table, active only | Required (≥1). Shows all active banders + their roles. Creates SessionBanderLog entries. |
-| **Weather @ Open** | Weather form | Weather table | Optional. Temp, wind, cloud cover, precipitation. |
-| **Weather @ Close** | Weather form | Weather table | Optional. Temp, wind, cloud cover, precipitation. |
+| **Open Time** | Time picker | User input | Soft-required. When nets opened. |
+| **Close Time** | Time picker | User input | Soft-required. When nets closed. |
+| **Master Bander** | Dropdown | Bander table, sorted by role | Soft-required. Dropdown shows: Master Banders first, then Sub-permittees, then Banders. Active only. |
+| **Session Participants** | Multi-select checkboxes | Bander table, active only | Soft-required (≥1). Shows all active banders + their roles. Creates SessionBanderLog entries. |
+| **Weather @ Open** | Inline fields | Session table | Optional. Temp (°C), Wind (Beaufort), Cloud Cover (%), Precipitation. |
+| **Weather @ Close** | Inline fields | Session table | Optional. Temp (°C), Wind (Beaufort), Cloud Cover (%), Precipitation. |
 | **Notes** | Text area | User input | Optional. Session-level notes. |
 
 **Linked Data:**

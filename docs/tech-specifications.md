@@ -47,7 +47,7 @@ The complete data model with 14 entities organized by category. See [entities.md
 ### Entity Categories
 
 - **Pink (Operational):** Organization, Person, User, Bander, Location, Net, Band, BandingRecord
-- **Orange (Session):** Session, SessionNetLog, SessionBanderLog, WeatherReading
+- **Orange (Session):** Session (includes flattened weather), SessionNetLog, SessionBanderLog
 - **Green (Reference):** Species, CodeTable — static resource files, not DB tables (no FK relationships)
 - **White (Immutable):** ChangeLog
 
@@ -96,8 +96,11 @@ The complete data model with 14 entities organized by category. See [entities.md
 - **protocol** (enum: MAPS, Non-MAPS, Burrowing Owl, Rehabbed-Bird, Saw-whet Owl, etc.)
 - **maps_period** (number, 1-10, nullable)
 - **master_bander_id** (FK to Bander)
-- **weather_open_id, weather_close_id** (FK to WeatherReading)
 - **open_time, close_time** (datetime)
+- **open_temp, close_temp** (number, Celsius, nullable)
+- **open_wind, close_wind** (number, Beaufort scale, nullable)
+- **open_cloud_cover, close_cloud_cover** (number, 0-100 percent, nullable)
+- **open_precipitation, close_precipitation** (enum: clear, fog, thick fog, drizzle, rain, snow; nullable)
 - **notes** (string)
 - **created, updated** (datetime)
 
@@ -119,15 +122,6 @@ The complete data model with 14 entities organized by category. See [entities.md
 - **id** (string, PK)
 - **session_id** (FK to Session)
 - **bander_id** (FK to Bander)
-- **created, updated** (datetime)
-
-#### WeatherReading
-- **id** (string, PK)
-- **reading_type** (enum: "session_open", "session_close")
-- **temperature** (number, Celsius)
-- **wind** (number, Beaufort/mph)
-- **cloud_cover** (number, 0-100 percent)
-- **precipitation** (enum: clear, fog, thick fog, drizzle, rain, snow)
 - **created, updated** (datetime)
 
 #### Band
