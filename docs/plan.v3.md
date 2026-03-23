@@ -183,7 +183,23 @@ Goal: Band lifecycle management per BBL requirements.
 
 ---
 
-## Phase 13 — Agency Export
+## Phase 13 — Photo Capture (Web Share)
+
+Goal: Attach photos to banding records without app-side storage — use the device camera, auto-name the file, and share to Google Drive (or any target) via the Web Share API.
+
+- Add `photo_filename` field to BandingRecord (string, nullable)
+- Camera input via `<input type="file" accept="image/*" capture="environment">`
+- Photo review modal: shows captured image with auto-generated filename
+  - Naming convention: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg` (e.g., `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`)
+  - User can edit/add a suffix (wing, tail, head, or free text)
+- "Save to Drive" button triggers `navigator.share({ files: [...] })` with the pre-named file
+- Native share sheet opens → user picks Google Drive (or other app)
+- On return, user confirms save → filename stored on the banding record
+- Photo Log view (future): browse records that have photo filenames, grouped by session
+
+---
+
+## Phase 14 — Agency Export
 
 **Unit tests to add alongside export:**
 - IBP → BBL code mappings (every field with dual coding)
@@ -201,7 +217,7 @@ Goal: Export in agency-specific formats.
 
 ---
 
-## Phase 14 — Schema Migration Framework
+## Phase 15 — Schema Migration Framework
 
 **Unit tests:**
 - Migration runner: each migration applies cleanly, version tracking works
@@ -210,29 +226,29 @@ Goal: Export in agency-specific formats.
 Goal: Formalize versioned schema migrations before adding cloud sync.
 
 - Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
-- Retroactively capture Phases 3-13 schema changes as migrations
-- Write each migration with a corresponding Postgres migration (for Phase 15 Supabase cutover)
+- Retroactively capture Phases 3-14 schema changes as migrations
+- Write each migration with a corresponding Postgres migration (for Phase 16 Supabase cutover)
 - See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
 
 ---
 
-## Phase 15 — Cloud Sync & Auth
+## Phase 16 — Cloud Sync & Auth
 
 Goal: Move from offline-only to synced multi-user. Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records.
 
-**15a. Multi-tenant data model**
+**16a. Multi-tenant data model**
 - Organization as top-level unit (already modeled)
 - User entity for authentication (email + password via Supabase Auth)
 - Bander entity links Person → Organization
 - Record-level filters by organization (row-level security)
 
-**15b. Supabase integration**
+**16b. Supabase integration**
 - Postgres backend for all operational entities (Species and CodeTable remain static resource files)
 - Auth: email or Google (Supabase Auth)
 - Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
 - Import existing JSON data bundles into Postgres on first sync
 
-**15c. API & SDKs**
+**16c. API & SDKs**
 - Auto-generate API (OpenAPI or GraphQL) from Postgres schema
 - Supabase client SDK (supabase-js) for real-time subscriptions (optional future)
 - No SSR — client-side rendering only
@@ -242,8 +258,6 @@ Goal: Move from offline-only to synced multi-user. Consider when: multiple stati
 ## Backlog (unordered — to be phased later)
 
 **Media**
-- Photo capture attached to records with labels (WING, TAIL, HEAD — combobox)
-- Photo log / visual database with auto-named exports
 - Speech-to-text (STT) input for field entry
 
 **Advanced Validation**

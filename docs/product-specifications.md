@@ -20,7 +20,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Session Module** — Create and manage banding sessions (location, date, protocol, weather, effort tracking).
 
-**Banding Data Collection** — Primary form for recording individual bird encounters (90% of field time).
+**Banding Data Collection** — Primary form for recording individual bird encounters (90% of field time). Includes **Photo Capture** — take photos of birds via the device camera, auto-name them from the record context (date, station, species, band number, label), and share to Google Drive or other storage via the Web Share API. No photos are stored in the app — only the filename is saved on the record as a reference.
 
 **Location Manager** — CRUD for project locations and associated nets.
 
@@ -401,7 +401,7 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 ### 8.3 Infrastructure
 
-- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. Target: Phase 14. See plan.v3.md.
+- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. Target: Phase 15. See plan.v3.md.
 - [ ] **Multi-tenancy / Organization support:** When Organization entity becomes a first-class concept, update JSON bundle file naming convention to include org code (e.g., `birdnerd-GCBS-2026-03-21.json` instead of `birdnerd-2026-03-21.json`)
 
 ### 8.4 Code Systems

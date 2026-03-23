@@ -22,7 +22,8 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
 │                                     │
-│  Future: Photo Log, Addendums       │
+│  Future: Photo Log (Phase 13),       │
+│          Addendums                   │
 └─────────────────────────────────────┘
 ```
 
@@ -158,6 +159,31 @@ This ensures every page has a consistent way to return home, regardless of navig
 5. **User selects "UNBANDED"**
    - Action: Capture Code = "U"
    - Status field becomes optional
+
+### 2.3 Photo Capture Flow
+
+Triggered from within a banding record. No photos are stored in the app — only the filename is saved as a reference.
+
+1. **User taps "Photo" button** on the banding record form (in the Additional Information section)
+2. **Device camera launches** via `<input type="file" accept="image/*" capture="environment">`
+3. **Photo review modal appears** showing:
+   - The captured image (preview)
+   - Auto-generated filename: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg`
+     - Example: `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`
+   - Editable suffix field (preset options: WING, TAIL, HEAD, BODY, BAND + free text)
+4. **User taps "Save to Drive"** → triggers `navigator.share({ files: [namedFile] })`
+   - Native share sheet opens with the pre-named file
+   - User selects Google Drive (or any other installed app)
+   - User picks folder and confirms save in the target app
+5. **User returns to BirdNerd** and taps "Confirm Saved"
+   - Filename is stored on the banding record (`photo_filename` field)
+   - Photo thumbnail remains visible on the record (from browser cache) for the duration of the session
+6. **Cancel / Retake** — user can dismiss the modal or retake at any point before confirming
+
+**Notes:**
+- The app has no confirmation callback from the share target — the "Confirm Saved" step is trust-based
+- Multiple photos per record: user can repeat the flow; filenames are appended (comma-separated or array)
+- Offline: camera capture and naming work offline; share requires the target app to handle offline queuing (Google Drive does this)
 
 ---
 
@@ -464,7 +490,7 @@ The Data Manager page has two sections: **Session Data** (per-session CSV export
 
 ## 9. Future Screen Ideas
 
-- **Photo Log** — Attach photos to banding records
+- **Photo Log** — Browse records with photo references, grouped by session (planned in Phase 13)
 - **Datasheet Addendums** — Field notes, special observations, protocols
 - **Band History** — Click a banded bird → show all previous encounters
 - **Session Summary** — End-of-day report + effort calculation
