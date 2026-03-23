@@ -217,44 +217,6 @@ Goal: Export in agency-specific formats.
 
 ---
 
-## Phase 15 — Schema Migration Framework
-
-**Unit tests:**
-- Migration runner: each migration applies cleanly, version tracking works
-- Data integrity after migration (existing records survive schema changes)
-
-Goal: Formalize versioned schema migrations before adding cloud sync.
-
-- Implement a numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
-- Retroactively capture Phases 3-14 schema changes as migrations
-- Write each migration with a corresponding Postgres migration (for Phase 16 Supabase cutover)
-- See [product-specifications.md § 8.3](product-specifications.md#8-open-decisions--todos) for full context
-
----
-
-## Phase 16 — Cloud Sync & Auth
-
-Goal: Move from offline-only to synced multi-user. Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records.
-
-**16a. Multi-tenant data model**
-- Organization as top-level unit (already modeled)
-- User entity for authentication (email + password via Supabase Auth)
-- Bander entity links Person → Organization
-- Record-level filters by organization (row-level security)
-
-**16b. Supabase integration**
-- Postgres backend for all operational entities (Species and CodeTable remain static resource files)
-- Auth: email or Google (Supabase Auth)
-- Data sync: local IndexedDB ↔ Supabase (conflict resolution TBD)
-- Import existing JSON data bundles into Postgres on first sync
-
-**16c. API & SDKs**
-- Auto-generate API (OpenAPI or GraphQL) from Postgres schema
-- Supabase client SDK (supabase-js) for real-time subscriptions (optional future)
-- No SSR — client-side rendering only
-
----
-
 ## Backlog (unordered — to be phased later)
 
 **Media**
@@ -281,6 +243,18 @@ Goal: Move from offline-only to synced multi-user. Consider when: multiple stati
 - Standalone band code lookup tool
 - Scientific name / definition lookup
 - Lighter "in-the-field" utility mode
+
+**Schema Migration Framework** (was Phase 15)
+- Numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
+- Retroactively capture schema changes as migrations
+- Write each migration with a corresponding Postgres migration (for Supabase cutover)
+- Unit tests: migration runner, data integrity after migration
+
+**Cloud Sync & Auth** (was Phase 16)
+- Multi-tenant data model: Organization as top-level, User entity, row-level security
+- Supabase integration: Postgres backend, Auth (email/Google), IndexedDB ↔ Supabase sync
+- API & SDKs: auto-generated API, supabase-js client
+- Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records
 
 **Platform**
 - Color band resighting data collection
