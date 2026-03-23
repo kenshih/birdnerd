@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import type { BirdRecord, Session } from '../types'
-import { getSessions, getRecordsBySession } from '../db'
+import type { BirdRecord, Session, Location } from '../types'
+import { getSessions, getRecordsBySession, getLocations } from '../db'
 import { exportSessionCSV } from '../utils/exportCsv'
 import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
 import type { DataBundle } from '../data/bundle-schema'
@@ -12,15 +12,21 @@ interface Props {
 
 export default function ExportPage({ onHome }: Props) {
   const [sessions, setSessions] = useState<Session[]>([])
+  const [locations, setLocations] = useState<Location[]>([])
   const [allRecords, setAllRecords] = useState<Map<string, BirdRecord[]>>(new Map())
   const [loading, setLoading] = useState(true)
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  function locationCode(locId: string): string {
+    return locations.find(l => l.id === locId)?.banderLocationId ?? ''
+  }
+
   async function loadData() {
-    const sess = await getSessions()
+    const [sess, locs] = await Promise.all([getSessions(), getLocations()])
     sess.sort((a, b) => b.date.localeCompare(a.date))
     setSessions(sess)
+    setLocations(locs)
 
     const map = new Map<string, BirdRecord[]>()
     for (const s of sess) {
@@ -42,8 +48,8 @@ export default function ExportPage({ onHome }: Props) {
       if (recs) allRecs.push(...recs)
     }
     if (allRecs.length === 0) { alert('No records to export.'); return }
-    const combined: Session = { id: 'all', station: 'all', date: new Date().toISOString().slice(0, 10), createdAt: '' }
-    exportSessionCSV(combined, allRecs)
+    const combined: Session = { id: 'all', locationId: '', date: new Date().toISOString().slice(0, 10), createdAt: '', updatedAt: '' }
+    exportSessionCSV(combined, allRecs, 'all')
   }
 
   async function handleExportBackup() {
@@ -67,8 +73,9 @@ export default function ExportPage({ onHome }: Props) {
       }
 
       const bundle = data as DataBundle
+      const sblCount = bundle.sessionBanderLogs?.length ?? 0
       const count = bundle.locations.length + bundle.nets.length + bundle.people.length +
-        bundle.banders.length + bundle.sessions.length + bundle.records.length
+        bundle.banders.length + bundle.sessions.length + sblCount + bundle.records.length
 
       const ok = confirm(
         `This will replace ALL existing data with the backup contents:\n\n` +
@@ -137,13 +144,13 @@ export default function ExportPage({ onHome }: Props) {
                   return (
                     <div key={s.id} style={styles.card}>
                       <div style={styles.cardHeader}>
-                        <strong>{s.station}</strong>
+                        <strong>{locationCode(s.locationId)}</strong>
                         <span style={styles.date}>{s.date}</span>
                       </div>
                       <div style={styles.cardBody}>
                         <span>{recs.length} record{recs.length !== 1 ? 's' : ''}</span>
                         {recs.length > 0 && (
-                          <button onClick={() => exportSessionCSV(s, recs)} style={styles.exportBtn}>
+                          <button onClick={() => exportSessionCSV(s, recs, locationCode(s.locationId))} style={styles.exportBtn}>
                             ↓ CSV
                           </button>
                         )}

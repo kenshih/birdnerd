@@ -4,12 +4,13 @@ import { getDB } from '../db'
 /** Export all managed data as a DataBundle object. */
 export async function exportDataBundle(): Promise<DataBundle> {
   const db = await getDB()
-  const [locations, nets, people, banders, sessions, records] = await Promise.all([
+  const [locations, nets, people, banders, sessions, sessionBanderLogs, records] = await Promise.all([
     db.getAll('locations'),
     db.getAll('nets'),
     db.getAll('people'),
     db.getAll('banders'),
     db.getAll('sessions'),
+    db.getAll('sessionBanderLogs'),
     db.getAll('records'),
   ])
   return {
@@ -20,6 +21,7 @@ export async function exportDataBundle(): Promise<DataBundle> {
     people,
     banders,
     sessions,
+    sessionBanderLogs,
     records,
   }
 }
@@ -51,7 +53,38 @@ export function validateBundle(data: unknown): string | null {
     if (!Array.isArray(bundle[key])) return `Invalid bundle: missing or invalid "${key}" array`
   }
 
+  // sessionBanderLogs added in v2 — optional for v1 bundles
+  if (bundle.sessionBanderLogs !== undefined && !Array.isArray(bundle.sessionBanderLogs)) {
+    return 'Invalid bundle: "sessionBanderLogs" must be an array'
+  }
+
   return null
+}
+
+/**
+ * Migrate a v1 bundle to v2 format.
+ * v1 sessions had { station: string } — v2 uses { locationId: string, updatedAt: string, ... }
+ */
+function migrateV1ToV2(bundle: Record<string, unknown>): void {
+  const sessions = bundle.sessions as Record<string, unknown>[]
+  const locations = bundle.locations as Array<{ id: string; banderLocationId: string }>
+
+  for (const session of sessions) {
+    if ('station' in session && !('locationId' in session)) {
+      // Map station code (e.g. "GCBS") to location ID
+      const loc = locations.find(l => l.banderLocationId === session.station)
+      session.locationId = loc?.id ?? ''
+      delete session.station
+    }
+    if (!session.updatedAt) {
+      session.updatedAt = session.createdAt as string
+    }
+  }
+
+  // Ensure sessionBanderLogs exists (empty for v1)
+  if (!bundle.sessionBanderLogs) {
+    bundle.sessionBanderLogs = []
+  }
 }
 
 /**
@@ -59,11 +92,15 @@ export function validateBundle(data: unknown): string | null {
  * Caller should validate the bundle first with validateBundle().
  */
 export async function importDataBundle(bundle: DataBundle): Promise<void> {
+  // Apply migrations for older bundle versions
+  const raw = bundle as unknown as Record<string, unknown>
+  if ((raw.version as number) < 2) migrateV1ToV2(raw)
+
   const db = await getDB()
 
   // Wipe all stores and reload from bundle in a single transaction
   const tx = db.transaction(
-    ['locations', 'nets', 'people', 'banders', 'sessions', 'records'],
+    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'records'],
     'readwrite',
   )
 
@@ -74,6 +111,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
     tx.objectStore('people').clear(),
     tx.objectStore('banders').clear(),
     tx.objectStore('sessions').clear(),
+    tx.objectStore('sessionBanderLogs').clear(),
     tx.objectStore('records').clear(),
   ])
 
@@ -83,6 +121,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   for (const person of bundle.people) await tx.objectStore('people').put(person)
   for (const bander of bundle.banders) await tx.objectStore('banders').put(bander)
   for (const session of bundle.sessions) await tx.objectStore('sessions').put(session)
+  for (const sbl of (bundle.sessionBanderLogs ?? [])) await tx.objectStore('sessionBanderLogs').put(sbl)
   for (const record of bundle.records) await tx.objectStore('records').put(record)
 
   await tx.done

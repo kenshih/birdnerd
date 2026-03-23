@@ -1,12 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BirdRecord, Session, Location, Net, Person, Bander } from '../types'
+import type { BirdRecord, Session, SessionBanderLog, Location, Net, Person, Bander } from '../types'
 import { loadSeedData } from '../utils/dataBundle'
 
 interface BirdNerdDB extends DBSchema {
   sessions: {
     key: string
     value: Session
-    indexes: { 'by-date': string }
+    indexes: { 'by-date': string; 'by-location': string }
   }
   records: {
     key: string
@@ -33,6 +33,11 @@ interface BirdNerdDB extends DBSchema {
     value: Bander
     indexes: { 'by-person': string }
   }
+  sessionBanderLogs: {
+    key: string
+    value: SessionBanderLog
+    indexes: { 'by-session': string }
+  }
 }
 
 let db: IDBPDatabase<BirdNerdDB> | null = null
@@ -47,8 +52,8 @@ export function resetDB() {
 
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
-  db = await openDB<BirdNerdDB>('birdnerd', 3, {
-    upgrade(database, oldVersion) {
+  db = await openDB<BirdNerdDB>('birdnerd', 4, {
+    upgrade(database, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         const sessionStore = database.createObjectStore('sessions', { keyPath: 'id' })
         sessionStore.createIndex('by-date', 'date')
@@ -71,6 +76,20 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
 
         const banderStore = database.createObjectStore('banders', { keyPath: 'id' })
         banderStore.createIndex('by-person', 'personId')
+      }
+
+      if (oldVersion < 4) {
+        // Add by-location index to sessions
+        if (database.objectStoreNames.contains('sessions')) {
+          const sessionStore = transaction.objectStore('sessions')
+          if (!sessionStore.indexNames.contains('by-location')) {
+            sessionStore.createIndex('by-location', 'locationId')
+          }
+        }
+
+        // New store for session bander logs
+        const sblStore = database.createObjectStore('sessionBanderLogs', { keyPath: 'id' })
+        sblStore.createIndex('by-session', 'sessionId')
       }
     },
   })
@@ -95,9 +114,25 @@ export async function getSessions(): Promise<Session[]> {
   return db.getAllFromIndex('sessions', 'by-date')
 }
 
+export async function getSession(id: string): Promise<Session | undefined> {
+  const db = await getDB()
+  return db.get('sessions', id)
+}
+
 export async function saveSession(session: Session): Promise<void> {
   const db = await getDB()
   await db.put('sessions', session)
+}
+
+export async function deleteSession(id: string): Promise<void> {
+  const db = await getDB()
+  const records = await db.getAllFromIndex('records', 'by-session', id)
+  const banderLogs = await db.getAllFromIndex('sessionBanderLogs', 'by-session', id)
+  const tx = db.transaction(['sessions', 'records', 'sessionBanderLogs'], 'readwrite')
+  for (const r of records) await tx.objectStore('records').delete(r.id)
+  for (const bl of banderLogs) await tx.objectStore('sessionBanderLogs').delete(bl.id)
+  await tx.objectStore('sessions').delete(id)
+  await tx.done
 }
 
 // Records
@@ -208,4 +243,43 @@ export async function saveBander(bander: Bander): Promise<void> {
 export async function deleteBander(id: string): Promise<void> {
   const db = await getDB()
   await db.delete('banders', id)
+}
+
+// Session Bander Logs
+export async function getSessionBanderLogs(sessionId: string): Promise<SessionBanderLog[]> {
+  const db = await getDB()
+  return db.getAllFromIndex('sessionBanderLogs', 'by-session', sessionId)
+}
+
+export async function getAllSessionBanderLogs(): Promise<SessionBanderLog[]> {
+  const db = await getDB()
+  return db.getAll('sessionBanderLogs')
+}
+
+export async function saveSessionBanderLog(log: SessionBanderLog): Promise<void> {
+  const db = await getDB()
+  await db.put('sessionBanderLogs', log)
+}
+
+export async function deleteSessionBanderLog(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('sessionBanderLogs', id)
+}
+
+export async function replaceSessionBanderLogs(sessionId: string, banderIds: string[]): Promise<void> {
+  const db = await getDB()
+  const existing = await db.getAllFromIndex('sessionBanderLogs', 'by-session', sessionId)
+  const tx = db.transaction('sessionBanderLogs', 'readwrite')
+  for (const log of existing) await tx.store.delete(log.id)
+  const now = new Date().toISOString()
+  for (const banderId of banderIds) {
+    await tx.store.put({
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      sessionId,
+      banderId,
+      createdAt: now,
+      updatedAt: now,
+    })
+  }
+  await tx.done
 }

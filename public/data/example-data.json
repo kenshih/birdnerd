@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "exportedAt": "2026-03-22T06:42:05.839Z",
   "locations": [
     {
@@ -183,9 +183,31 @@
   "sessions": [
     {
       "id": "1774161695303-q58qk54",
-      "station": "GCBS",
+      "locationId": "loc-gcbs",
       "date": "2026-03-22",
-      "createdAt": "2026-03-22T06:41:35.303Z"
+      "protocol": "MAPS",
+      "mapsPeriod": 1,
+      "masterBanderId": "bander-hd",
+      "openTime": "06:30",
+      "closeTime": "12:00",
+      "createdAt": "2026-03-22T06:41:35.303Z",
+      "updatedAt": "2026-03-22T06:41:35.303Z"
+    }
+  ],
+  "sessionBanderLogs": [
+    {
+      "id": "sbl-1",
+      "sessionId": "1774161695303-q58qk54",
+      "banderId": "bander-hd",
+      "createdAt": "2026-03-22T06:41:35.303Z",
+      "updatedAt": "2026-03-22T06:41:35.303Z"
+    },
+    {
+      "id": "sbl-2",
+      "sessionId": "1774161695303-q58qk54",
+      "banderId": "bander-ts",
+      "createdAt": "2026-03-22T06:41:35.303Z",
+      "updatedAt": "2026-03-22T06:41:35.303Z"
     }
   ],
   "records": [

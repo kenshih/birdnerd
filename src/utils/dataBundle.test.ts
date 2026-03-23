@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { BUNDLE_VERSION } from '../data/bundle-schema'
 import type { DataBundle } from '../data/bundle-schema'
 import { validateBundle, exportDataBundle, importDataBundle } from './dataBundle'
-import { getDB, resetDB, saveLocation, saveNet, savePerson, saveBander, saveSession, saveRecord } from '../db'
-import type { Location, Net, Person, Bander, Session, BirdRecord } from '../types'
+import { getDB, resetDB, saveLocation, saveNet, savePerson, saveBander, saveSession, saveRecord, saveSessionBanderLog } from '../db'
+import type { Location, Net, Person, Bander, Session, SessionBanderLog, BirdRecord } from '../types'
 
 // Mock fetch so getDB()'s seed check doesn't try to hit the network
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
@@ -19,6 +19,7 @@ function makeBundle(overrides: Partial<DataBundle> = {}): DataBundle {
     people: [],
     banders: [],
     sessions: [],
+    sessionBanderLogs: [],
     records: [],
     ...overrides,
   }
@@ -47,7 +48,11 @@ const sampleBander: Bander = {
 }
 
 const sampleSession: Session = {
-  id: 'sess-1', station: 'TEST', date: '2026-03-21', createdAt: now,
+  id: 'sess-1', locationId: 'loc-1', date: '2026-03-21', createdAt: now, updatedAt: now,
+}
+
+const sampleSessionBanderLog: SessionBanderLog = {
+  id: 'sbl-1', sessionId: 'sess-1', banderId: 'bander-1', createdAt: now, updatedAt: now,
 }
 
 const sampleRecord: BirdRecord = {
@@ -137,6 +142,7 @@ describe('export/import round-trip', () => {
     await savePerson(samplePerson)
     await saveBander(sampleBander)
     await saveSession(sampleSession)
+    await saveSessionBanderLog(sampleSessionBanderLog)
     await saveRecord(sampleRecord)
 
     // Export
@@ -146,6 +152,7 @@ describe('export/import round-trip', () => {
     expect(bundle.people).toHaveLength(1)
     expect(bundle.banders).toHaveLength(1)
     expect(bundle.sessions).toHaveLength(1)
+    expect(bundle.sessionBanderLogs).toHaveLength(1)
     expect(bundle.records).toHaveLength(1)
 
     // Reset and reimport
@@ -174,7 +181,11 @@ describe('export/import round-trip', () => {
 
     const sessions = await db.getAll('sessions')
     expect(sessions).toHaveLength(1)
-    expect(sessions[0].station).toBe('TEST')
+    expect(sessions[0].locationId).toBe('loc-1')
+
+    const sbls = await db.getAll('sessionBanderLogs')
+    expect(sbls).toHaveLength(1)
+    expect(sbls[0].banderId).toBe('bander-1')
 
     const records = await db.getAll('records')
     expect(records).toHaveLength(1)
@@ -218,5 +229,33 @@ describe('export/import round-trip', () => {
     const db = await getDB()
     expect(await db.count('locations')).toBe(0)
     expect(await db.count('records')).toBe(0)
+  })
+
+  it('migrates v1 bundle (station → locationId)', async () => {
+    // Create a v1-style bundle with station field on session
+    const v1Bundle = {
+      version: 1,
+      exportedAt: now,
+      locations: [sampleLocation],
+      nets: [],
+      people: [],
+      banders: [],
+      sessions: [{ id: 'sess-v1', station: 'TEST', date: '2026-01-01', createdAt: now }],
+      records: [],
+    }
+
+    expect(validateBundle(v1Bundle)).toBeNull()
+    await importDataBundle(v1Bundle as unknown as DataBundle)
+
+    const db = await getDB()
+    const sessions = await db.getAll('sessions')
+    expect(sessions).toHaveLength(1)
+    expect(sessions[0].locationId).toBe('loc-1') // mapped from station=TEST → location with banderLocationId=TEST
+    expect((sessions[0] as unknown as Record<string, unknown>).station).toBeUndefined()
+    expect(sessions[0].updatedAt).toBeTruthy()
+
+    // sessionBanderLogs should be empty (didn't exist in v1)
+    const sbls = await db.getAll('sessionBanderLogs')
+    expect(sbls).toHaveLength(0)
   })
 })

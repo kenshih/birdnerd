@@ -63,11 +63,28 @@ export interface BirdRecord {
   updatedAt: string
 }
 
+export type Protocol = 'MAPS' | 'Non-MAPS' | 'Burrowing Owl' | 'Rehabbed-Bird' | 'Saw-whet Owl'
+
 export interface Session {
   id: string
-  station: string
-  date: string       // ISO date string "YYYY-MM-DD"
+  locationId: string           // FK to Location
+  date: string                 // ISO date string "YYYY-MM-DD"
+  protocol?: Protocol
+  mapsPeriod?: number          // 1-10, only when protocol=MAPS
+  masterBanderId?: string      // FK to Bander
+  openTime?: string            // HH:mm
+  closeTime?: string           // HH:mm
+  notes?: string
   createdAt: string
+  updatedAt: string
+}
+
+export interface SessionBanderLog {
+  id: string
+  sessionId: string            // FK to Session
+  banderId: string             // FK to Bander
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Location {

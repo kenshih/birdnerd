@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "exportedAt": "2026-03-21T00:00:00.000Z",
   "locations": [
     {
@@ -56,5 +56,6 @@
     { "id": "bander-lc", "personId": "person-lc", "role": "Sub-permittee", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" }
   ],
   "sessions": [],
+  "sessionBanderLogs": [],
   "records": []
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
-import type { BirdRecord, Session, Net } from '../types'
-import { saveRecord, getPeople, getBanders, getLocations, getNetsByLocation } from '../db'
+import type { BirdRecord, Session, Net, Location } from '../types'
+import { saveRecord, getPeople, getBanders, getNetsByLocation, getLocation } from '../db'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
@@ -46,12 +46,19 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
+  const [sessionLocation, setSessionLocation] = useState<Location | undefined>()
 
   useEffect(() => {
     loadDropdownData()
   }, [])
 
   async function loadDropdownData() {
+    // Load session location
+    if (session.locationId) {
+      const loc = await getLocation(session.locationId)
+      setSessionLocation(loc)
+    }
+
     // Load banders
     const [people, banders] = await Promise.all([getPeople(), getBanders()])
     const banderPersonIds = new Set(banders.map(b => b.personId))
@@ -63,10 +70,8 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
     )
 
     // Load nets for this session's location
-    const locations = await getLocations()
-    const loc = locations.find(l => l.banderLocationId === session.station)
-    if (loc) {
-      const nets = await getNetsByLocation(loc.id)
+    if (session.locationId) {
+      const nets = await getNetsByLocation(session.locationId)
       setNetOptions(nets.sort((a, b) => {
         const aNum = parseInt(a.label), bNum = parseInt(b.label)
         if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
@@ -81,15 +86,15 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
       for (const f of ALL_FIELDS) {
         values[f] = record[f as keyof BirdRecord]
       }
-      values.station = record.station ?? session.station
+      values.station = record.station ?? sessionLocation?.banderLocationId ?? ''
       reset(values as FormValues)
     } else {
       reset({
-        station: session.station,
+        station: sessionLocation?.banderLocationId ?? '',
         date: session.date,
       })
     }
-  }, [record, session, reset])
+  }, [record, session, sessionLocation, reset])
 
   const speciesCode = watch('speciesCode')
   const wrpValue = watch('wrp')
@@ -130,7 +135,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
         )}
       </div>
       <p style={{ color: '#555', fontSize: '0.85rem', marginTop: 0 }}>
-        {session.station} · {session.date}
+        {sessionLocation?.banderLocationId ?? ''} · {session.date}
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)}>

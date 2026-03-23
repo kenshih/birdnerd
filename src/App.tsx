@@ -32,6 +32,8 @@ export default function App() {
         session={view.session}
         onBack={() => setView({ mode: 'sessions' })}
         onHome={goHome}
+        onSessionDeleted={() => setView({ mode: 'sessions' })}
+        onSessionUpdated={(s) => setView({ mode: 'session', session: s })}
       />
     )
   }

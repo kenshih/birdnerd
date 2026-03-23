@@ -243,3 +243,11 @@ export const STATIONS = [
   { code: 'GCBS', name: 'Galindo Creek Banding Station' },
   { code: 'MCFS', name: 'Mitchell Canyon Field Station' },
 ]
+
+export const PROTOCOL_CODES = [
+  { code: 'MAPS', label: 'MAPS' },
+  { code: 'Non-MAPS', label: 'Non-MAPS' },
+  { code: 'Burrowing Owl', label: 'Burrowing Owl Banding' },
+  { code: 'Rehabbed-Bird', label: 'Rehabbed-Bird Banding' },
+  { code: 'Saw-whet Owl', label: 'Saw-whet Owl Banding' },
+]

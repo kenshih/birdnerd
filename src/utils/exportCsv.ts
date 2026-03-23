@@ -22,7 +22,7 @@ function escape(value: unknown): string {
     : s
 }
 
-export function exportSessionCSV(session: Session, records: BirdRecord[]) {
+export function exportSessionCSV(session: Session, records: BirdRecord[], locationCode?: string) {
   const rows = [
     HEADERS.join(','),
     ...records.map(r => HEADERS.map(h => escape(r[h as keyof BirdRecord])).join(',')),
@@ -31,7 +31,7 @@ export function exportSessionCSV(session: Session, records: BirdRecord[]) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `birdnerd_${session.station}_${session.date}.csv`
+  a.download = `birdnerd_${locationCode ?? 'all'}_${session.date}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
