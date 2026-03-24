@@ -4,13 +4,14 @@ import { getDB } from '../db'
 /** Export all managed data as a DataBundle object. */
 export async function exportDataBundle(): Promise<DataBundle> {
   const db = await getDB()
-  const [locations, nets, people, banders, sessions, sessionBanderLogs, records] = await Promise.all([
+  const [locations, nets, people, banders, sessions, sessionBanderLogs, sessionNetLogs, records] = await Promise.all([
     db.getAll('locations'),
     db.getAll('nets'),
     db.getAll('people'),
     db.getAll('banders'),
     db.getAll('sessions'),
     db.getAll('sessionBanderLogs'),
+    db.getAll('sessionNetLogs'),
     db.getAll('records'),
   ])
   return {
@@ -22,6 +23,7 @@ export async function exportDataBundle(): Promise<DataBundle> {
     banders,
     sessions,
     sessionBanderLogs,
+    sessionNetLogs,
     records,
   }
 }
@@ -58,6 +60,11 @@ export function validateBundle(data: unknown): string | null {
     return 'Invalid bundle: "sessionBanderLogs" must be an array'
   }
 
+  // sessionNetLogs added in v2 — optional for v1 bundles
+  if (bundle.sessionNetLogs !== undefined && !Array.isArray(bundle.sessionNetLogs)) {
+    return 'Invalid bundle: "sessionNetLogs" must be an array'
+  }
+
   return null
 }
 
@@ -85,6 +92,19 @@ function migrateV1ToV2(bundle: Record<string, unknown>): void {
   if (!bundle.sessionBanderLogs) {
     bundle.sessionBanderLogs = []
   }
+
+  // Ensure sessionNetLogs exists (empty for v1)
+  if (!bundle.sessionNetLogs) {
+    bundle.sessionNetLogs = []
+  }
+
+  // Ensure all nets have active field (default true for v1)
+  const nets = bundle.nets as Array<Record<string, unknown>>
+  for (const net of nets) {
+    if (net.active === undefined) {
+      net.active = true
+    }
+  }
 }
 
 /**
@@ -100,7 +120,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
 
   // Wipe all stores and reload from bundle in a single transaction
   const tx = db.transaction(
-    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'records'],
+    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'sessionNetLogs', 'records'],
     'readwrite',
   )
 
@@ -112,6 +132,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
     tx.objectStore('banders').clear(),
     tx.objectStore('sessions').clear(),
     tx.objectStore('sessionBanderLogs').clear(),
+    tx.objectStore('sessionNetLogs').clear(),
     tx.objectStore('records').clear(),
   ])
 
@@ -122,6 +143,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   for (const bander of bundle.banders) await tx.objectStore('banders').put(bander)
   for (const session of bundle.sessions) await tx.objectStore('sessions').put(session)
   for (const sbl of (bundle.sessionBanderLogs ?? [])) await tx.objectStore('sessionBanderLogs').put(sbl)
+  for (const snl of (bundle.sessionNetLogs ?? [])) await tx.objectStore('sessionNetLogs').put(snl)
   for (const record of bundle.records) await tx.objectStore('records').put(record)
 
   await tx.done

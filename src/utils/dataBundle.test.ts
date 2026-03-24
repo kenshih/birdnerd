@@ -20,6 +20,7 @@ function makeBundle(overrides: Partial<DataBundle> = {}): DataBundle {
     banders: [],
     sessions: [],
     sessionBanderLogs: [],
+    sessionNetLogs: [],
     records: [],
     ...overrides,
   }
@@ -33,7 +34,7 @@ const sampleLocation: Location = {
 }
 
 const sampleNet: Net = {
-  id: 'net-1', locationId: 'loc-1', label: '1',
+  id: 'net-1', locationId: 'loc-1', label: '1', active: true,
   createdAt: now, updatedAt: now,
 }
 

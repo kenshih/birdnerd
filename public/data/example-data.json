@@ -34,6 +34,7 @@
       "id": "net-gcbs-1",
       "locationId": "loc-gcbs",
       "label": "1",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -41,6 +42,7 @@
       "id": "net-gcbs-10",
       "locationId": "loc-gcbs",
       "label": "10",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -48,6 +50,7 @@
       "id": "net-gcbs-2",
       "locationId": "loc-gcbs",
       "label": "2",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -55,6 +58,7 @@
       "id": "net-gcbs-3",
       "locationId": "loc-gcbs",
       "label": "3",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -62,6 +66,7 @@
       "id": "net-gcbs-4",
       "locationId": "loc-gcbs",
       "label": "4",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -69,6 +74,7 @@
       "id": "net-gcbs-5",
       "locationId": "loc-gcbs",
       "label": "5",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -76,6 +82,7 @@
       "id": "net-gcbs-6",
       "locationId": "loc-gcbs",
       "label": "6",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -83,6 +90,7 @@
       "id": "net-gcbs-7",
       "locationId": "loc-gcbs",
       "label": "7",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -90,6 +98,7 @@
       "id": "net-gcbs-8",
       "locationId": "loc-gcbs",
       "label": "8",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
@@ -97,6 +106,7 @@
       "id": "net-gcbs-9",
       "locationId": "loc-gcbs",
       "label": "9",
+      "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     }
@@ -194,6 +204,7 @@
       "updatedAt": "2026-03-22T06:41:35.303Z"
     }
   ],
+  "sessionNetLogs": [],
   "sessionBanderLogs": [
     {
       "id": "sbl-1",

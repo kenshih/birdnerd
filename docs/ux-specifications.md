@@ -69,7 +69,31 @@ When deleting an entity that has dependent data, show a confirmation dialog that
 
 Applies to: Session (→ records, bander logs), Location (→ nets), Person (→ bander associations). Always list the count and type of dependent records.
 
-### 1.3 Soft-Required Fields
+### 1.3 Collapsible Section
+
+A reusable component for grouping optional fields. Header with title + chevron toggle. Collapsed by default. Tap header to expand/collapse.
+
+```
+┌──────────────────────────────────────┐
+│  ▸ Weather @ Open                    │  ← collapsed
+└──────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│  ▾ Weather @ Open                    │  ← expanded
+│  Temp (°C)  [ 18  ]                 │
+│  Wind       [ 3   ]                 │
+│  Cloud %    [ 50  ]                 │
+│  Precip     [ clear        ▾ ]      │
+└──────────────────────────────────────┘
+```
+
+### 1.4 SearchableSelect / Combobox
+
+Reusable dropdown component with two modes:
+- **Select mode** (default): Type to filter, pick from list only. Used for WRP codes, etc.
+- **Combobox mode** (`allowFreeText`): Type to filter suggestions OR enter arbitrary text. Used for Precipitation and other fields where common values exist but free text is also valid.
+
+### 1.5 Soft-Required Fields
 
 Fields marked "soft-required" are visually highlighted (e.g., subtle border or label indicator) but do not block saving. The form can always be submitted with partial data. Enforcement of required fields is deferred to the Validation phase (Phase 12).
 
@@ -260,22 +284,35 @@ Triggered from within a banding record. No photos are stored in the app — only
 - After saving, user can immediately start logging banding records
 - Each banding record will reference this session
 
+### 3.2.1 Session View (Record List)
+
+After selecting a session, the Session View shows metadata summary, action buttons, and the list of banding records.
+
+**Record rows:**
+- Species code (bold), band number, capture code chip (if recap)
+- Second line: age, sex, capture time, net
+- Edit / Delete buttons on the right
+
+**Recap chip:** Records with capture code `R` (recap) display a small "recap" chip — a grey rounded label (`background: #e9ecef`, `color: #6c757d`, `font-size: 0.7rem`) — inline after the band number. This provides at-a-glance differentiation from new bandings without cluttering the row.
+
 ### 3.3 Net Effort (sub-page)
 
-Accessible from Session View via a "Net Effort" button. Uses the dense model: on session create, auto-generates a SessionNetLog entry for every active net at the location, pre-filled with session open/close times.
+Accessible from the **Edit Session** form via a "Net Effort" button (placed after Notes, before Save/Cancel). Uses the dense model: on session create, auto-generates a SessionNetLog entry for every active net at the location, pre-filled with session open/close times. Back button returns to Edit Session.
 
 ```
 ┌──────────────────────────────────────┐
-│  ← Session    Net Effort    🏠       │
+│  ← Edit Session  Net Effort  🏠      │
 │                                      │
-│  GCBS · 2026-03-22                   │
-│  Total: 58.5 net-hours (10 nets)     │
+│  Session: 06:30–12:00                │
+│  Total: 58.5 net-hours · 10 nets    │
 │                                      │
-│  Net 1    06:30 – 12:00   5.5 hrs   │
-│  Net 2    06:30 – 12:00   5.5 hrs   │
-│  Net 3    06:30 – 11:00   4.5 hrs   │
+│  [ Net 11 ▼ ] [ + Add Net ]         │
+│                                      │
+│  Net 1    06:30 – 12:00   5.50h     │
+│  Net 2    06:30 – 12:00   5.50h     │
+│  Net 3    06:30 – 11:00   4.50h     │
 │           Closed early: wind         │
-│  Net 4    07:00 – 12:00   5.0 hrs   │
+│  Net 4    07:00 – 12:00   5.00h     │
 │           Opened late: low temps     │
 │  ...                                 │
 │                                      │
@@ -287,10 +324,13 @@ Accessible from Session View via a "Net Effort" button. Uses the dense model: on
 - Each row shows net label, open/close times, calculated net-hours
 - Rows with remarks show the remark below in smaller/dimmed text
 - Tap a row to expand inline edit: open time, close time, remarks (free text)
+- Inline edit includes a "Remove" button to remove the net from this session's effort log
 - Net-hours auto-calculated: `(close - open)` in decimal hours
 - Total net-hours shown at top, updates live as times change
 - Nets are sorted by label (numeric sort where possible)
-- Only active nets from the location are included
+- Only active nets from the location are auto-generated on session create
+- **Add net:** Dropdown of active nets not already in the session + "Add Net" button. New log is pre-filled with session open/close times.
+- **Remove net:** Available in the inline edit view. Confirmation required. Removes the SessionNetLog entry (does not deactivate the net itself).
 
 ---
 

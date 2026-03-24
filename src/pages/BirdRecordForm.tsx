@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session, Net, Location } from '../types'
-import { saveRecord, getPeople, getBanders, getNetsByLocation, getLocation } from '../db'
+import { saveRecord, getPeople, getBanders, getActiveNetsByLocation, getLocation } from '../db'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
@@ -71,7 +71,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
 
     // Load nets for this session's location
     if (session.locationId) {
-      const nets = await getNetsByLocation(session.locationId)
+      const nets = await getActiveNetsByLocation(session.locationId)
       setNetOptions(nets.sort((a, b) => {
         const aNum = parseInt(a.label), bNum = parseInt(b.label)
         if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum

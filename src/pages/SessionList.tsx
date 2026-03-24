@@ -1,8 +1,19 @@
 import { useState, useEffect } from 'react'
 import type { Session, Location, Bander, Person, Protocol } from '../types'
-import { getSessions, saveSession, getLocations, getBanders, getPeople, deleteSession, getRecordsBySession, getSessionBanderLogs, replaceSessionBanderLogs } from '../db'
+import { getSessions, saveSession, getLocations, getBanders, getPeople, deleteSession, getRecordsBySession, getSessionBanderLogs, replaceSessionBanderLogs, generateSessionNetLogs } from '../db'
 import { PROTOCOL_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'
+import Collapsible from '../components/Collapsible'
+import SearchableSelect from '../components/SearchableSelect'
+
+const PRECIP_SUGGESTIONS = [
+  { code: 'clear', label: 'Clear' },
+  { code: 'fog', label: 'Fog' },
+  { code: 'thick fog', label: 'Thick Fog' },
+  { code: 'drizzle', label: 'Drizzle' },
+  { code: 'rain', label: 'Rain' },
+  { code: 'snow', label: 'Snow' },
+]
 
 interface Props {
   onSelectSession: (session: Session) => void
@@ -45,6 +56,16 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
   const [formCloseTime, setFormCloseTime] = useState('')
   const [formNotes, setFormNotes] = useState('')
   const [formParticipants, setFormParticipants] = useState<Set<string>>(new Set())
+  // Weather @ Open
+  const [formWeatherOpenTemp, setFormWeatherOpenTemp] = useState('')
+  const [formWeatherOpenWind, setFormWeatherOpenWind] = useState('')
+  const [formWeatherOpenCloud, setFormWeatherOpenCloud] = useState('')
+  const [formWeatherOpenPrecip, setFormWeatherOpenPrecip] = useState('')
+  // Weather @ Close
+  const [formWeatherCloseTemp, setFormWeatherCloseTemp] = useState('')
+  const [formWeatherCloseWind, setFormWeatherCloseWind] = useState('')
+  const [formWeatherCloseCloud, setFormWeatherCloseCloud] = useState('')
+  const [formWeatherClosePrecip, setFormWeatherClosePrecip] = useState('')
 
   useEffect(() => {
     loadData()
@@ -91,6 +112,8 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
     setFormCloseTime('')
     setFormNotes('')
     setFormParticipants(new Set())
+    setFormWeatherOpenTemp(''); setFormWeatherOpenWind(''); setFormWeatherOpenCloud(''); setFormWeatherOpenPrecip('')
+    setFormWeatherCloseTemp(''); setFormWeatherCloseWind(''); setFormWeatherCloseCloud(''); setFormWeatherClosePrecip('')
     if (locations.length > 0) setFormLocationId(locations[0]!.id)
   }
 
@@ -105,6 +128,14 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
       masterBanderId: formMasterBanderId || undefined,
       openTime: formOpenTime || undefined,
       closeTime: formCloseTime || undefined,
+      weatherOpenTemp: formWeatherOpenTemp ? parseFloat(formWeatherOpenTemp) : undefined,
+      weatherOpenWind: formWeatherOpenWind ? parseInt(formWeatherOpenWind) : undefined,
+      weatherOpenCloud: formWeatherOpenCloud ? parseInt(formWeatherOpenCloud) : undefined,
+      weatherOpenPrecip: formWeatherOpenPrecip || undefined,
+      weatherCloseTemp: formWeatherCloseTemp ? parseFloat(formWeatherCloseTemp) : undefined,
+      weatherCloseWind: formWeatherCloseWind ? parseInt(formWeatherCloseWind) : undefined,
+      weatherCloseCloud: formWeatherCloseCloud ? parseInt(formWeatherCloseCloud) : undefined,
+      weatherClosePrecip: formWeatherClosePrecip || undefined,
       notes: formNotes || undefined,
       createdAt: now,
       updatedAt: now,
@@ -115,6 +146,9 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
     if (formParticipants.size > 0) {
       await replaceSessionBanderLogs(session.id, Array.from(formParticipants))
     }
+
+    // Auto-generate net logs for all active nets at the location
+    await generateSessionNetLogs(session.id, formLocationId, formOpenTime || undefined, formCloseTime || undefined)
 
     await loadData()
     setShowNew(false)
@@ -224,6 +258,64 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
                 <button type="button" onClick={() => setFormCloseTime(nowTime())} style={nowBtnStyle}>Now</button>
               </div>
             </div>
+          </div>
+
+          <div style={{ marginTop: '0.5rem' }}>
+            <Collapsible title="Weather @ Open">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={labelStyle}>Temp (°C)</label>
+                  <input type="number" step="0.1" value={formWeatherOpenTemp} onChange={e => setFormWeatherOpenTemp(e.target.value)} style={inputStyle} placeholder="e.g. 15" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Wind (Beaufort 0-12)</label>
+                  <input type="number" min="0" max="12" value={formWeatherOpenWind} onChange={e => setFormWeatherOpenWind(e.target.value)} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Cloud Cover (%)</label>
+                  <input type="number" min="0" max="100" value={formWeatherOpenCloud} onChange={e => setFormWeatherOpenCloud(e.target.value)} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Precipitation</label>
+                  <SearchableSelect
+                    options={PRECIP_SUGGESTIONS}
+                    value={formWeatherOpenPrecip}
+                    onChange={setFormWeatherOpenPrecip}
+                    placeholder="Type or select..."
+                    allowFreeText
+                  />
+                </div>
+              </div>
+            </Collapsible>
+          </div>
+
+          <div style={{ marginTop: '0.25rem' }}>
+            <Collapsible title="Weather @ Close">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={labelStyle}>Temp (°C)</label>
+                  <input type="number" step="0.1" value={formWeatherCloseTemp} onChange={e => setFormWeatherCloseTemp(e.target.value)} style={inputStyle} placeholder="e.g. 22" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Wind (Beaufort 0-12)</label>
+                  <input type="number" min="0" max="12" value={formWeatherCloseWind} onChange={e => setFormWeatherCloseWind(e.target.value)} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Cloud Cover (%)</label>
+                  <input type="number" min="0" max="100" value={formWeatherCloseCloud} onChange={e => setFormWeatherCloseCloud(e.target.value)} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Precipitation</label>
+                  <SearchableSelect
+                    options={PRECIP_SUGGESTIONS}
+                    value={formWeatherClosePrecip}
+                    onChange={setFormWeatherClosePrecip}
+                    placeholder="Type or select..."
+                    allowFreeText
+                  />
+                </div>
+              </div>
+            </Collapsible>
           </div>
 
           <label style={labelStyle}>Master Bander</label>

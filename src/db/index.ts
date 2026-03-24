@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BirdRecord, Session, SessionBanderLog, Location, Net, Person, Bander } from '../types'
+import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander } from '../types'
 import { loadSeedData } from '../utils/dataBundle'
 
 interface BirdNerdDB extends DBSchema {
@@ -38,6 +38,11 @@ interface BirdNerdDB extends DBSchema {
     value: SessionBanderLog
     indexes: { 'by-session': string }
   }
+  sessionNetLogs: {
+    key: string
+    value: SessionNetLog
+    indexes: { 'by-session': string }
+  }
 }
 
 let db: IDBPDatabase<BirdNerdDB> | null = null
@@ -52,7 +57,7 @@ export function resetDB() {
 
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
-  db = await openDB<BirdNerdDB>('birdnerd', 4, {
+  db = await openDB<BirdNerdDB>('birdnerd', 5, {
     upgrade(database, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         const sessionStore = database.createObjectStore('sessions', { keyPath: 'id' })
@@ -91,6 +96,29 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
         const sblStore = database.createObjectStore('sessionBanderLogs', { keyPath: 'id' })
         sblStore.createIndex('by-session', 'sessionId')
       }
+
+      if (oldVersion < 5) {
+        // Add sessionNetLogs store
+        const snlStore = database.createObjectStore('sessionNetLogs', { keyPath: 'id' })
+        snlStore.createIndex('by-session', 'sessionId')
+
+        // Migrate existing nets: add active=true
+        if (database.objectStoreNames.contains('nets')) {
+          const netStore = transaction.objectStore('nets')
+          const req = netStore.openCursor()
+          req.then(async (cursor) => {
+            let cur = cursor
+            while (cur) {
+              const net = cur.value as unknown as Record<string, unknown>
+              if (net.active === undefined) {
+                net.active = true
+                cur.update(net as unknown as Net)
+              }
+              cur = await cur.continue()
+            }
+          })
+        }
+      }
     },
   })
 
@@ -128,9 +156,11 @@ export async function deleteSession(id: string): Promise<void> {
   const db = await getDB()
   const records = await db.getAllFromIndex('records', 'by-session', id)
   const banderLogs = await db.getAllFromIndex('sessionBanderLogs', 'by-session', id)
-  const tx = db.transaction(['sessions', 'records', 'sessionBanderLogs'], 'readwrite')
+  const netLogs = await db.getAllFromIndex('sessionNetLogs', 'by-session', id)
+  const tx = db.transaction(['sessions', 'records', 'sessionBanderLogs', 'sessionNetLogs'], 'readwrite')
   for (const r of records) await tx.objectStore('records').delete(r.id)
   for (const bl of banderLogs) await tx.objectStore('sessionBanderLogs').delete(bl.id)
+  for (const nl of netLogs) await tx.objectStore('sessionNetLogs').delete(nl.id)
   await tx.objectStore('sessions').delete(id)
   await tx.done
 }
@@ -282,4 +312,58 @@ export async function replaceSessionBanderLogs(sessionId: string, banderIds: str
     })
   }
   await tx.done
+}
+
+// Session Net Logs
+export async function getSessionNetLogs(sessionId: string): Promise<SessionNetLog[]> {
+  const db = await getDB()
+  return db.getAllFromIndex('sessionNetLogs', 'by-session', sessionId)
+}
+
+export async function getAllSessionNetLogs(): Promise<SessionNetLog[]> {
+  const db = await getDB()
+  return db.getAll('sessionNetLogs')
+}
+
+export async function saveSessionNetLog(log: SessionNetLog): Promise<void> {
+  const db = await getDB()
+  await db.put('sessionNetLogs', log)
+}
+
+export async function deleteSessionNetLog(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('sessionNetLogs', id)
+}
+
+/** Auto-generate net logs for all active nets at a location, pre-filled with session times */
+export async function generateSessionNetLogs(
+  sessionId: string,
+  locationId: string,
+  openTime?: string,
+  closeTime?: string,
+): Promise<SessionNetLog[]> {
+  const db = await getDB()
+  const allNets = await db.getAllFromIndex('nets', 'by-location', locationId)
+  const activeNets = allNets.filter(n => n.active !== false)
+  const now = new Date().toISOString()
+  const logs: SessionNetLog[] = activeNets.map(net => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${net.id}`,
+    sessionId,
+    netId: net.id,
+    openTime,
+    closeTime,
+    createdAt: now,
+    updatedAt: now,
+  }))
+  const tx = db.transaction('sessionNetLogs', 'readwrite')
+  for (const log of logs) await tx.store.put(log)
+  await tx.done
+  return logs
+}
+
+/** Get active nets for a location */
+export async function getActiveNetsByLocation(locationId: string): Promise<Net[]> {
+  const db = await getDB()
+  const allNets = await db.getAllFromIndex('nets', 'by-location', locationId)
+  return allNets.filter(n => n.active !== false)
 }

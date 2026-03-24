@@ -74,6 +74,16 @@ export interface Session {
   masterBanderId?: string      // FK to Bander
   openTime?: string            // HH:mm
   closeTime?: string           // HH:mm
+  // Weather @ Open
+  weatherOpenTemp?: number     // °C
+  weatherOpenWind?: number     // Beaufort 0-12
+  weatherOpenCloud?: number    // 0-100%
+  weatherOpenPrecip?: string   // free text or suggestion
+  // Weather @ Close
+  weatherCloseTemp?: number
+  weatherCloseWind?: number
+  weatherCloseCloud?: number
+  weatherClosePrecip?: string
   notes?: string
   createdAt: string
   updatedAt: string
@@ -105,6 +115,18 @@ export interface Net {
   id: string
   locationId: string         // FK to Location
   label: string              // e.g. "1", "N-01", "Trap-A"
+  active: boolean            // soft-delete: false = removed from operation
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SessionNetLog {
+  id: string
+  sessionId: string          // FK to Session
+  netId: string              // FK to Net
+  openTime?: string          // HH:mm — defaults to session open time
+  closeTime?: string         // HH:mm — defaults to session close time
+  remarks?: string
   createdAt: string
   updatedAt: string
 }

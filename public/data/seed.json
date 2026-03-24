@@ -39,7 +39,7 @@
     { "id": "net-gcbs-7", "locationId": "loc-gcbs", "label": "7", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
     { "id": "net-gcbs-8", "locationId": "loc-gcbs", "label": "8", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
     { "id": "net-gcbs-9", "locationId": "loc-gcbs", "label": "9", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
-    { "id": "net-gcbs-10", "locationId": "loc-gcbs", "label": "10", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" }
+    { "id": "net-gcbs-10", "locationId": "loc-gcbs", "label": "10", "createdAt": "2026-03-21T00:00:00.000Z", "active": true, "updatedAt": "2026-03-21T00:00:00.000Z" }
   ],
   "people": [
     { "id": "person-hd", "name": "Hallie Daly", "initials": "HD", "active": true, "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
@@ -57,5 +57,6 @@
   ],
   "sessions": [],
   "sessionBanderLogs": [],
+  "sessionNetLogs": [],
   "records": []
 }

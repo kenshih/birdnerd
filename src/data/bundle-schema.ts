@@ -1,4 +1,4 @@
-import type { Location, Net, Person, Bander, Session, SessionBanderLog, BirdRecord } from '../types'
+import type { Location, Net, Person, Bander, Session, SessionBanderLog, SessionNetLog, BirdRecord } from '../types'
 
 /**
  * JSON Data Bundle schema — single source of truth for the portable backup format.
@@ -9,6 +9,9 @@ import type { Location, Net, Person, Bander, Session, SessionBanderLog, BirdReco
  *   v2 — Session.station → Session.locationId + new session fields
  *         (protocol, mapsPeriod, masterBanderId, openTime, closeTime, notes, updatedAt)
  *         Added sessionBanderLogs array
+ *         Added sessionNetLogs array
+ *         Added weather fields to Session (weatherOpen/Close Temp/Wind/Cloud/Precip)
+ *         Added Net.active field (soft-delete)
  */
 
 /** Increment when entity fields are added, removed, or renamed. */
@@ -23,5 +26,6 @@ export interface DataBundle {
   banders: Bander[]
   sessions: Session[]
   sessionBanderLogs: SessionBanderLog[]
+  sessionNetLogs: SessionNetLog[]
   records: BirdRecord[]
 }

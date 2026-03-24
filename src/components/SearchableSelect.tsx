@@ -11,9 +11,10 @@ interface Props {
   onChange: (value: string) => void
   placeholder?: string
   style?: React.CSSProperties
+  allowFreeText?: boolean
 }
 
-export default function SearchableSelect({ options, value, onChange, placeholder = 'Search...', style }: Props) {
+export default function SearchableSelect({ options, value, onChange, placeholder = 'Search...', style, allowFreeText = false }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -31,13 +32,16 @@ export default function SearchableSelect({ options, value, onChange, placeholder
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        if (allowFreeText && query && !selectedLabel) {
+          onChange(query)
+        }
         setOpen(false)
         setQuery('')
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+  }, [allowFreeText, query, selectedLabel, onChange])
 
   function handleSelect(code: string) {
     onChange(code)
@@ -51,6 +55,19 @@ export default function SearchableSelect({ options, value, onChange, placeholder
     setOpen(false)
   }
 
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (allowFreeText && e.key === 'Enter') {
+      e.preventDefault()
+      if (filtered.length > 0) {
+        handleSelect(filtered[0].code)
+      } else if (query) {
+        onChange(query)
+        setOpen(false)
+        setQuery('')
+      }
+    }
+  }
+
   return (
     <div ref={containerRef} style={{ position: 'relative', ...style }}>
       <button
@@ -60,6 +77,8 @@ export default function SearchableSelect({ options, value, onChange, placeholder
       >
         {selectedLabel ? (
           <span>{selectedLabel.code} — {selectedLabel.label}</span>
+        ) : value && allowFreeText ? (
+          <span>{value}</span>
         ) : (
           <span style={{ color: '#999' }}>—</span>
         )}
@@ -73,7 +92,8 @@ export default function SearchableSelect({ options, value, onChange, placeholder
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder={placeholder}
+            onKeyDown={handleKeyDown}
+            placeholder={allowFreeText ? (placeholder || 'Type or select...') : placeholder}
             style={searchInputStyle}
           />
           <div style={listStyle}>
@@ -96,7 +116,15 @@ export default function SearchableSelect({ options, value, onChange, placeholder
                 <span style={{ marginLeft: '0.4rem', color: '#555', fontSize: '0.85rem' }}>{o.label}</span>
               </div>
             ))}
-            {filtered.length === 0 && (
+            {allowFreeText && query && !filtered.some(o => o.code.toLowerCase() === query.toLowerCase()) && (
+              <div
+                style={{ ...optionStyle, color: '#0066cc', fontStyle: 'italic' }}
+                onClick={() => { onChange(query); setOpen(false); setQuery('') }}
+              >
+                Use "{query}"
+              </div>
+            )}
+            {filtered.length === 0 && !allowFreeText && (
               <div style={{ padding: '0.5rem', color: '#999', fontSize: '0.85rem' }}>No matches</div>
             )}
           </div>

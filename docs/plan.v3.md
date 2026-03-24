@@ -130,33 +130,17 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 ---
 
-## Phase 11 — Weather & Effort Tracking
+### Phase 11 — Weather & Effort Tracking ✅
 
-Goal: Per-session weather and per-net effort logging.
-
-**11a. Weather on Session form**
-- Two collapsible sections (Weather @ Open, Weather @ Close) on session create/edit
-- Fields: Temperature (°C), Wind (Beaufort 0-12), Cloud Cover (0-100%), Precipitation (combobox: free text or pick from suggestions)
-- Collapsed by default
-
-**11b. Net soft-delete**
-- Add `active: boolean` to Net type (default true for all existing nets)
-- IndexedDB v5, bundle stays v2 (not yet shipped)
-- Replace net hard-delete with soft-delete ("Remove from operation")
-- Active nets shown in session setup; inactive hidden
-
-**11c. SessionNetLog (dense model)**
-- New SessionNetLog type + DB store
-- On session create, auto-generate entries for all active nets at location, pre-filled with session open/close times
-- Net Effort sub-page accessible from Session View (see ux-spec § 3.3)
-- Tap row to inline-edit: open time, close time, remarks (free text)
-- Auto-calculated net-hours per net + total session effort
-- Bundle: add sessionNetLogs array (v2 — not yet shipped)
-
-**11d. Tests**
-- Net-hours calculation (edge cases: missing times, same open/close)
-- SessionNetLog auto-generation from active nets
-- Net soft-delete: inactive nets excluded from new session net list
+- Weather fields flattened into Session (8 fields: open/close temp, wind, cloud cover, precipitation)
+- Collapsible component for weather sections on session create/edit (collapsed by default)
+- SearchableSelect `allowFreeText` combobox mode for precipitation
+- Net soft-delete: `active: boolean` on Net, IndexedDB v5, toggle UI in LocationDetail
+- SessionNetLog dense model: auto-generated on session create for active nets, pre-filled with session times
+- Net Effort sub-page accessible from Edit Session form: inline-edit times/remarks, add/remove nets, net-hours calculation
+- Recap chip on banding record list rows (capture code R)
+- Bundle stays v2: added sessionNetLogs array, Net.active field
+- Tests: net-hours calculation, auto-generation, soft-delete filtering (13 new tests, 27 total)
 
 ---
 

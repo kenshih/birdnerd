@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Location, Net } from '../types'
-import { getNetsByLocation, saveNet, deleteNet, saveLocation } from '../db'
+import { getNetsByLocation, saveNet, saveLocation } from '../db'
 import PageHeader from '../components/PageHeader'
 
 interface Props {
@@ -53,6 +53,7 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
       id: generateId(),
       locationId: location.id,
       label: newLabel.trim(),
+      active: true,
       createdAt: now,
       updatedAt: now,
     }
@@ -61,8 +62,8 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
     await loadNets()
   }
 
-  async function handleDeleteNet(id: string) {
-    await deleteNet(id)
+  async function handleToggleNet(net: Net) {
+    await saveNet({ ...net, active: !net.active, updatedAt: new Date().toISOString() })
     await loadNets()
   }
 
@@ -159,7 +160,9 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
 
       {/* Net inventory */}
       <div style={{ marginTop: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.75rem' }}>Nets ({nets.length})</h2>
+        <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.75rem' }}>
+          Nets ({nets.filter(n => n.active !== false).length} active{nets.some(n => n.active === false) ? `, ${nets.filter(n => n.active === false).length} inactive` : ''})
+        </h2>
 
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
           <input
@@ -177,9 +180,18 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
         ) : (
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {nets.map(net => (
-              <li key={net.id} style={netRowStyle}>
-                <span style={{ fontWeight: 600 }}>{net.label}</span>
-                <button onClick={() => handleDeleteNet(net.id)} style={deleteNetBtnStyle} aria-label="Delete">&#x2715;</button>
+              <li key={net.id} style={{ ...netRowStyle, opacity: net.active !== false ? 1 : 0.5 }}>
+                <span style={{ fontWeight: 600 }}>
+                  {net.label}
+                  {net.active === false && <span style={{ fontWeight: 400, color: '#888', marginLeft: '0.5rem', fontSize: '0.8rem' }}>(inactive)</span>}
+                </span>
+                <button
+                  onClick={() => handleToggleNet(net)}
+                  style={net.active !== false ? deactivateNetBtnStyle : reactivateNetBtnStyle}
+                  aria-label={net.active !== false ? 'Remove from operation' : 'Reactivate'}
+                >
+                  {net.active !== false ? 'Remove' : 'Reactivate'}
+                </button>
               </li>
             ))}
           </ul>
@@ -221,7 +233,12 @@ const netRowStyle: React.CSSProperties = {
   borderRadius: 8, marginBottom: '0.4rem', fontSize: '1rem',
 }
 
-const deleteNetBtnStyle: React.CSSProperties = {
-  background: 'none', border: 'none', cursor: 'pointer', color: '#c44',
-  fontSize: '0.9rem', padding: '0.25rem',
+const deactivateNetBtnStyle: React.CSSProperties = {
+  background: 'none', border: '1px solid #c44', borderRadius: 4, cursor: 'pointer',
+  color: '#c44', fontSize: '0.75rem', padding: '0.2rem 0.5rem',
+}
+
+const reactivateNetBtnStyle: React.CSSProperties = {
+  background: 'none', border: '1px solid #2d6a4f', borderRadius: 4, cursor: 'pointer',
+  color: '#2d6a4f', fontSize: '0.75rem', padding: '0.2rem 0.5rem',
 }
