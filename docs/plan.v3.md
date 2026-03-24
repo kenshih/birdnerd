@@ -118,26 +118,15 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 ---
 
-## Phase 10 — Session Form & Views
+### Phase 10 — Session Form & Views ✅
 
-Goal: Expand session metadata and build list/detail views.
-
-**Breaking change:** Rename `Session.station` → `Session.locationId` (FK to Location). This is a clean-slate change — update `birdnerd-full-sample.json` and bump bundle version. Existing sessions will need re-import via JSON bundle.
-
-**10a. Session form updates**
-- Location dropdown (from Phase 6)
-- Protocol (dropdown: MAPS, Non-MAPS, etc.)
-- MAPS Period (numeric field)
-- Session Date (date picker)
-- Master Bander dropdown (from Bander registry, Phase 7)
-- Bander Roster: multi-select or checkboxes for SessionBanderLog (all active org banders)
-- Session open/close times (datetime)
-
-**10b. Session list & summary**
-- Session list view: date, location, protocol, master bander, record count
-- Session detail: edit form, linked banding records, session-level stats (new/unbanded/recaptured counts from records)
-- Session delete with cascade confirmation (deletes banding records + bander log entries; see ux-spec § 1.2)
-- All form fields soft-required (highlighted but always saveable; see ux-spec § 1.3)
+- Breaking change: `Session.station` → `Session.locationId` (FK to Location), bundle v1→v2 migration
+- Session form: location, date, protocol (MAPS/Non-MAPS/etc.), MAPS period, open/close times (with Now), master bander dropdown, participant checkboxes (SessionBanderLog), notes
+- Session list: richer display (protocol, time range, master bander, record count), delete with cascade confirmation
+- Session detail: metadata summary, stats (new/recap/unbanded), edit session, cascade delete
+- IndexedDB v4: sessionBanderLogs store, by-location index on sessions
+- Bundle schema v2: sessionBanderLogs array, v1→v2 migration (station→locationId)
+- All form fields soft-required (highlighted but always saveable)
 
 ---
 
@@ -145,13 +134,29 @@ Goal: Expand session metadata and build list/detail views.
 
 Goal: Per-session weather and per-net effort logging.
 
-- Weather fields on Session (flattened, no separate entity):
-  - open/close: Temperature (C), Wind (Beaufort), Cloud Cover (%), Precipitation (enum)
-- SessionNetLog: per-net effort tracking
-  - Which nets opened (from location inventory)
-  - Open/close time per net (may differ from session times)
-  - Remarks per net (wind, predators, low temps, etc.)
-- Auto-calculated: net-hours per net and total session effort
+**11a. Weather on Session form**
+- Two collapsible sections (Weather @ Open, Weather @ Close) on session create/edit
+- Fields: Temperature (°C), Wind (Beaufort 0-12), Cloud Cover (0-100%), Precipitation (combobox: free text or pick from suggestions)
+- Collapsed by default
+
+**11b. Net soft-delete**
+- Add `active: boolean` to Net type (default true for all existing nets)
+- IndexedDB v5, bundle stays v2 (not yet shipped)
+- Replace net hard-delete with soft-delete ("Remove from operation")
+- Active nets shown in session setup; inactive hidden
+
+**11c. SessionNetLog (dense model)**
+- New SessionNetLog type + DB store
+- On session create, auto-generate entries for all active nets at location, pre-filled with session open/close times
+- Net Effort sub-page accessible from Session View (see ux-spec § 3.3)
+- Tap row to inline-edit: open time, close time, remarks (free text)
+- Auto-calculated net-hours per net + total session effort
+- Bundle: add sessionNetLogs array (v2 — not yet shipped)
+
+**11d. Tests**
+- Net-hours calculation (edge cases: missing times, same open/close)
+- SessionNetLog auto-generation from active nets
+- Net soft-delete: inactive nets excluded from new session net list
 
 ---
 
@@ -264,6 +269,9 @@ Goal: Export in agency-specific formats.
 - Supabase integration: Postgres backend, Auth (email/Google), IndexedDB ↔ Supabase sync
 - API & SDKs: auto-generated API, supabase-js client
 - Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records
+
+**Effort & Reporting**
+- Volunteer/person-hours tracking: derive from SessionBanderLog + session open/close times, or add explicit per-bander hours field
 
 **Platform**
 - Color band resighting data collection

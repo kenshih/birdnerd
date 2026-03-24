@@ -92,6 +92,7 @@ erDiagram
         string id
         string location_id
         string label
+        boolean active
         datetime created
         datetime updated
     }

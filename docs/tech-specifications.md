@@ -100,7 +100,7 @@ The complete data model with 14 entities organized by category. See [entities.md
 - **open_temp, close_temp** (number, Celsius, nullable)
 - **open_wind, close_wind** (number, Beaufort scale, nullable)
 - **open_cloud_cover, close_cloud_cover** (number, 0-100 percent, nullable)
-- **open_precipitation, close_precipitation** (enum: clear, fog, thick fog, drizzle, rain, snow; nullable)
+- **open_precipitation, close_precipitation** (string, nullable — combobox: free text or pick from suggestions: clear, fog, thick fog, drizzle, rain, snow)
 - **notes** (string)
 - **created, updated** (datetime)
 
@@ -108,14 +108,18 @@ The complete data model with 14 entities organized by category. See [entities.md
 - **id** (string, PK)
 - **location_id** (FK to Location)
 - **label** (string, e.g., "N-01", "Trap-A")
+- **active** (boolean, default: true) — soft-delete: inactive nets are hidden from session setup but preserved in historical data
 - **created, updated** (datetime)
 
 #### SessionNetLog
+
+**Dense model:** On session create, auto-generate a log entry for every active net at the location, pre-filled with session open/close times. Banders only edit exceptions (late open, early close, remarks). This ensures accurate per-net effort tracking for MAPS net-hours reporting.
+
 - **id** (string, PK)
 - **session_id** (FK to Session)
 - **net_id** (FK to Net)
-- **remarks** (string, nullable)
-- **open_time, close_time** (datetime, nullable)
+- **open_time, close_time** (string, HH:mm — defaults to session open/close times)
+- **remarks** (string, nullable — only when something out-of-the-ordinary happens)
 - **created, updated** (datetime)
 
 #### SessionBanderLog

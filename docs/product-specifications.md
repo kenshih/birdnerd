@@ -398,7 +398,6 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
 - [ ] Status not required for unbanded birds (Hallie: "do NOT require Status entry if unbanded")
 - [ ] Protocol dropdown values: MAPS, Non-MAPS, Burrowing Owl Banding, Rehabbed-Bird Banding, Saw-whet Owl Banding (from Hallie's doc)
-- [ ] Precipitation enum values for weather: fog, thick fog, drizzle, rain (from Hallie's doc) -- perhaps let's not constrain this & leave it for open subjective notes rather than constrained values (we can give bander weather word cloud or somthing just to give them hints?)? from lat/lon arent the weather and vegetation info pretty detailed and robust?
 
 ### 8.3 Infrastructure
 
@@ -419,3 +418,6 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [x] Session ↔ Banding linkage: Session station auto-populates banding form, net dropdown from session's location nets (implemented in Phase 8)
 - [x] Session ID display on banding form: shows station code + date, not raw ID (implemented in Phase 8)
 - [x] IBP vs BBL storage: Store IBP internally, derive BBL at export (decided, coded in Phase 5)
+- [x] Net soft-delete: Use `active: boolean` instead of hard delete. Inactive nets hidden from session setup, preserved in historical data. Same pattern as Person.active.
+- [x] SessionNetLog dense model: Auto-generate a log entry for every active net on session create, pre-filled with session open/close times. Banders only edit exceptions. Enables accurate net-hours for MAPS reporting.
+- [x] Precipitation: Combobox (free text or pick from suggestions: clear, fog, thick fog, drizzle, rain, snow). Not constrained to enum.

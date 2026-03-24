@@ -249,14 +249,48 @@ Triggered from within a banding record. No photos are stored in the app — only
 | **Close Time** | Time picker | User input | Soft-required. When nets closed. |
 | **Master Bander** | Dropdown | Bander table, sorted by role | Soft-required. Dropdown shows: Master Banders first, then Sub-permittees, then Banders. Active only. |
 | **Session Participants** | Multi-select checkboxes | Bander table, active only | Soft-required (≥1). Shows all active banders + their roles. Creates SessionBanderLog entries. |
-| **Weather @ Open** | Inline fields | Session table | Optional. Temp (°C), Wind (Beaufort), Cloud Cover (%), Precipitation. |
-| **Weather @ Close** | Inline fields | Session table | Optional. Temp (°C), Wind (Beaufort), Cloud Cover (%), Precipitation. |
+| **Weather @ Open** | Collapsible section | Session table | Optional. Temp (°C), Wind (Beaufort 0-12), Cloud Cover (0-100%), Precipitation (combobox: type or pick from common values). |
+| **Weather @ Close** | Collapsible section | Session table | Optional. Same fields as Weather @ Open. |
 | **Notes** | Text area | User input | Optional. Session-level notes. |
+
+**Weather sections** use a collapsible component — collapsed by default, expand on tap. Each contains 4 fields: Temperature, Wind, Cloud Cover, Precipitation. Precipitation uses a combobox (type free text or pick from suggestions: clear, fog, thick fog, drizzle, rain, snow).
 
 **Linked Data:**
 - Shows count of nets available at this location
 - After saving, user can immediately start logging banding records
 - Each banding record will reference this session
+
+### 3.3 Net Effort (sub-page)
+
+Accessible from Session View via a "Net Effort" button. Uses the dense model: on session create, auto-generates a SessionNetLog entry for every active net at the location, pre-filled with session open/close times.
+
+```
+┌──────────────────────────────────────┐
+│  ← Session    Net Effort    🏠       │
+│                                      │
+│  GCBS · 2026-03-22                   │
+│  Total: 58.5 net-hours (10 nets)     │
+│                                      │
+│  Net 1    06:30 – 12:00   5.5 hrs   │
+│  Net 2    06:30 – 12:00   5.5 hrs   │
+│  Net 3    06:30 – 11:00   4.5 hrs   │
+│           Closed early: wind         │
+│  Net 4    07:00 – 12:00   5.0 hrs   │
+│           Opened late: low temps     │
+│  ...                                 │
+│                                      │
+│  Tap a net row to edit times/remarks │
+└──────────────────────────────────────┘
+```
+
+**Behavior:**
+- Each row shows net label, open/close times, calculated net-hours
+- Rows with remarks show the remark below in smaller/dimmed text
+- Tap a row to expand inline edit: open time, close time, remarks (free text)
+- Net-hours auto-calculated: `(close - open)` in decimal hours
+- Total net-hours shown at top, updates live as times change
+- Nets are sorted by label (numeric sort where possible)
+- Only active nets from the location are included
 
 ---
 
