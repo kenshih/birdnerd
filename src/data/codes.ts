@@ -239,6 +239,36 @@ export const JUV_BODY_PLUMAGE_CODES = [
   { code: '3', label: '3 — Heavy' },
 ]
 
+// BBL Band Size codes
+export const BAND_SIZE_CODES = [
+  { code: '0', label: '0' },
+  { code: '0A', label: '0A' },
+  { code: '0B', label: '0B' },
+  { code: '1', label: '1' },
+  { code: '1A', label: '1A' },
+  { code: '1B', label: '1B' },
+  { code: '1C', label: '1C' },
+  { code: '1D', label: '1D' },
+  { code: '2', label: '2' },
+  { code: '3', label: '3' },
+  { code: '3A', label: '3A' },
+  { code: '3B', label: '3B' },
+  { code: '4', label: '4' },
+  { code: '7', label: '7' },
+  { code: '7A', label: '7A' },
+  { code: '7B', label: '7B' },
+  { code: '8', label: '8' },
+  { code: '9', label: '9' },
+]
+
+// Band Type — TODO: confirm full list with Hallie
+export const BAND_TYPE_CODES = [
+  { code: 'Standard', label: 'Standard' },
+  { code: 'Buffy', label: 'Buffy' },
+  { code: 'Giant', label: 'Giant' },
+  { code: 'Lockout', label: 'Lockout' },
+]
+
 export const STATIONS = [
   { code: 'GCBS', name: 'Galindo Creek Banding Station' },
   { code: 'MCFS', name: 'Mitchell Canyon Field Station' },

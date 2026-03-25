@@ -169,6 +169,14 @@ Goal: Band lifecycle management per BBL requirements.
 - Auto-update band status on record submission (set to "deployed" on New; track recaptures)
 - Foreign recapture detection (band not in inventory → Capture Code = F)
 
+**Implementation order:**
+
+1. **13a-1 — Data layer:** Band type/interface, IndexedDB v6 with `bands` store (unique index on `bandNumber`), Band CRUD functions, band size + type code tables
+2. **13a-2 — Bundle schema v3:** Add bands to export/import, v2→v3 migration (default empty bands array), update seed/example data
+3. **13a-3 — Band Inventory UI:** Overview dashboard (stats by size/status), filterable band list, bulk add-by-series form with duplicate detection + preview
+4. **13a-4 — Band search on form:** New `BandSearchSelect` component replaces free-text band input. Auto-set capture code from band status (available→N, deployed→R, not found→F, UNBANDED→U). Atomic record + band status update in single IndexedDB transaction
+5. **13a-5 — Validation & cleanup:** Band-related validation rules (capture code vs band status conflicts), display verification, CSV import compatibility (no bandId linkage)
+
 ## Phase 13b — Recapture Fields & UX
 
 Goal: Model recapture-specific data and expose it in the record form.

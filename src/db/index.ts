@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander } from '../types'
+import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander, Band } from '../types'
 import { loadSeedData } from '../utils/dataBundle'
 
 interface BirdNerdDB extends DBSchema {
@@ -43,6 +43,11 @@ interface BirdNerdDB extends DBSchema {
     value: SessionNetLog
     indexes: { 'by-session': string }
   }
+  bands: {
+    key: string
+    value: Band
+    indexes: { 'by-number': string; 'by-status': string }
+  }
 }
 
 let db: IDBPDatabase<BirdNerdDB> | null = null
@@ -57,7 +62,7 @@ export function resetDB() {
 
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
-  db = await openDB<BirdNerdDB>('birdnerd', 5, {
+  db = await openDB<BirdNerdDB>('birdnerd', 6, {
     upgrade(database, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         const sessionStore = database.createObjectStore('sessions', { keyPath: 'id' })
@@ -118,6 +123,12 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
             }
           })
         }
+      }
+
+      if (oldVersion < 6) {
+        const bandStore = database.createObjectStore('bands', { keyPath: 'id' })
+        bandStore.createIndex('by-number', 'bandNumber', { unique: true })
+        bandStore.createIndex('by-status', 'status')
       }
     },
   })
@@ -366,4 +377,56 @@ export async function getActiveNetsByLocation(locationId: string): Promise<Net[]
   const db = await getDB()
   const allNets = await db.getAllFromIndex('nets', 'by-location', locationId)
   return allNets.filter(n => n.active !== false)
+}
+
+// Bands
+export async function getBands(): Promise<Band[]> {
+  const db = await getDB()
+  return db.getAll('bands')
+}
+
+export async function getBand(id: string): Promise<Band | undefined> {
+  const db = await getDB()
+  return db.get('bands', id)
+}
+
+export async function getBandByNumber(bandNumber: string): Promise<Band | undefined> {
+  const db = await getDB()
+  return db.getFromIndex('bands', 'by-number', bandNumber)
+}
+
+export async function getBandsByStatus(status: string): Promise<Band[]> {
+  const db = await getDB()
+  return db.getAllFromIndex('bands', 'by-status', status)
+}
+
+export async function saveBand(band: Band): Promise<void> {
+  const db = await getDB()
+  await db.put('bands', band)
+}
+
+export async function saveBands(bands: Band[]): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction('bands', 'readwrite')
+  for (const band of bands) await tx.store.put(band)
+  await tx.done
+}
+
+export async function deleteBand(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('bands', id)
+}
+
+/** Save a banding record and optionally update the associated band in one transaction */
+export async function saveRecordWithBandUpdate(
+  record: BirdRecord,
+  bandUpdate?: Band,
+): Promise<void> {
+  const db = await getDB()
+  const tx = db.transaction(['records', 'bands'], 'readwrite')
+  await tx.objectStore('records').put(record)
+  if (bandUpdate) {
+    await tx.objectStore('bands').put(bandUpdate)
+  }
+  await tx.done
 }

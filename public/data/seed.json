@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "exportedAt": "2026-03-21T00:00:00.000Z",
   "locations": [
     {
@@ -58,5 +58,6 @@
   "sessions": [],
   "sessionBanderLogs": [],
   "sessionNetLogs": [],
+  "bands": [],
   "records": []
 }

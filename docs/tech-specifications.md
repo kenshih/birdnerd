@@ -147,8 +147,8 @@ This means components rendering or validating a BandingRecord can load session-l
 #### BandingRecord
 - **id** (string, PK)
 - **session_id** (FK to Session)
-- **band_id** (string, FK to Band, nullable — null for UNBANDED)
-- **band_number** (string, denormalized from Band for display; "UNBANDED" when no band)
+- **band_id** (string, FK to Band, nullable — null for UNBANDED and foreign recaptures)
+- **band_number** (string, denormalized from Band for display; "UNBANDED" when no band; free-text foreign band number when capture_code = F)
 - **species_code** (string, 4-letter alpha code — validated against static Species list, not a DB FK)
 - **capture_code** (enum: 1/N, U, R, F, 4, 5, 6, 8, X)
 - **age** (enum: U, L, HY, AHY, SY, ASY, TY, ATY)

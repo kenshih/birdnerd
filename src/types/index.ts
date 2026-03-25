@@ -4,10 +4,26 @@ export interface Species {
   sciName: string    // e.g. "Melospiza melodia"
 }
 
+export type BandStatus = 'available' | 'deployed' | 'destroyed' | 'lost' | 'replaced'
+export type BandType = 'Standard' | 'Buffy' | 'Giant' | 'Lockout'
+
+export interface Band {
+  id: string
+  bandNumber: string        // XXXX-XXXXX, unique per physical band
+  status: BandStatus
+  bandSize: string          // BBL size code (0, 0A, 0B, 1, 1A, 1B, 1C, 1D, 2, 3, 3A, 3B, 4, 7, 7A, 7B, 8, 9)
+  bandType: BandType
+  currentSpecies?: string   // ALPHA code when deployed
+  deploymentDate?: string   // ISO date when deployed
+  createdAt: string
+  updatedAt: string
+}
+
 export interface BirdRecord {
   id: string
   sessionId: string
   // Identity
+  bandId?: string           // FK to Band (null for UNBANDED)
   bandNumber?: string
   speciesCode?: string
   age?: string

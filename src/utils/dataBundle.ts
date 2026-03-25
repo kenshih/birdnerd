@@ -4,7 +4,7 @@ import { getDB } from '../db'
 /** Export all managed data as a DataBundle object. */
 export async function exportDataBundle(): Promise<DataBundle> {
   const db = await getDB()
-  const [locations, nets, people, banders, sessions, sessionBanderLogs, sessionNetLogs, records] = await Promise.all([
+  const [locations, nets, people, banders, sessions, sessionBanderLogs, sessionNetLogs, bands, records] = await Promise.all([
     db.getAll('locations'),
     db.getAll('nets'),
     db.getAll('people'),
@@ -12,6 +12,7 @@ export async function exportDataBundle(): Promise<DataBundle> {
     db.getAll('sessions'),
     db.getAll('sessionBanderLogs'),
     db.getAll('sessionNetLogs'),
+    db.getAll('bands'),
     db.getAll('records'),
   ])
   return {
@@ -24,6 +25,7 @@ export async function exportDataBundle(): Promise<DataBundle> {
     sessions,
     sessionBanderLogs,
     sessionNetLogs,
+    bands,
     records,
   }
 }
@@ -63,6 +65,11 @@ export function validateBundle(data: unknown): string | null {
   // sessionNetLogs added in v2 — optional for v1 bundles
   if (bundle.sessionNetLogs !== undefined && !Array.isArray(bundle.sessionNetLogs)) {
     return 'Invalid bundle: "sessionNetLogs" must be an array'
+  }
+
+  // bands added in v3 — optional for v1/v2 bundles
+  if (bundle.bands !== undefined && !Array.isArray(bundle.bands)) {
+    return 'Invalid bundle: "bands" must be an array'
   }
 
   return null
@@ -108,6 +115,16 @@ function migrateV1ToV2(bundle: Record<string, unknown>): void {
 }
 
 /**
+ * Migrate a v2 bundle to v3 format.
+ * v3 adds bands array and BirdRecord.bandId.
+ */
+function migrateV2ToV3(bundle: Record<string, unknown>): void {
+  if (!bundle.bands) {
+    bundle.bands = []
+  }
+}
+
+/**
  * Import a DataBundle into IndexedDB (replace mode: wipes all existing data).
  * Caller should validate the bundle first with validateBundle().
  */
@@ -115,12 +132,13 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   // Apply migrations for older bundle versions
   const raw = bundle as unknown as Record<string, unknown>
   if ((raw.version as number) < 2) migrateV1ToV2(raw)
+  if ((raw.version as number) < 3) migrateV2ToV3(raw)
 
   const db = await getDB()
 
   // Wipe all stores and reload from bundle in a single transaction
   const tx = db.transaction(
-    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'sessionNetLogs', 'records'],
+    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'sessionNetLogs', 'bands', 'records'],
     'readwrite',
   )
 
@@ -133,6 +151,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
     tx.objectStore('sessions').clear(),
     tx.objectStore('sessionBanderLogs').clear(),
     tx.objectStore('sessionNetLogs').clear(),
+    tx.objectStore('bands').clear(),
     tx.objectStore('records').clear(),
   ])
 
@@ -144,6 +163,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   for (const session of bundle.sessions) await tx.objectStore('sessions').put(session)
   for (const sbl of (bundle.sessionBanderLogs ?? [])) await tx.objectStore('sessionBanderLogs').put(sbl)
   for (const snl of (bundle.sessionNetLogs ?? [])) await tx.objectStore('sessionNetLogs').put(snl)
+  for (const band of (bundle.bands ?? [])) await tx.objectStore('bands').put(band)
   for (const record of bundle.records) await tx.objectStore('records').put(record)
 
   await tx.done

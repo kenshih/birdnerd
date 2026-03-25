@@ -206,3 +206,31 @@ describe('combined warnings', () => {
     expect(Object.keys(v({})).length).toBe(0)
   })
 })
+
+// ─── Band status vs capture code ──────────────────────────────────────
+
+describe('Band status vs capture code', () => {
+  it('warns when capture code is New but band is deployed', () => {
+    expect(v({ bandStatus: 'deployed', captureCode: '1' }).bbpCode).toMatch(/already deployed/)
+  })
+
+  it('warns when capture code is Recapture but band is available', () => {
+    expect(v({ bandStatus: 'available', captureCode: 'R' }).bbpCode).toMatch(/available/)
+  })
+
+  it('no warning for New + available', () => {
+    expect(v({ bandStatus: 'available', captureCode: '1' }).bbpCode).toBeUndefined()
+  })
+
+  it('no warning for Recapture + deployed', () => {
+    expect(v({ bandStatus: 'deployed', captureCode: 'R' }).bbpCode).toBeUndefined()
+  })
+
+  it('no warning when band status is not set', () => {
+    expect(v({ captureCode: '1' }).bbpCode).toBeUndefined()
+  })
+
+  it('no warning when capture code is not set', () => {
+    expect(v({ bandStatus: 'deployed' }).bbpCode).toBeUndefined()
+  })
+})

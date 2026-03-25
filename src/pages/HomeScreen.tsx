@@ -20,7 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   // Back office
   { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
   { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
-  { mode: 'band-inventory', label: 'Band Inventory', description: 'Coming soon', enabled: false },
+  { mode: 'band-inventory', label: 'Band Inventory', description: 'Add, track, and manage band stock', enabled: true },
   // Meta
   { mode: 'feedback', label: 'Report Bugs / Feedback', description: 'Send us an email', enabled: true },
 ]

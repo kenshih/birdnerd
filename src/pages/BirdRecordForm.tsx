@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
-import type { BirdRecord, Session, Net, Location } from '../types'
-import { saveRecord, getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation } from '../db'
+import type { BirdRecord, Session, Net, Location, Band } from '../types'
+import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate } from '../db'
 import { validateRecord } from '../utils/validation'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
@@ -11,6 +11,7 @@ import {
 } from '../data/codes'
 import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
 import SearchableSelect from '../components/SearchableSelect'
+import BandSearchSelect, { type BandSelection } from '../components/BandSearchSelect'
 
 interface Props {
   session: Session
@@ -49,6 +50,8 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
   const [netOptions, setNetOptions] = useState<Net[]>([])
   const [sessionLocation, setSessionLocation] = useState<Location | undefined>()
   const [sessionNetLabels, setSessionNetLabels] = useState<Set<string>>(new Set())
+  const [allBands, setAllBands] = useState<Band[]>([])
+  const [bandSelection, setBandSelection] = useState<BandSelection>({ kind: 'none' })
 
   useEffect(() => {
     loadDropdownData()
@@ -81,6 +84,10 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
       }))
     }
 
+    // Load all bands for search
+    const bands = await getBands()
+    setAllBands(bands.sort((a, b) => a.bandNumber.localeCompare(b.bandNumber)))
+
     // Load session net log labels for net validation
     const netLogs = await getSessionNetLogs(session.id)
     if (session.locationId) {
@@ -98,13 +105,24 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
       }
       values.station = record.station ?? sessionLocation?.banderLocationId ?? ''
       reset(values as FormValues)
+
+      // Restore band selection from record
+      if (record.bandId && allBands.length > 0) {
+        const band = allBands.find(b => b.id === record.bandId)
+        if (band) setBandSelection({ kind: 'band', band })
+      } else if (record.bandNumber === 'UNBANDED') {
+        setBandSelection({ kind: 'unbanded' })
+      } else if (record.bandNumber && !record.bandId) {
+        setBandSelection({ kind: 'foreign', bandNumber: record.bandNumber })
+      }
     } else {
       reset({
         station: sessionLocation?.banderLocationId ?? '',
         date: session.date,
       })
+      setBandSelection({ kind: 'none' })
     }
-  }, [record, session, sessionLocation, reset])
+  }, [record, session, sessionLocation, reset, allBands])
 
   const speciesCode = watch('speciesCode')
   const wrpValue = watch('wrp')
@@ -125,10 +143,30 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
   const notes = watch('notes')
   const net = watch('net')
 
+  const bbpCode = watch('bbpCode')
+  const bandStatus = bandSelection.kind === 'band' ? bandSelection.band.status : undefined
+
   const warnings = useMemo(() => validateRecord(
-    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net },
+    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, bandStatus, captureCode: bbpCode },
     sessionNetLabels,
-  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels])
+  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels, bandStatus, bbpCode])
+
+  function handleBandSelect(sel: BandSelection) {
+    setBandSelection(sel)
+    // Auto-set capture code based on band status
+    switch (sel.kind) {
+      case 'band':
+        if (sel.band.status === 'available') setValue('bbpCode', '1')
+        else if (sel.band.status === 'deployed') setValue('bbpCode', 'R')
+        break
+      case 'unbanded':
+        setValue('bbpCode', 'U')
+        break
+      case 'foreign':
+        setValue('bbpCode', 'F')
+        break
+    }
+  }
 
   function fillNow(field: 'captureTime' | 'releaseTime') {
     const now = new Date()
@@ -139,14 +177,42 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
 
   async function onSubmit(data: FormValues) {
     const now = new Date().toISOString()
+
+    // Resolve bandId and bandNumber from selection
+    let bandId: string | undefined
+    let bandNumber: string | undefined
+    if (bandSelection.kind === 'band') {
+      bandId = bandSelection.band.id
+      bandNumber = bandSelection.band.bandNumber
+    } else if (bandSelection.kind === 'unbanded') {
+      bandNumber = 'UNBANDED'
+    } else if (bandSelection.kind === 'foreign') {
+      bandNumber = bandSelection.bandNumber
+    }
+
     const saved: BirdRecord = {
       ...data,
       id: record?.id ?? generateId(),
       sessionId: session.id,
+      bandId,
+      bandNumber,
       createdAt: record?.createdAt ?? now,
       updatedAt: now,
     }
-    await saveRecord(saved)
+
+    // If new banding (capture code = 1/N) and band is available, update band to deployed
+    let bandUpdate: Band | undefined
+    if (bandSelection.kind === 'band' && bandSelection.band.status === 'available' && (data.bbpCode === '1' || data.bbpCode === 'N')) {
+      bandUpdate = {
+        ...bandSelection.band,
+        status: 'deployed',
+        currentSpecies: data.speciesCode,
+        deploymentDate: session.date,
+        updatedAt: now,
+      }
+    }
+
+    await saveRecordWithBandUpdate(saved, bandUpdate)
     onSaved()
   }
 
@@ -173,7 +239,16 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
         {/* ── Identity ── */}
         <Section title="Identity">
           <Field label="Band Number">
-            <input {...register('bandNumber')} placeholder="e.g. 2305043898" style={inputStyle} />
+            <BandSearchSelect
+              bands={allBands}
+              value={bandSelection}
+              onChange={handleBandSelect}
+            />
+            {bandSelection.kind === 'band' && bandSelection.band.status === 'deployed' && (
+              <div style={{ marginTop: '0.3rem', padding: '0.4rem 0.5rem', background: '#cce5ff', borderRadius: 6, fontSize: '0.8rem' }}>
+                Deployed on {bandSelection.band.deploymentDate ?? '?'} to {bandSelection.band.currentSpecies ?? '?'}
+              </div>
+            )}
           </Field>
           <Field label="Species">
             <SpeciesAutocomplete
@@ -182,7 +257,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
             />
           </Field>
           <Row>
-            <Field label="Capture Status">
+            <Field label="Capture Status" warning={warnings.bbpCode}>
               <select {...register('bbpCode')} style={inputStyle}>
                 <option value="">—</option>
                 {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}

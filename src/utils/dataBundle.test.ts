@@ -21,6 +21,7 @@ function makeBundle(overrides: Partial<DataBundle> = {}): DataBundle {
     sessions: [],
     sessionBanderLogs: [],
     sessionNetLogs: [],
+    bands: [],
     records: [],
     ...overrides,
   }
@@ -230,6 +231,49 @@ describe('export/import round-trip', () => {
     const db = await getDB()
     expect(await db.count('locations')).toBe(0)
     expect(await db.count('records')).toBe(0)
+  })
+
+  it('round-trips bands', async () => {
+    const { saveBand } = await import('../db')
+    await saveBand({
+      id: 'band-1', bandNumber: '1154-81501', status: 'available',
+      bandSize: '1B', bandType: 'Standard', createdAt: now, updatedAt: now,
+    })
+
+    const bundle = await exportDataBundle()
+    expect(bundle.bands).toHaveLength(1)
+    expect(bundle.bands[0].bandNumber).toBe('1154-81501')
+
+    resetDB()
+    indexedDB.deleteDatabase('birdnerd')
+    await importDataBundle(bundle)
+
+    const db = await getDB()
+    const bands = await db.getAll('bands')
+    expect(bands).toHaveLength(1)
+    expect(bands[0].bandSize).toBe('1B')
+  })
+
+  it('migrates v2 bundle (adds empty bands)', async () => {
+    const v2Bundle = {
+      version: 2,
+      exportedAt: now,
+      locations: [sampleLocation],
+      nets: [sampleNet],
+      people: [],
+      banders: [],
+      sessions: [],
+      sessionBanderLogs: [],
+      sessionNetLogs: [],
+      records: [],
+    }
+
+    expect(validateBundle(v2Bundle)).toBeNull()
+    await importDataBundle(v2Bundle as unknown as DataBundle)
+
+    const db = await getDB()
+    const bands = await db.getAll('bands')
+    expect(bands).toHaveLength(0)
   })
 
   it('migrates v1 bundle (station → locationId)', async () => {

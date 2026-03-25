@@ -3,12 +3,12 @@ import type { Session, Location, Person } from './types'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
 import SessionView from './pages/SessionView'
-import PlaceholderPage from './pages/PlaceholderPage'
 import DataManagerPage from './pages/DataManagerPage'
 import LocationList from './pages/LocationList'
 import LocationDetail from './pages/LocationDetail'
 import PeopleList from './pages/PeopleList'
 import PersonDetail from './pages/PersonDetail'
+import BandInventory from './pages/BandInventory'
 
 type AppView =
   | { mode: 'home' }
@@ -72,13 +72,7 @@ export default function App() {
   }
 
   if (view.mode === 'band-inventory') {
-    return (
-      <PlaceholderPage
-        title="Band Inventory"
-        description="Add, track, and manage USGS BBL band stock. View deployed vs available bands by size and type."
-        onHome={goHome}
-      />
-    )
+    return <BandInventory onHome={goHome} />
   }
 
   if (view.mode === 'location-detail') {

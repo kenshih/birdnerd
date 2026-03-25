@@ -19,6 +19,8 @@ export interface ValidationInput {
   bloodSample?: boolean
   notes?: string
   net?: string
+  bandStatus?: string       // Band entity status: 'available', 'deployed', etc.
+  captureCode?: string      // bbpCode: '1', 'R', 'U', 'F', etc.
 }
 
 export type ValidationWarnings = Partial<Record<string, string>>
@@ -95,6 +97,16 @@ export function validateRecord(
   // Net not in session effort log
   if (values.net && sessionNetLabels && sessionNetLabels.size > 0 && !sessionNetLabels.has(values.net)) {
     warnings.net = `Net ${values.net} not in session effort log`
+  }
+
+  // Band status vs capture code conflicts
+  if (values.bandStatus && values.captureCode) {
+    if (values.captureCode === '1' && values.bandStatus === 'deployed') {
+      warnings.bbpCode = 'This band is already deployed — expected Recapture (R), not New (1)'
+    }
+    if (values.captureCode === 'R' && values.bandStatus === 'available') {
+      warnings.bbpCode = 'This band shows as available — expected New (1), not Recapture (R)'
+    }
   }
 
   return warnings
