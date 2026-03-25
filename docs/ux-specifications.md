@@ -133,6 +133,8 @@ Validation warnings and errors display **inline below the relevant field**, appe
 │  BirdNerd Banding Form               │
 ├──────────────────────────────────────┤
 │                                      │
+│  [ Save Record ] [ Cancel ]          │
+│                                      │
 │  📋 IDENTITY SECTION                │
 │   ├─ Band Number [search dropdown]  │
 │   ├─ Capture Code [radio buttons]   │

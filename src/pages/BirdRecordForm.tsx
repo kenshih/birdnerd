@@ -243,6 +243,11 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
       </p>
 
       <form onSubmit={handleSubmit(onSubmit)}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <button type="submit" style={btnStyle('#2d6a4f')}>Save Record</button>
+          <button type="button" onClick={onCancel} style={btnStyle('#888')}>Cancel</button>
+        </div>
+
         {/* ── Identity ── */}
         <Section title="Identity">
           <Field label="Band Number">
