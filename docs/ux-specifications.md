@@ -97,6 +97,30 @@ Reusable dropdown component with two modes:
 
 Fields marked "soft-required" are visually highlighted (e.g., subtle border or label indicator) but do not block saving. The form can always be submitted with partial data. Enforcement of required fields is deferred to the Validation phase (Phase 12).
 
+### 1.6 Inline Validation Warnings
+
+Validation warnings and errors display **inline below the relevant field**, appearing live as the user fills the form and persisting until the conflict is resolved. They do **not** block saving — the form is always submittable.
+
+```
+┌──────────────────────────────────────┐
+│  Sex       [M ▼]                     │
+│                                      │
+│  Brood Patch  [3 - Heavy ▼]         │
+│  ⚠ Sex=M conflicts with BP 3/4      │
+│                                      │
+│  Skull     [  ▼]                     │
+│  ⚠ Skull required when aged by SK    │
+└──────────────────────────────────────┘
+```
+
+**Styling:** Warning text in `color: #c0392b`, `font-size: 0.8rem`, preceded by a ⚠ icon. Displayed immediately below the field's input element, above the next field's label.
+
+**Behavior:**
+- Warnings evaluate live on every field change (not just on save)
+- Multiple warnings can appear simultaneously on different fields
+- Warnings do not prevent saving — partial/conflicting records are allowed
+- Cross-field rules (e.g., Sex + BP) trigger on whichever field changes last
+
 ---
 
 ## 2. Banding Data Collection Form
@@ -295,13 +319,13 @@ After selecting a session, the Session View shows metadata summary, action butto
 
 **Recap chip:** Records with capture code `R` (recap) display a small "recap" chip — a grey rounded label (`background: #e9ecef`, `color: #6c757d`, `font-size: 0.7rem`) — inline after the band number. This provides at-a-glance differentiation from new bandings without cluttering the row.
 
-### 3.3 Net Effort (sub-page)
+### 3.3 Manage Nets (sub-page)
 
-Accessible from the **Edit Session** form via a "Net Effort" button (placed after Notes, before Save/Cancel). Uses the dense model: on session create, auto-generates a SessionNetLog entry for every active net at the location, pre-filled with session open/close times. Back button returns to Edit Session.
+Accessible from the **Edit Session** form via a "Manage Nets" button (placed at the top, before the form fields). Uses the dense model: on session create, auto-generates a SessionNetLog entry for every active net at the location, pre-filled with session open/close times. Back button returns to Edit Session.
 
 ```
 ┌──────────────────────────────────────┐
-│  ← Edit Session  Net Effort  🏠      │
+│  ← Edit Session  Manage Nets  🏠     │
 │                                      │
 │  Session: 06:30–12:00                │
 │  Total: 58.5 net-hours · 10 nets    │

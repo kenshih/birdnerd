@@ -257,7 +257,15 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
   if (view.mode === 'edit-session') {
     return (
       <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-        <PageHeader title="Edit Session" onBack={() => setView({ mode: 'list' })} backLabel="← Cancel" onHome={onHome} />
+        <PageHeader title="Edit Session" onBack={() => setView({ mode: 'list' })} backLabel="← Back" onHome={onHome} />
+
+        <button
+          type="button"
+          onClick={() => setView({ mode: 'net-effort' })}
+          style={{ ...secondaryBtnStyle, width: '100%', marginBottom: '0.75rem', textAlign: 'center' }}
+        >
+          Manage Nets{netLogs.length > 0 ? ` (${netLogs.length} nets)` : ''}
+        </button>
 
         <div style={cardStyle}>
           <label style={labelStyle}>Location</label>
@@ -368,14 +376,6 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
 
           <label style={labelStyle}>Notes</label>
           <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={2} placeholder="Optional session notes" style={{ ...inputStyle, resize: 'vertical' }} />
-
-          <button
-            type="button"
-            onClick={() => setView({ mode: 'net-effort' })}
-            style={{ ...secondaryBtnStyle, width: '100%', marginTop: '0.75rem', textAlign: 'center' }}
-          >
-            Net Effort{netLogs.length > 0 ? ` (${netLogs.length} nets)` : ''}
-          </button>
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
             <button onClick={saveEditSession} style={actionBtnStyle('#2d6a4f')}>Save</button>
@@ -580,7 +580,7 @@ function NetEffortView({ session, netLogs, nets, onBack, onHome, onSave, onAdd, 
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
-      <PageHeader title="Net Effort" onBack={onBack} backLabel="← Edit Session" onHome={onHome} />
+      <PageHeader title="Manage Nets" onBack={onBack} backLabel="← Edit Session" onHome={onHome} />
 
       <div style={{ fontSize: '0.85rem', color: '#555', marginBottom: '0.75rem' }}>
         {session.openTime && session.closeTime

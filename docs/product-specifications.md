@@ -326,7 +326,8 @@ For detailed field definitions, constraints, and data types, see [tech-specifica
 ### 5.3 Validation Philosophy
 - **Soft warnings by default** — birds escape, partial records are valuable
 - **Hard blocks only** for logical impossibilities (Sex=M + BP=Heavy)
-- **Override mechanism** — user can acknowledge and proceed (with auto-note)
+- **Inline display** — warnings/errors appear under the relevant field, live as the user fills the form
+- **Override mechanism** — future consideration (see backlog). Originally from Hallie's doc for Species × Band size ("Did you gauge the leg?" → auto-note). May not be needed for other validations.
 - **Required fields** marked with * are enforced at submission time, not during entry
 
 ---

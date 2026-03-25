@@ -144,26 +144,16 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 ---
 
-## Phase 12 — Validation (Soft Warnings)
+### Phase 12 — Validation (Soft Warnings) ✅
 
-**Unit tests to add alongside validation:**
-- Validation rule logic (sex/CP/BP conflicts, required-field triggers, override mechanism)
-- CSV import/export round-trip (all field types: string, number, boolean)
-- IBP → BBL code translation (Phase 15 prerequisite)
-
-Goal: Implement priority validation rules (red items from specification).
-
-- Sex=M + Brood Patch 3/4 → error
-- Sex=F + Cloacal Protuberance 1-3 → error
-- SK in How Aged → require Skull field
-- Age=U → How Aged not required; Sex=U → How Sexed not required
-- How Aged/Sexed = OT → require note
-- Status 500 → require disposition + note
-- Mortality → require note
-- Blood Sample → validate status includes blood sample code (18)
-- Species × band size validation (when band inventory exists)
-- Override mechanism: user acknowledges warning, auto-note generated
-- Validate net selection against nets opened in session (from SessionNetLog)
+- Pure validation function (`src/utils/validation.ts`) — no DB or React dependencies
+- 9 rules: Sex+BP conflict, Sex+CP conflict, SK→Skull required, OT→note required, Status 500→disposition+note, Mortality→note, Status OT→note, Blood sample→status check, Net not in session effort
+- Live inline warnings via `useMemo` + React Hook Form `watch()` — recompute on every field change
+- Warning display: `⚠` prefix, red text under field, never blocks saving
+- Multiple warnings on notes field concatenated with "; also required for..."
+- Net validation loads SessionNetLogs mapped through Net labels for context
+- Species × band size validation deferred to Phase 13
+- Tests: 39 validation tests (66 total across all test files)
 
 ---
 
@@ -221,11 +211,14 @@ Goal: Export in agency-specific formats.
 - Speech-to-text (STT) input for field entry
 
 **Advanced Validation**
+- Validation override mechanism: user acknowledges warning, auto-note generated (from Hallie's doc re: Species × Band size "Did you gauge the leg?"). Consider if needed beyond band size.
 - Morphometrics × species range validation (wing, tail, tarsus, culmen, mass — tables from Hallie)
 - Status × Disposition cross-validation
 - Cross-field self-validation (contradicting data in multiple categories)
 - Season × species × age/sex/molt consistency
 - New/Recapture/Unbanded selection driving which codes are valid
+- CSV import/export round-trip tests (all field types)
+- IBP → BBL code translation tests
 
 **Band Inventory Advanced**
 - Auxiliary markers (colored bands, 1-2 letters + 1-2 numbers)

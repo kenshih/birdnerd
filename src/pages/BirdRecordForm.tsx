@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session, Net, Location } from '../types'
-import { saveRecord, getPeople, getBanders, getActiveNetsByLocation, getLocation } from '../db'
+import { saveRecord, getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation } from '../db'
+import { validateRecord } from '../utils/validation'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
@@ -47,6 +48,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
   const [sessionLocation, setSessionLocation] = useState<Location | undefined>()
+  const [sessionNetLabels, setSessionNetLabels] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     loadDropdownData()
@@ -78,6 +80,14 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
         return a.label.localeCompare(b.label)
       }))
     }
+
+    // Load session net log labels for net validation
+    const netLogs = await getSessionNetLogs(session.id)
+    if (session.locationId) {
+      const allNets = await getNetsByLocation(session.locationId)
+      const netMap = new Map(allNets.map(n => [n.id, n.label]))
+      setSessionNetLabels(new Set(netLogs.map(l => netMap.get(l.netId) ?? '').filter(Boolean)))
+    }
   }
 
   useEffect(() => {
@@ -98,6 +108,27 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
 
   const speciesCode = watch('speciesCode')
   const wrpValue = watch('wrp')
+
+  // Watch fields needed for validation
+  const sex = watch('sex')
+  const bp = watch('bp')
+  const cp = watch('cp')
+  const howAged = watch('howAged')
+  const howAged2 = watch('howAged2')
+  const howSexed = watch('howSexed')
+  const howSexed2 = watch('howSexed2')
+  const age = watch('age')
+  const skull = watch('skull')
+  const status = watch('status')
+  const disposition = watch('disposition')
+  const bloodSample = watch('bloodSample')
+  const notes = watch('notes')
+  const net = watch('net')
+
+  const warnings = useMemo(() => validateRecord(
+    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net },
+    sessionNetLabels,
+  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels])
 
   function fillNow(field: 'captureTime' | 'releaseTime') {
     const now = new Date()
@@ -213,7 +244,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
         {/* ── Condition ── */}
         <Section title="Condition">
           <Row>
-            <Field label="Skull">
+            <Field label="Skull" warning={warnings.skull}>
               <select {...register('skull')} style={inputStyle}>
                 <option value="">—</option>
                 {SKULL_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
@@ -227,13 +258,13 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
             </Field>
           </Row>
           <Row>
-            <Field label="CP">
+            <Field label="CP" warning={warnings.cp}>
               <select {...register('cp')} style={inputStyle}>
                 <option value="">—</option>
                 {CP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="BP">
+            <Field label="BP" warning={warnings.bp}>
               <select {...register('bp')} style={inputStyle}>
                 <option value="">—</option>
                 {BP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
@@ -393,13 +424,13 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
             </Field>
           </Row>
           <Row>
-            <Field label="Status">
+            <Field label="Status" warning={warnings.status}>
               <select {...register('status')} style={inputStyle}>
                 <option value="">—</option>
                 {BIRD_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="Disposition">
+            <Field label="Disposition" warning={warnings.disposition}>
               <select {...register('disposition')} style={inputStyle}>
                 <option value="">—</option>
                 {DISPOSITION_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
@@ -425,7 +456,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
             </Field>
           </Row>
           <Row>
-            <Field label="Net">
+            <Field label="Net" warning={warnings.net}>
               <select {...register('net')} style={inputStyle}>
                 <option value="">—</option>
                 {netOptions.map(n => (
@@ -456,7 +487,7 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
               </label>
             </Field>
           </Row>
-          <Field label="Notes">
+          <Field label="Notes" warning={warnings.notes}>
             <textarea {...register('notes')} rows={2} placeholder="Optional notes" style={{ ...inputStyle, resize: 'vertical' }} />
           </Field>
         </Section>
@@ -485,7 +516,7 @@ function Row({ children }: { children: React.ReactNode }) {
   return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>{children}</div>
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, warning }: { label: string; children: React.ReactNode; warning?: string }) {
   return (
     <div style={{ marginBottom: '0.5rem' }}>
       {label && (
@@ -494,6 +525,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
         </label>
       )}
       {children}
+      {warning && (
+        <div style={warningStyle}>⚠ {warning}</div>
+      )}
     </div>
   )
 }
@@ -526,6 +560,12 @@ const nowBtnStyle: React.CSSProperties = {
   fontSize: '0.8rem',
   cursor: 'pointer',
   whiteSpace: 'nowrap',
+}
+
+const warningStyle: React.CSSProperties = {
+  color: '#c0392b',
+  fontSize: '0.8rem',
+  marginTop: '0.2rem',
 }
 
 const backBtnStyle: React.CSSProperties = {

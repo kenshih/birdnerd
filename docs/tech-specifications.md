@@ -51,6 +51,12 @@ The complete data model with 14 entities organized by category. See [entities.md
 - **Green (Reference):** Species, CodeTable — static resource files, not DB tables (no FK relationships)
 - **White (Immutable):** ChangeLog
 
+### Session as Context Container
+
+A Session is the parent container for banding records. From the perspective of a BandingRecord, all session-level data — location, nets (via SessionNetLog), participating banders (via SessionBanderLog), weather, open/close times — is part of its inherited context, not a separate concern. The banding form freely references session-scoped data (e.g., net dropdown filtered to nets in the session's effort log, bander dropdown from session participants) without crossing a boundary. Nets and bander logs are siblings to banding records within the session, but from the record's local viewpoint they are contextual metadata provided by the session parent.
+
+This means components rendering or validating a BandingRecord can load session-level entities (SessionNetLog, SessionBanderLog, Location, Net) as ambient context rather than treating them as foreign data.
+
 ### Core Entities
 
 #### Organization
