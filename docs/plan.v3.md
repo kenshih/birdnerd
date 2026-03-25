@@ -157,31 +157,23 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 ---
 
-## Phase 13a — Band Inventory
+### Phase 13a — Band Inventory ✅
 
-Goal: Band lifecycle management per BBL requirements.
-
-- Band entity: formatted band number (XXXX-XXXXX), BBL size codes (0, 0A, 0B, 1, 1A…9), type (Standard, Buffy, Giant, Lockout) — TODO: confirm types with Hallie
-- Add bands by series (prefix + suffix range, band size, type)
-- Inventory overview: deployed vs remaining by size + type
-- Band number search/dropdown on banding form (replaces free text), required field
-- BandingRecord gains `bandId` FK to Band + denormalized `bandNumber` for display
-- Auto-update band status on record submission (set to "deployed" on New; track recaptures)
-- Foreign recapture detection (band not in inventory → Capture Code = F)
-
-**Implementation order:**
-
-1. **13a-1 — Data layer:** Band type/interface, IndexedDB v6 with `bands` store (unique index on `bandNumber`), Band CRUD functions, band size + type code tables
-2. **13a-2 — Bundle schema v3:** Add bands to export/import, v2→v3 migration (default empty bands array), update seed/example data
-3. **13a-3 — Band Inventory UI:** Overview dashboard (stats by size/status), filterable band list, bulk add-by-series form with duplicate detection + preview
-4. **13a-4 — Band search on form:** New `BandSearchSelect` component replaces free-text band input. Auto-set capture code from band status (available→N, deployed→R, not found→F, UNBANDED→U). Atomic record + band status update in single IndexedDB transaction
-5. **13a-5 — Validation & cleanup:** Band-related validation rules (capture code vs band status conflicts), display verification, CSV import compatibility (no bandId linkage)
+- Band entity: formatted band number (XXXX-XXXXX), BBL size codes (0, 0A…9), type (Standard, Buffy, Giant, Lockout) — TODO: confirm types with Hallie
+- IndexedDB v6 with `bands` store (unique index on `bandNumber`), full CRUD + atomic `saveRecordWithBandUpdate`
+- Bundle schema v3 with bands array, v2→v3 migration
+- Band Inventory UI: overview dashboard (stats by size/status), filterable band list, bulk add-by-series with duplicate detection
+- `BandSearchSelect` component replaces free-text band input on banding form. Auto-set capture code (available→N, deployed→R, foreign→F, UNBANDED→U). Deployed-band info alert
+- Atomic band status update on record save (available→deployed)
+- Foreign recapture: `bandId` null, `bandNumber` stored as free text, Capture Code = F
+- Validation: capture code vs band status conflict warnings
+- Tests: 74 total (45 validation, 16 bundle, 13 phase 11)
 
 ## Phase 13b — Recapture Fields & UX
 
 Goal: Model recapture-specific data and expose it in the record form.
 
-- Recapture fields on BandingRecord: `how_obtained`, `present_condition`, `replaced_band_number`
+- Recapture fields on BandingRecord: `present_condition`, `replaced_band_number`
 - Record form: Capture Code = R auto-opens a collapsible section directly below Capture Code
 - Changing Capture Code away from R hides the section and discards recapture field values on save
 - Widen the Record data model for recapture fields
@@ -253,6 +245,7 @@ Goal: Click band → encounter timeline.
 - Auxiliary markers (colored bands, 1-2 letters + 1-2 numbers)
 - Band replacement tracking (old band → new band, linked history)
 - Hummingbird band prefix → alpha mapping
+- `how_obtained` recapture field (BBL reporting detail, not needed at capture time)
 
 **Special Forms**
 - Empidonax flycatcher supplemental datasheet

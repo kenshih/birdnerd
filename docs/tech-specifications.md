@@ -168,7 +168,7 @@ This means components rendering or validating a BandingRecord can load session-l
 - **net_id** (FK to Net)
 - **notes** (string)
 - **feather_pull, blood_sample** (boolean, defaults: false)
-- **Recapture fields (Phase 13b):** how_obtained (string, nullable), present_condition (string, nullable), replaced_band_number (string, nullable) — only saved when capture_code = R; discarded otherwise
+- **Recapture fields (Phase 13b):** present_condition (string, nullable), replaced_band_number (string, nullable) — only saved when capture_code = R; discarded otherwise. `how_obtained` deferred to backlog
 - **created, updated** (datetime)
 
 #### Species

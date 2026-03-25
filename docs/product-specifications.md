@@ -386,7 +386,7 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [ ] BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
 - [ ] Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, `weight_time`?
 - [ ] Bill measurements: add `bill_length`, `bill_width`, `bill_height` (BBL upload has these in addition to culmen)?
-- [x] Recapture fields: `how_obtained`, `present_condition`, `replaced_band_number` — resolved for Phase 13b. Dropped: `second_band_number` (redundant with our new band), `reward_band_number` (waterfowl/game bird concern, not MAPS)
+- [x] Recapture fields: `present_condition`, `replaced_band_number` for Phase 13b. Deferred to backlog: `how_obtained` (BBL reporting detail, not needed at capture time). Dropped: `second_band_number` (redundant with our new band), `reward_band_number` (waterfowl/game bird concern, not MAPS)
 - [ ] Nest/effort fields: add `net_nest_cavity_designator`, `net_nest_cavity_number`, `plot_id`, `sweep_number`, `nest_location`?
 - [ ] Sampling/tests fields: add `genetic_sample`, `other_tests`, `tracheal_swab`, `mouth_swab`, `cloacal_swab`, `ectoparasites_present`, `ectoparasites_collected`?
 - [ ] User-defined fields: support BBL `User Field 1-5`, or map to notes/extra metadata?

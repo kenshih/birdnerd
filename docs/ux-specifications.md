@@ -238,7 +238,6 @@ When Capture Code = R, a collapsible section auto-opens directly below the Captu
 
 | Field | Type | Notes |
 |-------|------|-------|
-| **How Obtained** | Select | How the bird was recaptured |
 | **Present Condition** | Select | Condition at recapture (healthy, injured, dead, etc.) |
 | **Replaced Band #** | Text input | If old band was worn/damaged and replaced — enter old band number |
 
