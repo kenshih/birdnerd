@@ -7,7 +7,7 @@ import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
   CP_CODES, BP_CODES, FF_WEAR_CODES, BIRD_STATUS_CODES, DISPOSITION_CODES,
-  MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES,
+  MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES, PRESENT_CONDITION_CODES,
 } from '../data/codes'
 import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
 import SearchableSelect from '../components/SearchableSelect'
@@ -34,6 +34,7 @@ const ALL_FIELDS: (keyof FormValues)[] = [
   'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
   'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
   'moltLimitsPlumage',
+  'presentCondition', 'replacedBandNumber',
   'wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass',
   'status', 'disposition', 'captureTime', 'releaseTime', 'date', 'station',
   'net', 'bander', 'featherPull', 'bloodSample', 'notes',
@@ -190,6 +191,12 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
       bandNumber = bandSelection.bandNumber
     }
 
+    // Discard recapture fields when capture code ≠ R
+    if (data.bbpCode !== 'R') {
+      data.presentCondition = undefined
+      data.replacedBandNumber = undefined
+    }
+
     const saved: BirdRecord = {
       ...data,
       id: record?.id ?? generateId(),
@@ -272,6 +279,22 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
               />
             </Field>
           </Row>
+          {bbpCode === 'R' && (
+            <div style={recapSectionStyle}>
+              <div style={{ fontWeight: 600, fontSize: '0.8rem', color: '#1a73e8', marginBottom: '0.4rem' }}>Recapture Details</div>
+              <Row>
+                <Field label="Present Condition">
+                  <select {...register('presentCondition')} style={inputStyle}>
+                    <option value="">—</option>
+                    {PRESENT_CONDITION_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Replaced Band #">
+                  <input {...register('replacedBandNumber')} placeholder="Old band # if replaced" style={inputStyle} />
+                </Field>
+              </Row>
+            </div>
+          )}
           <Row>
             <Field label="Age">
               <select {...register('age')} style={inputStyle}>
@@ -641,6 +664,15 @@ const warningStyle: React.CSSProperties = {
   color: '#c0392b',
   fontSize: '0.8rem',
   marginTop: '0.2rem',
+}
+
+const recapSectionStyle: React.CSSProperties = {
+  marginTop: '0.25rem',
+  marginBottom: '0.5rem',
+  padding: '0.5rem',
+  background: '#e8f0fe',
+  borderRadius: 6,
+  border: '1px solid #c2d7f2',
 }
 
 const backBtnStyle: React.CSSProperties = {

@@ -61,6 +61,9 @@ export interface BirdRecord {
   exposedCulmen?: number
   otherMeasurement?: number
   bodyMass?: number
+  // Recapture (only saved when bbpCode = R)
+  presentCondition?: string
+  replacedBandNumber?: string
   // Status & Disposition
   status?: string
   disposition?: string

@@ -169,16 +169,13 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 - Validation: capture code vs band status conflict warnings
 - Tests: 74 total (45 validation, 16 bundle, 13 phase 11)
 
-## Phase 13b — Recapture Fields & UX
+### Phase 13b — Recapture Fields & UX ✅
 
-Goal: Model recapture-specific data and expose it in the record form.
-
-- Recapture fields on BandingRecord: `present_condition`, `replaced_band_number`
-- Record form: Capture Code = R auto-opens a collapsible section directly below Capture Code
-- Changing Capture Code away from R hides the section and discards recapture field values on save
-- Widen the Record data model for recapture fields
-- Validation: recapture fields required/optional rules
-- Update specs and bundle schema
+- Recapture fields on BirdRecord: `presentCondition` (select: H/I/S/D), `replacedBandNumber` (free text)
+- Recapture Details section auto-shows when Capture Code = R, hides when changed away
+- Fields discarded on save when Capture Code ≠ R
+- CSV export/import updated with new fields
+- No bundle version bump needed (new optional fields on existing entity)
 
 ---
 

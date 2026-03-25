@@ -239,6 +239,14 @@ export const JUV_BODY_PLUMAGE_CODES = [
   { code: '3', label: '3 — Heavy' },
 ]
 
+// Present Condition (recapture)
+export const PRESENT_CONDITION_CODES = [
+  { code: 'H', label: 'H — Healthy' },
+  { code: 'I', label: 'I — Injured' },
+  { code: 'S', label: 'S — Sick/Stressed' },
+  { code: 'D', label: 'D — Dead' },
+]
+
 // BBL Band Size codes
 export const BAND_SIZE_CODES = [
   { code: '0', label: '0' },

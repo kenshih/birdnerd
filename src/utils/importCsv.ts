@@ -11,6 +11,7 @@ const KNOWN_HEADERS = new Set([
   'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
   'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
   'moltLimitsPlumage',
+  'presentCondition', 'replacedBandNumber',
   'wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass',
   'status', 'disposition',
   'captureTime', 'releaseTime', 'date', 'station', 'net', 'bander',
