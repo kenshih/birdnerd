@@ -136,10 +136,10 @@ This means components rendering or validating a BandingRecord can load session-l
 
 #### Band
 - **id** (string, PK)
-- **band_number** (string, unique, format: XXXX-XXXXX(X))
+- **band_number** (string, unique, format: XXXX-XXXXX or XXXX-XXXXXX — 4-digit prefix + hyphen + 5-6 digit suffix)
 - **status** (enum: available, deployed, destroyed, lost, replaced)
-- **band_size** (number, e.g., 1.6, 2.0, 2.5)
-- **band_type** (string, e.g., "Standard", "Buffy", "Giant")
+- **band_size** (string, BBL size code: 0, 0A, 0B, 1, 1A, 1B, 1C, 1D, 2, 3, 3A, 3B, 4, 7, 7A, 7B, 8, 9)
+- **band_type** (string: "Standard", "Buffy", "Giant", "Lockout") — TODO: confirm full list with Hallie
 - **current_species** (string, ALPHA code, nullable)
 - **deployment_date** (date, ISO, nullable)
 - **created, updated** (datetime)
@@ -147,7 +147,8 @@ This means components rendering or validating a BandingRecord can load session-l
 #### BandingRecord
 - **id** (string, PK)
 - **session_id** (FK to Session)
-- **band_number** (string or "UNBANDED", FK to Band)
+- **band_id** (string, FK to Band, nullable — null for UNBANDED)
+- **band_number** (string, denormalized from Band for display; "UNBANDED" when no band)
 - **species_code** (string, 4-letter alpha code — validated against static Species list, not a DB FK)
 - **capture_code** (enum: 1/N, U, R, F, 4, 5, 6, 8, X)
 - **age** (enum: U, L, HY, AHY, SY, ASY, TY, ATY)
@@ -167,6 +168,7 @@ This means components rendering or validating a BandingRecord can load session-l
 - **net_id** (FK to Net)
 - **notes** (string)
 - **feather_pull, blood_sample** (boolean, defaults: false)
+- **Recapture fields (Phase 13b):** how_obtained (string, nullable), present_condition (string, nullable), replaced_band_number (string, nullable) — only saved when capture_code = R; discarded otherwise
 - **created, updated** (datetime)
 
 #### Species
@@ -337,7 +339,7 @@ A single JSON file that contains all managed reference and operational data, pro
 - Locations, Nets (Phase 9)
 - People, Banders (Phase 9)
 - Sessions, BandingRecords (Phase 9)
-- Bands (added in Phase 12)
+- Bands (added in Phase 13)
 - Future entities added as they are built
 
 **Not included:** Code tables and species list (static app resources, not user data).
@@ -462,5 +464,5 @@ A single JSON file that contains all managed reference and operational data, pro
 
 - **Status quo:** No computed fields in IndexedDB; client-side aggregation for effort totals
 - **Future refactor:** Consider splitting Session schema into separate multi-tenant workspace
-- **Band number formats:** Internal storage format (string) to be finalized (numeric vs. formatted)
+- **Band number format:** Resolved — stored formatted with hyphen (XXXX-XXXXX or XXXX-XXXXXX)
 - **Auxiliary band markers:** Not yet designed; needed for complex band scenarios

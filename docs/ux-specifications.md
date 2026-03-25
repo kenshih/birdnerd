@@ -197,7 +197,7 @@ Validation warnings and errors display **inline below the relevant field**, appe
 
 | Field | Type | Interaction Notes |
 |-------|------|-------------------|
-| **Band Number** | Dropdown + search | Type to search inventory. On match, show band size + type for verification. See Band Number Flow below. |
+| **Band Number** | Dropdown + search (required) | Type to search inventory (FK to Band). On match, show band size + type for verification. "UNBANDED" option for unbanded birds. See Band Number Flow below. |
 | **Capture Code** | Radio buttons (N, U, R, F, etc.) | Defaults based on band status. Restricted to valid options for selected band. |
 | **Species** | Autocomplete combobox | Type common name → ALPHA code auto-populates (or vice versa). Matches against 1,323 species from BBL. |
 | **Age** | Select | Options: U, L, HY, AHY, SY, ASY, TY, ATY. Makes How Aged optional if U. |
@@ -232,7 +232,22 @@ Validation warnings and errors display **inline below the relevant field**, appe
    - Action: Capture Code = "U"
    - Status field becomes optional
 
-### 2.3 Photo Capture Flow
+### 2.3 Recapture Fields (Phase 13b)
+
+When Capture Code = R, a collapsible section auto-opens directly below the Capture Code field:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| **How Obtained** | Select | How the bird was recaptured |
+| **Present Condition** | Select | Condition at recapture (healthy, injured, dead, etc.) |
+| **Replaced Band #** | Text input | If old band was worn/damaged and replaced — enter old band number |
+
+**Behavior:**
+- Section auto-opens when Capture Code = R (including when auto-set by band lookup detecting a deployed band)
+- Changing Capture Code away from R hides the section
+- On save: recapture field values are **discarded** if Capture Code ≠ R (not persisted)
+
+### 2.4 Photo Capture Flow
 
 Triggered from within a banding record. No photos are stored in the app — only the filename is saved as a reference.
 
@@ -373,9 +388,9 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 │  ├─ Destroyed/Lost: 100              │
 │                                      │
 │  By Size:                            │
-│  ├─ Size 1.6: 420 avail | 380 depl  │
-│  ├─ Size 2.0: 380 avail | 450 depl  │
-│  ├─ Size 2.5: 250 avail | 270 depl  │
+│  ├─ Size 0A:  420 avail | 380 depl  │
+│  ├─ Size 1:   380 avail | 450 depl  │
+│  ├─ Size 1B:  250 avail | 270 depl  │
 │  └─ ...                              │
 │                                      │
 │  [ View All Bands ] [ Add Bands ]    │
@@ -387,14 +402,14 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 | Column | Content | Filterable |
 |--------|---------|------------|
 | **Band #** | e.g., `1154-81501` | Yes (search) |
-| **Size** | e.g., 2.0 | Yes (select) |
-| **Type** | Standard, Buffy, Giant | Yes (select) |
+| **Size** | BBL code (0, 0A, 0B, 1, 1A, 1B, 1C, 1D, 2, 3, 3A, 3B, 4, 7, 7A, 7B, 8, 9) | Yes (select) |
+| **Type** | Standard, Buffy, Giant, Lockout | Yes (select) |
 | **Status** | available, deployed, destroyed, lost, replaced | Yes (select) |
 | **Current Species** | ALPHA code (if deployed) | Yes |
 | **Deployed Date** | ISO date | Yes (date range) |
 | **Actions** | [View] [Edit] [Retire] | — |
 
-### 4.3 Band Detail View (Future)
+### 4.3 Band Detail View (Phase 16)
 
 - Full band metadata
 - Encounter history (all capture/recapture events)
@@ -409,8 +424,8 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 │  Prefix: [1154] (4-digit)            │
 │  Start Range: [81501]                │
 │  End Range: [81550]                  │
-│  Size: [2.0] (select)                │
-│  Type: [Standard] (select)           │
+│  Size: [1A ▼] (BBL size code)        │
+│  Type: [Standard ▼] (select)         │
 │                                      │
 │  Preview: 1154-81501 to 1154-81550   │
 │           (50 bands)                 │

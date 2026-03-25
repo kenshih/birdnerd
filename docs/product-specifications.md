@@ -156,6 +156,7 @@ erDiagram
     BandingRecord {
         string id
         string session_id
+        string band_id
         string band_number
         string species_code
         string capture_code
@@ -205,7 +206,7 @@ erDiagram
         string id
         string band_number
         string status
-        number band_size
+        string band_size
         string band_type
         string current_species
         string deployment_date
@@ -379,11 +380,11 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 ### 8.1 Data Model
 
 - [ ] Reconsider whether `master_bander_id` should remain a FK on Session, or if all session leaders should be pulled from SessionBanderLog
-- [ ] Band number format: Numeric (115481501) or formatted (1154-81501)?
+- [x] Band number format: Formatted with hyphen (1154-81501) — resolved
 - [ ] BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
 - [ ] Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, `weight_time`?
 - [ ] Bill measurements: add `bill_length`, `bill_width`, `bill_height` (BBL upload has these in addition to culmen)?
-- [ ] Recapture fields: add `how_obtained`, `present_condition`, `second_band_number`, `reward_band_number`, `replaced_band_number`?
+- [x] Recapture fields: `how_obtained`, `present_condition`, `replaced_band_number` — resolved for Phase 13b. Dropped: `second_band_number` (redundant with our new band), `reward_band_number` (waterfowl/game bird concern, not MAPS)
 - [ ] Nest/effort fields: add `net_nest_cavity_designator`, `net_nest_cavity_number`, `plot_id`, `sweep_number`, `nest_location`?
 - [ ] Sampling/tests fields: add `genetic_sample`, `other_tests`, `tracheal_swab`, `mouth_swab`, `cloacal_swab`, `ectoparasites_present`, `ectoparasites_collected`?
 - [ ] User-defined fields: support BBL `User Field 1-5`, or map to notes/extra metadata?

@@ -128,6 +128,7 @@ erDiagram
     BandingRecord {
         string id
         string session_id
+        string band_id
         string band_number
         string species_code
         string capture_code
@@ -177,7 +178,7 @@ erDiagram
         string id
         string band_number
         string status
-        number band_size
+        string band_size
         string band_type
         string current_species
         string deployment_date

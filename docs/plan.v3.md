@@ -157,17 +157,28 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 ---
 
-## Phase 13 — Band Inventory
+## Phase 13a — Band Inventory
 
 Goal: Band lifecycle management per BBL requirements.
 
+- Band entity: formatted band number (XXXX-XXXXX), BBL size codes (0, 0A, 0B, 1, 1A…9), type (Standard, Buffy, Giant, Lockout) — TODO: confirm types with Hallie
 - Add bands by series (prefix + suffix range, band size, type)
 - Inventory overview: deployed vs remaining by size + type
-- Band number dropdown on banding form (replaces free text)
+- Band number search/dropdown on banding form (replaces free text), required field
+- BandingRecord gains `bandId` FK to Band + denormalized `bandNumber` for display
 - Auto-update band status on record submission (set to "deployed" on New; track recaptures)
-- Foreign recapture detection (band not in inventory)
-- Band history view (future: click band → encounter timeline)
-- Integration with BandingRecord: link band_number FK
+- Foreign recapture detection (band not in inventory → Capture Code = F)
+
+## Phase 13b — Recapture Fields & UX
+
+Goal: Model recapture-specific data and expose it in the record form.
+
+- Recapture fields on BandingRecord: `how_obtained`, `present_condition`, `replaced_band_number`
+- Record form: Capture Code = R auto-opens a collapsible section directly below Capture Code
+- Changing Capture Code away from R hides the section and discards recapture field values on save
+- Widen the Record data model for recapture fields
+- Validation: recapture fields required/optional rules
+- Update specs and bundle schema
 
 ---
 
@@ -202,6 +213,16 @@ Goal: Export in agency-specific formats.
 - CDFW format
 - Code translation layer (IBP codes stored internally → BBL/agency codes at export)
 - Export from banding records, optionally scoped by location/session/date range
+
+---
+
+## Phase 16 — Band History View
+
+Goal: Click band → encounter timeline.
+
+- Band detail view: full metadata + encounter history (all capture/recapture events)
+- Search by band number
+- Link from banding record → band detail
 
 ---
 
