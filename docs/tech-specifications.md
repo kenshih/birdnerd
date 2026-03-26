@@ -174,8 +174,9 @@ This means components rendering or validating a BandingRecord can load session-l
 #### PhotoRecord
 - **id** (string, PK)
 - **banding_record_id** (FK to BandingRecord)
-- **body_part** (string; suggested values: wing, tail, body, head; allow short free text)
-- **file_name** (string)
+- **body_part** (string; presets: WING, TAIL, HEAD, BODY, BAND + free text)
+- **file_name** (string; auto-generated: `DAY_LOCCODE_BANDID_SPECIESCODE_BODYPART.ext`)
+- **blob** (Blob; image data stored in IndexedDB, excluded from data bundle export)
 - **created, updated** (datetime)
 
 #### Species

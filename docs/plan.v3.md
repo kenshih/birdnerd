@@ -177,39 +177,27 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 - CSV export/import updated with new fields
 - No bundle version bump needed (new optional fields on existing entity)
 
----
+### Phase 14 — Photo Capture (Web Share) ✅
 
-## Phase 14 — Photo Capture (Web Share)
-
-Goal: Attach photos to banding records without app-side storage — use the device camera, auto-name the file, and share to Google Drive (or any target) via the Web Share API.
-
-- Add PhotoRecord entity: BandingRecord 1-* PhotoRecord
-- Fields: `body_part` (enum-like string + free-form short text), `file_name` (string)
+- PhotoRecord entity (1-to-many from BandingRecord): `bodyPart`, `fileName`, `blob` stored in IndexedDB
+- IndexedDB v7 with `photos` store, cascade deletes on record and session
 - Camera input via `<input type="file" accept="image/*" capture="environment">`
-- Desktop: Photo button greyed out with "Mobile only" label
-- Photo review modal: shows captured image with auto-generated filename
-  - Naming: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg` (e.g., `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`)
-  - Unbanded: `UNBANDED003` replaces band# (003 = record sequence in session)
-  - User can edit/add a suffix (wing, tail, head, or free text)
-- "Save to Drive" button triggers `navigator.share({ files: [...] })` with the pre-named file
-- Native share sheet opens → user picks Google Drive (or other app)
-- On return, user confirms save → PhotoRecord saved for the banding record
-- Photo button + photo list at top of banding record form (each row: body_part + filename + delete)
-- Photo Log view (future): browse PhotoRecords grouped by session
-
----
-
-## Phase 14.5 — E2E UX Tests (Playwright)
-
-Goal: Add a lean Playwright suite that protects the core field workflow.
-
-- Flow 1: Create a session (location/date/protocol/times/participants) and verify it appears in session list + detail
-- Flow 2: Add a banding record inside the session and verify summary chips in session list
-- Flow 3: Toggle offline/online, then export data, wipe state, import data, verify counts/labels
+- Photo review modal with live-updating filename preview as body part changes
+  - Body part chip selector: WING, TAIL, HEAD, BODY, BAND + custom free text
+  - Naming: `DAY_LOCCODE_BANDID_SPECIESCODE_BODYPART.ext` (e.g., `2026-03-22_GCBS_1154-81501_SOSP_WING.jpg`)
+  - Unbanded: `UNBANDED003` replaces band ID (003 = record sequence in session)
+  - Extension derived from uploaded file type (jpg, png, heic, etc.)
+- "Save to Drive" button: `navigator.share` on mobile, file download fallback on desktop
+- "Add Photo" button + photo list at top of banding record form (each row: body_part + filename + delete)
+- New records: photos held as pending until record saved, then flushed to IndexedDB
+- Bundle schema v4: photo metadata exported (no blobs), v3→v4 migration
+- Tests: 74 passing
 
 ---
 
 ## Phase 15 — Agency Export
+
+> **Decision point:** Should agency export live in the app UI, or as standalone offline scripts (e.g. a CLI or notebook that reads the JSON data bundle)? The app already exports a full JSON bundle — a separate script could transform that into BBL/IBP/CDFW formats without adding complexity to the PWA. In-app export is nicer UX but adds code for a task that happens infrequently (a few times per season). TBD.
 
 **Unit tests to add alongside export:**
 - IBP → BBL code mappings (every field with dual coding)
@@ -237,12 +225,20 @@ Goal: Click band → encounter timeline.
 
 ---
 
+## Phase 17 — About / RTM Page
+
+Goal: TBD — to be specified.
+
+---
+
 ## Backlog (unordered — to be phased later)
 
 **Media**
+- Photo Log view: browse PhotoRecords grouped by session, filter by species/date
 - Speech-to-text (STT) input for field entry
 
 **Dev tooling**
+- E2E UX tests (Playwright): session CRUD, banding record flow, offline export/import round-trip. Best added before Cloud Sync when bugs get expensive.
 - Storybook for component-level UX checks (optional)
 
 **Advanced Validation**
@@ -270,15 +266,14 @@ Goal: Click band → encounter timeline.
 - Standalone band code lookup tool
 - Scientific name / definition lookup
 - Lighter "in-the-field" utility mode
-- About / RTM page
 
-**Schema Migration Framework** (was Phase 15)
+**Schema Migration Framework**
 - Numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)
 - Retroactively capture schema changes as migrations
 - Write each migration with a corresponding Postgres migration (for Supabase cutover)
 - Unit tests: migration runner, data integrity after migration
 
-**Cloud Sync & Auth** (was Phase 16)
+**Cloud Sync & Auth**
 - Multi-tenant data model: Organization as top-level, User entity, row-level security
 - Supabase integration: Postgres backend, Auth (email/Google), IndexedDB ↔ Supabase sync
 - API & SDKs: auto-generated API, supabase-js client

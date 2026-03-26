@@ -22,8 +22,7 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
 │                                     │
-│  Future: Photo Log (Phase 13),       │
-│          Addendums                   │
+│  Future: Photo Log, Addendums        │
 └─────────────────────────────────────┘
 ```
 
@@ -250,34 +249,30 @@ When Capture Code = R, a collapsible section auto-opens directly below the Captu
 
 ### 2.4 Photo Capture Flow
 
-Triggered from within a banding record. No photos are stored in the app — only the filename is saved as a reference.
+Triggered from within a banding record. Photos are stored as blobs in IndexedDB; the filename is also saved for external reference.
 
-1. **User taps "Photo" button** at the top of the banding record form
+1. **User taps "Add Photo"** at the top of the banding record form
 2. **Device camera launches** via `<input type="file" accept="image/*" capture="environment">`
-   - On desktop: button is greyed out with "Mobile only" tooltip
 3. **Photo review modal appears** showing:
    - The captured image (preview)
-   - Auto-generated filename: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg`
-     - Banded example: `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`
-     - Unbanded example: `2026-03-22_GCBS_SOSP_UNBANDED003_wing.jpg` (where 003 is the record's sequence number in the session)
-   - Editable suffix field (preset options: WING, TAIL, HEAD, BODY, BAND + free text)
-4. **User taps "Save to Drive"** → triggers `navigator.share({ files: [namedFile] })`
-   - Native share sheet opens with the pre-named file
-   - User selects Google Drive (or any other installed app)
-   - User picks folder and confirms save in the target app
-5. **User returns to BirdNerd** and taps "Confirm Saved"
-   - A `PhotoRecord` is created (banding_record_id, body_part, file_name)
-   - Photo thumbnail remains visible on the record (from browser cache) for the duration of the session
-6. **Cancel / Retake** — user can dismiss the modal or retake at any point before confirming
+   - Auto-generated filename (updates live as body part changes): `DAY_LOCCODE_BANDID_SPECIESCODE_BODYPART.ext`
+     - Banded example: `2026-03-22_GCBS_1154-81501_SOSP_WING.jpg`
+     - Unbanded example: `2026-03-22_GCBS_UNBANDED003_SOSP_WING.jpg` (003 = record sequence in session)
+     - Extension derived from uploaded file type (jpg, png, heic, etc.)
+   - Body part chip selector: WING, TAIL, HEAD, BODY, BAND + "Other..." for free text
+4. **User taps "Save to Drive"**
+   - Mobile: `navigator.share({ files: [namedFile] })` → native share sheet → user picks Google Drive or other app
+   - Desktop: falls back to file download with the auto-generated filename
+   - After share/download completes, a `PhotoRecord` is automatically created
+5. **Cancel / Retake** — user can dismiss the modal at any point
 
 **Photo list on record:**
-- After saving, a compact list of PhotoRecords appears at the top of the form (below the Photo button)
+- After saving, a compact list of PhotoRecords appears at the top of the form (below the Add Photo button)
 - Each row shows: body_part label + file_name (truncated) + delete button
-- User can tap "Photo" again to add more photos; each creates a separate PhotoRecord
+- User can tap "Add Photo" again to add more; each creates a separate PhotoRecord
+- New records (unsaved): photos held as "pending" until the record is saved
 
 **Notes:**
-- The app has no confirmation callback from the share target — the "Confirm Saved" step is trust-based
-- Desktop: Photo button is greyed out with "Mobile only" label (Web Share file API not supported on desktop browsers)
 - Offline: camera capture and naming work offline; share requires the target app to handle offline queuing (Google Drive does this)
 
 ---
@@ -635,7 +630,7 @@ The Data Manager page has two sections: **Session Data** (per-session CSV export
 
 ## 9. Future Screen Ideas
 
-- **Photo Log** — Browse records with photo references, grouped by session (planned in Phase 13)
+- **Photo Log** — Browse records with photo references, grouped by session (backlog)
 - **Datasheet Addendums** — Field notes, special observations, protocols
 - **Band History** — Click a banded bird → show all previous encounters
 - **Session Summary** — End-of-day report + effort calculation
