@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander, Band } from '../types'
+import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander, Band, PhotoRecord } from '../types'
 import { loadSeedData } from '../utils/dataBundle'
 
 interface BirdNerdDB extends DBSchema {
@@ -48,6 +48,11 @@ interface BirdNerdDB extends DBSchema {
     value: Band
     indexes: { 'by-number': string; 'by-status': string }
   }
+  photos: {
+    key: string
+    value: PhotoRecord
+    indexes: { 'by-record': string }
+  }
 }
 
 let db: IDBPDatabase<BirdNerdDB> | null = null
@@ -62,7 +67,7 @@ export function resetDB() {
 
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
-  db = await openDB<BirdNerdDB>('birdnerd', 6, {
+  db = await openDB<BirdNerdDB>('birdnerd', 7, {
     upgrade(database, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         const sessionStore = database.createObjectStore('sessions', { keyPath: 'id' })
@@ -130,6 +135,11 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
         bandStore.createIndex('by-number', 'bandNumber', { unique: true })
         bandStore.createIndex('by-status', 'status')
       }
+
+      if (oldVersion < 7) {
+        const photoStore = database.createObjectStore('photos', { keyPath: 'id' })
+        photoStore.createIndex('by-record', 'bandingRecordId')
+      }
     },
   })
 
@@ -168,7 +178,14 @@ export async function deleteSession(id: string): Promise<void> {
   const records = await db.getAllFromIndex('records', 'by-session', id)
   const banderLogs = await db.getAllFromIndex('sessionBanderLogs', 'by-session', id)
   const netLogs = await db.getAllFromIndex('sessionNetLogs', 'by-session', id)
-  const tx = db.transaction(['sessions', 'records', 'sessionBanderLogs', 'sessionNetLogs'], 'readwrite')
+  // Gather all photos for all records in this session
+  const allPhotos: PhotoRecord[] = []
+  for (const r of records) {
+    const photos = await db.getAllFromIndex('photos', 'by-record', r.id)
+    allPhotos.push(...photos)
+  }
+  const tx = db.transaction(['sessions', 'records', 'sessionBanderLogs', 'sessionNetLogs', 'photos'], 'readwrite')
+  for (const p of allPhotos) await tx.objectStore('photos').delete(p.id)
   for (const r of records) await tx.objectStore('records').delete(r.id)
   for (const bl of banderLogs) await tx.objectStore('sessionBanderLogs').delete(bl.id)
   for (const nl of netLogs) await tx.objectStore('sessionNetLogs').delete(nl.id)
@@ -189,7 +206,11 @@ export async function saveRecord(record: BirdRecord): Promise<void> {
 
 export async function deleteRecord(id: string): Promise<void> {
   const db = await getDB()
-  await db.delete('records', id)
+  const photos = await db.getAllFromIndex('photos', 'by-record', id)
+  const tx = db.transaction(['records', 'photos'], 'readwrite')
+  for (const p of photos) await tx.objectStore('photos').delete(p.id)
+  await tx.objectStore('records').delete(id)
+  await tx.done
 }
 
 // Locations
@@ -429,4 +450,20 @@ export async function saveRecordWithBandUpdate(
     await tx.objectStore('bands').put(bandUpdate)
   }
   await tx.done
+}
+
+// Photos
+export async function getPhotosByRecord(recordId: string): Promise<PhotoRecord[]> {
+  const db = await getDB()
+  return db.getAllFromIndex('photos', 'by-record', recordId)
+}
+
+export async function savePhoto(photo: PhotoRecord): Promise<void> {
+  const db = await getDB()
+  await db.put('photos', photo)
+}
+
+export async function deletePhoto(id: string): Promise<void> {
+  const db = await getDB()
+  await db.delete('photos', id)
 }

@@ -243,10 +243,14 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
   }
 
   if (view.mode === 'form') {
+    const recordSequence = view.record
+      ? records.findIndex(r => r.id === view.record!.id) + 1
+      : records.length + 1
     return (
       <BirdRecordForm
         session={session}
         record={view.record}
+        recordSequence={recordSequence}
         onSaved={() => { loadRecords(); setView({ mode: 'list' }) }}
         onCancel={() => setView({ mode: 'list' })}
         onHome={onHome}

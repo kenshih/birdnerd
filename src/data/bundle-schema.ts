@@ -1,5 +1,15 @@
 import type { Location, Net, Person, Bander, Session, SessionBanderLog, SessionNetLog, BirdRecord, Band } from '../types'
 
+/** Photo metadata for bundle export (blob excluded — photos stored externally) */
+export interface PhotoRecordExport {
+  id: string
+  bandingRecordId: string
+  bodyPart: string
+  fileName: string
+  createdAt: string
+  updatedAt: string
+}
+
 /**
  * JSON Data Bundle schema — single source of truth for the portable backup format.
  * See tech-specifications.md § 6 for versioning rules.
@@ -14,10 +24,11 @@ import type { Location, Net, Person, Bander, Session, SessionBanderLog, SessionN
  *         Added Net.active field (soft-delete)
  *   v3 — Added bands array (Band entity)
  *         Added BirdRecord.bandId FK
+ *   v4 — Added photos array (PhotoRecord metadata, no blobs)
  */
 
 /** Increment when entity fields are added, removed, or renamed. */
-export const BUNDLE_VERSION = 3
+export const BUNDLE_VERSION = 4
 
 export interface DataBundle {
   version: number
@@ -31,4 +42,5 @@ export interface DataBundle {
   sessionNetLogs: SessionNetLog[]
   bands: Band[]
   records: BirdRecord[]
+  photos: PhotoRecordExport[]
 }

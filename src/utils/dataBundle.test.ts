@@ -23,6 +23,7 @@ function makeBundle(overrides: Partial<DataBundle> = {}): DataBundle {
     sessionNetLogs: [],
     bands: [],
     records: [],
+    photos: [],
     ...overrides,
   }
 }

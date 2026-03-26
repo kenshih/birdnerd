@@ -1,7 +1,7 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session, Net, Location, Band } from '../types'
-import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate } from '../db'
+import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate, savePhoto } from '../db'
 import { validateRecord } from '../utils/validation'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
@@ -12,10 +12,12 @@ import {
 import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
 import SearchableSelect from '../components/SearchableSelect'
 import BandSearchSelect, { type BandSelection } from '../components/BandSearchSelect'
+import PhotoSection, { type PendingPhoto } from '../components/PhotoSection'
 
 interface Props {
   session: Session
   record?: BirdRecord
+  recordSequence: number
   onSaved: () => void
   onCancel: () => void
   onHome?: () => void
@@ -45,7 +47,7 @@ interface BanderOption {
   name: string
 }
 
-export default function BirdRecordForm({ session, record, onSaved, onCancel, onHome }: Props) {
+export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome }: Props) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
@@ -53,6 +55,11 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
   const [sessionNetLabels, setSessionNetLabels] = useState<Set<string>>(new Set())
   const [allBands, setAllBands] = useState<Band[]>([])
   const [bandSelection, setBandSelection] = useState<BandSelection>({ kind: 'none' })
+  const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
+
+  const handlePendingPhotosChange = useCallback((photos: PendingPhoto[]) => {
+    setPendingPhotos(photos)
+  }, [])
 
   useEffect(() => {
     loadDropdownData()
@@ -220,6 +227,20 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
     }
 
     await saveRecordWithBandUpdate(saved, bandUpdate)
+
+    // Flush any pending photos (taken before record had an ID)
+    for (const pp of pendingPhotos) {
+      await savePhoto({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        bandingRecordId: saved.id,
+        bodyPart: pp.bodyPart,
+        fileName: pp.fileName,
+        blob: pp.blob,
+        createdAt: now,
+        updatedAt: now,
+      })
+    }
+
     onSaved()
   }
 
@@ -247,6 +268,17 @@ export default function BirdRecordForm({ session, record, onSaved, onCancel, onH
           <button type="submit" style={btnStyle('#2d6a4f')}>Save Record</button>
           <button type="button" onClick={onCancel} style={btnStyle('#888')}>Cancel</button>
         </div>
+
+        {/* ── Photo Capture ── */}
+        <PhotoSection
+          recordId={record?.id}
+          date={session.date}
+          station={sessionLocation?.banderLocationId ?? ''}
+          speciesCode={speciesCode ?? ''}
+          bandNumber={bandSelection.kind === 'band' ? bandSelection.band.bandNumber : bandSelection.kind === 'foreign' ? bandSelection.bandNumber : bandSelection.kind === 'unbanded' ? 'UNBANDED' : ''}
+          recordSequence={recordSequence}
+          onPendingPhotosChange={handlePendingPhotosChange}
+        />
 
         {/* ── Identity ── */}
         <Section title="Identity">

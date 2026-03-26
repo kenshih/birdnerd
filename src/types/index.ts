@@ -4,6 +4,16 @@ export interface Species {
   sciName: string    // e.g. "Melospiza melodia"
 }
 
+export interface PhotoRecord {
+  id: string
+  bandingRecordId: string    // FK to BirdRecord
+  bodyPart: string           // WING, TAIL, HEAD, BODY, BAND, or free text
+  fileName: string           // auto-generated filename for external storage
+  blob: Blob                 // the actual image data (stored in IndexedDB, not exported)
+  createdAt: string
+  updatedAt: string
+}
+
 export type BandStatus = 'available' | 'deployed' | 'destroyed' | 'lost' | 'replaced'
 export type BandType = 'Standard' | 'Buffy' | 'Giant' | 'Lockout'
 

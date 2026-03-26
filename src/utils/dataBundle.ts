@@ -4,7 +4,7 @@ import { getDB } from '../db'
 /** Export all managed data as a DataBundle object. */
 export async function exportDataBundle(): Promise<DataBundle> {
   const db = await getDB()
-  const [locations, nets, people, banders, sessions, sessionBanderLogs, sessionNetLogs, bands, records] = await Promise.all([
+  const [locations, nets, people, banders, sessions, sessionBanderLogs, sessionNetLogs, bands, records, photosRaw] = await Promise.all([
     db.getAll('locations'),
     db.getAll('nets'),
     db.getAll('people'),
@@ -14,7 +14,12 @@ export async function exportDataBundle(): Promise<DataBundle> {
     db.getAll('sessionNetLogs'),
     db.getAll('bands'),
     db.getAll('records'),
+    db.getAll('photos'),
   ])
+  // Strip blobs from photos — only export metadata
+  const photos = photosRaw.map(({ id, bandingRecordId, bodyPart, fileName, createdAt, updatedAt }) => ({
+    id, bandingRecordId, bodyPart, fileName, createdAt, updatedAt,
+  }))
   return {
     version: BUNDLE_VERSION,
     exportedAt: new Date().toISOString(),
@@ -27,6 +32,7 @@ export async function exportDataBundle(): Promise<DataBundle> {
     sessionNetLogs,
     bands,
     records,
+    photos,
   }
 }
 
@@ -70,6 +76,11 @@ export function validateBundle(data: unknown): string | null {
   // bands added in v3 — optional for v1/v2 bundles
   if (bundle.bands !== undefined && !Array.isArray(bundle.bands)) {
     return 'Invalid bundle: "bands" must be an array'
+  }
+
+  // photos added in v4 — optional for v1/v2/v3 bundles
+  if (bundle.photos !== undefined && !Array.isArray(bundle.photos)) {
+    return 'Invalid bundle: "photos" must be an array'
   }
 
   return null
@@ -125,6 +136,16 @@ function migrateV2ToV3(bundle: Record<string, unknown>): void {
 }
 
 /**
+ * Migrate a v3 bundle to v4 format.
+ * v4 adds photos array (PhotoRecord metadata, no blobs).
+ */
+function migrateV3ToV4(bundle: Record<string, unknown>): void {
+  if (!bundle.photos) {
+    bundle.photos = []
+  }
+}
+
+/**
  * Import a DataBundle into IndexedDB (replace mode: wipes all existing data).
  * Caller should validate the bundle first with validateBundle().
  */
@@ -133,12 +154,13 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   const raw = bundle as unknown as Record<string, unknown>
   if ((raw.version as number) < 2) migrateV1ToV2(raw)
   if ((raw.version as number) < 3) migrateV2ToV3(raw)
+  if ((raw.version as number) < 4) migrateV3ToV4(raw)
 
   const db = await getDB()
 
   // Wipe all stores and reload from bundle in a single transaction
   const tx = db.transaction(
-    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'sessionNetLogs', 'bands', 'records'],
+    ['locations', 'nets', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'sessionNetLogs', 'bands', 'records', 'photos'],
     'readwrite',
   )
 
@@ -153,6 +175,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
     tx.objectStore('sessionNetLogs').clear(),
     tx.objectStore('bands').clear(),
     tx.objectStore('records').clear(),
+    tx.objectStore('photos').clear(),
   ])
 
   // Load from bundle
@@ -165,6 +188,8 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   for (const snl of (bundle.sessionNetLogs ?? [])) await tx.objectStore('sessionNetLogs').put(snl)
   for (const band of (bundle.bands ?? [])) await tx.objectStore('bands').put(band)
   for (const record of bundle.records) await tx.objectStore('records').put(record)
+  // Photos from bundle are metadata-only (no blobs) — import as placeholder records
+  for (const photo of (bundle.photos ?? [])) await tx.objectStore('photos').put({ ...photo, blob: new Blob() })
 
   await tx.done
 }
