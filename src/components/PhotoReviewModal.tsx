@@ -1,18 +1,16 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 
 const BODY_PART_PRESETS = ['WING', 'TAIL', 'HEAD', 'BODY', 'BAND']
 
 interface Props {
   blob: Blob
   defaultBodyPart: string
-  fileName: string
+  generateFileName: (bodyPart: string) => string
   onSave: (bodyPart: string) => void
-  onShare: (bodyPart: string) => void
   onCancel: () => void
-  canShare: boolean
 }
 
-export default function PhotoReviewModal({ blob, defaultBodyPart, fileName, onSave, onShare, onCancel, canShare }: Props) {
+export default function PhotoReviewModal({ blob, defaultBodyPart, generateFileName, onSave, onCancel }: Props) {
   const [bodyPart, setBodyPart] = useState(defaultBodyPart || BODY_PART_PRESETS[0])
   const [customPart, setCustomPart] = useState('')
   const [previewUrl, setPreviewUrl] = useState<string>('')
@@ -25,15 +23,35 @@ export default function PhotoReviewModal({ blob, defaultBodyPart, fileName, onSa
   }, [blob])
 
   const isCustom = !BODY_PART_PRESETS.includes(bodyPart)
-  const effectiveBodyPart = isCustom ? customPart || bodyPart : bodyPart
+  const effectiveBodyPart = isCustom ? (customPart || 'PHOTO') : bodyPart
+  const fileName = useMemo(() => generateFileName(effectiveBodyPart), [generateFileName, effectiveBodyPart])
 
-  async function handleShare() {
+  async function handleSaveToDrive() {
     setSharing(true)
     try {
-      onShare(effectiveBodyPart)
-    } finally {
-      setSharing(false)
+      const mimeType = blob.type || 'image/jpeg'
+      const file = new File([blob], fileName, { type: mimeType })
+      if (navigator.share && navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file] })
+      } else {
+        // Desktop fallback: download the file
+        const url = URL.createObjectURL(file)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        a.click()
+        URL.revokeObjectURL(url)
+      }
+    } catch (err) {
+      if ((err as Error).name === 'AbortError') {
+        setSharing(false)
+        return // User cancelled — don't save reference
+      }
+      console.error('Share failed:', err)
     }
+    setSharing(false)
+    // Save reference after share/download
+    onSave(effectiveBodyPart)
   }
 
   return (
@@ -95,26 +113,13 @@ export default function PhotoReviewModal({ blob, defaultBodyPart, fileName, onSa
         )}
 
         <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-          {canShare ? (
-            <button
-              type="button"
-              onClick={handleShare}
-              disabled={sharing}
-              style={{ ...btnStyle, background: '#1a73e8' }}
-            >
-              {sharing ? 'Sharing...' : 'Save to Drive'}
-            </button>
-          ) : (
-            <button type="button" disabled style={{ ...btnStyle, background: '#ccc', cursor: 'default' }}>
-              Mobile only
-            </button>
-          )}
           <button
             type="button"
-            onClick={() => onSave(effectiveBodyPart)}
-            style={{ ...btnStyle, background: '#2d6a4f' }}
+            onClick={handleSaveToDrive}
+            disabled={sharing}
+            style={{ ...btnStyle, background: '#1a73e8' }}
           >
-            Save Reference
+            {sharing ? 'Saving...' : 'Save to Drive'}
           </button>
           <button
             type="button"

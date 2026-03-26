@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { PhotoRecord } from '../types'
 import { getPhotosByRecord, savePhoto, deletePhoto } from '../db'
-import { generatePhotoFilename } from '../utils/photoFilename'
+import { generatePhotoFilename, getFileExtension } from '../utils/photoFilename'
 import PhotoReviewModal from './PhotoReviewModal'
 
 export interface PendingPhoto {
@@ -24,21 +24,11 @@ function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-function canShareFiles(): boolean {
-  if (!navigator.share || !navigator.canShare) return false
-  try {
-    const testFile = new File([new Blob(['test'])], 'test.jpg', { type: 'image/jpeg' })
-    return navigator.canShare({ files: [testFile] })
-  } catch {
-    return false
-  }
-}
-
 export default function PhotoSection({ recordId, date, station, speciesCode, bandNumber, recordSequence, onPendingPhotosChange }: Props) {
   const [savedPhotos, setSavedPhotos] = useState<PhotoRecord[]>([])
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [modalBlob, setModalBlob] = useState<Blob | null>(null)
-  const [shareSupported] = useState(() => canShareFiles())
+  const [modalExt, setModalExt] = useState('jpg')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadPhotos = useCallback(async () => {
@@ -54,13 +44,14 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
     onPendingPhotosChange?.(pendingPhotos)
   }, [pendingPhotos, onPendingPhotosChange])
 
-  function makeFileName(bodyPart: string): string {
-    return generatePhotoFilename({ date, station, species: speciesCode, bandNumber, recordSequence, bodyPart })
-  }
+  const makeFileName = useCallback((bodyPart: string) => {
+    return generatePhotoFilename({ date, station, species: speciesCode, bandNumber, recordSequence, bodyPart, ext: modalExt })
+  }, [date, station, speciesCode, bandNumber, recordSequence, modalExt])
 
   function handleFileCapture(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (file) {
+      setModalExt(getFileExtension(file))
       setModalBlob(file)
     }
     // Reset input so same file can be re-selected
@@ -87,23 +78,6 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
       setPendingPhotos(prev => [...prev, { blob: modalBlob!, bodyPart, fileName }])
     }
     setModalBlob(null)
-  }
-
-  async function handleShare(bodyPart: string) {
-    if (!modalBlob) return
-    const fileName = makeFileName(bodyPart)
-    const file = new File([modalBlob], fileName, { type: 'image/jpeg' })
-    try {
-      await navigator.share({ files: [file] })
-    } catch (err) {
-      // User cancelled share — that's fine
-      if ((err as Error).name !== 'AbortError') {
-        console.error('Share failed:', err)
-      }
-      return
-    }
-    // After successful share, also save the reference
-    await handleSave(bodyPart)
   }
 
   async function handleDelete(photoId: string) {
@@ -136,7 +110,7 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
           onClick={() => fileInputRef.current?.click()}
           style={photoBtnStyle}
         >
-          Photo {allPhotos.length > 0 && <span style={badgeStyle}>{allPhotos.length}</span>}
+          Add Photo {allPhotos.length > 0 && <span style={badgeStyle}>{allPhotos.length}</span>}
         </button>
       </div>
 
@@ -169,11 +143,9 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
         <PhotoReviewModal
           blob={modalBlob}
           defaultBodyPart="WING"
-          fileName={makeFileName('WING')}
+          generateFileName={makeFileName}
           onSave={handleSave}
-          onShare={handleShare}
           onCancel={() => setModalBlob(null)}
-          canShare={shareSupported}
         />
       )}
     </div>
