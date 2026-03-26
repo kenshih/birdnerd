@@ -35,7 +35,7 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 - **Node.js:** v18+ (LTS recommended)
 - **Package Manager:** npm or yarn
 - **Build Tool:** Vite with TypeScript support
-- **Testing:** Vitest + React Testing Library (planned Phase 3+)
+- **Testing:** Vitest + React Testing Library (planned Phase 3+); Storybook (optional); E2E UX test framework TBD
 - **Linting/Formatting:** ESLint + Prettier (recommended)
 
 ---
@@ -169,6 +169,13 @@ This means components rendering or validating a BandingRecord can load session-l
 - **notes** (string)
 - **feather_pull, blood_sample** (boolean, defaults: false)
 - **Recapture fields (Phase 13b):** present_condition (string, nullable), replaced_band_number (string, nullable) — only saved when capture_code = R; discarded otherwise. `how_obtained` deferred to backlog
+- **created, updated** (datetime)
+
+#### PhotoRecord
+- **id** (string, PK)
+- **banding_record_id** (FK to BandingRecord)
+- **body_part** (string; suggested values: wing, tail, body, head; allow short free text)
+- **file_name** (string)
 - **created, updated** (datetime)
 
 #### Species

@@ -7,7 +7,7 @@
 The ER diagram uses colors to categorize entity types:
 
 - **Pink** — General BirdNerd operational entities (core business objects)
-  - Organization, Person, User, Bander, Location, Net, Band, BandingRecord
+    - Organization, Person, User, Bander, Location, Net, Band, BandingRecord, PhotoRecord
 - **Orange** — Session-related data (tracking one banding session and its participants/efforts)
   - Session (includes flattened weather readings), SessionNetLog, SessionBanderLog
   - *Note: May be split into separate schema in future phases for multi-tenant data isolation*
@@ -174,6 +174,15 @@ erDiagram
         datetime updated
     }
 
+    PhotoRecord {
+        string id
+        string banding_record_id
+        string body_part
+        string file_name
+        datetime created
+        datetime updated
+    }
+
     Band {
         string id
         string band_number
@@ -215,6 +224,7 @@ erDiagram
     Session ||--o{ SessionNetLog : includes
     Session ||--o{ SessionBanderLog : includes
     Session ||--o{ BandingRecord : contains
+    BandingRecord ||--o{ PhotoRecord : captures
 
     Net ||--o{ SessionNetLog : logs
 
@@ -233,7 +243,7 @@ erDiagram
     classDef referenceData fill:#b7e4c7,stroke:#2f6f3e,stroke-width:1px,color:#000
     classDef immutable fill:#ffffff,stroke:#666,stroke-width:2px,color:#000
     
-    class Organization,Person,User,Bander,Location,Net,Band,BandingRecord entitySpec
+    class Organization,Person,User,Bander,Location,Net,Band,BandingRecord,PhotoRecord entitySpec
     class Session,SessionNetLog,SessionBanderLog sessionData
     class Species,CodeTable referenceData
     class ChangeLog immutable

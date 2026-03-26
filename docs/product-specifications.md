@@ -20,7 +20,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Session Module** — Create and manage banding sessions (location, date, protocol, weather, effort tracking).
 
-**Banding Data Collection** — Primary form for recording individual bird encounters (90% of field time). Includes **Photo Capture** — take photos of birds via the device camera, auto-name them from the record context (date, station, species, band number, label), and share to Google Drive or other storage via the Web Share API. No photos are stored in the app — only the filename is saved on the record as a reference.
+**Banding Data Collection** — Primary form for recording individual bird encounters (90% of field time). Includes **Photo Capture** — take photos of birds via the device camera, auto-name them from the record context (date, station, species, band number, label), and share to Google Drive or other storage via the Web Share API. No photos are stored in the app — only metadata is saved as a `PhotoRecord` entity (body_part, file_name) linked to the banding record.
 
 **Location Manager** — CRUD for project locations and associated nets.
 

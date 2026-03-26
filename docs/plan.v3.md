@@ -183,15 +183,29 @@ Goal: Portable backup/restore for all managed data. This is the primary persiste
 
 Goal: Attach photos to banding records without app-side storage — use the device camera, auto-name the file, and share to Google Drive (or any target) via the Web Share API.
 
-- Add `photo_filename` field to BandingRecord (string, nullable)
+- Add PhotoRecord entity: BandingRecord 1-* PhotoRecord
+- Fields: `body_part` (enum-like string + free-form short text), `file_name` (string)
 - Camera input via `<input type="file" accept="image/*" capture="environment">`
+- Desktop: Photo button greyed out with "Mobile only" label
 - Photo review modal: shows captured image with auto-generated filename
-  - Naming convention: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg` (e.g., `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`)
+  - Naming: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg` (e.g., `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`)
+  - Unbanded: `UNBANDED003` replaces band# (003 = record sequence in session)
   - User can edit/add a suffix (wing, tail, head, or free text)
 - "Save to Drive" button triggers `navigator.share({ files: [...] })` with the pre-named file
 - Native share sheet opens → user picks Google Drive (or other app)
-- On return, user confirms save → filename stored on the banding record
-- Photo Log view (future): browse records that have photo filenames, grouped by session
+- On return, user confirms save → PhotoRecord saved for the banding record
+- Photo button + photo list at top of banding record form (each row: body_part + filename + delete)
+- Photo Log view (future): browse PhotoRecords grouped by session
+
+---
+
+## Phase 14.5 — E2E UX Tests (Playwright)
+
+Goal: Add a lean Playwright suite that protects the core field workflow.
+
+- Flow 1: Create a session (location/date/protocol/times/participants) and verify it appears in session list + detail
+- Flow 2: Add a banding record inside the session and verify summary chips in session list
+- Flow 3: Toggle offline/online, then export data, wipe state, import data, verify counts/labels
 
 ---
 
@@ -228,6 +242,9 @@ Goal: Click band → encounter timeline.
 **Media**
 - Speech-to-text (STT) input for field entry
 
+**Dev tooling**
+- Storybook for component-level UX checks (optional)
+
 **Advanced Validation**
 - Validation override mechanism: user acknowledges warning, auto-note generated (from Hallie's doc re: Species × Band size "Did you gauge the leg?"). Consider if needed beyond band size.
 - Morphometrics × species range validation (wing, tail, tarsus, culmen, mass — tables from Hallie)
@@ -253,6 +270,7 @@ Goal: Click band → encounter timeline.
 - Standalone band code lookup tool
 - Scientific name / definition lookup
 - Lighter "in-the-field" utility mode
+- About / RTM page
 
 **Schema Migration Framework** (was Phase 15)
 - Numbered migration runner for IndexedDB (leveraging idb's version-based upgrades)

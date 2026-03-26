@@ -252,25 +252,32 @@ When Capture Code = R, a collapsible section auto-opens directly below the Captu
 
 Triggered from within a banding record. No photos are stored in the app — only the filename is saved as a reference.
 
-1. **User taps "Photo" button** on the banding record form (in the Additional Information section)
+1. **User taps "Photo" button** at the top of the banding record form
 2. **Device camera launches** via `<input type="file" accept="image/*" capture="environment">`
+   - On desktop: button is greyed out with "Mobile only" tooltip
 3. **Photo review modal appears** showing:
    - The captured image (preview)
    - Auto-generated filename: `YYYY-MM-DD_STATION_SPECIES_BAND#_suffix.jpg`
-     - Example: `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`
+     - Banded example: `2026-03-22_GCBS_SOSP_1154-81501_wing.jpg`
+     - Unbanded example: `2026-03-22_GCBS_SOSP_UNBANDED003_wing.jpg` (where 003 is the record's sequence number in the session)
    - Editable suffix field (preset options: WING, TAIL, HEAD, BODY, BAND + free text)
 4. **User taps "Save to Drive"** → triggers `navigator.share({ files: [namedFile] })`
    - Native share sheet opens with the pre-named file
    - User selects Google Drive (or any other installed app)
    - User picks folder and confirms save in the target app
 5. **User returns to BirdNerd** and taps "Confirm Saved"
-   - Filename is stored on the banding record (`photo_filename` field)
+   - A `PhotoRecord` is created (banding_record_id, body_part, file_name)
    - Photo thumbnail remains visible on the record (from browser cache) for the duration of the session
 6. **Cancel / Retake** — user can dismiss the modal or retake at any point before confirming
 
+**Photo list on record:**
+- After saving, a compact list of PhotoRecords appears at the top of the form (below the Photo button)
+- Each row shows: body_part label + file_name (truncated) + delete button
+- User can tap "Photo" again to add more photos; each creates a separate PhotoRecord
+
 **Notes:**
 - The app has no confirmation callback from the share target — the "Confirm Saved" step is trust-based
-- Multiple photos per record: user can repeat the flow; filenames are appended (comma-separated or array)
+- Desktop: Photo button is greyed out with "Mobile only" label (Web Share file API not supported on desktop browsers)
 - Offline: camera capture and naming work offline; share requires the target app to handle offline queuing (Google Drive does this)
 
 ---
