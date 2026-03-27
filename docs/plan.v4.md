@@ -28,34 +28,44 @@ Phases 1–14 complete. See [plan.v3 (archived)](archives/plan.v3.md) for detail
 
 ---
 
-## Phase 14.5 — Cleanup & Fixes
+### Phase 14.5 — Cleanup & Fixes ✅
 
-Goal: Address band inventory bugs, small UX tweaks, and any loose ends before agency export.
-
-- [x] Fix: sample data had 5 bands incorrectly marked "deployed" with no linked records
-- [x] Fix: deployed bands should not appear in BandSearchSelect dropdown (except current record's band when editing)
-- [x] Add session net logs to Hallie's example data (3 nets)
-- [ ] TBD — other tweaks
+- Fix: sample data bands incorrectly marked "deployed" with no linked records
+- Fix: deployed bands excluded from BandSearchSelect dropdown (except current record's band when editing)
+- Sample data: added session net logs (3 nets), 30 sample bands across sizes 0–2
+- PWA status bar: `black-translucent` + `safe-area-inset-top` padding for iPhone
+- Home screen body background matches gradient for overscroll areas
+- Home screen icon rounded corners
+- About BirdNerd page with MDBA attribution + GitHub link
+- Home nav reordered: Band Inventory before Project Locations
+- Plan v3 archived, plan v4 created (compact completed phases table)
+- CLAUDE.md rewritten with project context, conventions, commands
+- Spec links updated from plan.v3 → plan.v4
 
 ---
 
 ## Phase 15 — Agency Export
 
-> **Decision point:** Should agency export live in the app UI, or as standalone offline scripts (e.g. a CLI or notebook that reads the JSON data bundle)? The app already exports a full JSON bundle — a separate script could transform that into BBL/IBP/CDFW formats without adding complexity to the PWA. In-app export is nicer UX but adds code for a task that happens infrequently (a few times per season). TBD.
+Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
-**Unit tests to add alongside export:**
-- IBP → BBL code mappings (every field with dual coding)
-- BBL upload format column ordering and value formatting
-- Edge cases: missing fields, unbanded records, mortality records
+### 15a — IBP (MAPS Master List) ✅
+- 49-column CSV matching Hallie's MASTER sheet layout
+- IBP ↔ BBL dual columns for: Code, How Aged, How Sexed, Body Molt, FF Molt
+- Code translation mappings: BBL 2-letter → IBP single-letter (How Aged, How Sexed), numeric → alpha (Age), Capture Code (1→N, 4→D, 8→L)
+- Band number stripped of hyphen, capture time to numeric, booleans to Y/N
+- Bander resolved via FK chain (bander → person → initials), location via session FK
+- Agency Export section on Data Manager page with format picker + session scope
+- `generateIBPRows()` exposed for testability
+- Tests: 6 new (80 total)
 
-Goal: Export in agency-specific formats.
+### 15b — BBL Upload Format
+- BBL upload format (58 columns) for new bandings
+- BBL recapture upload format (60 columns) for recaptures
+- `how_obtained` hardcoded to "Mist net" for now (see backlog)
+- Code translation layer (IBP → BBL)
 
-- BBL upload format (58 columns, with IBP→BBL code mappings)
-- BBL recapture upload format (60 columns)
-- IBP format
-- CDFW format
-- Code translation layer (IBP codes stored internally → BBL/agency codes at export)
-- Export from banding records, optionally scoped by location/session/date range
+### 15c — CDFW Format
+- TBD — requirements not yet documented
 
 ---
 
@@ -66,12 +76,6 @@ Goal: Click band → encounter timeline.
 - Band detail view: full metadata + encounter history (all capture/recapture events)
 - Search by band number
 - Link from banding record → band detail
-
----
-
-## Phase 17 — About / RTM Page
-
-Goal: TBD — to be specified.
 
 ---
 
@@ -99,7 +103,7 @@ Goal: TBD — to be specified.
 - Auxiliary markers (colored bands, 1-2 letters + 1-2 numbers)
 - Band replacement tracking (old band → new band, linked history)
 - Hummingbird band prefix → alpha mapping
-- `how_obtained` recapture field (BBL reporting detail, not needed at capture time)
+- `how_obtained` field: currently hardcoded to "mist net" in export. Needs per-record or per-session config when generalizing to non-MAPS protocols or stations with varied capture methods.
 - Confirm band types with Hallie (Standard, Buffy, Giant, Lockout)
 
 **Special Forms**

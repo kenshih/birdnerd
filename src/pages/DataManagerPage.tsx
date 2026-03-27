@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import type { BirdRecord, Session, Location } from '../types'
-import { getSessions, getRecordsBySession, getLocations } from '../db'
+import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
+import { getSessions, getRecordsBySession, getLocations, getBands, getPeople, getBanders } from '../db'
 import { exportSessionCSV } from '../utils/exportCsv'
 import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
+import { exportIBP } from '../utils/agencyExport'
 import type { DataBundle } from '../data/bundle-schema'
 import PageHeader from '../components/PageHeader'
 
@@ -10,12 +11,19 @@ interface Props {
   onHome: () => void
 }
 
+type AgencyFormat = 'ibp'
+
 export default function ExportPage({ onHome }: Props) {
   const [sessions, setSessions] = useState<Session[]>([])
   const [locations, setLocations] = useState<Location[]>([])
+  const [bands, setBands] = useState<Band[]>([])
+  const [people, setPeople] = useState<Person[]>([])
+  const [banders, setBanders] = useState<Bander[]>([])
   const [allRecords, setAllRecords] = useState<Map<string, BirdRecord[]>>(new Map())
   const [loading, setLoading] = useState(true)
   const [importStatus, setImportStatus] = useState<string | null>(null)
+  const [agencyFormat, setAgencyFormat] = useState<AgencyFormat>('ibp')
+  const [agencyScope, setAgencyScope] = useState<string>('all')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function locationCode(locId: string): string {
@@ -23,10 +31,15 @@ export default function ExportPage({ onHome }: Props) {
   }
 
   async function loadData() {
-    const [sess, locs] = await Promise.all([getSessions(), getLocations()])
+    const [sess, locs, bnds, ppl, bdrs] = await Promise.all([
+      getSessions(), getLocations(), getBands(), getPeople(), getBanders(),
+    ])
     sess.sort((a, b) => b.date.localeCompare(a.date))
     setSessions(sess)
     setLocations(locs)
+    setBands(bnds)
+    setPeople(ppl)
+    setBanders(bdrs)
 
     const map = new Map<string, BirdRecord[]>()
     for (const s of sess) {
@@ -96,6 +109,31 @@ export default function ExportPage({ onHome }: Props) {
     }
   }
 
+  function handleAgencyExport() {
+    // Gather records based on scope
+    let recs: BirdRecord[] = []
+    if (agencyScope === 'all') {
+      for (const s of sessions) {
+        const sessionRecs = allRecords.get(s.id)
+        if (sessionRecs) recs.push(...sessionRecs)
+      }
+    } else {
+      const sessionRecs = allRecords.get(agencyScope)
+      if (sessionRecs) recs.push(...sessionRecs)
+    }
+
+    if (recs.length === 0) {
+      alert('No records to export.')
+      return
+    }
+
+    const ctx = { sessions, locations, bands, people, banders }
+
+    if (agencyFormat === 'ibp') {
+      exportIBP(recs, ctx)
+    }
+  }
+
   async function handleLoadExample() {
     const ok = confirm(
       'This will replace ALL existing data with example data (seed + sample session).\n\nContinue?'
@@ -158,6 +196,47 @@ export default function ExportPage({ onHome }: Props) {
                     </div>
                   )
                 })}
+              </div>
+            </>
+          )}
+
+          {/* Agency Export section */}
+          {totalRecords > 0 && (
+            <>
+              <div style={styles.divider} />
+              <div style={styles.backupSection}>
+                <h3 style={styles.backupTitle}>Agency Export</h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={styles.radioLabel}>
+                    <input
+                      type="radio" name="agencyFormat" value="ibp"
+                      checked={agencyFormat === 'ibp'}
+                      onChange={() => setAgencyFormat('ibp')}
+                    />
+                    IBP (MAPS master list)
+                  </label>
+                </div>
+
+                <div style={{ marginTop: '0.5rem' }}>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Scope</label>
+                  <select
+                    value={agencyScope}
+                    onChange={e => setAgencyScope(e.target.value)}
+                    style={styles.scopeSelect}
+                  >
+                    <option value="all">All Sessions</option>
+                    {sessions.map(s => (
+                      <option key={s.id} value={s.id}>
+                        {locationCode(s.locationId)} · {s.date} ({(allRecords.get(s.id) ?? []).length} recs)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <button onClick={handleAgencyExport} style={styles.exportAllBtn}>
+                  ↓ Export
+                </button>
               </div>
             </>
           )}
@@ -334,5 +413,20 @@ const styles: Record<string, React.CSSProperties> = {
     cursor: 'pointer',
     fontSize: '0.85rem',
     fontWeight: 500,
+  },
+  radioLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    fontSize: '0.9rem',
+    cursor: 'pointer',
+  },
+  scopeSelect: {
+    width: '100%',
+    padding: '0.45rem 0.5rem',
+    fontSize: '0.9rem',
+    borderRadius: 6,
+    border: '1px solid #ccc',
+    marginTop: '0.25rem',
   },
 }

@@ -543,7 +543,7 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-The Data Manager page has two sections: **Session Data** (per-session CSV export) and **Data Backup** (full JSON bundle import/export).
+The Data Manager page has three sections: **Session Data** (per-session CSV export), **Agency Export** (IBP/BBL format exports), and **Data Backup** (full JSON bundle import/export).
 
 ```
 ┌──────────────────────────────────────┐
@@ -555,6 +555,18 @@ The Data Manager page has two sections: **Session Data** (per-session CSV export
 │  GCBS · 2026-03-19         12 recs   │
 │  GCBS · 2026-03-18         20 recs   │
 │  MCFS · 2026-03-15         15 recs   │
+│                                      │
+│  ── Agency Export ───────────────── │
+│                                      │
+│  Format:                             │
+│  ○ IBP (MAPS master list)           │
+│  ○ BBL Upload (new bandings)        │
+│  ○ BBL Recapture Upload             │
+│                                      │
+│  Scope:                              │
+│  [ All Sessions ▼ ]                  │
+│                                      │
+│  [ ↓ Export ]                        │
 │                                      │
 │  ── Data Backup ──────────────────── │
 │                                      │
@@ -591,30 +603,17 @@ The Data Manager page has two sections: **Session Data** (per-session CSV export
 └──────────────────────────────────────────┘
 ```
 
-### 7.2 Export Dialog
+### 7.2 Agency Export Formats
 
-```
-┌──────────────────────────────────────┐
-│  Export Data                         │
-│                                      │
-│  Format:                             │
-│  ○ CSV (Excel-compatible)            │
-│  ○ BBL Upload Format (58 cols)       │
-│  ○ IBP Internal Format               │
-│  ○ CDFW Format (future)              │
-│                                      │
-│  Options:                            │
-│  ☐ Include header row               │
-│  ☐ Include notes field               │
-│                                      │
-│  Date Range: [from] [to]             │
-│  Session: [all] [select]             │
-│                                      │
-│  [ Export ] [ Cancel ]               │
-└──────────────────────────────────────┘
-```
+The app stores data internally in **IBP format** and derives **BBL format** at export time via code mappings.
 
-**Note:** The app stores data internally in **IBP format** and derives **BBL format** at export time via mappings from the LOOKUPS sheet.
+**IBP (MAPS master list)** — 50 columns matching Hallie's MASTER sheet. Includes both IBP and BBL code columns. All records (new bandings, recaptures, destroyed, unbanded).
+
+**BBL Upload** — 58 columns per BBL spec. New bandings only (Code = N/1). IBP codes translated to BBL equivalents. `how_obtained` defaults to "Mist net".
+
+**BBL Recapture Upload** — 60 columns per BBL spec. Recaptures only (Code = R). Adds `How Obtained`, `Present Condition` columns. `how_obtained` defaults to "Mist net".
+
+Exports query live IndexedDB data (not the JSON bundle). Scoped by session or all sessions.
 
 ---
 
