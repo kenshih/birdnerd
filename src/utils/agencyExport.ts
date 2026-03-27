@@ -184,6 +184,201 @@ function recordToIBPRow(rec: BirdRecord, ctx: ExportContext): string[] {
   ]
 }
 
+// ── BBL Upload Format (New Bandings) ──────────────────────────────
+
+// bbpCodes that represent new bandings (go in BBL UPLOAD)
+const NEW_BANDING_CODES = new Set(['1'])
+
+// bbpCodes that represent recaptures (go in R UPLOAD)
+const RECAPTURE_CODES = new Set(['R', 'F', '4', '5', '6', '8'])
+
+const BBL_HEADERS = [
+  'Band Number', 'Species', 'Disposition',
+  'Banding Year', 'Banding Month', 'Banding Day',
+  'Age', 'How Aged', 'Sex', 'How Sexed',
+  'Bird Status', 'Location', 'Remarks',
+  'Replaced Band Number', 'Reward Band Number',
+  'Bander ID', 'Scribe',
+  'How Captured', 'Capture Time Enter or Paste Here', 'Capture Time',
+  'Banded Leg',
+  'Wing Chord', 'Tail Length', 'Tarsus Length', 'Culmen Length',
+  'Bill Length', 'Bill Width', 'Bill Height',
+  'Bird Weight', 'Weight Time Enter or Paste Here', 'Weight Time',
+  'Eye color', 'Fat Score', 'Skull', 'Brood Patch', 'Cloacal Protuberance',
+  'Body Molt', 'Flight Feather Molt', 'Molt Cycle Code',
+  'Net Nest Cavity Designator', 'Net Nest Cavity Number',
+  'Plot ID', 'Sweep Number', 'Nest Location',
+  'Blood sample taken', 'Feather sample taken',
+  'Genetic sample taken', 'Other tests performed',
+  'Tracheal Swab', 'Mouth Swab', 'Cloacal Swab',
+  'Ectoparasites present', 'Ectoparasites collected',
+  'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5',
+]
+
+function recordToBBLRow(rec: BirdRecord, ctx: ExportContext): string[] {
+  const session = lookupSession(ctx, rec.sessionId)
+  const location = session ? lookupLocation(ctx, session.locationId) : undefined
+
+  const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
+
+  return [
+    bandNumberRaw(rec.bandNumber),                                   // Band Number
+    rec.speciesCode ?? '',                                           // Species (ALPHA code)
+    rec.bbpCode ?? '',                                               // Disposition (BBL capture code)
+    year ?? '',                                                      // Banding Year
+    month ? String(parseInt(month, 10)) : '',                        // Banding Month
+    day ? String(parseInt(day, 10)) : '',                            // Banding Day
+    rec.age ?? '',                                                   // Age
+    rec.howAged ?? '',                                               // How Aged (BBL 2-letter)
+    rec.sex ?? '',                                                   // Sex
+    rec.howSexed ?? '',                                              // How Sexed (BBL 2-letter)
+    rec.status ?? '',                                                // Bird Status
+    location?.banderLocationId ?? rec.station ?? '',                  // Location
+    rec.notes ?? '',                                                 // Remarks
+    bandNumberRaw(rec.replacedBandNumber),                            // Replaced Band Number
+    '',                                                              // Reward Band Number
+    lookupBanderInitials(ctx, rec.bander),                           // Bander ID
+    '',                                                              // Scribe
+    'Mist net',                                                      // How Captured (hardcoded)
+    captureTimeToNum(rec.captureTime),                               // Capture Time Enter or Paste Here
+    rec.captureTime ?? '',                                           // Capture Time (HH:MM)
+    'R',                                                             // Banded Leg (hardcoded)
+    rec.wing != null ? String(rec.wing) : '',                        // Wing Chord
+    rec.tail != null ? String(rec.tail) : '',                        // Tail Length
+    rec.tarsus != null ? String(rec.tarsus) : '',                    // Tarsus Length
+    rec.exposedCulmen != null ? String(rec.exposedCulmen) : '',      // Culmen Length
+    '',                                                              // Bill Length
+    '',                                                              // Bill Width
+    '',                                                              // Bill Height
+    rec.bodyMass != null ? String(rec.bodyMass) : '',                // Bird Weight
+    '',                                                              // Weight Time Enter or Paste Here
+    '',                                                              // Weight Time
+    '',                                                              // Eye color
+    rec.fat ?? '',                                                   // Fat Score
+    rec.skull ?? '',                                                 // Skull
+    rec.bp ?? '',                                                    // Brood Patch
+    rec.cp ?? '',                                                    // Cloacal Protuberance
+    bodyMoltToBBL(rec.bodyMolt),                                     // Body Molt (BBL Y/N)
+    ffMoltToBBL(rec.ffMolt),                                         // Flight Feather Molt (BBL Y/N)
+    rec.wrp ?? '',                                                   // Molt Cycle Code (WRP)
+    '',                                                              // Net Nest Cavity Designator
+    '',                                                              // Net Nest Cavity Number
+    '',                                                              // Plot ID
+    '',                                                              // Sweep Number
+    '',                                                              // Nest Location
+    boolToYN(rec.bloodSample),                                       // Blood sample taken
+    boolToYN(rec.featherPull),                                       // Feather sample taken
+    '',                                                              // Genetic sample taken
+    '',                                                              // Other tests performed
+    '',                                                              // Tracheal Swab
+    '',                                                              // Mouth Swab
+    '',                                                              // Cloacal Swab
+    '',                                                              // Ectoparasites present
+    '',                                                              // Ectoparasites collected
+    '',                                                              // User Field 1
+    '',                                                              // User Field 2
+    '',                                                              // User Field 3
+    '',                                                              // User Field 4
+    '',                                                              // User Field 5
+  ]
+}
+
+// ── BBL Recapture Upload Format ───────────────────────────────────
+
+const BBL_RECAP_HEADERS = [
+  'Band Number', 'Species', 'Disposition',
+  'Recapture Year', 'Recapture Month', 'Recapture Day',
+  'Age', 'How Aged', 'Sex', 'How Sexed',
+  'Bird Status', 'How Obtained', 'Present Condition',
+  'Location', 'Remarks',
+  'Second Band Number', 'Reward Band Number',
+  'Bander ID', 'Scribe',
+  'How Captured', 'Capture Time Enter or Paste Here', 'Capture Time',
+  'Banded Leg',
+  'Wing Chord', 'Tail Length', 'Tarsus Length', 'Culmen Length',
+  'Bill Length', 'Bill Width', 'Bill Height',
+  'Bird Weight', 'Weight Time Enter or Paste Here', 'Weight Time',
+  'Eye color', 'Fat Score', 'Skull', 'Brood Patch', 'Cloacal Protuberance',
+  'Body Molt', 'Flight Feather Molt', 'Molt Cycle Code',
+  'Net Nest Cavity Designator', 'Net Nest Cavity Number',
+  'Plot ID', 'Sweep Number', 'Nest Location',
+  'Blood sample taken', 'Feather sample taken',
+  'Genetic sample taken', 'Other tests performed',
+  'Tracheal Swab', 'Mouth Swab', 'Cloacal Swab',
+  'Ectoparasites present', 'Ectoparasites collected',
+  'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5',
+]
+
+function recordToBBLRecapRow(rec: BirdRecord, ctx: ExportContext): string[] {
+  const session = lookupSession(ctx, rec.sessionId)
+  const location = session ? lookupLocation(ctx, session.locationId) : undefined
+
+  const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
+
+  return [
+    bandNumberRaw(rec.bandNumber),                                   // Band Number
+    rec.speciesCode ?? '',                                           // Species (ALPHA code)
+    rec.bbpCode ?? '',                                               // Disposition (BBL capture code)
+    year ?? '',                                                      // Recapture Year
+    month ? String(parseInt(month, 10)) : '',                        // Recapture Month
+    day ? String(parseInt(day, 10)) : '',                            // Recapture Day
+    rec.age ?? '',                                                   // Age
+    rec.howAged ?? '',                                               // How Aged (BBL 2-letter)
+    rec.sex ?? '',                                                   // Sex
+    rec.howSexed ?? '',                                              // How Sexed (BBL 2-letter)
+    rec.status ?? '',                                                // Bird Status
+    'Mist net',                                                      // How Obtained (hardcoded)
+    rec.presentCondition ?? '',                                      // Present Condition
+    location?.banderLocationId ?? rec.station ?? '',                  // Location
+    rec.notes ?? '',                                                 // Remarks
+    bandNumberRaw(rec.replacedBandNumber),                            // Second Band Number
+    '',                                                              // Reward Band Number
+    lookupBanderInitials(ctx, rec.bander),                           // Bander ID
+    '',                                                              // Scribe
+    'Mist net',                                                      // How Captured (hardcoded)
+    captureTimeToNum(rec.captureTime),                               // Capture Time Enter or Paste Here
+    rec.captureTime ?? '',                                           // Capture Time (HH:MM)
+    'R',                                                             // Banded Leg (hardcoded)
+    rec.wing != null ? String(rec.wing) : '',                        // Wing Chord
+    rec.tail != null ? String(rec.tail) : '',                        // Tail Length
+    rec.tarsus != null ? String(rec.tarsus) : '',                    // Tarsus Length
+    rec.exposedCulmen != null ? String(rec.exposedCulmen) : '',      // Culmen Length
+    '',                                                              // Bill Length
+    '',                                                              // Bill Width
+    '',                                                              // Bill Height
+    rec.bodyMass != null ? String(rec.bodyMass) : '',                // Bird Weight
+    '',                                                              // Weight Time Enter or Paste Here
+    '',                                                              // Weight Time
+    '',                                                              // Eye color
+    rec.fat ?? '',                                                   // Fat Score
+    rec.skull ?? '',                                                 // Skull
+    rec.bp ?? '',                                                    // Brood Patch
+    rec.cp ?? '',                                                    // Cloacal Protuberance
+    bodyMoltToBBL(rec.bodyMolt),                                     // Body Molt (BBL Y/N)
+    ffMoltToBBL(rec.ffMolt),                                         // Flight Feather Molt (BBL Y/N)
+    rec.wrp ?? '',                                                   // Molt Cycle Code (WRP)
+    '',                                                              // Net Nest Cavity Designator
+    '',                                                              // Net Nest Cavity Number
+    '',                                                              // Plot ID
+    '',                                                              // Sweep Number
+    '',                                                              // Nest Location
+    boolToYN(rec.bloodSample),                                       // Blood sample taken
+    boolToYN(rec.featherPull),                                       // Feather sample taken
+    '',                                                              // Genetic sample taken
+    '',                                                              // Other tests performed
+    '',                                                              // Tracheal Swab
+    '',                                                              // Mouth Swab
+    '',                                                              // Cloacal Swab
+    '',                                                              // Ectoparasites present
+    '',                                                              // Ectoparasites collected
+    '',                                                              // User Field 1
+    '',                                                              // User Field 2
+    '',                                                              // User Field 3
+    '',                                                              // User Field 4
+    '',                                                              // User Field 5
+  ]
+}
+
 // ── CSV helpers ────────────────────────────────────────────────────
 
 function escapeCSV(value: string): string {
@@ -223,6 +418,44 @@ export function exportIBP(
   filenamePrefix: string = 'birdnerd-ibp',
 ): void {
   const { headers, rows } = generateIBPRows(records, ctx)
+  const date = new Date().toISOString().slice(0, 10)
+  downloadCSV(`${filenamePrefix}_${date}.csv`, headers, rows)
+}
+
+/** Generate BBL Upload rows (new bandings only) without triggering download */
+export function generateBBLRows(
+  records: BirdRecord[],
+  ctx: ExportContext,
+): { headers: string[]; rows: string[][] } {
+  const newBandings = records.filter(r => NEW_BANDING_CODES.has(r.bbpCode ?? ''))
+  return { headers: BBL_HEADERS, rows: newBandings.map(r => recordToBBLRow(r, ctx)) }
+}
+
+export function exportBBL(
+  records: BirdRecord[],
+  ctx: ExportContext,
+  filenamePrefix: string = 'birdnerd-bbl',
+): void {
+  const { headers, rows } = generateBBLRows(records, ctx)
+  const date = new Date().toISOString().slice(0, 10)
+  downloadCSV(`${filenamePrefix}_${date}.csv`, headers, rows)
+}
+
+/** Generate BBL Recapture Upload rows without triggering download */
+export function generateBBLRecapRows(
+  records: BirdRecord[],
+  ctx: ExportContext,
+): { headers: string[]; rows: string[][] } {
+  const recaps = records.filter(r => RECAPTURE_CODES.has(r.bbpCode ?? ''))
+  return { headers: BBL_RECAP_HEADERS, rows: recaps.map(r => recordToBBLRecapRow(r, ctx)) }
+}
+
+export function exportBBLRecap(
+  records: BirdRecord[],
+  ctx: ExportContext,
+  filenamePrefix: string = 'birdnerd-bbl-recap',
+): void {
+  const { headers, rows } = generateBBLRecapRows(records, ctx)
   const date = new Date().toISOString().slice(0, 10)
   downloadCSV(`${filenamePrefix}_${date}.csv`, headers, rows)
 }

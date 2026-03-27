@@ -59,14 +59,21 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 - `generateIBPRows()` exposed for testability
 - Tests: 6 new (80 total)
 
-### 15b — BBL Upload Format
-- BBL upload format (58 columns) for new bandings
-- BBL recapture upload format (60 columns) for recaptures
-- `how_obtained` hardcoded to "Mist net" for now (see backlog)
-- Code translation layer (IBP → BBL)
+### 15b — BBL Upload Format ✅
+- BBL upload format (58 columns) for new bandings — filters to bbpCode `1` only
+- BBL recapture upload format (60 columns) for recaptures — filters to bbpCode `R`, `F`, `4`, `5`, `6`, `8`
+- `how_obtained` and `how_captured` hardcoded to "Mist net" for now (see backlog)
+- `banded_leg` hardcoded to "R"
+- Band numbers (including replaced/second) stripped of hyphens
+- Body Molt / FF Molt converted to BBL Y/N
+- Capture time exported both as numeric (for paste) and HH:MM
+- Format picker on Data Manager page updated with all three options
+- `generateBBLRows()` / `generateBBLRecapRows()` exposed for testability
+- Agency export format transformations documented in tech spec § 3
+- Tests: 5 new (85 total)
 
-### 15c — CDFW Format
-- TBD — requirements not yet documented
+### 15c — CDFW Format (backlogged)
+- TBD — requirements not yet documented, waiting on Hallie
 
 ---
 

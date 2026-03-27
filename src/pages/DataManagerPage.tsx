@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
 import { getSessions, getRecordsBySession, getLocations, getBands, getPeople, getBanders } from '../db'
 import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
-import { exportIBP } from '../utils/agencyExport'
+import { exportIBP, exportBBL, exportBBLRecap } from '../utils/agencyExport'
 import type { DataBundle } from '../data/bundle-schema'
 import PageHeader from '../components/PageHeader'
 
@@ -10,7 +10,7 @@ interface Props {
   onHome: () => void
 }
 
-type AgencyFormat = 'ibp'
+type AgencyFormat = 'ibp' | 'bbl' | 'bbl-recap'
 
 export default function ExportPage({ onHome }: Props) {
   const [sessions, setSessions] = useState<Session[]>([])
@@ -103,6 +103,10 @@ export default function ExportPage({ onHome }: Props) {
 
     if (agencyFormat === 'ibp') {
       exportIBP(recs, ctx)
+    } else if (agencyFormat === 'bbl') {
+      exportBBL(recs, ctx)
+    } else if (agencyFormat === 'bbl-recap') {
+      exportBBLRecap(recs, ctx)
     }
   }
 
@@ -200,6 +204,22 @@ export default function ExportPage({ onHome }: Props) {
                       onChange={() => setAgencyFormat('ibp')}
                     />
                     IBP (MAPS master list)
+                  </label>
+                  <label style={styles.radioLabel}>
+                    <input
+                      type="radio" name="agencyFormat" value="bbl"
+                      checked={agencyFormat === 'bbl'}
+                      onChange={() => setAgencyFormat('bbl')}
+                    />
+                    BBL Upload (new bandings)
+                  </label>
+                  <label style={styles.radioLabel}>
+                    <input
+                      type="radio" name="agencyFormat" value="bbl-recap"
+                      checked={agencyFormat === 'bbl-recap'}
+                      onChange={() => setAgencyFormat('bbl-recap')}
+                    />
+                    BBL Recapture Upload (R Upload)
                   </label>
                 </div>
 

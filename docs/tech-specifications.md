@@ -239,6 +239,62 @@ The master spreadsheet reveals that many fields have **IBP** and **BBL** code va
 
 **Decision:** Store data in richer IBP format internally. Derive BBL format at export via mapping tables. Mappings documented in LOOKUPS sheet and spreadsheet formulas.
 
+### Agency Export Formats
+
+Three export formats, all implemented in `src/utils/agencyExport.ts`.
+
+#### IBP (MAPS Master List) — 49 columns
+
+Matches Hallie's MASTER sheet layout. Requires reverse-mapping from BBL → IBP for several fields:
+
+| Field | App stores | IBP wants | Transformation |
+|-------|-----------|-----------|----------------|
+| How Aged / How Sexed | BBL 2-letter (CL, SK, PL…) | IBP 1-letter (C, S, P…) | `HOW_AGED_BBL_TO_IBP` / `HOW_SEXED_BBL_TO_IBP` lookup |
+| Capture Code | BBL (1, 4, 8…) | IBP alpha (N, D, L…) | `CAPTURE_CODE_TO_IBP` lookup |
+| Age | Numeric (1, 2, 4, 5…) | Alpha (AHY, HY, ASY, SY…) | `AGE_NUM_TO_ALPHA` lookup |
+| Body Molt | IBP numeric (0–4) | _also_ BBL Y/N in separate column | `bodyMoltToBBL()`: 0→N, 1–4→Y |
+| FF Molt | IBP letter (N, A, S, J) | _also_ BBL Y/N in separate column | `ffMoltToBBL()`: N→N, else→Y |
+| Band Number | XXXX-XXXXX | XXXXXXXXX | Strip hyphen |
+| Capture Time | HH:MM | Numeric (710) | Strip colon, parseInt |
+| Bander | Bander FK ID | Initials | FK chain: bander → person → initials |
+| Station | Session FK | Location code | FK chain: session → location → banderLocationId |
+| Feather Pull / Blood Sample | boolean | Y/N | `boolToYN()` |
+
+IBP export includes dual columns (IBP + BBL) for: Code, How Aged, How Sexed, Body Molt, FF Molt.
+
+#### BBL Upload (New Bandings) — 58 columns
+
+Matches the "BBL UPLOAD" sheet in Hallie's spreadsheet. Simpler than IBP because the app already stores most codes in BBL format. Only fields with data are populated; the remaining columns are left empty.
+
+| Field | App stores | BBL wants | Transformation |
+|-------|-----------|-----------|----------------|
+| Body Molt | IBP numeric (0–4) | BBL Y/N | `bodyMoltToBBL()`: 0→N, 1–4→Y |
+| FF Molt | IBP letter (N, A, S, J) | BBL Y/N | `ffMoltToBBL()`: N→N, else→Y |
+| Band Number | XXXX-XXXXX | XXXXXXXXX | Strip hyphen |
+| Capture Time | HH:MM | HH:MM | No conversion (unlike IBP numeric) |
+| Feather Pull / Blood Sample | boolean | Y/N | `boolToYN()` |
+| Bander | Bander FK ID | Initials | FK chain: bander → person → initials |
+| Station | Session FK | Location code | FK chain: session → location → banderLocationId |
+
+Hardcoded values: How Captured = "Mist net", Banded Leg = "R".
+
+Empty columns (not collected): Reward Band Number, Scribe, Tail/Tarsus/Culmen/Bill measurements, Weight Time, Eye Color, Net/Nest/Cavity Designator & Number, Plot ID, Sweep Number, Nest Location, Genetic/Tracheal/Mouth/Cloacal samples, Ectoparasites, User Fields 1–5.
+
+Only new bandings (bbpCode `1`) are included. Records with bbpCode `R`, `F`, `4`, etc. are excluded — recaptures go in the R UPLOAD format.
+
+#### BBL Recapture Upload — 60 columns
+
+Matches the "R UPLOAD" sheet. Nearly identical layout to BBL Upload with two extra columns (How Obtained, Present Condition) and renamed date/band columns.
+
+| BBL Upload column | R Upload column | Notes |
+|-------------------|-----------------|-------|
+| Banding Year/Month/Day | Recapture Year/Month/Day | Same date field, different header |
+| Replaced Band Number | Second Band Number | Maps from `replacedBandNumber` |
+| _(not present)_ | How Obtained (col 11) | Hardcoded "Mist net" |
+| _(not present)_ | Present Condition (col 12) | From `presentCondition` (H/I/S/D) |
+
+Only recaptures (bbpCode `R`, `F`, `4`) are included.
+
 ### Code Tables
 
 All imported from MASTER BANDING DATA.xlsx → LOOKUPS sheet:
