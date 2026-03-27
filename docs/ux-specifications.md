@@ -31,7 +31,7 @@ Buttons are grouped with subtle dividers: **field activities** (Session Data, Da
 | Button | Purpose | Leads To |
 |--------|---------|----------|
 | **Session Data** | Create/manage daily sessions, record bird encounters | Session List / Session Form |
-| **Data Manager** | Browse records, export CSV, backup & restore | Data Manager (§7) |
+| **Data Manager** | Agency export, backup & restore | Data Manager (§7) |
 | **Project Locations** | Register locations, manage nets | Location List / Location Form |
 | **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
@@ -543,18 +543,13 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-The Data Manager page has three sections: **Session Data** (per-session CSV export), **Agency Export** (IBP/BBL format exports), and **Data Backup** (full JSON bundle import/export).
+The Data Manager page has two sections: **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Data Backup** (full JSON bundle import/export).
 
 ```
 ┌──────────────────────────────────────┐
 │  🏠 Data Manager                     │
 │                                      │
 │  3 sessions · 47 records             │
-│  [ ↓ Export All Records (CSV) ]      │
-│                                      │
-│  GCBS · 2026-03-19         12 recs   │
-│  GCBS · 2026-03-18         20 recs   │
-│  MCFS · 2026-03-15         15 recs   │
 │                                      │
 │  ── Agency Export ───────────────── │
 │                                      │
@@ -563,10 +558,13 @@ The Data Manager page has three sections: **Session Data** (per-session CSV expo
 │  ○ BBL Upload (new bandings)        │
 │  ○ BBL Recapture Upload             │
 │                                      │
-│  Scope:                              │
-│  [ All Sessions ▼ ]                  │
+│  Sessions:                           │
+│  ☑ All Sessions                      │
+│  ☑ GCBS · 2026-03-19 (12 recs)     │
+│  ☑ GCBS · 2026-03-18 (20 recs)     │
+│  ☑ MCFS · 2026-03-15 (15 recs)     │
 │                                      │
-│  [ ↓ Export ]                        │
+│  [ ↓ Export 47 records ]             │
 │                                      │
 │  ── Data Backup ──────────────────── │
 │                                      │

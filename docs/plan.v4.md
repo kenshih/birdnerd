@@ -54,7 +54,8 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 - Code translation mappings: BBL 2-letter → IBP single-letter (How Aged, How Sexed), numeric → alpha (Age), Capture Code (1→N, 4→D, 8→L)
 - Band number stripped of hyphen, capture time to numeric, booleans to Y/N
 - Bander resolved via FK chain (bander → person → initials), location via session FK
-- Agency Export section on Data Manager page with format picker + session scope
+- Agency Export section on Data Manager page with format picker + multi-select session scope
+- Removed old CSV export/import buttons from Data Manager (kept per-session CSV in SessionView)
 - `generateIBPRows()` exposed for testability
 - Tests: 6 new (80 total)
 

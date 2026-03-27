@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
 import { getSessions, getRecordsBySession, getLocations, getBands, getPeople, getBanders } from '../db'
-import { exportSessionCSV } from '../utils/exportCsv'
 import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
 import { exportIBP } from '../utils/agencyExport'
 import type { DataBundle } from '../data/bundle-schema'
@@ -23,7 +22,7 @@ export default function ExportPage({ onHome }: Props) {
   const [loading, setLoading] = useState(true)
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const [agencyFormat, setAgencyFormat] = useState<AgencyFormat>('ibp')
-  const [agencyScope, setAgencyScope] = useState<string>('all')
+  const [agencyScope, setAgencyScope] = useState<Set<string>>(new Set(['all']))
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function locationCode(locId: string): string {
@@ -54,15 +53,57 @@ export default function ExportPage({ onHome }: Props) {
 
   const totalRecords = Array.from(allRecords.values()).reduce((n, r) => n + r.length, 0)
 
-  function exportAllCsv() {
-    const allRecs: BirdRecord[] = []
-    for (const s of sessions) {
-      const recs = allRecords.get(s.id)
-      if (recs) allRecs.push(...recs)
+  function toggleScope(sessionId: string) {
+    setAgencyScope(prev => {
+      const next = new Set(prev)
+      if (sessionId === 'all') {
+        // Toggle all: if all is selected, deselect; otherwise select all
+        if (next.has('all')) {
+          return new Set()
+        }
+        const all = new Set(['all'])
+        sessions.forEach(s => all.add(s.id))
+        return all
+      }
+      // Toggle individual session
+      next.delete('all')
+      if (next.has(sessionId)) {
+        next.delete(sessionId)
+      } else {
+        next.add(sessionId)
+      }
+      // If all sessions are now selected, also check "all"
+      if (sessions.every(s => next.has(s.id))) {
+        next.add('all')
+      }
+      return next
+    })
+  }
+
+  function handleAgencyExport() {
+    let recs: BirdRecord[] = []
+    if (agencyScope.has('all')) {
+      for (const s of sessions) {
+        const sessionRecs = allRecords.get(s.id)
+        if (sessionRecs) recs.push(...sessionRecs)
+      }
+    } else {
+      for (const sid of agencyScope) {
+        const sessionRecs = allRecords.get(sid)
+        if (sessionRecs) recs.push(...sessionRecs)
+      }
     }
-    if (allRecs.length === 0) { alert('No records to export.'); return }
-    const combined: Session = { id: 'all', locationId: '', date: new Date().toISOString().slice(0, 10), createdAt: '', updatedAt: '' }
-    exportSessionCSV(combined, allRecs, 'all')
+
+    if (recs.length === 0) {
+      alert('No records to export.')
+      return
+    }
+
+    const ctx = { sessions, locations, bands, people, banders }
+
+    if (agencyFormat === 'ibp') {
+      exportIBP(recs, ctx)
+    }
   }
 
   async function handleExportBackup() {
@@ -73,7 +114,6 @@ export default function ExportPage({ onHome }: Props) {
   async function handleImportBackup(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
-    // Reset file input so same file can be re-selected
     e.target.value = ''
 
     try {
@@ -102,35 +142,9 @@ export default function ExportPage({ onHome }: Props) {
 
       await importDataBundle(bundle)
       setImportStatus(`Imported ${count} items successfully.`)
-      // Reload page data to reflect changes
       await loadData()
     } catch {
       setImportStatus('Failed to read file. Make sure it is a valid JSON backup.')
-    }
-  }
-
-  function handleAgencyExport() {
-    // Gather records based on scope
-    let recs: BirdRecord[] = []
-    if (agencyScope === 'all') {
-      for (const s of sessions) {
-        const sessionRecs = allRecords.get(s.id)
-        if (sessionRecs) recs.push(...sessionRecs)
-      }
-    } else {
-      const sessionRecs = allRecords.get(agencyScope)
-      if (sessionRecs) recs.push(...sessionRecs)
-    }
-
-    if (recs.length === 0) {
-      alert('No records to export.')
-      return
-    }
-
-    const ctx = { sessions, locations, bands, people, banders }
-
-    if (agencyFormat === 'ibp') {
-      exportIBP(recs, ctx)
     }
   }
 
@@ -153,6 +167,11 @@ export default function ExportPage({ onHome }: Props) {
     }
   }
 
+  // Count selected records for export button label
+  const selectedRecordCount = agencyScope.has('all')
+    ? totalRecords
+    : Array.from(agencyScope).reduce((n, sid) => n + (allRecords.get(sid)?.length ?? 0), 0)
+
   return (
     <div style={styles.page}>
       <PageHeader title="Data Manager" onHome={onHome} />
@@ -161,51 +180,17 @@ export default function ExportPage({ onHome }: Props) {
         <p style={styles.loading}>Loading…</p>
       ) : (
         <>
-          {sessions.length === 0 ? (
-            <p style={styles.empty}>No sessions yet.</p>
-          ) : (
-            <>
-              <div style={styles.summary}>
-                <span>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
-                <span>{totalRecords} record{totalRecords !== 1 ? 's' : ''}</span>
-              </div>
-
-              {totalRecords > 0 && (
-                <button onClick={exportAllCsv} style={styles.exportAllBtn}>
-                  ↓ Export All Records (CSV)
-                </button>
-              )}
-
-              <div style={styles.list}>
-                {sessions.map(s => {
-                  const recs = allRecords.get(s.id) ?? []
-                  return (
-                    <div key={s.id} style={styles.card}>
-                      <div style={styles.cardHeader}>
-                        <strong>{locationCode(s.locationId)}</strong>
-                        <span style={styles.date}>{s.date}</span>
-                      </div>
-                      <div style={styles.cardBody}>
-                        <span>{recs.length} record{recs.length !== 1 ? 's' : ''}</span>
-                        {recs.length > 0 && (
-                          <button onClick={() => exportSessionCSV(s, recs, locationCode(s.locationId))} style={styles.exportBtn}>
-                            ↓ CSV
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
+          <div style={styles.summary}>
+            <span>{sessions.length} session{sessions.length !== 1 ? 's' : ''}</span>
+            <span>{totalRecords} record{totalRecords !== 1 ? 's' : ''}</span>
+          </div>
 
           {/* Agency Export section */}
           {totalRecords > 0 && (
             <>
               <div style={styles.divider} />
-              <div style={styles.backupSection}>
-                <h3 style={styles.backupTitle}>Agency Export</h3>
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Agency Export</h3>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   <label style={styles.radioLabel}>
@@ -219,23 +204,34 @@ export default function ExportPage({ onHome }: Props) {
                 </div>
 
                 <div style={{ marginTop: '0.5rem' }}>
-                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Scope</label>
-                  <select
-                    value={agencyScope}
-                    onChange={e => setAgencyScope(e.target.value)}
-                    style={styles.scopeSelect}
-                  >
-                    <option value="all">All Sessions</option>
-                    {sessions.map(s => (
-                      <option key={s.id} value={s.id}>
-                        {locationCode(s.locationId)} · {s.date} ({(allRecords.get(s.id) ?? []).length} recs)
-                      </option>
-                    ))}
-                  </select>
+                  <label style={{ fontSize: '0.85rem', fontWeight: 600 }}>Sessions</label>
+                  <div style={styles.scopeList}>
+                    <label style={styles.checkLabel}>
+                      <input
+                        type="checkbox"
+                        checked={agencyScope.has('all')}
+                        onChange={() => toggleScope('all')}
+                      />
+                      All Sessions
+                    </label>
+                    {sessions.map(s => {
+                      const recCount = (allRecords.get(s.id) ?? []).length
+                      return (
+                        <label key={s.id} style={styles.checkLabel}>
+                          <input
+                            type="checkbox"
+                            checked={agencyScope.has(s.id) || agencyScope.has('all')}
+                            onChange={() => toggleScope(s.id)}
+                          />
+                          {locationCode(s.locationId)} · {s.date} ({recCount} rec{recCount !== 1 ? 's' : ''})
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
 
-                <button onClick={handleAgencyExport} style={styles.exportAllBtn}>
-                  ↓ Export
+                <button onClick={handleAgencyExport} style={styles.primaryBtn}>
+                  ↓ Export {selectedRecordCount} record{selectedRecordCount !== 1 ? 's' : ''}
                 </button>
               </div>
             </>
@@ -244,17 +240,17 @@ export default function ExportPage({ onHome }: Props) {
           {/* Data Backup section */}
           <div style={styles.divider} />
 
-          <div style={styles.backupSection}>
-            <h3 style={styles.backupTitle}>Data Backup</h3>
-            <p style={styles.backupDesc}>
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Data Backup</h3>
+            <p style={styles.desc}>
               Full backup of all managed data: locations, nets, people, banders, sessions, and banding records.
             </p>
 
-            <div style={styles.backupButtons}>
-              <button onClick={handleExportBackup} style={styles.exportAllBtn}>
+            <div style={styles.buttonStack}>
+              <button onClick={handleExportBackup} style={styles.primaryBtn}>
                 ↓ Export Backup (JSON)
               </button>
-              <button onClick={() => fileInputRef.current?.click()} style={styles.importBtn}>
+              <button onClick={() => fileInputRef.current?.click()} style={styles.secondaryBtn}>
                 ↑ Import Backup (JSON)
               </button>
               <input
@@ -266,7 +262,7 @@ export default function ExportPage({ onHome }: Props) {
               />
             </div>
 
-            <p style={styles.backupWarning}>
+            <p style={styles.warning}>
               Import replaces all existing data. Export a backup first.
             </p>
 
@@ -297,7 +293,6 @@ const styles: Record<string, React.CSSProperties> = {
     color: '#1b4332',
   },
   loading: { textAlign: 'center' as const, opacity: 0.6 },
-  empty: { textAlign: 'center' as const, opacity: 0.6, marginTop: '2rem' },
   summary: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -307,7 +302,29 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.9rem',
     fontWeight: 600,
   },
-  exportAllBtn: {
+  divider: {
+    width: '100%',
+    height: '1px',
+    background: '#ccc',
+    margin: '0.5rem 0',
+  },
+  section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  sectionTitle: {
+    margin: 0,
+    fontSize: '1rem',
+    fontWeight: 600,
+  },
+  desc: {
+    margin: 0,
+    fontSize: '0.85rem',
+    opacity: 0.7,
+    lineHeight: 1.4,
+  },
+  primaryBtn: {
     padding: '0.7rem',
     background: '#2d6a4f',
     color: '#fff',
@@ -317,70 +334,7 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.9rem',
     fontWeight: 600,
   },
-  list: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  card: {
-    background: '#fff',
-    borderRadius: '8px',
-    padding: '0.75rem 1rem',
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '0.4rem',
-  },
-  date: {
-    fontSize: '0.85rem',
-    opacity: 0.6,
-  },
-  cardBody: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '0.85rem',
-    opacity: 0.7,
-  },
-  exportBtn: {
-    padding: '0.3rem 0.6rem',
-    background: '#2d6a4f',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-    fontSize: '0.8rem',
-  },
-  divider: {
-    width: '100%',
-    height: '1px',
-    background: '#ccc',
-    margin: '0.5rem 0',
-  },
-  backupSection: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  backupTitle: {
-    margin: 0,
-    fontSize: '1rem',
-    fontWeight: 600,
-  },
-  backupDesc: {
-    margin: 0,
-    fontSize: '0.85rem',
-    opacity: 0.7,
-    lineHeight: 1.4,
-  },
-  backupButtons: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  importBtn: {
+  secondaryBtn: {
     padding: '0.7rem',
     background: '#fff',
     color: '#2d6a4f',
@@ -390,7 +344,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.9rem',
     fontWeight: 600,
   },
-  backupWarning: {
+  buttonStack: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  warning: {
     margin: 0,
     fontSize: '0.8rem',
     opacity: 0.6,
@@ -421,12 +380,21 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.9rem',
     cursor: 'pointer',
   },
-  scopeSelect: {
-    width: '100%',
-    padding: '0.45rem 0.5rem',
-    fontSize: '0.9rem',
-    borderRadius: 6,
-    border: '1px solid #ccc',
+  checkLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.4rem',
+    fontSize: '0.85rem',
+    cursor: 'pointer',
+  },
+  scopeList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.35rem',
     marginTop: '0.25rem',
+    padding: '0.5rem 0.75rem',
+    background: '#fff',
+    borderRadius: 6,
+    border: '1px solid #e0e0e0',
   },
 }
