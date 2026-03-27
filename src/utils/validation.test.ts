@@ -154,8 +154,8 @@ describe('Blood Sample + Status', () => {
     expect(v({ bloodSample: false, status: '300' }).status).toBeUndefined()
   })
 
-  it('no warning when blood sample checked but no status yet', () => {
-    expect(v({ bloodSample: true }).status).toBeUndefined()
+  it('warns when blood sample checked but status is missing', () => {
+    expect(v({ bloodSample: true }).status).toBe('Blood sample taken — Status should be 318, 319, or 334')
   })
 })
 

@@ -89,9 +89,13 @@ export function validateRecord(
     }
   }
 
-  // Blood Sample checked → status should be 318
-  if (values.bloodSample && values.status && values.status !== '318' && values.status !== '319' && values.status !== '334') {
-    warnings.status = 'Blood sample taken — expected Status 318, 319, or 334'
+  // Blood Sample checked → status should be 318, 319, or 334
+  if (values.bloodSample) {
+    if (!values.status) {
+      warnings.status = 'Blood sample taken — Status should be 318, 319, or 334'
+    } else if (values.status !== '318' && values.status !== '319' && values.status !== '334') {
+      warnings.status = 'Blood sample taken — expected Status 318, 319, or 334'
+    }
   }
 
   // Net not in session effort log

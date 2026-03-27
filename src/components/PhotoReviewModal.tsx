@@ -48,9 +48,11 @@ export default function PhotoReviewModal({ blob, defaultBodyPart, generateFileNa
         return // User cancelled — don't save reference
       }
       console.error('Share failed:', err)
+      setSharing(false)
+      return // Share failed — don't save reference
     }
     setSharing(false)
-    // Save reference after share/download
+    // Save reference after successful share/download
     onSave(effectiveBodyPart)
   }
 

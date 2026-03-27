@@ -77,6 +77,13 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 ---
 
+## Phase 15.5 — Bug Fixes
+
+- Fix: photo reference saved even when share fails (PhotoReviewModal.tsx) — non-AbortError failures should not call onSave
+- Fix: blood sample validation should warn when status is missing, not only when status is wrong
+
+---
+
 ## Phase 16 — Band History View
 
 Goal: Click band → encounter timeline.
