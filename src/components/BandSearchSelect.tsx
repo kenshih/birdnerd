@@ -11,9 +11,11 @@ interface Props {
   bands: Band[]
   value: BandSelection
   onChange: (selection: BandSelection) => void
+  /** Band ID already assigned to this record (so it stays selectable even if deployed) */
+  currentBandId?: string
 }
 
-export default function BandSearchSelect({ bands, value, onChange }: Props) {
+export default function BandSearchSelect({ bands, value, onChange, currentBandId }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const ref = useRef<HTMLDivElement>(null)
@@ -28,10 +30,13 @@ export default function BandSearchSelect({ bands, value, onChange }: Props) {
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
+  // Only show available bands — deployed bands can't be assigned to another bird
+  // Exception: the band already on this record (so editing a recap can re-select it)
   const filtered = useMemo(() => {
-    if (!search) return bands.slice(0, 50)
-    return bands.filter(b => b.bandNumber.includes(search)).slice(0, 50)
-  }, [bands, search])
+    const selectable = bands.filter(b => b.status === 'available' || b.id === currentBandId)
+    if (!search) return selectable.slice(0, 50)
+    return selectable.filter(b => b.bandNumber.includes(search)).slice(0, 50)
+  }, [bands, search, currentBandId])
 
   const hasExactMatch = useMemo(() => {
     return bands.some(b => b.bandNumber === search)

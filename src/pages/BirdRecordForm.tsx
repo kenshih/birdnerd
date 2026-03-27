@@ -287,6 +287,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
               bands={allBands}
               value={bandSelection}
               onChange={handleBandSelect}
+              currentBandId={record?.bandId}
             />
             {bandSelection.kind === 'band' && bandSelection.band.status === 'deployed' && (
               <div style={{ marginTop: '0.3rem', padding: '0.4rem 0.5rem', background: '#cce5ff', borderRadius: 6, fontSize: '0.8rem' }}>

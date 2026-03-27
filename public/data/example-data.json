@@ -204,7 +204,11 @@
       "updatedAt": "2026-03-22T06:41:35.303Z"
     }
   ],
-  "sessionNetLogs": [],
+  "sessionNetLogs": [
+    { "id": "snl-1", "sessionId": "1774161695303-q58qk54", "netId": "net-gcbs-1", "openTime": "06:30", "closeTime": "12:00", "remarks": "", "createdAt": "2026-03-22T06:41:35.303Z", "updatedAt": "2026-03-22T06:41:35.303Z" },
+    { "id": "snl-2", "sessionId": "1774161695303-q58qk54", "netId": "net-gcbs-2", "openTime": "06:30", "closeTime": "12:00", "remarks": "", "createdAt": "2026-03-22T06:41:35.303Z", "updatedAt": "2026-03-22T06:41:35.303Z" },
+    { "id": "snl-3", "sessionId": "1774161695303-q58qk54", "netId": "net-gcbs-3", "openTime": "06:30", "closeTime": "12:00", "remarks": "", "createdAt": "2026-03-22T06:41:35.303Z", "updatedAt": "2026-03-22T06:41:35.303Z" }
+  ],
   "bands": [
     { "id": "band-001", "bandNumber": "0921-00101", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
     { "id": "band-002", "bandNumber": "0921-00102", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
@@ -221,11 +225,11 @@
     { "id": "band-013", "bandNumber": "1154-81503", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
     { "id": "band-014", "bandNumber": "1154-81504", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
     { "id": "band-015", "bandNumber": "1154-81505", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-016", "bandNumber": "1261-12345", "status": "deployed", "bandSize": "1B", "bandType": "Standard", "currentSpecies": "SOSP", "deploymentDate": "2026-03-22", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-22T06:42:00.000Z" },
-    { "id": "band-017", "bandNumber": "1261-12346", "status": "deployed", "bandSize": "1B", "bandType": "Standard", "currentSpecies": "WIWA", "deploymentDate": "2026-03-22", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-22T06:42:00.000Z" },
-    { "id": "band-018", "bandNumber": "1261-12347", "status": "deployed", "bandSize": "1B", "bandType": "Standard", "currentSpecies": "WCSP", "deploymentDate": "2026-03-15", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-15T00:00:00.000Z" },
-    { "id": "band-019", "bandNumber": "1261-12348", "status": "deployed", "bandSize": "1B", "bandType": "Standard", "currentSpecies": "SWTH", "deploymentDate": "2026-03-22", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-22T06:42:00.000Z" },
-    { "id": "band-020", "bandNumber": "1261-12349", "status": "deployed", "bandSize": "1B", "bandType": "Standard", "currentSpecies": "AMGO", "deploymentDate": "2026-03-22", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-22T06:42:00.000Z" },
+    { "id": "band-016", "bandNumber": "1261-12345", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
+    { "id": "band-017", "bandNumber": "1261-12346", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
+    { "id": "band-018", "bandNumber": "1261-12347", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
+    { "id": "band-019", "bandNumber": "1261-12348", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
+    { "id": "band-020", "bandNumber": "1261-12349", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
     { "id": "band-021", "bandNumber": "1261-12350", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
     { "id": "band-022", "bandNumber": "1261-12351", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
     { "id": "band-023", "bandNumber": "1261-12352", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },

@@ -9,6 +9,7 @@ import LocationDetail from './pages/LocationDetail'
 import PeopleList from './pages/PeopleList'
 import PersonDetail from './pages/PersonDetail'
 import BandInventory from './pages/BandInventory'
+import AboutPage from './pages/AboutPage'
 
 type AppView =
   | { mode: 'home' }
@@ -21,6 +22,7 @@ type AppView =
   | { mode: 'location-detail'; location: Location }
   | { mode: 'export' }
   | { mode: 'feedback' }
+  | { mode: 'about' }
 
 export default function App() {
   const [view, setView] = useState<AppView>({ mode: 'home' })
@@ -93,6 +95,10 @@ export default function App() {
         onHome={goHome}
       />
     )
+  }
+
+  if (view.mode === 'about') {
+    return <AboutPage onHome={goHome} />
   }
 
   if (view.mode === 'feedback') {

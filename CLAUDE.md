@@ -1,14 +1,63 @@
-# birdnerd
+# BirdNerd
 
-Please help me a written plan, specifications, phased plan of action (that we'll update together iteratively), and develop/create a progressive web app I have in mind.
+PWA for bird banders to collect, manage, and export banding data. Offline-first, mobile-first (iPhone/iPad), Android supported.
 
-Main targets of use are iphone and ipad, but it'd be nice to support android, as well. It will be both online & offline mode gracefully.
+## Key Docs
 
-Users will be Bird Banders collecting data from their banding at a field station, often following a protocol like MAPS.
+- [docs/plan.v4.md](docs/plan.v4.md) — current roadmap & phase tracker
+- [docs/product-specifications.md](docs/product-specifications.md) — product spec, open decisions (§ 8)
+- [docs/tech-specifications.md](docs/tech-specifications.md) — architecture, data model, code systems
+- [docs/ux-specifications.md](docs/ux-specifications.md) — screens, wireframes, interaction patterns
+- [docs/entities.md](docs/entities.md) — ER diagram + data flow
 
-We have some datasets that would be helpful for validation of entered data. In some cases, that means looking for inconsistency between fields. In other cases, it might be gentle warnings about likelihood of data entered having to do with season, sex, molt, etc of the bird in question.
+## Stack
 
-1. I'd like you to ask me questions one by one, that will be most useful information in creating this app, including goals, requirements, technology choice/decisions, etc.
-2. With each question and follow up questions, I'd like you to refine the plan in plan.md. 
-3. I may interrupt you on important tangents for context. Of course, if it's important context, please add it to the plan after you learn something that will be important for execution. though, try not to be too wordy.
-4. I'd like to start with a very simple end-to-end experience that i'd be able to see in my browser AND my iphone. Then add/refine features one by one. We won't know the whole plan up front, but continue to refine plan.md through our execution, maybe even have a second doc to archive things that we did that may not be as important to us to execute the next piece. 
+- React 19 + TypeScript + Vite 7
+- vite-plugin-pwa (offline, installable)
+- React Hook Form
+- IndexedDB via `idb` (currently v7)
+- GitHub Pages — client-side rendering only, no SSR ever
+
+## Project Structure
+
+```
+src/
+  pages/        — top-level screens (HomeScreen, SessionView, BirdRecordForm, BandInventory, etc.)
+  components/   — reusable UI (SearchableSelect, BandSearchSelect, Collapsible, PageHeader, etc.)
+  data/         — code tables (codes.ts, species.ts), seed.json, bundle-schema.ts
+  db/           — IndexedDB setup, CRUD, migrations (index.ts)
+  types/        — TypeScript interfaces (index.ts)
+  utils/        — validation, CSV export/import, data bundle export/import
+  test/         — vitest tests
+docs/           — specs, plan, entities, archives
+public/data/    — seed.json, example-data.json (Hallie's sample data)
+nogit/          — Hallie's source docs (not committed)
+```
+
+## Conventions
+
+- **All fields optional.** Partial records are valid. Soft warnings only, never block save.
+- **Update specs when changing behavior.** Product spec, tech spec, ux spec, and plan should stay in sync.
+- **Bundle schema versioning.** Bump `BUNDLE_VERSION` in `bundle-schema.ts` when adding/removing/renaming fields on bundled entities. Write a migration function.
+- **IndexedDB versioning.** Bump version in `db/index.ts` upgrade handler when adding stores or indexes.
+- **Code tables** live in `src/data/codes.ts`. Species list in `src/data/species.ts`.
+- **Pure validation functions** in `src/utils/validation.ts` — no DB or React deps.
+- **Tests** via vitest + fake-indexeddb. Run: `npm test`
+
+## Commands
+
+```bash
+npm run dev               # local dev server
+npm run dev -- --host     # dev server accessible on LAN (iPhone testing)
+npm run build             # production build
+npm run preview -- --host # preview production build on LAN
+npm test                  # run vitest
+npm run deploy            # build + deploy to GitHub Pages
+```
+
+## Working Style
+
+- Ask questions one by one, update plan docs iteratively
+- Start simple, layer features incrementally
+- Keep plan.v4.md updated as phases complete
+- Archive completed plan versions in `docs/archives/`

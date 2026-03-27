@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-type NavMode = 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'feedback'
+type NavMode = 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'feedback' | 'about'
 
 interface Props {
   onNavigate: (mode: NavMode) => void
@@ -18,11 +18,12 @@ const NAV_ITEMS: NavItem[] = [
   { mode: 'sessions', label: 'Session Data', description: 'Create sessions and record bird encounters', enabled: true },
   { mode: 'export', label: 'Data Manager', description: 'Browse records, export CSV, backup & restore', enabled: true },
   // Back office
-  { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
-  { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
   { mode: 'band-inventory', label: 'Band Inventory', description: 'Add, track, and manage band stock', enabled: true },
+  { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
+  { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
   // Meta
   { mode: 'feedback', label: 'Report Bugs / Feedback', description: 'Send us an email', enabled: true },
+  { mode: 'about', label: 'About BirdNerd', description: '', enabled: true },
 ]
 
 function isInstalled(): boolean {
@@ -40,6 +41,9 @@ export default function HomeScreen({ onNavigate }: Props) {
 
   useEffect(() => {
     setInstalled(isInstalled())
+    // Set body background to match gradient for overscroll areas
+    document.body.style.background = '#1b4332'
+    return () => { document.body.style.background = '' }
   }, [])
 
   return (
@@ -112,6 +116,7 @@ const styles: Record<string, React.CSSProperties> = {
     height: '100px',
     objectFit: 'contain',
     marginBottom: '0.25rem',
+    borderRadius: '20px',
     filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.3))',
   },
   title: {

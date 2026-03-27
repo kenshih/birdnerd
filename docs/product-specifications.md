@@ -1,6 +1,6 @@
 # BirdNerd — Product Specification
 
-**See also:** [tech-specifications.md](tech-specifications.md) (architecture, database schema, implementation details) | [entities.md](entities.md) (ER diagram) | [plan.v3.md](plan.v3.md) (development roadmap)
+**See also:** [tech-specifications.md](tech-specifications.md) (architecture, database schema, implementation details) | [entities.md](entities.md) (ER diagram) | [plan.v4.md](plan.v4.md) (development roadmap)
 
 ---
 
@@ -405,7 +405,7 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 ### 8.3 Infrastructure
 
-- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. Target: Phase 15. See plan.v3.md.
+- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. Target: Phase 15. See plan.v4.md.
 - [ ] **Multi-tenancy / Organization support:** When Organization entity becomes a first-class concept, update JSON bundle file naming convention to include org code (e.g., `birdnerd-GCBS-2026-03-21.json` instead of `birdnerd-2026-03-21.json`)
 
 ### 8.4 Code Systems
