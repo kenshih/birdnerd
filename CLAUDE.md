@@ -4,7 +4,7 @@ PWA for bird banders to collect, manage, and export banding data. Offline-first,
 
 ## Key Docs
 
-- [docs/plan.v4.md](docs/plan.v4.md) — current roadmap & phase tracker
+- [docs/plan.md](docs/plan.md) — current roadmap & phase tracker
 - [docs/product-specifications.md](docs/product-specifications.md) — product spec, open decisions (§ 8)
 - [docs/tech-specifications.md](docs/tech-specifications.md) — architecture, data model, code systems
 - [docs/ux-specifications.md](docs/ux-specifications.md) — screens, wireframes, interaction patterns
@@ -59,5 +59,5 @@ npm run deploy            # build + deploy to GitHub Pages
 
 - Ask questions one by one, update plan docs iteratively
 - Start simple, layer features incrementally
-- Keep plan.v4.md updated as phases complete
+- Keep plan.md updated as phases complete
 - Archive completed plan versions in `docs/archives/`

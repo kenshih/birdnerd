@@ -1,4 +1,4 @@
-# BirdNerd — Plan v4
+# BirdNerd — Plan
 
 See also: [product-specifications.md](product-specifications.md) | [tech-specifications.md](tech-specifications.md) | [ux-specifications.md](ux-specifications.md) | [entities.md](entities.md) | [archives/plan.v3.md](archives/plan.v3.md)
 
@@ -103,8 +103,18 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 Goal: Build on the shared theme by consolidating duplicated component patterns.
 
-- Consolidate dropdown components: BandSearchSelect, SearchableSelect, SpeciesAutocomplete share dropdown/option styles and open/close/click-outside logic — extract a shared `Dropdown` primitive
-- Normalize card variants: decide whether `cardStyle` (gray+border) and `cardElevatedStyle` (white+shadow) are intentional variants or drift, and document when to use each
+### 18a — Card Variants
+- Document card variant convention: `cardStyle` (gray+border) = editable forms/detail views, `cardElevatedStyle` (white+shadow) = read-only/dashboard content
+- Update tech spec § 11 with the documented convention
+
+### 18b — Vitest Browser Mode
+- Add `@vitest/browser` for real-browser component testing
+- Write component tests for BandSearchSelect, SearchableSelect, SpeciesAutocomplete covering: open/close, click-outside, type-to-filter, option selection, component-specific behavior (status chips, alpha↔common name, free text)
+- Existing pure logic tests remain in Node (no migration needed)
+
+### 18c — Dropdown Consolidation
+- Extract shared `Dropdown` primitive from BandSearchSelect, SearchableSelect, SpeciesAutocomplete (dropdown/option styles, open/close/click-outside logic)
+- Vitest Browser tests from 18b serve as safety net during refactor
 
 ---
 

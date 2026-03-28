@@ -1,6 +1,6 @@
 # BirdNerd — Technical Specification
 
-See also: [product-specifications.md](product-specifications.md) | [entities.md](entities.md) | [plan.v4.md](plan.v4.md)
+See also: [product-specifications.md](product-specifications.md) | [entities.md](entities.md) | [plan.md](plan.md)
 
 ---
 

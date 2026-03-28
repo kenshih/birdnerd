@@ -47,26 +47,29 @@ npm run preview
 
 ```
 src/
-  components/   UI components (e.g. SpeciesAutocomplete)
-  data/         Species list, banding code tables
-  db/           IndexedDB layer
+  components/   Reusable UI (SearchableSelect, BandSearchSelect, ErrorBoundary, etc.)
+  data/         Species list, banding code tables, bundle schema
+  db/           IndexedDB setup, CRUD, migrations
   hooks/        Custom React hooks
-  pages/        Top-level views (SessionList, SessionView, BirdRecordForm)
-  types/        TypeScript types
+  pages/        Top-level views (SessionList, SessionView, BirdRecordForm, etc.)
+  styles/       Shared design tokens and common styles (theme.ts)
+  test/         Test infrastructure (setup, fixtures)
+  types/        TypeScript interfaces
+  utils/        Validation, CSV export, agency export, data bundle
 docs/
-  plan.md                     Project plan and roadmap
-  banding.log.book.page.JPG   Reference banding sheet
+  plan.md       Project plan and roadmap
+  archives/     Previous plan versions (v1–v3)
 ```
 
 ## Documentation
 
 | Document | Purpose |
 |----------|---------|
+| [docs/plan.md](docs/plan.md) | Development roadmap, phase tracker, backlog |
 | [docs/product-specifications.md](docs/product-specifications.md) | Product vision, entity overview, validation rules |
 | [docs/ux-specifications.md](docs/ux-specifications.md) | Screens, layouts, wireframes, interaction patterns |
-| [docs/tech-specifications.md](docs/tech-specifications.md) | Architecture, data model (full schema), code systems, deployment, security |
-| [docs/entities.md](docs/entities.md) | ER diagram, entity relationships, color-coded organization |
-| [docs/plan.v3.md](docs/plan.v3.md) | Development roadmap phases 3-9 |
+| [docs/tech-specifications.md](docs/tech-specifications.md) | Architecture, data model (full schema), code systems, deployment |
+| [docs/entities.md](docs/entities.md) | ER diagram, entity relationships |
 
 ## See also
 
