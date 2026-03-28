@@ -25,22 +25,8 @@ Phases 1–14 complete. See [plan.v3 (archived)](archives/plan.v3.md) for detail
 | 13a | Band Inventory — Band entity, bulk add, BandSearchSelect, atomic save |
 | 13b | Recapture Fields — presentCondition, replacedBandNumber, auto-show on R |
 | 14 | Photo Capture — PhotoRecord, camera input, share/download, bundle v4 |
-
----
-
-### Phase 14.5 — Cleanup & Fixes ✅
-
-- Fix: sample data bands incorrectly marked "deployed" with no linked records
-- Fix: deployed bands excluded from BandSearchSelect dropdown (except current record's band when editing)
-- Sample data: added session net logs (3 nets), 30 sample bands across sizes 0–2
-- PWA status bar: `black-translucent` + `safe-area-inset-top` padding for iPhone
-- Home screen body background matches gradient for overscroll areas
-- Home screen icon rounded corners
-- About BirdNerd page with MDBA attribution + GitHub link
-- Home nav reordered: Band Inventory before Project Locations
-- Plan v3 archived, plan v4 created (compact completed phases table)
-- CLAUDE.md rewritten with project context, conventions, commands
-- Spec links updated from plan.v3 → plan.v4
+| 14.5 | Cleanup & Fixes — sample data, PWA status bar, About page, plan v4 migration |
+| 15.5 | Bug Fixes & Refactors — 9 bug fixes, DRY capture codes, shared theme.ts (13 files) |
 
 ---
 
@@ -77,29 +63,63 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 ---
 
-## Phase 15.5 — Bug Fixes
+## Phase 15.5 — Bug Fixes & Refactors ✅
 
-- Fix: photo reference saved even when share fails (PhotoReviewModal.tsx) — non-AbortError failures should not call onSave ✅
-- Fix: blood sample validation should warn when status is missing, not only when status is wrong ✅
-- Fix: data bundle import confirmation undercounts — missing sessionNetLogs, bands, and photos from total
-- Fix: editing session location doesn't refresh nets for new location — loadReferenceData uses stale locationId
-- Fix: band status conflict validation misses capture code "N" (treated same as "1" elsewhere)
-- Fix: agency export omits records with bbpCode "N" from BBL new bandings; IBP mapping also missing "N"
-- Fix: deployed bands unselectable in BandSearchSelect, blocking recapture workflow
-- Refactor: DRY capture code checks — `isNewBanding()` / `isRecapture()` helpers in codes.ts
-- Fix: deleting a record now reverts band status to available (if no other records reference it)
-- Fix: false "already deployed" warning when re-editing a record's own band (isOwnBand flag)
-- Refactor: created `src/styles/theme.ts` — shared design tokens (colors) and common styles (inputStyle, labelStyle, cardStyle, btnStyle, rowStyle, nowBtnStyle, dropdownStyle). Updated 13 files.
+- Fix: photo reference saved even when share fails (non-AbortError path)
+- Fix: blood sample validation warns when status is missing, not only when wrong
+- Fix: data bundle import confirmation now counts sessionNetLogs, bands, and photos
+- Fix: editing session location refreshes nets for new location
+- Fix: band status conflict validation includes capture code "N"
+- Fix: agency export includes bbpCode "N" in BBL new bandings + IBP mapping
+- Fix: deployed bands now selectable in BandSearchSelect for recaptures
+- Fix: deleting a record reverts band to available (if no other records reference it)
+- Fix: false "already deployed" warning suppressed when re-editing own band
+- Refactor: `isNewBanding()` / `isRecapture()` helpers in codes.ts (DRY capture code checks)
+- Refactor: `src/styles/theme.ts` — shared design tokens + common styles, updated 13 files
 
 ---
 
-## Phase 16 — Band History View
+## Phase 16 — PWA & Deployment
 
-Goal: Click band → encounter timeline.
+Goal: Let field users know when an update is available and apply it on their own schedule — no manual cache clearing.
 
-- Band detail view: full metadata + encounter history (all capture/recapture events)
+- Wire up `onNeedRefresh` callback from vite-plugin-pwa's `registerSW` helper
+- Non-intrusive update banner (e.g., small bar at top or bottom): "Update available" with a "Update now" button
+  - Banner is persistent but dismissable — user can ignore it and keep working on the current version
+  - Dismissed banner reappears on next app open (the update is still waiting)
+  - "Update now" calls `SKIP_WAITING` on the new service worker + page reload
+- App version displayed on About page (build timestamp or semver from package.json)
+- No auto-update, no forced refresh — user decides when to apply
+
+---
+
+## Phase 17 — UI Components & Styles
+
+Goal: Build on the shared theme by consolidating duplicated component patterns.
+
+- Consolidate dropdown components: BandSearchSelect, SearchableSelect, SpeciesAutocomplete share dropdown/option styles and open/close/click-outside logic — extract a shared `Dropdown` primitive
+- Normalize card variants: decide whether `cardStyle` (gray+border) and `cardElevatedStyle` (white+shadow) are intentional variants or drift, and document when to use each
+- Storybook for component-level UX checks (optional)
+
+---
+
+## Phase 18 — Band History View
+
+Goal: Minimal encounter timeline for a band. From there, navigate to sessions.
+
+Vision: start minimal, layer detail later.
+
+- Band detail view: encounter timeline (date, species, station, capture code, bander)
+- Each encounter links to its session
 - Search by band number
-- Link from banding record → band detail
+
+**Open questions (TBD):**
+- Entry points: Band Inventory row? Band number on a banding record? Both? Standalone search?
+- Should timeline show band status changes (deployed → available → redeployed) or just encounters?
+- Unbanded/foreign records have no band history — is this view purely for inventory bands?
+- Read-only, or actions available (retire band, jump to edit record)?
+- Relationship to UX spec § 2.2 step 3 ("show encounter history table" on recapture) — same view inline, or link to this page?
+- How much band metadata to show (current status, deployment date, size, type, prefix)?
 
 ---
 
@@ -111,11 +131,6 @@ Goal: Click band → encounter timeline.
 
 **Dev tooling**
 - E2E UX tests (Playwright): session CRUD, banding record flow, offline export/import round-trip
-- Storybook for component-level UX checks (optional)
-
-**UI / Styles**
-- Consolidate dropdown components: BandSearchSelect, SearchableSelect, SpeciesAutocomplete share dropdown/option styles and open/close/click-outside logic — extract a shared `Dropdown` primitive
-- Normalize card variants: decide whether `cardStyle` (gray+border) and `cardElevatedStyle` (white+shadow) are intentional variants or drift, and document when to use each
 
 **Advanced Validation**
 - Validation override mechanism: user acknowledges warning, auto-note generated
@@ -158,9 +173,6 @@ Goal: Click band → encounter timeline.
 
 **Effort & Reporting**
 - Volunteer/person-hours tracking
-
-**PWA & Deployment**
-- App update detection: prompt user to refresh when a new service worker is available (currently requires manual refresh or cache expiry)
 
 **Platform**
 - Color band resighting data collection
