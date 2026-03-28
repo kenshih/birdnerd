@@ -128,6 +128,40 @@ Vision: start minimal, layer detail later.
 
 ---
 
+## Phase 20 — Monorepo Migration
+
+Goal: Restructure for code sharing across multiple apps without bloating the field PWA.
+
+- Convert to npm workspaces monorepo
+- Structure: `apps/field/` (current PWA), `packages/shared/` (domain logic)
+- Extract shared code into `packages/shared/`: types, validation, codes, species, CSV/export formats, agency export
+- Each app gets its own Vite config, build, and deploy
+- GitHub Pages deploys `apps/field/` to `/birdnerd/` (same URL, no user disruption)
+- Verify: PWA offline, service worker, bundle size unchanged for field app
+- All existing tests pass from new structure
+
+---
+
+## Phase 21 — Bandsheet OCR
+
+Goal: Scan handwritten/printed bandsheets and import records into BirdNerd.
+
+- New app: `apps/ocr/` — separate Vite build, not part of the field PWA
+- Tesseract.js (WASM) for text recognition
+- Imports `packages/shared/` for types, validation, code tables, species list
+- Deploys to `/birdnerd/ocr/` (or separate path)
+
+**Open questions (TBD):**
+- Input: handwritten bandsheets, printed sheets, or both?
+- Output: JSON data bundle? Direct IndexedDB import? CSV?
+- Field mapping: how to map OCR'd regions to BandingRecord fields?
+- Correction UX: review/edit extracted data before import?
+- Camera vs file upload: scan live or upload photos?
+- Accuracy expectations: which fields are reliably OCR-able vs. need human review?
+- Does OCR app need offline support, or is it a desk/office tool only?
+
+---
+
 ## Backlog (unordered — to be phased later)
 
 **Media**
@@ -182,6 +216,7 @@ Vision: start minimal, layer detail later.
 - Multi-tenant data model: Organization as top-level, User entity, row-level security
 - Supabase integration: Postgres backend, Auth, IndexedDB ↔ Supabase sync
 - Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records
+- **ID migration:** Replace current numeric/short IDs with time-sortable UUIDs (UUIDv7) to support multi-org without collisions. UUIDv7 is timestamp-prefixed so IDs sort chronologically (unlike random UUIDv4), which keeps IndexedDB range queries and Postgres index performance sane. Enables shared data store OR sharded-per-org with safe merges. Valuable even without cloud sync — unique IDs allow assembling data across MAPS orgs later. Likely implementation: `uuid` npm package (`v7()` method), one-time IndexedDB migration to remap existing IDs + FK references.
 
 **Effort & Reporting**
 - Volunteer/person-hours tracking
