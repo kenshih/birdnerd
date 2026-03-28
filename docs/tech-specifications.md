@@ -524,7 +524,24 @@ A single JSON file that contains all managed reference and operational data, pro
 
 ---
 
-## 10. Known Limitations & Technical Debt
+## 10. Reusable Components
+
+| Component | Purpose | Used by |
+|-----------|---------|---------|
+| **PageHeader** | Title bar with home + optional back button | All 9 page-level screens |
+| **SearchableSelect** | Dropdown with search for code-table fields | BirdRecordForm, SessionList, SessionView |
+| **BandSearchSelect** | Band number search with status chips, unbanded/foreign options | BirdRecordForm |
+| **SpeciesAutocomplete** | Type-ahead for 1,323 BBL species (common name ↔ alpha code) | BirdRecordForm |
+| **Collapsible** | Expandable section with toggle header | BirdRecordForm (molt/morphometrics), SessionView (weather) |
+| **PhotoSection** | Camera capture + photo list for a banding record | BirdRecordForm |
+| **PhotoReviewModal** | Photo preview, body-part label picker, share/download | PhotoSection (internal) |
+| **UpdateBanner** | "New version available" prompt with dismiss/update | App (global, fixed bottom) |
+
+**Shared styles:** `src/styles/theme.ts` exports design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). Imported by 13 files.
+
+---
+
+## 11. Known Limitations & Technical Debt
 
 - **Status quo:** No computed fields in IndexedDB; client-side aggregation for effort totals
 - **Future refactor:** Consider splitting Session schema into separate multi-tenant workspace

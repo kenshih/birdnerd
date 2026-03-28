@@ -90,17 +90,26 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 ---
 
-## Phase 17 — UI Components & Styles
+## Phase 17 — Error Boundary
+
+Goal: Catch runtime errors gracefully instead of white-screening the app.
+
+- React error boundary component wrapping the app
+- Friendly fallback UI with "Return to Home" action
+- Logs error details to console for debugging
+
+---
+
+## Phase 18 — UI Components & Styles
 
 Goal: Build on the shared theme by consolidating duplicated component patterns.
 
 - Consolidate dropdown components: BandSearchSelect, SearchableSelect, SpeciesAutocomplete share dropdown/option styles and open/close/click-outside logic — extract a shared `Dropdown` primitive
 - Normalize card variants: decide whether `cardStyle` (gray+border) and `cardElevatedStyle` (white+shadow) are intentional variants or drift, and document when to use each
-- Storybook for component-level UX checks (optional)
 
 ---
 
-## Phase 18 — Band History View
+## Phase 19 — Band History View
 
 Goal: Minimal encounter timeline for a band. From there, navigate to sessions.
 
@@ -126,8 +135,15 @@ Vision: start minimal, layer detail later.
 - Photo Log view: browse PhotoRecords grouped by session, filter by species/date
 - Speech-to-text (STT) input for field entry
 
+**Code Quality**
+- SessionView decomposition: ~800 lines with mixed concerns (data loading, form state, rendering) — split into sub-components or custom hooks
+- DB-layer band lifecycle tests: no tests for band status transitions (deploy, revert on delete, multi-record reference check)
+- FK integrity checks: deleting a location/person doesn't warn about referencing sessions/records
+- App.tsx routing: replace if/else chain with a route map or lightweight router as view count grows
+
 **Dev tooling**
 - E2E UX tests (Playwright): session CRUD, banding record flow, offline export/import round-trip
+- Storybook for component-level UX checks (optional)
 
 **Advanced Validation**
 - Validation override mechanism: user acknowledges warning, auto-note generated
