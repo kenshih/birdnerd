@@ -25,6 +25,10 @@ export default function AboutPage({ onHome }: Props) {
         >
           github.com/kenshih/birdnerd
         </a>
+
+        <p style={{ margin: '1rem 0 0', fontSize: '0.8rem', color: colors.textMuted }}>
+          Version {__APP_VERSION__}
+        </p>
       </div>
     </div>
   )

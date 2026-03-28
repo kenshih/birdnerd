@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
 import type { Session, Location, Person } from './types'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
@@ -10,6 +11,7 @@ import PeopleList from './pages/PeopleList'
 import PersonDetail from './pages/PersonDetail'
 import BandInventory from './pages/BandInventory'
 import AboutPage from './pages/AboutPage'
+import UpdateBanner from './components/UpdateBanner'
 
 type AppView =
   | { mode: 'home' }
@@ -28,8 +30,15 @@ export default function App() {
   const [view, setView] = useState<AppView>({ mode: 'home' })
   const goHome = () => setView({ mode: 'home' })
 
+  const {
+    needRefresh: [needRefresh],
+    updateServiceWorker,
+  } = useRegisterSW()
+
+  let page: React.ReactNode = null
+
   if (view.mode === 'session') {
-    return (
+    page = (
       <SessionView
         session={view.session}
         onBack={() => setView({ mode: 'sessions' })}
@@ -38,23 +47,17 @@ export default function App() {
         onSessionUpdated={(s) => setView({ mode: 'session', session: s })}
       />
     )
-  }
-
-  if (view.mode === 'sessions') {
-    return (
+  } else if (view.mode === 'sessions') {
+    page = (
       <SessionList
         onSelectSession={session => setView({ mode: 'session', session })}
         onHome={goHome}
       />
     )
-  }
-
-  if (view.mode === 'export') {
-    return <DataManagerPage onHome={goHome} />
-  }
-
-  if (view.mode === 'person-detail') {
-    return (
+  } else if (view.mode === 'export') {
+    page = <DataManagerPage onHome={goHome} />
+  } else if (view.mode === 'person-detail') {
+    page = (
       <PersonDetail
         person={view.person}
         onBack={() => setView({ mode: 'banders' })}
@@ -62,23 +65,17 @@ export default function App() {
         onHome={goHome}
       />
     )
-  }
-
-  if (view.mode === 'banders') {
-    return (
+  } else if (view.mode === 'banders') {
+    page = (
       <PeopleList
         onSelectPerson={person => setView({ mode: 'person-detail', person })}
         onHome={goHome}
       />
     )
-  }
-
-  if (view.mode === 'band-inventory') {
-    return <BandInventory onHome={goHome} />
-  }
-
-  if (view.mode === 'location-detail') {
-    return (
+  } else if (view.mode === 'band-inventory') {
+    page = <BandInventory onHome={goHome} />
+  } else if (view.mode === 'location-detail') {
+    page = (
       <LocationDetail
         location={view.location}
         onBack={() => setView({ mode: 'locations' })}
@@ -86,30 +83,26 @@ export default function App() {
         onHome={goHome}
       />
     )
-  }
-
-  if (view.mode === 'locations') {
-    return (
+  } else if (view.mode === 'locations') {
+    page = (
       <LocationList
         onSelectLocation={location => setView({ mode: 'location-detail', location })}
         onHome={goHome}
       />
     )
-  }
-
-  if (view.mode === 'about') {
-    return <AboutPage onHome={goHome} />
-  }
-
-  if (view.mode === 'feedback') {
+  } else if (view.mode === 'about') {
+    page = <AboutPage onHome={goHome} />
+  } else if (view.mode === 'feedback') {
     window.location.href = 'mailto:ks.birdnerd@pm.me?subject=BirdNerd%20Feedback'
     setView({ mode: 'home' })
-    return null
+  } else {
+    page = <HomeScreen onNavigate={(mode) => setView({ mode } as AppView)} />
   }
 
   return (
-    <HomeScreen
-      onNavigate={(mode) => setView({ mode } as AppView)}
-    />
+    <>
+      {page}
+      {needRefresh && <UpdateBanner onUpdate={() => updateServiceWorker(true)} />}
+    </>
   )
 }

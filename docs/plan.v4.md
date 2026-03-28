@@ -27,6 +27,7 @@ Phases 1–14 complete. See [plan.v3 (archived)](archives/plan.v3.md) for detail
 | 14 | Photo Capture — PhotoRecord, camera input, share/download, bundle v4 |
 | 14.5 | Cleanup & Fixes — sample data, PWA status bar, About page, plan v4 migration |
 | 15.5 | Bug Fixes & Refactors — 9 bug fixes, DRY capture codes, shared theme.ts (13 files) |
+| 16 | PWA & Deployment — prompt-based SW update banner, app version on About page |
 
 ---
 
@@ -79,17 +80,13 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 ---
 
-## Phase 16 — PWA & Deployment
+## Phase 16 — PWA & Deployment ✅
 
-Goal: Let field users know when an update is available and apply it on their own schedule — no manual cache clearing.
-
-- Wire up `onNeedRefresh` callback from vite-plugin-pwa's `registerSW` helper
-- Non-intrusive update banner (e.g., small bar at top or bottom): "Update available" with a "Update now" button
-  - Banner is persistent but dismissable — user can ignore it and keep working on the current version
-  - Dismissed banner reappears on next app open (the update is still waiting)
-  - "Update now" calls `SKIP_WAITING` on the new service worker + page reload
-- App version displayed on About page (build timestamp or semver from package.json)
-- No auto-update, no forced refresh — user decides when to apply
+- Changed `registerType` from `autoUpdate` to `prompt` — new service worker waits for user action
+- `useRegisterSW()` wired into App.tsx with `onNeedRefresh` callback
+- UpdateBanner component: fixed bottom bar, "Update now" + "Later" (dismissable, reappears on next open)
+- App version from package.json displayed on About page via Vite `define`
+- App.tsx refactored from early returns to if/else so banner renders on every page
 
 ---
 
