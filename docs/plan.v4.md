@@ -28,6 +28,7 @@ Phases 1–14 complete. See [plan.v3 (archived)](archives/plan.v3.md) for detail
 | 14.5 | Cleanup & Fixes — sample data, PWA status bar, About page, plan v4 migration |
 | 15.5 | Bug Fixes & Refactors — 9 bug fixes, DRY capture codes, shared theme.ts (13 files) |
 | 16 | PWA & Deployment — prompt-based SW update banner, app version on About page |
+| 17 | Error Boundary — class component, fallback UI, console logging |
 
 ---
 
@@ -90,13 +91,11 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 ---
 
-## Phase 17 — Error Boundary
+## Phase 17 — Error Boundary ✅
 
-Goal: Catch runtime errors gracefully instead of white-screening the app.
-
-- React error boundary component wrapping the app
-- Friendly fallback UI with "Return to Home" action
-- Logs error details to console for debugging
+- `ErrorBoundary` class component wrapping app in App.tsx
+- Fallback UI: error message, "Your data is safe" reassurance, "Return to Home" button (resets error state)
+- Error details logged to console via `componentDidCatch`
 
 ---
 

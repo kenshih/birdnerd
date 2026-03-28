@@ -12,6 +12,7 @@ import PersonDetail from './pages/PersonDetail'
 import BandInventory from './pages/BandInventory'
 import AboutPage from './pages/AboutPage'
 import UpdateBanner from './components/UpdateBanner'
+import ErrorBoundary from './components/ErrorBoundary'
 
 type AppView =
   | { mode: 'home' }
@@ -100,9 +101,9 @@ export default function App() {
   }
 
   return (
-    <>
+    <ErrorBoundary>
       {page}
       {needRefresh && <UpdateBanner onUpdate={() => updateServiceWorker(true)} />}
-    </>
+    </ErrorBoundary>
   )
 }

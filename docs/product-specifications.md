@@ -38,249 +38,21 @@ For comprehensive screen layouts, wireframes, and interaction patterns, see [doc
 
 ## 4. Data Model Summary
 
-The app uses **14 core entities** organized by function: operational (field station data), session (banding session data), reference (static lookups), and immutable (audit log). For complete field-level schema definitions, see [tech-specifications.md § 2 Data Model](tech-specifications.md#2-data-model).
+The app uses **14 core entities** organized by function: operational (field station data), session (banding session data), reference (static lookups), and immutable (audit log).
 
-### 3.1 Entity Relationship Diagram
+For the ER diagram, complete field definitions, and entity relationships, see [tech-specifications.md § 2 Data Model](tech-specifications.md#2-data-model) and [entities.md](entities.md).
 
-```mermaid
-erDiagram
-    Organization {
-        string id
-        string name
-        datetime created
-        datetime updated
-    }
+### 4.1 Entity Overview
 
-    Person {
-        string id
-        string name
-        string initials
-        datetime created
-        datetime updated
-    }
+**Operational (Pink):** Organization (top-level tenant), Person (human base), User (login), Bander (person + organization + role), Location (field station), Net (physical net), Band (USGS band), BandingRecord (encounter/capture event), PhotoRecord (photo metadata + blob).
 
-    User {
-        string id
-        string person_id
-        string email
-        string display_name
-        datetime created
-        datetime updated
-    }
-
-    Bander {
-        string id
-        string person_id
-        string organization_id
-        datetime created
-        datetime updated
-    }
-
-    Location {
-        string id
-        string bander_location_id
-        string bbl_location_id
-        string name
-        number latitude
-        number longitude
-        string country
-        string state_province
-        string remarks
-        datetime created
-        datetime updated
-    }
-
-    Session {
-        string id
-        string location_id
-        date session_date
-        string protocol
-        string maps_period
-        string master_bander_id
-        string weather_open_id
-        string weather_close_id
-        datetime open_time
-        datetime close_time
-        string notes
-        datetime created
-        datetime updated
-    }
-
-    Net {
-        string id
-        string location_id
-        string label
-        datetime created
-        datetime updated
-    }
-
-    SessionNetLog {
-        string id
-        string session_id
-        string net_id
-        string remarks
-        datetime created
-        datetime updated
-    }
-
-    SessionBanderLog {
-        string id
-        string session_id
-        string bander_id
-        datetime created
-        datetime updated
-    }
-
-    WeatherReading {
-        string id
-        string reading_type
-        number temperature
-        number wind
-        number cloud_cover
-        string precipitation
-        datetime created
-        datetime updated
-    }
-
-    Species {
-        string id
-        string alpha_code
-        string species_name
-        string sci_name
-        string french_name
-        string spanish_name
-        datetime created
-        datetime updated
-    }
-
-    BandingRecord {
-        string id
-        string session_id
-        string band_id
-        string band_number
-        string species_code
-        string capture_code
-        string age
-        string how_aged
-        string how_aged2
-        string wrp
-        string sex
-        string how_sexed
-        string how_sexed2
-        string skull
-        string brood_patch
-        string cloacal_protuberance
-        string fat
-        string body_molt
-        string ff_molt
-        string ff_wear
-        string juv_body_plumage
-        string p_covs
-        string s_covs
-        string pp
-        string ss
-        string tert
-        string rec
-        string body_plum
-        string non_feather
-        number wing
-        number tail
-        number tarsus
-        number exposed_culmen
-        number other_measurement
-        number body_mass
-        string status
-        string disposition
-        string bander_id
-        string capture_time
-        string release_time
-        string net_id
-        string notes
-        boolean feather_pull
-        boolean blood_sample
-        datetime created
-        datetime updated
-    }
-
-    Band {
-        string id
-        string band_number
-        string status
-        string band_size
-        string band_type
-        string current_species
-        string deployment_date
-        datetime created
-        datetime updated
-    }
-
-    CodeTable {
-        string id
-        string code_type
-        string code
-        string description
-        datetime created
-        datetime updated
-    }
-
-    ChangeLog {
-        string id
-        datetime created
-        string person_id
-        string change_type
-        string entity
-        json detail
-    }
-
-    Organization ||--o{ Location : owns
-    Organization ||--o{ Bander : includes
-    Person ||--o{ Bander : assigned
-    Person ||--o{ User : has
-    Person ||--o{ ChangeLog : makes
-
-    Location ||--o{ Net : includes
-    Location ||--o{ Session : hosts
-    Session ||--o{ SessionNetLog : includes
-    Session ||--o{ SessionBanderLog : includes
-    Session ||--o{ WeatherReading : records
-    Session ||--o{ BandingRecord : contains
-
-    Net ||--o{ SessionNetLog : logs
-
-    Bander ||--o{ SessionBanderLog : assigned
-
-    Bander ||..o{ Session : leads
-    Bander ||..o{ BandingRecord : recorded_by
-
-    Species }o..o{ BandingRecord : "code lookup (no FK)"
-    Band ||--o{ BandingRecord : assigned
-
-    CodeTable }o..o{ BandingRecord : "code lookup (no FK)"
-
-    classDef entitySpec fill:#ffd1dc,stroke:#333,stroke-width:1px,color:#000
-    classDef sessionData fill:#ffe4b5,stroke:#ff8c00,stroke-width:1px,color:#000
-    classDef referenceData fill:#b7e4c7,stroke:#2f6f3e,stroke-width:1px,color:#000
-    classDef immutable fill:#ffffff,stroke:#666,stroke-width:2px,color:#000
-    
-    class Organization,Person,User,Bander,Location,Net,Band,BandingRecord entitySpec
-    class Session,SessionNetLog,SessionBanderLog,WeatherReading sessionData
-    class Species,CodeTable referenceData
-    class ChangeLog immutable
-```
-
-### 3.2 Entity Overview
-
-**Operational (Pink):** Organization (top-level tenant), Person (human base), User (login), Bander (person + organization + role), Location (field station), Net (physical net), Band (USGS band), BandingRecord (encounter/capture event).
-
-**Session (Orange):** Session (daily banding session), SessionNetLog (per-net effort tracking), SessionBanderLog (bander participation), WeatherReading (conditions at session open/close).
+**Session (Orange):** Session (daily banding session with flattened weather fields), SessionNetLog (per-net effort tracking), SessionBanderLog (bander participation).
 
 **Reference (Green):** Species (1,323 species from USGS BBL), CodeTable (120+ code lookups — age, sex, molt, status, how-aged, how-sexed, capture methods, etc.).
 
 **Immutable (White):** ChangeLog (append-only audit trail of all entity changes).
 
-For detailed field definitions, constraints, and data types, see [tech-specifications.md § 2 Data Model](tech-specifications.md#2-data-model).
-
-### 3.3 Key Product Concepts
+### 4.2 Key Product Concepts
 
 **Band Inventory & Status:** Each band from BBL has a lifecycle: `available` → `deployed` (assigned to bird) → recaptured, replaced, destroyed, lost, or retired. The app tracks current status and deployment date.
 
@@ -292,7 +64,7 @@ For detailed field definitions, constraints, and data types, see [tech-specifica
 
 **Validation Datasets (Future):** We will provide species-specific ranges for morphometrics (wing, tail, tarsus, etc.) and code consistency rules to flag unusual combinations (e.g., HY adult molt codes, season/sex mismatches).
 
-### 3.4 Database Conventions
+### 4.3 Database Conventions
 
 1. **Primary Key:** All entities use `id` (string) as primary key.
 2. **Audit Timestamps:** Operational and reference entities have `created` (insertion time) and `updated` (modification time). This supports change tracking and conflict resolution for offline sync.
@@ -307,17 +79,17 @@ For detailed field definitions, constraints, and data types, see [tech-specifica
 
 | Rule | Trigger | Behavior |
 |------|---------|----------|
-| Code × Band history | Recaptured band selected as New, Destroyed, or Band Lost | Error: block or show only valid options |
-| New band × Inventory | New band must pair with unused/available band number | Error |
+| Code × Band history | Recaptured band selected as New, Destroyed, or Band Lost | Warning |
+| New band × Inventory | New band must pair with unused/available band number | Warning |
 | Species × Band size | Band size doesn't match standard for species | Warning with override: "Did you gauge the leg?" → auto-note "Leg gauged" |
-| Sex=M + BP 3-4 | Male with Heavy/Wrinkled brood patch | Error |
-| Sex=F + CP 1-3 | Female with any cloacal protuberance | Error |
-| SK in How Aged + no Skull | Skull used for aging but skull field empty | Require skull entry |
+| Sex=M + BP 3-4 | Male with Heavy/Wrinkled brood patch | Warning |
+| Sex=F + CP 1-3 | Female with any cloacal protuberance | Warning |
+| SK in How Aged + no Skull | Skull used for aging but skull field empty | Warning: skull entry expected |
 | Age=U → How Aged | How Aged not needed | Make How Aged optional |
 | Sex=U → How Sexed | How Sexed not needed | Make How Sexed optional |
-| How Aged/Sexed = OT | "Other" selected | Require note before save |
-| Status 500 | Sick/Injured/Stressed | Require disposition + note |
-| Status "---" or Other | Mortality or Other | Require note |
+| How Aged/Sexed = OT | "Other" selected | Warning: note expected |
+| Status 500 | Sick/Injured/Stressed | Warning: disposition + note expected |
+| Status "---" or Other | Mortality or Other | Warning: note expected |
 | Blood Sample + Status | Blood sample checked | Warn if Status is missing or not 318/319/334 |
 | Morphometrics × Species | Wing/Tail/Tarsus/Culmen/Mass outside known range | Warning (soft) |
 
@@ -327,8 +99,7 @@ For detailed field definitions, constraints, and data types, see [tech-specifica
 - Season × species × age/sex/molt consistency
 
 ### 5.3 Validation Philosophy
-- **Soft warnings by default** — birds escape, partial records are valuable
-- **Hard blocks only** for logical impossibilities (Sex=M + BP=Heavy)
+- **Soft warnings only** — birds escape, partial records are valuable. Never block save.
 - **Inline display** — warnings/errors appear under the relevant field, live as the user fills the form
 - **Override mechanism** — future consideration (see backlog). Originally from Hallie's doc for Species × Band size ("Did you gauge the leg?" → auto-note). May not be needed for other validations.
 - **Required fields** marked with * are enforced at submission time, not during entry
@@ -345,7 +116,7 @@ Examples:
 - FF Molt IBP is letter (N, A, S, J) → FF Molt BBL is Y/N
 - Code IBP (N, D, R, F, etc.) → Code BBL is numeric (1, 4, etc.)
 
-**Recommendation:** Store data in the richer IBP format internally. Derive BBL format via mappings at export time. The LOOKUPS sheet + spreadsheet formulas document all mappings.
+**Decision (implemented):** Data is stored in IBP format internally. BBL format is derived via mapping tables at export time. For full mapping details, see [tech-specifications.md § 3](tech-specifications.md#3-code-systems--mappings).
 
 ---
 
@@ -397,7 +168,7 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [ ] Remove "Load Example Data (for Hallie)" button from Data Manager once real data is in use
 - [ ] JSON import merge mode: Currently replace-only; consider additive merge strategy for importing bundles without wiping existing data
 - [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
-- [ ] Required fields timing: When to start enforcing * required fields? (Target: Phase 11 Validation)
+- [ ] Required fields timing: When to start enforcing * required fields? (Validation phase complete — currently all soft warnings, no hard enforcement)
 - [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
 - [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
 - [ ] Status not required for unbanded birds (Hallie: "do NOT require Status entry if unbanded")
@@ -405,14 +176,10 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 ### 8.3 Infrastructure
 
-- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. Target: Phase 15. See plan.v4.md.
+- [ ] **Schema migration strategy:** Formalize versioned migration runner for IndexedDB with corresponding Postgres migrations. See plan.v4.md backlog.
 - [ ] **Multi-tenancy / Organization support:** When Organization entity becomes a first-class concept, update JSON bundle file naming convention to include org code (e.g., `birdnerd-GCBS-2026-03-21.json` instead of `birdnerd-2026-03-21.json`)
 
-### 8.4 Code Systems
-
-- [ ] Blood Sample validation: Doc says "validate Status is 518" — likely means 318 (healthy + banded + blood sample). Confirm with Hallie.
-
-### 8.5 Resolved
+### 8.4 Resolved
 
 - [x] Galindo Creek location code: **GCBS** (Galindo Creek Banding Station) confirmed as the 4-letter code
 - [x] Personnel → Bander ID mapping: Bander registry with initials + full name + role (implemented in Phase 7)
@@ -425,3 +192,4 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [x] Net soft-delete: Use `active: boolean` instead of hard delete. Inactive nets hidden from session setup, preserved in historical data. Same pattern as Person.active.
 - [x] SessionNetLog dense model: Auto-generate a log entry for every active net on session create, pre-filled with session open/close times. Banders only edit exceptions. Enables accurate net-hours for MAPS reporting.
 - [x] Precipitation: Combobox (free text or pick from suggestions: clear, fog, thick fog, drizzle, rain, snow). Not constrained to enum.
+- [x] Blood Sample validation: Resolved — warns if Status is missing or not 318/319/334 (implemented in Phase 15.5)

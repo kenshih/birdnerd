@@ -21,6 +21,7 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 │  [Band Inventory]                   │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
+│  [About]                            │
 │                                     │
 │  Future: Photo Log, Addendums        │
 └─────────────────────────────────────┘
@@ -36,6 +37,7 @@ Buttons are grouped with subtle dividers: **field activities** (Session Data, Da
 | **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
 | **Report Bugs / Feedback** | Send feedback via email | Email client |
+| **About** | App version, credits, links | About Page |
 
 ### 1.1 Page Header (shared component)
 
@@ -412,7 +414,7 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 | **Deployed Date** | ISO date | Yes (date range) |
 | **Actions** | [View] [Edit] [Retire] | — |
 
-### 4.3 Band Detail View (Phase 16)
+### 4.3 Band Detail View (Phase 19)
 
 - Full band metadata
 - Encounter history (all capture/recapture events)
@@ -580,26 +582,11 @@ The Data Manager page has two sections: **Agency Export** (IBP/BBL format export
 └──────────────────────────────────────┘
 ```
 
-### 7.1 Data Table (Browse Records)
+### 7.1 Data Manager Layout
 
-```
-┌──────────────────────────────────────────┐
-│  Banding Records                         │
-│                                          │
-│  [ Session Filter ] [ Date Range ]       │
-│  [ Species Filter ] [ Export ]           │
-│                                          │
-│  Date     │ Species │ Band # │ Age/Sex │
-│  ─────────┼─────────┼────────┼─────────│
-│  2026-03-19│ WBNU   │ 1154-81501 │ AHY/M  │
-│  2026-03-19│ HOSP   │ UNBANDED   │ HY/? │
-│  2026-03-18│ BUTN   │ 1173-64520 │ SY/F │
-│  ...                                     │
-│                                          │
-│  Showing 1-50 of 1,247 records          │
-│  [ < Prev ] [ Next > ]                   │
-└──────────────────────────────────────────┘
-```
+The Data Manager page shows a summary count (sessions, records) and two sections: Agency Export and Data Backup. There is no record browsing or filtering — record-level views are accessed through Session View.
+
+See § 7.0 wireframe above for the full layout.
 
 ### 7.2 Agency Export Formats
 
@@ -609,7 +596,7 @@ The app stores data internally in **IBP format** and derives **BBL format** at e
 
 **BBL Upload** — 58 columns per BBL spec. New bandings only (Code = N/1). IBP codes translated to BBL equivalents. `how_obtained` defaults to "Mist net".
 
-**BBL Recapture Upload** — 60 columns per BBL spec. Recaptures only (Code = R). Adds `How Obtained`, `Present Condition` columns. `how_obtained` defaults to "Mist net".
+**BBL Recapture Upload** — 60 columns per BBL spec. Recaptures only (Code = R, F, 4, 5, 6, 8). Adds `How Obtained`, `Present Condition` columns. `how_obtained` defaults to "Mist net".
 
 Exports query live IndexedDB data (not the JSON bundle). Scoped by session or all sessions.
 

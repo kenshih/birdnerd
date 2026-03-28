@@ -24,7 +24,7 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 
 - **Frontend:** React 19 + TypeScript + Vite (client-side rendering only, no SSR ever)
 - **PWA:** vite-plugin-pwa (offline capability, installable, home screen icon)
-- **Forms:** React Hook Form + validation library (TBD)
+- **Forms:** React Hook Form + custom validation (src/utils/validation.ts)
 - **Local Storage:** IndexedDB (via `idb` package)
 - **Database (future):** Supabase (PostgreSQL + Auth)
 - **API (future):** Generated from schema (OpenAPI or GraphQL TBD)
@@ -35,7 +35,7 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 - **Node.js:** v18+ (LTS recommended)
 - **Package Manager:** npm or yarn
 - **Build Tool:** Vite with TypeScript support
-- **Testing:** Vitest + React Testing Library (planned Phase 3+); Storybook (optional); E2E UX test framework TBD
+- **Testing:** Vitest + fake-indexeddb (87 tests). E2E: Playwright (backlogged)
 - **Linting/Formatting:** ESLint + Prettier (recommended)
 
 ---
@@ -293,7 +293,7 @@ Matches the "R UPLOAD" sheet. Nearly identical layout to BBL Upload with two ext
 | _(not present)_ | How Obtained (col 11) | Hardcoded "Mist net" |
 | _(not present)_ | Present Condition (col 12) | From `presentCondition` (H/I/S/D) |
 
-Only recaptures (bbpCode `R`, `F`, `4`) are included.
+Only recaptures (bbpCode `R`, `F`, `4`, `5`, `6`, `8`) are included.
 
 ### Code Tables
 
@@ -312,7 +312,7 @@ All imported from MASTER BANDING DATA.xlsx → LOOKUPS sheet:
 
 ### Seed Data
 
-All seed/default data is centralized in a single config file (`src/data/seed.ts`). This includes pre-populated locations, nets, people, banders, and any other reference data the app ships with. The seed file can be swapped for an empty config to start fresh (e.g., for new organizations or testing). In Phase 9, seed.ts will be replaced by a bundled JSON data file in the same format as the export bundle, making seed data runtime-swappable rather than build-time only.
+Seed data ships as a JSON file (`public/data/seed.json`) in the same format as the export bundle. On first launch (empty IndexedDB), the app loads this file to populate initial reference data (locations, nets, people, banders). The seed file can be swapped or emptied for new organizations.
 
 ---
 
@@ -340,14 +340,14 @@ Assumptions: ~50 birds/session, 2 sessions/week, 30 weeks/year, ~1–2 KB per re
 
 **JSON bundle limits:** Export/import starts feeling slow around ~50K+ records due to serialization. Splitting by year or session range could extend this.
 
-**When to move to Postgres (Phase 15):**
+**When to move to Postgres:**
 - Multiple users or stations need shared/synced data
 - Server-side queries, reports, or dashboards are needed
 - Data volume exceeds ~100K records (unlikely for years at one station)
 
 For a single user or small team at one station, IndexedDB + JSON data bundles is a viable long-term strategy.
 
-### Cloud Sync (Phase 15+)
+### Cloud Sync (Future)
 
 - Supabase PostgreSQL backend
 - Sync from IndexedDB → Supabase when online
@@ -368,7 +368,7 @@ Tables provided by domain experts for validation:
 
 ## 5. API & Integration (Future)
 
-### OpenAPI / GraphQL (Phase 15+)
+### OpenAPI / GraphQL (Future)
 
 - Auto-generate from Postgres schema
 - REST and/or GraphQL endpoints
@@ -390,10 +390,8 @@ Tables provided by domain experts for validation:
 
 ### CSV Import (Sessions & Banding Records)
 
-Current capability:
-- Read CSV, validate columns, insert into local IndexedDB
-- Basic error reporting
-- Independent export/import per session or all sessions
+- Per-session CSV export available in Session View (export banding records for a single session)
+- Standalone CSV import/export buttons were removed from Data Manager in Phase 15a (replaced by agency-specific export formats)
 
 ### JSON Data Bundle (Phase 9)
 
@@ -463,10 +461,11 @@ A single JSON file that contains all managed reference and operational data, pro
 
 ## 7. Deployment & DevOps
 
-### Current (Phase 1-2)
+### Current
 
 - GitHub Pages static hosting
 - Client-side rendering only (no Node.js backend required)
+- **PWA update mechanism:** `registerType: 'prompt'` — new service worker waits for user action. `useRegisterSW()` hook detects updates; `UpdateBanner` component offers "Update now" (triggers `SKIP_WAITING` + reload) or "Later" (dismisses until next app open). App version from `package.json` injected at build time via Vite `define` and displayed on About page.
 
 ### Future (Phase 15+)
 
@@ -475,10 +474,12 @@ A single JSON file that contains all managed reference and operational data, pro
 - Database migrations via Supabase CLI or custom scripts
 - Optional: CI/CD pipeline (GitHub Actions) for testing and deployment
 
-### Monitoring & Logging
+### Error Handling
 
-- Browser console + client-side error boundaries
-- Future: Sentry or similar for error tracking
+- **ErrorBoundary** class component wraps the entire app in App.tsx
+- Catches runtime React errors, shows friendly fallback UI with error message and "Return to Home" button
+- Logs error + component stack to console via `componentDidCatch`
+- Future: Sentry or similar for remote error tracking
 - Future: Analytics for usage patterns
 
 ---
@@ -500,8 +501,7 @@ A single JSON file that contains all managed reference and operational data, pro
 
 ### Compliance
 
-- TBD: HIPAA, FDA 21 CFR Part 11 requirements (if applicable)
-- Data retention policies
+- Data retention policies (TBD)
 - Audit logging (via ChangeLog)
 
 ---
@@ -536,8 +536,9 @@ A single JSON file that contains all managed reference and operational data, pro
 | **PhotoSection** | Camera capture + photo list for a banding record | BirdRecordForm |
 | **PhotoReviewModal** | Photo preview, body-part label picker, share/download | PhotoSection (internal) |
 | **UpdateBanner** | "New version available" prompt with dismiss/update | App (global, fixed bottom) |
+| **ErrorBoundary** | Catches runtime errors, shows fallback UI with reset | App (wraps entire app) |
 
-**Shared styles:** `src/styles/theme.ts` exports design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). Imported by 13 files.
+**Shared styles:** `src/styles/theme.ts` exports design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). See § 11 for details.
 
 ---
 
@@ -550,23 +551,10 @@ A single JSON file that contains all managed reference and operational data, pro
 
 ### Inline Styles & Design Tokens
 
-**Current state:** 102 inline style constants defined locally across 16 files. No shared styles infrastructure — no theme file, no CSS modules, no shared constants.
+**Current state:** `src/styles/theme.ts` centralizes design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). Imported by 13+ files.
 
-**Key duplications:**
+**Card variants:** `cardStyle` (gray background + border) for inline/inset content, `cardElevatedStyle` (white background + shadow) for standalone cards.
 
-| Style | Files | Notes |
-|-------|-------|-------|
-| `inputStyle` | 11 | Nearly identical (minor padding/fontSize variance) |
-| `cardStyle` | 8 | Two distinct variants: white+shadow vs gray+border |
-| `labelStyle` | 8 | Nearly identical |
-| `btnStyle` (function) | 7 | Same `(bg: string) => CSSProperties` pattern |
-| `rowStyle` | 5 | Completely identical (`display: flex, gap: 0.5rem`) |
-| `dropdownStyle` | 3 | Identical across BandSearchSelect, SearchableSelect, SpeciesAutocomplete |
-
-Colors like `#2d6a4f` (primary green), `#ccc` (input border), `#888` (secondary text) appear 20+ times each with no central definition.
-
-**Recommended refactor (backlogged):**
-
-1. **Create `src/styles/theme.ts`** — export shared design tokens (colors, spacing) and common style objects (inputStyle, labelStyle, cardStyle, btnStyle, rowStyle). Can be adopted incrementally file-by-file. Eliminates ~60% of duplication.
-2. **Consolidate dropdown components** — BandSearchSelect, SearchableSelect, and SpeciesAutocomplete share dropdown/option/input styles and open/close/click-outside logic. Extract a shared `Dropdown` primitive.
-3. **Normalize card variants** — Decide whether white+shadow and gray+border are intentional variants or drift, and name them explicitly (e.g., `card` vs `cardInset`).
+**Remaining backlog:**
+1. **Consolidate dropdown components** — BandSearchSelect, SearchableSelect, and SpeciesAutocomplete share dropdown/option/input styles and open/close/click-outside logic. Extract a shared `Dropdown` primitive.
+2. **Normalize card variants** — Confirm whether both variants are intentional and document when to use each.
