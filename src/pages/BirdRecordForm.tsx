@@ -8,6 +8,7 @@ import {
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
   CP_CODES, BP_CODES, FF_WEAR_CODES, BIRD_STATUS_CODES, DISPOSITION_CODES,
   MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES, PRESENT_CONDITION_CODES,
+  isNewBanding,
 } from '../data/codes'
 import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
 import SearchableSelect from '../components/SearchableSelect'
@@ -153,11 +154,12 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
 
   const bbpCode = watch('bbpCode')
   const bandStatus = bandSelection.kind === 'band' ? bandSelection.band.status : undefined
+  const isOwnBand = bandSelection.kind === 'band' && bandSelection.band.id === record?.bandId
 
   const warnings = useMemo(() => validateRecord(
-    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, bandStatus, captureCode: bbpCode },
+    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, bandStatus, captureCode: bbpCode, isOwnBand },
     sessionNetLabels,
-  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels, bandStatus, bbpCode])
+  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels, bandStatus, bbpCode, isOwnBand])
 
   function handleBandSelect(sel: BandSelection) {
     setBandSelection(sel)
@@ -216,7 +218,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
 
     // If new banding (capture code = 1/N) and band is available, update band to deployed
     let bandUpdate: Band | undefined
-    if (bandSelection.kind === 'band' && bandSelection.band.status === 'available' && (data.bbpCode === '1' || data.bbpCode === 'N')) {
+    if (bandSelection.kind === 'band' && bandSelection.band.status === 'available' && isNewBanding(data.bbpCode)) {
       bandUpdate = {
         ...bandSelection.band,
         status: 'deployed',

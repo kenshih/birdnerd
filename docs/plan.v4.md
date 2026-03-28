@@ -79,8 +79,16 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 ## Phase 15.5 — Bug Fixes
 
-- Fix: photo reference saved even when share fails (PhotoReviewModal.tsx) — non-AbortError failures should not call onSave
-- Fix: blood sample validation should warn when status is missing, not only when status is wrong
+- Fix: photo reference saved even when share fails (PhotoReviewModal.tsx) — non-AbortError failures should not call onSave ✅
+- Fix: blood sample validation should warn when status is missing, not only when status is wrong ✅
+- Fix: data bundle import confirmation undercounts — missing sessionNetLogs, bands, and photos from total
+- Fix: editing session location doesn't refresh nets for new location — loadReferenceData uses stale locationId
+- Fix: band status conflict validation misses capture code "N" (treated same as "1" elsewhere)
+- Fix: agency export omits records with bbpCode "N" from BBL new bandings; IBP mapping also missing "N"
+- Fix: deployed bands unselectable in BandSearchSelect, blocking recapture workflow
+- Refactor: DRY capture code checks — `isNewBanding()` / `isRecapture()` helpers in codes.ts
+- Fix: deleting a record now reverts band status to available (if no other records reference it)
+- Fix: false "already deployed" warning when re-editing a record's own band (isOwnBand flag)
 
 ---
 
@@ -115,6 +123,7 @@ Goal: Click band → encounter timeline.
 - IBP → BBL code translation tests
 
 **Band Inventory Advanced**
+- Editing a record to switch bands (or to unbanded/foreign) does not revert the previous band to available. Low severity (rare correction scenario), complex fix (must check if other records still reference the old band before reverting).
 - Auxiliary markers (colored bands, 1-2 letters + 1-2 numbers)
 - Band replacement tracking (old band → new band, linked history)
 - Hummingbird band prefix → alpha mapping
@@ -143,6 +152,9 @@ Goal: Click band → encounter timeline.
 
 **Effort & Reporting**
 - Volunteer/person-hours tracking
+
+**PWA & Deployment**
+- App update detection: prompt user to refresh when a new service worker is available (currently requires manual refresh or cache expiry)
 
 **Platform**
 - Color band resighting data collection

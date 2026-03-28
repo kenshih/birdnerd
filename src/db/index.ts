@@ -206,10 +206,28 @@ export async function saveRecord(record: BirdRecord): Promise<void> {
 
 export async function deleteRecord(id: string): Promise<void> {
   const db = await getDB()
+  const record = await db.get('records', id)
   const photos = await db.getAllFromIndex('photos', 'by-record', id)
-  const tx = db.transaction(['records', 'photos'], 'readwrite')
+  const tx = db.transaction(['records', 'photos', 'bands'], 'readwrite')
   for (const p of photos) await tx.objectStore('photos').delete(p.id)
   await tx.objectStore('records').delete(id)
+
+  // Revert band to available if no other records reference it
+  if (record?.bandId) {
+    const allRecords = await tx.objectStore('records').getAll()
+    const otherRefs = allRecords.some(r => r.bandId === record.bandId)
+    if (!otherRefs) {
+      const band = await tx.objectStore('bands').get(record.bandId)
+      if (band && band.status === 'deployed') {
+        band.status = 'available'
+        band.currentSpecies = undefined
+        band.deploymentDate = undefined
+        band.updatedAt = new Date().toISOString()
+        await tx.objectStore('bands').put(band)
+      }
+    }
+  }
+
   await tx.done
 }
 

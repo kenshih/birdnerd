@@ -214,6 +214,10 @@ describe('Band status vs capture code', () => {
     expect(v({ bandStatus: 'deployed', captureCode: '1' }).bbpCode).toMatch(/already deployed/)
   })
 
+  it('warns when capture code is N but band is deployed', () => {
+    expect(v({ bandStatus: 'deployed', captureCode: 'N' }).bbpCode).toMatch(/already deployed/)
+  })
+
   it('warns when capture code is Recapture but band is available', () => {
     expect(v({ bandStatus: 'available', captureCode: 'R' }).bbpCode).toMatch(/available/)
   })
@@ -232,5 +236,9 @@ describe('Band status vs capture code', () => {
 
   it('no warning when capture code is not set', () => {
     expect(v({ bandStatus: 'deployed' }).bbpCode).toBeUndefined()
+  })
+
+  it('no warning when editing own band (New + deployed but isOwnBand)', () => {
+    expect(v({ bandStatus: 'deployed', captureCode: '1', isOwnBand: true }).bbpCode).toBeUndefined()
   })
 })

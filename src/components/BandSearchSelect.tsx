@@ -30,10 +30,10 @@ export default function BandSearchSelect({ bands, value, onChange, currentBandId
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
-  // Only show available bands — deployed bands can't be assigned to another bird
-  // Exception: the band already on this record (so editing a recap can re-select it)
+  // Show available and deployed bands — deployed bands are valid recapture targets
+  // Retired/destroyed bands are excluded unless they're the current record's band
   const filtered = useMemo(() => {
-    const selectable = bands.filter(b => b.status === 'available' || b.id === currentBandId)
+    const selectable = bands.filter(b => b.status === 'available' || b.status === 'deployed' || b.id === currentBandId)
     if (!search) return selectable.slice(0, 50)
     return selectable.filter(b => b.bandNumber.includes(search)).slice(0, 50)
   }, [bands, search, currentBandId])

@@ -4,7 +4,7 @@ import { getRecordsBySession, deleteRecord, saveRecord, getLocations, getBanders
 import BirdRecordForm from './BirdRecordForm'
 import { exportSessionCSV } from '../utils/exportCsv'
 import { parseCSV } from '../utils/importCsv'
-import { PROTOCOL_CODES } from '../data/codes'
+import { PROTOCOL_CODES, isNewBanding } from '../data/codes'
 import PageHeader from '../components/PageHeader'
 import Collapsible from '../components/Collapsible'
 import SearchableSelect from '../components/SearchableSelect'
@@ -91,7 +91,8 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
     setRecords(r.sort((a, b) => a.createdAt.localeCompare(b.createdAt)))
   }
 
-  async function loadReferenceData() {
+  async function loadReferenceData(locationIdOverride?: string) {
+    const locId = locationIdOverride ?? session.locationId
     const [locs, banders, people, banderLogs, snLogs] = await Promise.all([
       getLocations(),
       getBanders(),
@@ -113,8 +114,8 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
     setEditParticipants(ids)
 
     setNetLogs(snLogs)
-    // Load nets for this location
-    const locationNets = await getNetsByLocation(session.locationId)
+    // Load nets for this location (use override when location just changed)
+    const locationNets = await getNetsByLocation(locId)
     setNets(locationNets)
   }
 
@@ -194,7 +195,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
     await saveSession(updated)
     await replaceSessionBanderLogs(session.id, Array.from(editParticipants))
     onSessionUpdated(updated)
-    await loadReferenceData()
+    await loadReferenceData(editLocationId)
     setView({ mode: 'list' })
   }
 
@@ -391,7 +392,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
   }
 
   // Summary stats
-  const newCount = records.filter(r => r.bbpCode === '1' || r.bbpCode === 'N').length
+  const newCount = records.filter(r => isNewBanding(r.bbpCode)).length
   const recapCount = records.filter(r => r.bbpCode === 'R').length
   const unbandedCount = records.filter(r => r.bbpCode === 'U').length
 

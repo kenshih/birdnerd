@@ -201,10 +201,15 @@ describe('BBL Upload — generateBBLRows', () => {
     expect(headers[17]).toBe('How Captured')
   })
 
-  it('only includes new bandings (bbpCode 1)', () => {
+  it('only includes new bandings (bbpCode 1 and N)', () => {
     const newRec: BirdRecord = {
       id: 'r10', sessionId: 'sess-1', bbpCode: '1',
       bandNumber: '1422-63301', speciesCode: 'SOSP',
+      createdAt: '', updatedAt: '',
+    }
+    const newRecN: BirdRecord = {
+      id: 'r10b', sessionId: 'sess-1', bbpCode: 'N',
+      bandNumber: '1422-63303', speciesCode: 'CALT',
       createdAt: '', updatedAt: '',
     }
     const recapRec: BirdRecord = {
@@ -216,9 +221,10 @@ describe('BBL Upload — generateBBLRows', () => {
       id: 'r12', sessionId: 'sess-1', bbpCode: 'U',
       createdAt: '', updatedAt: '',
     }
-    const { rows } = generateBBLRows([newRec, recapRec, unbanded], ctx)
-    expect(rows.length).toBe(1)
+    const { rows } = generateBBLRows([newRec, newRecN, recapRec, unbanded], ctx)
+    expect(rows.length).toBe(2)
     expect(rows[0][1]).toBe('SOSP')
+    expect(rows[1][1]).toBe('CALT')
   })
 
   it('maps a new banding record to BBL row', () => {

@@ -129,6 +129,19 @@ export const CAPTURE_STATUS_CODES = [
   { code: 'X', label: 'X — Other' },
 ]
 
+/** Capture codes that represent a new banding (BBL "1", IBP "N") */
+const NEW_BANDING_CODES = new Set(['1', 'N'])
+/** Capture codes that represent a recapture encounter */
+const RECAPTURE_CODES = new Set(['R', 'F', '4', '5', '6', '8'])
+
+export function isNewBanding(code: string | undefined): boolean {
+  return NEW_BANDING_CODES.has(code ?? '')
+}
+
+export function isRecapture(code: string | undefined): boolean {
+  return RECAPTURE_CODES.has(code ?? '')
+}
+
 export const SKULL_CODES = [
   { code: '0', label: '0 — No skull visible' },
   { code: '1', label: '1 — Partial pneumatization' },

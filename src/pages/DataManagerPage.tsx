@@ -131,14 +131,19 @@ export default function ExportPage({ onHome }: Props) {
 
       const bundle = data as DataBundle
       const sblCount = bundle.sessionBanderLogs?.length ?? 0
+      const snlCount = bundle.sessionNetLogs?.length ?? 0
+      const bandCount = bundle.bands?.length ?? 0
+      const photoCount = bundle.photos?.length ?? 0
       const count = bundle.locations.length + bundle.nets.length + bundle.people.length +
-        bundle.banders.length + bundle.sessions.length + sblCount + bundle.records.length
+        bundle.banders.length + bundle.sessions.length + sblCount + snlCount +
+        bandCount + bundle.records.length + photoCount
 
       const ok = confirm(
         `This will replace ALL existing data with the backup contents:\n\n` +
         `${bundle.locations.length} locations, ${bundle.nets.length} nets\n` +
         `${bundle.people.length} people, ${bundle.banders.length} banders\n` +
         `${bundle.sessions.length} sessions, ${bundle.records.length} records\n` +
+        `${bandCount} bands, ${photoCount} photos\n` +
         `(${count} total items)\n\n` +
         `This cannot be undone. Continue?`
       )
@@ -292,8 +297,8 @@ export default function ExportPage({ onHome }: Props) {
 
             {/* TODO: Remove this button once Hallie has real data */}
             <div style={styles.divider} />
-            <button onClick={handleLoadExample} style={styles.exampleBtn}>
-              Load Example Data (for Hallie)
+            <button onClick={handleLoadExample} style={styles.secondaryBtn}>
+              Load Example Data
             </button>
           </div>
         </>
@@ -382,16 +387,6 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     fontSize: '0.85rem',
     color: '#155724',
-  },
-  exampleBtn: {
-    padding: '0.7rem',
-    background: '#e9ecef',
-    color: '#495057',
-    border: '1px dashed #adb5bd',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '0.85rem',
-    fontWeight: 500,
   },
   radioLabel: {
     display: 'flex',

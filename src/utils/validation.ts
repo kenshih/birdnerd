@@ -3,6 +3,7 @@
  * Pure function — no DB or React dependencies. Returns a map of field name → warning message.
  * All warnings are soft (never block saving).
  */
+import { isNewBanding } from '../data/codes'
 
 export interface ValidationInput {
   sex?: string
@@ -21,6 +22,7 @@ export interface ValidationInput {
   net?: string
   bandStatus?: string       // Band entity status: 'available', 'deployed', etc.
   captureCode?: string      // bbpCode: '1', 'R', 'U', 'F', etc.
+  isOwnBand?: boolean       // true when editing a record that deployed this band
 }
 
 export type ValidationWarnings = Partial<Record<string, string>>
@@ -103,10 +105,10 @@ export function validateRecord(
     warnings.net = `Net ${values.net} not in session effort log`
   }
 
-  // Band status vs capture code conflicts
-  if (values.bandStatus && values.captureCode) {
-    if (values.captureCode === '1' && values.bandStatus === 'deployed') {
-      warnings.bbpCode = 'This band is already deployed — expected Recapture (R), not New (1)'
+  // Band status vs capture code conflicts (skip if this record owns the band)
+  if (values.bandStatus && values.captureCode && !values.isOwnBand) {
+    if (isNewBanding(values.captureCode) && values.bandStatus === 'deployed') {
+      warnings.bbpCode = 'This band is already deployed — expected Recapture (R), not New'
     }
     if (values.captureCode === 'R' && values.bandStatus === 'available') {
       warnings.bbpCode = 'This band shows as available — expected New (1), not Recapture (R)'

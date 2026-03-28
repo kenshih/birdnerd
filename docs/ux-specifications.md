@@ -198,7 +198,7 @@ Validation warnings and errors display **inline below the relevant field**, appe
 
 | Field | Type | Interaction Notes |
 |-------|------|-------------------|
-| **Band Number** | Dropdown + search (required) | Type to search inventory (FK to Band). Only available bands shown — deployed bands excluded (except the band already on the current record when editing). On match, show band size + type for verification. "UNBANDED" option for unbanded birds. See Band Number Flow below. |
+| **Band Number** | Dropdown + search (required) | Type to search inventory (FK to Band). Available and deployed bands shown (deployed = valid recapture target). Retired/destroyed excluded unless already on this record. On match, show band size + type + status chip for verification. "UNBANDED" option for unbanded birds. See Band Number Flow below. |
 | **Capture Code** | Radio buttons (N, U, R, F, etc.) | Defaults based on band status. Restricted to valid options for selected band. |
 | **Species** | Autocomplete combobox | Type common name → ALPHA code auto-populates (or vice versa). Matches against 1,323 species from BBL. |
 | **Age** | Select | Options: U, L, HY, AHY, SY, ASY, TY, ATY. Makes How Aged optional if U. |

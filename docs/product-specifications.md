@@ -318,7 +318,7 @@ For detailed field definitions, constraints, and data types, see [tech-specifica
 | How Aged/Sexed = OT | "Other" selected | Require note before save |
 | Status 500 | Sick/Injured/Stressed | Require disposition + note |
 | Status "---" or Other | Mortality or Other | Require note |
-| Blood Sample + Status | Blood sample checked | Validate Status = 318 |
+| Blood Sample + Status | Blood sample checked | Warn if Status is missing or not 318/319/334 |
 | Morphometrics × Species | Wing/Tail/Tarsus/Culmen/Mass outside known range | Warning (soft) |
 
 ### 5.2 Future Validations (blue in doc)

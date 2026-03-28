@@ -250,7 +250,7 @@ Matches Hallie's MASTER sheet layout. Requires reverse-mapping from BBL → IBP 
 | Field | App stores | IBP wants | Transformation |
 |-------|-----------|-----------|----------------|
 | How Aged / How Sexed | BBL 2-letter (CL, SK, PL…) | IBP 1-letter (C, S, P…) | `HOW_AGED_BBL_TO_IBP` / `HOW_SEXED_BBL_TO_IBP` lookup |
-| Capture Code | BBL (1, 4, 8…) | IBP alpha (N, D, L…) | `CAPTURE_CODE_TO_IBP` lookup |
+| Capture Code | BBL (1/N, 4, 8…) | IBP alpha (N, D, L…) | `CAPTURE_CODE_TO_IBP` lookup; both "1" and "N" → IBP "N" |
 | Age | Numeric (1, 2, 4, 5…) | Alpha (AHY, HY, ASY, SY…) | `AGE_NUM_TO_ALPHA` lookup |
 | Body Molt | IBP numeric (0–4) | _also_ BBL Y/N in separate column | `bodyMoltToBBL()`: 0→N, 1–4→Y |
 | FF Molt | IBP letter (N, A, S, J) | _also_ BBL Y/N in separate column | `ffMoltToBBL()`: N→N, else→Y |

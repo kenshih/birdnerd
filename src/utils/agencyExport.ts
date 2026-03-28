@@ -1,4 +1,5 @@
 import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
+import { isNewBanding, isRecapture } from '../data/codes'
 
 // ── Code Mappings ──────────────────────────────────────────────────
 
@@ -32,7 +33,7 @@ function ffMoltToBBL(ibp: string | undefined): string {
 // IBP uses letters (N, U, R, F, D, etc.), BBL uses numbers (1, U, R, F, 4, 5, 6, 8, X)
 // Our app stores the BBL version already
 const CAPTURE_CODE_TO_IBP: Record<string, string> = {
-  '1': 'N', '4': 'D', '5': '5', '6': '6', '8': 'L',
+  '1': 'N', 'N': 'N', '4': 'D', '5': '5', '6': '6', '8': 'L',
   'U': 'U', 'R': 'R', 'F': 'F', 'X': 'X',
 }
 
@@ -186,11 +187,6 @@ function recordToIBPRow(rec: BirdRecord, ctx: ExportContext): string[] {
 
 // ── BBL Upload Format (New Bandings) ──────────────────────────────
 
-// bbpCodes that represent new bandings (go in BBL UPLOAD)
-const NEW_BANDING_CODES = new Set(['1'])
-
-// bbpCodes that represent recaptures (go in R UPLOAD)
-const RECAPTURE_CODES = new Set(['R', 'F', '4', '5', '6', '8'])
 
 const BBL_HEADERS = [
   'Band Number', 'Species', 'Disposition',
@@ -427,7 +423,7 @@ export function generateBBLRows(
   records: BirdRecord[],
   ctx: ExportContext,
 ): { headers: string[]; rows: string[][] } {
-  const newBandings = records.filter(r => NEW_BANDING_CODES.has(r.bbpCode ?? ''))
+  const newBandings = records.filter(r => isNewBanding(r.bbpCode))
   return { headers: BBL_HEADERS, rows: newBandings.map(r => recordToBBLRow(r, ctx)) }
 }
 
@@ -446,7 +442,7 @@ export function generateBBLRecapRows(
   records: BirdRecord[],
   ctx: ExportContext,
 ): { headers: string[]; rows: string[][] } {
-  const recaps = records.filter(r => RECAPTURE_CODES.has(r.bbpCode ?? ''))
+  const recaps = records.filter(r => isRecapture(r.bbpCode))
   return { headers: BBL_RECAP_HEADERS, rows: recaps.map(r => recordToBBLRecapRow(r, ctx)) }
 }
 
