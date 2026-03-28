@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { inputStyle } from '../styles/theme'
 
 const BODY_PART_PRESETS = ['WING', 'TAIL', 'HEAD', 'BODY', 'BAND']
 
@@ -165,15 +166,6 @@ const chipStyle: React.CSSProperties = {
   fontSize: '0.8rem',
   fontWeight: 600,
   cursor: 'pointer',
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.45rem 0.5rem',
-  fontSize: '1rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
-  boxSizing: 'border-box',
 }
 
 const btnStyle: React.CSSProperties = {

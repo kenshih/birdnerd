@@ -89,6 +89,7 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 - Refactor: DRY capture code checks — `isNewBanding()` / `isRecapture()` helpers in codes.ts
 - Fix: deleting a record now reverts band status to available (if no other records reference it)
 - Fix: false "already deployed" warning when re-editing a record's own band (isOwnBand flag)
+- Refactor: created `src/styles/theme.ts` — shared design tokens (colors) and common styles (inputStyle, labelStyle, cardStyle, btnStyle, rowStyle, nowBtnStyle, dropdownStyle). Updated 13 files.
 
 ---
 
@@ -112,11 +113,16 @@ Goal: Click band → encounter timeline.
 - E2E UX tests (Playwright): session CRUD, banding record flow, offline export/import round-trip
 - Storybook for component-level UX checks (optional)
 
+**UI / Styles**
+- Consolidate dropdown components: BandSearchSelect, SearchableSelect, SpeciesAutocomplete share dropdown/option styles and open/close/click-outside logic — extract a shared `Dropdown` primitive
+- Normalize card variants: decide whether `cardStyle` (gray+border) and `cardElevatedStyle` (white+shadow) are intentional variants or drift, and document when to use each
+
 **Advanced Validation**
 - Validation override mechanism: user acknowledges warning, auto-note generated
 - Morphometrics × species range validation (wing, tail, tarsus, culmen, mass)
 - Status × Disposition cross-validation
 - Cross-field self-validation (contradicting data in multiple categories)
+- Sex × How Sexed/How Aged conflict: EG (Egg in Oviduct), BP (Brood Patch) are female-only; CL (Cloacal Protuberance), IC (Incomplete CP) are male-only. Warn when these contradict the selected sex.
 - Season × species × age/sex/molt consistency
 - New/Recapture/Unbanded selection driving which codes are valid
 - CSV import/export round-trip tests

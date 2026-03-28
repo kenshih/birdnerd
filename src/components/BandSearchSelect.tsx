@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import type { Band } from '../types'
+import { inputStyle, dropdownStyle as baseDropdownStyle } from '../styles/theme'
 
 export type BandSelection =
   | { kind: 'band'; band: Band }
@@ -148,28 +149,10 @@ function chipStyle(kind: string): React.CSSProperties {
   }
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.45rem 0.5rem',
-  fontSize: '1rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
-  boxSizing: 'border-box',
-}
-
 const dropdownStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '100%',
-  left: 0,
-  right: 0,
+  ...baseDropdownStyle,
   maxHeight: 250,
   overflowY: 'auto',
-  background: '#fff',
-  border: '1px solid #ccc',
-  borderRadius: 6,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-  zIndex: 100,
-  marginTop: 2,
 }
 
 const optionStyle: React.CSSProperties = {

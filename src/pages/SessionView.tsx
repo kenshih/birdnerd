@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { cardStyle, labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
 import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol } from '../types'
 import { getRecordsBySession, deleteRecord, saveRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
 import BirdRecordForm from './BirdRecordForm'
@@ -383,8 +384,8 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
           <textarea value={editNotes} onChange={e => setEditNotes(e.target.value)} rows={2} placeholder="Optional session notes" style={{ ...inputStyle, resize: 'vertical' }} />
 
           <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
-            <button onClick={saveEditSession} style={actionBtnStyle('#2d6a4f')}>Save</button>
-            <button onClick={() => setView({ mode: 'list' })} style={actionBtnStyle('#888')}>Cancel</button>
+            <button onClick={saveEditSession} style={btnStyle('#2d6a4f')}>Save</button>
+            <button onClick={() => setView({ mode: 'list' })} style={btnStyle('#888')}>Cancel</button>
           </div>
         </div>
       </div>
@@ -445,7 +446,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
       )}
 
       <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-        <button onClick={() => setView({ mode: 'form' })} style={actionBtnStyle('#2d6a4f')}>
+        <button onClick={() => setView({ mode: 'form' })} style={btnStyle('#2d6a4f')}>
           + New Bird Record
         </button>
         <button onClick={startEditSession} style={secondaryBtnStyle}>
@@ -729,15 +730,6 @@ const recapChipStyle: React.CSSProperties = {
   verticalAlign: 'middle',
 }
 
-const actionBtnStyle = (bg: string): React.CSSProperties => ({
-  background: bg,
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '0.6rem 1.2rem',
-  fontSize: '1rem',
-  cursor: 'pointer',
-})
 
 const smallBtnStyle = (bg: string): React.CSSProperties => ({
   background: bg,
@@ -808,37 +800,3 @@ const notesStyle: React.CSSProperties = {
   border: '1px solid #ffd43b',
 }
 
-const cardStyle: React.CSSProperties = {
-  background: '#f5f5f5',
-  border: '1px solid #ddd',
-  borderRadius: 8,
-  padding: '1rem',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.85rem',
-  fontWeight: 600,
-  marginBottom: '0.25rem',
-  marginTop: '0.5rem',
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem',
-  fontSize: '1rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
-  boxSizing: 'border-box',
-}
-
-const nowBtnStyle: React.CSSProperties = {
-  background: '#2d6a4f',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '0.45rem 0.6rem',
-  fontSize: '0.8rem',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-}

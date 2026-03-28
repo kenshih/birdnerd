@@ -14,6 +14,7 @@ import SpeciesAutocomplete from '../components/SpeciesAutocomplete'
 import SearchableSelect from '../components/SearchableSelect'
 import BandSearchSelect, { type BandSelection } from '../components/BandSearchSelect'
 import PhotoSection, { type PendingPhoto } from '../components/PhotoSection'
+import { inputStyle, btnStyle, nowBtnStyle } from '../styles/theme'
 
 interface Props {
   session: Session
@@ -670,35 +671,6 @@ function Field({ label, children, warning }: { label: string; children: React.Re
   )
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.45rem 0.5rem',
-  fontSize: '1rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
-  boxSizing: 'border-box',
-}
-
-const btnStyle = (bg: string): React.CSSProperties => ({
-  background: bg,
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '0.7rem 1.4rem',
-  fontSize: '1rem',
-  cursor: 'pointer',
-})
-
-const nowBtnStyle: React.CSSProperties = {
-  background: '#2d6a4f',
-  color: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  padding: '0.45rem 0.6rem',
-  fontSize: '0.8rem',
-  cursor: 'pointer',
-  whiteSpace: 'nowrap',
-}
 
 const warningStyle: React.CSSProperties = {
   color: '#c0392b',

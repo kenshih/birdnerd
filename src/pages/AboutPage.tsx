@@ -1,4 +1,5 @@
 import PageHeader from '../components/PageHeader'
+import { cardElevatedStyle, colors } from '../styles/theme'
 
 interface Props {
   onHome: () => void
@@ -9,7 +10,7 @@ export default function AboutPage({ onHome }: Props) {
     <div style={{ padding: '1rem' }}>
       <PageHeader title="About" onHome={onHome} />
 
-      <div style={cardStyle}>
+      <div style={{...cardElevatedStyle, padding: '1.25rem'}}>
         <p style={{ margin: '0 0 1rem', lineHeight: 1.6 }}>
           This app was created for the{' '}
           <strong>Mount Diablo Bird Alliance</strong>{' '}
@@ -29,14 +30,7 @@ export default function AboutPage({ onHome }: Props) {
   )
 }
 
-const cardStyle: React.CSSProperties = {
-  background: '#fff',
-  borderRadius: 10,
-  padding: '1.25rem',
-  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-}
-
 const linkStyle: React.CSSProperties = {
-  color: '#2d6a4f',
+  color: colors.primary,
   fontWeight: 500,
 }

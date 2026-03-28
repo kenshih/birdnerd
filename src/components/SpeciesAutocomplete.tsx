@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { SPECIES_LIST } from '../data/species'
 import type { Species } from '../types'
+import { inputStyle, dropdownStyle as baseDropdownStyle } from '../styles/theme'
 
 interface Props {
   value: string
@@ -77,28 +78,13 @@ export default function SpeciesAutocomplete({ value, onChange }: Props) {
   )
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem',
-  fontSize: '1rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
-  boxSizing: 'border-box',
-}
-
 const dropdownStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '100%',
-  left: 0,
-  right: 0,
-  background: '#fff',
-  border: '1px solid #ccc',
-  borderRadius: 6,
+  ...baseDropdownStyle,
   listStyle: 'none',
   margin: 0,
   padding: 0,
-  zIndex: 100,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
+  maxHeight: 250,
+  overflowY: 'auto',
 }
 
 const dropdownItemStyle: React.CSSProperties = {

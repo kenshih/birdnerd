@@ -530,3 +530,26 @@ A single JSON file that contains all managed reference and operational data, pro
 - **Future refactor:** Consider splitting Session schema into separate multi-tenant workspace
 - **Band number format:** Resolved — stored formatted with hyphen (XXXX-XXXXX or XXXX-XXXXXX)
 - **Auxiliary band markers:** Not yet designed; needed for complex band scenarios
+
+### Inline Styles & Design Tokens
+
+**Current state:** 102 inline style constants defined locally across 16 files. No shared styles infrastructure — no theme file, no CSS modules, no shared constants.
+
+**Key duplications:**
+
+| Style | Files | Notes |
+|-------|-------|-------|
+| `inputStyle` | 11 | Nearly identical (minor padding/fontSize variance) |
+| `cardStyle` | 8 | Two distinct variants: white+shadow vs gray+border |
+| `labelStyle` | 8 | Nearly identical |
+| `btnStyle` (function) | 7 | Same `(bg: string) => CSSProperties` pattern |
+| `rowStyle` | 5 | Completely identical (`display: flex, gap: 0.5rem`) |
+| `dropdownStyle` | 3 | Identical across BandSearchSelect, SearchableSelect, SpeciesAutocomplete |
+
+Colors like `#2d6a4f` (primary green), `#ccc` (input border), `#888` (secondary text) appear 20+ times each with no central definition.
+
+**Recommended refactor (backlogged):**
+
+1. **Create `src/styles/theme.ts`** — export shared design tokens (colors, spacing) and common style objects (inputStyle, labelStyle, cardStyle, btnStyle, rowStyle). Can be adopted incrementally file-by-file. Eliminates ~60% of duplication.
+2. **Consolidate dropdown components** — BandSearchSelect, SearchableSelect, and SpeciesAutocomplete share dropdown/option/input styles and open/close/click-outside logic. Extract a shared `Dropdown` primitive.
+3. **Normalize card variants** — Decide whether white+shadow and gray+border are intentional variants or drift, and name them explicitly (e.g., `card` vs `cardInset`).

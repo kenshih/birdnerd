@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { inputStyle, dropdownStyle } from '../styles/theme'
 
 interface Option {
   code: string
@@ -135,30 +136,12 @@ export default function SearchableSelect({ options, value, onChange, placeholder
 }
 
 const triggerStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.45rem 0.5rem',
-  fontSize: '1rem',
-  borderRadius: 6,
-  border: '1px solid #ccc',
-  boxSizing: 'border-box',
+  ...inputStyle,
   background: '#fff',
   cursor: 'pointer',
   display: 'flex',
   alignItems: 'center',
   textAlign: 'left',
-}
-
-const dropdownStyle: React.CSSProperties = {
-  position: 'absolute',
-  top: '100%',
-  left: 0,
-  right: 0,
-  background: '#fff',
-  border: '1px solid #ccc',
-  borderRadius: 6,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-  zIndex: 100,
-  marginTop: 2,
 }
 
 const searchInputStyle: React.CSSProperties = {

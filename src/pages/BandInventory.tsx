@@ -3,6 +3,7 @@ import type { Band, BandType } from '../types'
 import { getBands, saveBands, getBandByNumber } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'
+import { cardElevatedStyle, labelStyle, inputStyle } from '../styles/theme'
 
 interface Props {
   onHome: () => void
@@ -50,7 +51,7 @@ export default function BandInventory({ onHome }: Props) {
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
       <PageHeader title="Band Inventory" onHome={onHome} />
 
-      <div style={cardStyle}>
+      <div style={cardElevatedStyle}>
         <div style={statRowStyle}>
           <span>Total Bands</span>
           <strong>{bands.length}</strong>
@@ -70,7 +71,7 @@ export default function BandInventory({ onHome }: Props) {
       </div>
 
       {stats.bySize.length > 0 && (
-        <div style={{ ...cardStyle, marginTop: '0.75rem' }}>
+        <div style={{ ...cardElevatedStyle, marginTop: '0.75rem' }}>
           <div style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>By Size</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '0.25rem 0.75rem', fontSize: '0.85rem' }}>
             <span style={{ fontWeight: 600, color: '#666' }}>Size</span>
@@ -304,7 +305,7 @@ function AddBands({ onBack, onHome, onAdded }: { onBack: () => void; onHome: () 
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
       <PageHeader title="Add Bands" onBack={onBack} onHome={onHome} />
 
-      <div style={cardStyle}>
+      <div style={cardElevatedStyle}>
         <label style={labelStyle}>Prefix (4-digit)</label>
         <input
           type="text"
@@ -377,13 +378,6 @@ function AddBands({ onBack, onHome, onAdded }: { onBack: () => void; onHome: () 
 
 // ─── Shared styles ───────────────────────────────────────────────────
 
-const cardStyle: React.CSSProperties = {
-  background: '#fff',
-  borderRadius: 10,
-  padding: '1rem',
-  boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
-}
-
 const statRowStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
@@ -408,24 +402,6 @@ const statusChipStyle: React.CSSProperties = {
   borderRadius: 4,
   fontWeight: 500,
   marginLeft: 'auto',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: '0.8rem',
-  fontWeight: 600,
-  marginBottom: '0.2rem',
-  marginTop: '0.5rem',
-  color: '#333',
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  padding: '0.5rem',
-  border: '1px solid #ccc',
-  borderRadius: 6,
-  fontSize: '0.95rem',
-  boxSizing: 'border-box',
 }
 
 const actionBtnStyle = (bg: string): React.CSSProperties => ({

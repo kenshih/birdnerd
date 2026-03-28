@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { Location } from '../types'
 import { getLocations, saveLocation, deleteLocation, getNetsByLocation } from '../db'
 import PageHeader from '../components/PageHeader'
+import { btnStyle, cardStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
 
 interface Props {
   onSelectLocation: (location: Location) => void
@@ -145,30 +146,6 @@ export default function LocationList({ onSelectLocation, onHome }: Props) {
       </ul>
     </div>
   )
-}
-
-const btnStyle = (bg: string): React.CSSProperties => ({
-  background: bg, color: '#fff', border: 'none', borderRadius: 6,
-  padding: '0.6rem 1.2rem', fontSize: '1rem', cursor: 'pointer',
-})
-
-const cardStyle: React.CSSProperties = {
-  background: '#f5f5f5', border: '1px solid #ddd', borderRadius: 8,
-  padding: '1rem', marginTop: '1rem',
-}
-
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: '0.85rem', fontWeight: 600,
-  marginBottom: '0.25rem', marginTop: '0.5rem',
-}
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '0.5rem', fontSize: '1rem', borderRadius: 6,
-  border: '1px solid #ccc', boxSizing: 'border-box',
-}
-
-const rowStyle: React.CSSProperties = {
-  display: 'flex', gap: '0.5rem',
 }
 
 const locationRowStyle: React.CSSProperties = {
