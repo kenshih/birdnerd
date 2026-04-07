@@ -118,7 +118,24 @@ Goal: Build on the shared theme by consolidating duplicated component patterns.
 
 ---
 
-## Phase 19 — Band History View
+## Phase 19 — Species Validation
+
+Goal: Warn when band size or morphometric measurements don't match known ranges for the recorded species.
+
+- `src/data/band-sizes.json` — ALPHA → string[] of valid band sizes (parsed from Validations.xlsx Tab 1)
+- `src/data/measurement-ranges.json` — ALPHA → `{ weight, wing, tail }` each with `{ femaleMin, femaleMax, maleMin, maleMax }` (0 = unspecified, omitted)
+- New validation rules in `src/utils/validation.ts`:
+  - Band size mismatch: warn if selected band's size is not in the species' valid size list
+  - Measurement out of range: warn if wing/bodyMass/tail is outside the expected range for the species + sex
+  - Disposition requires notes: warn if Disposition is set but Notes is empty
+  - Disposition × Status: warn if Disposition is set but Status does not indicate mortality (TBD: confirm which Status codes are mortality — need to check with Hallie)
+- Sex unknown: warn only if value is outside *both* male and female ranges
+- Bird Record Form: wire warnings inline below band size (via BandSearchSelect context) and below wing/bodyMass/tail fields
+- Tests for all new rules
+
+---
+
+## Phase 20 — Band History View
 
 Goal: Minimal encounter timeline for a band. From there, navigate to sessions.
 
@@ -138,7 +155,7 @@ Vision: start minimal, layer detail later.
 
 ---
 
-## Phase 20 — Monorepo Migration
+## Phase 21 — Monorepo Migration
 
 Goal: Restructure for code sharing across multiple apps without bloating the field PWA.
 
@@ -152,7 +169,7 @@ Goal: Restructure for code sharing across multiple apps without bloating the fie
 
 ---
 
-## Phase 21 — Bandsheet OCR
+## Phase 22 — Bandsheet OCR
 
 Goal: Scan handwritten/printed bandsheets and import records into BirdNerd.
 
@@ -190,7 +207,6 @@ Goal: Scan handwritten/printed bandsheets and import records into BirdNerd.
 
 **Advanced Validation**
 - Validation override mechanism: user acknowledges warning, auto-note generated
-- Morphometrics × species range validation (wing, tail, tarsus, culmen, mass)
 - Status × Disposition cross-validation
 - Cross-field self-validation (contradicting data in multiple categories)
 - Sex × How Sexed/How Aged conflict: EG (Egg in Oviduct), BP (Brood Patch) are female-only; CL (Cloacal Protuberance), IC (Incomplete CP) are male-only. Warn when these contradict the selected sex.
@@ -227,6 +243,9 @@ Goal: Scan handwritten/printed bandsheets and import records into BirdNerd.
 - Supabase integration: Postgres backend, Auth, IndexedDB ↔ Supabase sync
 - Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records
 - **ID migration:** Replace current numeric/short IDs with time-sortable UUIDs (UUIDv7) to support multi-org without collisions. UUIDv7 is timestamp-prefixed so IDs sort chronologically (unlike random UUIDv4), which keeps IndexedDB range queries and Postgres index performance sane. Enables shared data store OR sharded-per-org with safe merges. Valuable even without cloud sync — unique IDs allow assembling data across MAPS orgs later. Likely implementation: `uuid` npm package (`v7()` method), one-time IndexedDB migration to remap existing IDs + FK references.
+
+**External Data Integration**
+- NOAA weather API: auto-populate session weather fields from station coordinates + date/time (similar approach to openhamclock). Reduces manual entry, improves data consistency.
 
 **Effort & Reporting**
 - Volunteer/person-hours tracking

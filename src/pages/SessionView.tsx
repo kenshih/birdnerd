@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
 import { cardStyle, labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
 import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol } from '../types'
-import { getRecordsBySession, deleteRecord, saveRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
+import { getRecordsBySession, deleteRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
 import BirdRecordForm from './BirdRecordForm'
-import { exportSessionCSV } from '../utils/exportCsv'
-import { parseCSV } from '../utils/importCsv'
 import { PROTOCOL_CODES, isNewBanding } from '../data/codes'
 import PageHeader from '../components/PageHeader'
 import Collapsible from '../components/Collapsible'
@@ -63,29 +61,6 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
   const [editWeatherCloseCloud, setEditWeatherCloseCloud] = useState(session.weatherCloseCloud?.toString() ?? '')
   const [editWeatherClosePrecip, setEditWeatherClosePrecip] = useState(session.weatherClosePrecip ?? '')
 
-  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    e.target.value = ''
-    const text = await file.text()
-    const { records, skippedHeaders, rowCount } = parseCSV(text)
-    if (rowCount === 0) { alert('No records found in file.'); return }
-    const msg = skippedHeaders.length
-      ? `Import ${rowCount} record(s)?\n\nUnknown columns ignored: ${skippedHeaders.join(', ')}`
-      : `Import ${rowCount} record(s) into this session?`
-    if (!confirm(msg)) return
-    const now = new Date().toISOString()
-    for (const partial of records) {
-      await saveRecord({
-        ...partial,
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        sessionId: session.id,
-        createdAt: now,
-        updatedAt: now,
-      })
-    }
-    await loadRecords()
-  }
 
   async function loadRecords() {
     const r = await getRecordsBySession(session.id)
@@ -452,15 +427,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
         <button onClick={startEditSession} style={secondaryBtnStyle}>
           Edit Session
         </button>
-        {records.length > 0 && (
-          <button onClick={() => exportSessionCSV(session, records, locationCode(session.locationId))} style={secondaryBtnStyle}>
-            ↓ Export CSV
-          </button>
-        )}
-        <label style={secondaryBtnStyle}>
-          ↑ Import CSV
-          <input type="file" accept=".csv,text/csv" onChange={handleImport} style={{ display: 'none' }} />
-        </label>
+
         <button onClick={handleDeleteSession} style={deleteBtnStyle}>
           Delete Session
         </button>

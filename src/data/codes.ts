@@ -191,6 +191,14 @@ export const MOLT_CODES = [
   { code: '4', label: '4 — Very heavy molt' },
 ]
 
+// FF Molt
+export const FF_MOLT_CODES = [
+  { code: 'N', label: 'N — None' },
+  { code: 'S', label: 'S — Symmetrical' },
+  { code: 'A', label: 'A — Asymmetrical' },
+  { code: 'J', label: 'J — Juv growth' },
+]
+
 // FF Wear (0-5)
 export const FF_WEAR_CODES = [
   { code: '0', label: '0 — None' },
@@ -219,16 +227,16 @@ export const BIRD_STATUS_CODES = [
 // Disposition codes (from Hallie's doc)
 export const DISPOSITION_CODES = [
   { code: 'M', label: 'M — Mortality' },
-  { code: 'O', label: 'O — Old injury' },
-  { code: 'I', label: 'I — Injured' },
-  { code: 'S', label: 'S — Stressed' },
-  { code: 'E', label: 'E — Escaped' },
-  { code: 'T', label: 'T — Transferred' },
-  { code: 'W', label: 'W — Wing problem' },
-  { code: 'B', label: 'B — Band problem' },
-  { code: 'L', label: 'L — Leg problem' },
-  { code: 'P', label: 'P — Parasites' },
-  { code: 'D', label: 'D — Disease' },
+  { code: 'O', label: 'O — Old/heal?TBA injury' },
+  { code: 'I', label: 'I — Illness/Disease' },
+  { code: 'S', label: 'S — Stress/?TBA' },
+  { code: 'E', label: 'E — Eye Injury' },
+  { code: 'T', label: 'T — Tongue Injury' },
+  { code: 'W', label: 'W — Wing Injury' },
+  { code: 'B', label: 'B — Body Injury' },
+  { code: 'L', label: 'L — Leg Injury' },
+  { code: 'P', label: 'P — Predation' },
+  { code: 'D', label: 'D — Dead' },
 ]
 
 // Molt Limits & Plumage codes
@@ -247,8 +255,8 @@ export const MOLT_LIMITS_CODES = [
 // Juvenile Body Plumage (0-3)
 export const JUV_BODY_PLUMAGE_CODES = [
   { code: '0', label: '0 — None' },
-  { code: '1', label: '1 — Light' },
-  { code: '2', label: '2 — Medium' },
+  { code: '1', label: '1 — < 1/2' },
+  { code: '2', label: '2 — > 1/2' },
   { code: '3', label: '3 — Heavy' },
 ]
 
@@ -285,9 +293,9 @@ export const BAND_SIZE_CODES = [
 // Band Type — TODO: confirm full list with Hallie
 export const BAND_TYPE_CODES = [
   { code: 'Standard', label: 'Standard' },
-  { code: 'Buffy', label: 'Buffy' },
-  { code: 'Giant', label: 'Giant' },
-  { code: 'Lockout', label: 'Lockout' },
+  { code: 'Stainless-steel', label: 'Stainless steel' },
+  { code: '4-short', label: '4-short' },
+  { code: 'Lock-on', label: 'Lock-on' },
 ]
 
 export const STATIONS = [

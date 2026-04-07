@@ -79,7 +79,6 @@ export default function BandSearchSelect({ bands, value, onChange, currentBandId
         onFocus={() => { setOpen(true); setSearch(open ? search : '') }}
         placeholder="Search band # or UNBANDED"
         style={inputStyle}
-        inputMode="numeric"
       />
 
       {value.kind !== 'none' && !open && (

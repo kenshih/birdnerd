@@ -101,7 +101,6 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
           ref={fileInputRef}
           type="file"
           accept="image/*"
-          capture="environment"
           onChange={handleFileCapture}
           style={{ display: 'none' }}
         />

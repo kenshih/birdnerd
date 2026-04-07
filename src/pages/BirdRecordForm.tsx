@@ -6,7 +6,7 @@ import { validateRecord } from '../utils/validation'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
-  CP_CODES, BP_CODES, FF_WEAR_CODES, BIRD_STATUS_CODES, DISPOSITION_CODES,
+  CP_CODES, BP_CODES, FF_WEAR_CODES, FF_MOLT_CODES, BIRD_STATUS_CODES, DISPOSITION_CODES,
   MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES, PRESENT_CONDITION_CODES,
   isNewBanding,
 } from '../data/codes'
@@ -34,7 +34,7 @@ type FormValues = Omit<BirdRecord, 'id' | 'sessionId' | 'createdAt' | 'updatedAt
 const ALL_FIELDS: (keyof FormValues)[] = [
   'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howAged2',
   'howSexed', 'howSexed2', 'bbpCode', 'wrp', 'skull', 'cp', 'bp', 'fat',
-  'bodyMolt', 'ffMolt', 'tfMolt', 'ffWear', 'juvBodyPlumage',
+  'bodyMolt', 'ffMolt', 'ffWear', 'juvBodyPlumage',
   'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
   'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
   'moltLimitsPlumage',
@@ -426,10 +426,10 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
           </Row>
           <Row>
             <Field label="FF Molt">
-              <input {...register('ffMolt')} placeholder="e.g. A1-A3" style={inputStyle} />
-            </Field>
-            <Field label="TF Molt">
-              <input {...register('tfMolt')} placeholder="e.g. T1-T3" style={inputStyle} />
+              <select {...register('ffMolt')} style={inputStyle}>
+                <option value="">—</option>
+                {FF_MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
             </Field>
           </Row>
           <Field label="Juv Body Plumage">
@@ -446,13 +446,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="P Covs">
               <select {...register('moltLimitsPCovs')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
             <Field label="S Covs">
               <select {...register('moltLimitsSCovs')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -460,13 +460,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="PP">
               <select {...register('moltLimitsPP')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
             <Field label="SS">
               <select {...register('moltLimitsSS')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -474,13 +474,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Tert">
               <select {...register('moltLimitsTert')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
             <Field label="Rec">
               <select {...register('moltLimitsRec')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -488,13 +488,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Body Plum">
               <select {...register('moltLimitsBodyPlum')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
             <Field label="Non-Feather">
               <select {...register('moltLimitsNonFeather')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -585,12 +585,14 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
               <div style={{ display: 'flex', gap: '0.25rem' }}>
                 <input {...register('captureTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
                 <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>
+                <button type="button" onClick={() => setValue('captureTime', '')} style={nowBtnStyle}>✕</button>
               </div>
             </Field>
             <Field label="Release Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>
                 <input {...register('releaseTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
                 <button type="button" onClick={() => fillNow('releaseTime')} style={nowBtnStyle}>Now</button>
+                <button type="button" onClick={() => setValue('releaseTime', '')} style={nowBtnStyle}>✕</button>
               </div>
             </Field>
           </Row>
