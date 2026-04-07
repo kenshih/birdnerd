@@ -72,7 +72,7 @@ export default function BandInventory({ onHome }: Props) {
       </CardElevated>
 
       {stats.bySize.length > 0 && (
-        <CardElevated style={{ marginTop: '0.75rem' }}>
+        <CardElevated>
           <div style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>By Size</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '0.25rem 0.75rem', fontSize: '0.85rem' }}>
             <span style={{ fontWeight: 600, color: '#666' }}>Size</span>

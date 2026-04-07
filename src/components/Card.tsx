@@ -5,10 +5,12 @@ interface Props {
   children: React.ReactNode
 }
 
+const defaultMargin: React.CSSProperties = { marginTop: '0.75rem' }
+
 export function Card({ style, children }: Props) {
-  return <div style={{ ...cardStyle, ...style }}>{children}</div>
+  return <div style={{ ...defaultMargin, ...cardStyle, ...style }}>{children}</div>
 }
 
 export function CardElevated({ style, children }: Props) {
-  return <div style={{ ...cardElevatedStyle, ...style }}>{children}</div>
+  return <div style={{ ...defaultMargin, ...cardElevatedStyle, ...style }}>{children}</div>
 }

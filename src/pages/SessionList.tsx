@@ -209,7 +209,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
       </button>
 
       {showNew && (
-        <Card style={{ marginTop: '1rem' }}>
+        <Card>
           <h3 style={{ marginTop: 0 }}>New Session</h3>
 
           <label style={labelStyle}>Location</label>
