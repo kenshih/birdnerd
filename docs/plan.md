@@ -32,23 +32,22 @@ Phases 1–18 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases
 | 16 | PWA & Deployment — prompt-based SW update banner, app version on About page |
 | 17 | Error Boundary — class component, fallback UI, console logging |
 | 18 | UI Components & Styles — Card/CardElevated components, card variant convention |
+| 19 | Species Validation — band size + morphometric range warnings, disposition requires notes |
 
 ---
 
-## Phase 19 — Species Validation
+## Phase 19 — Species Validation ✅
 
-Goal: Warn when band size or morphometric measurements don't match known ranges for the recorded species.
-
-- `src/data/band-sizes.json` — ALPHA → string[] of valid band sizes (parsed from Validations.xlsx Tab 1)
-- `src/data/measurement-ranges.json` — ALPHA → `{ weight, wing, tail }` each with `{ femaleMin, femaleMax, maleMin, maleMax }` (0 = unspecified, omitted)
+- `src/data/band-sizes.json` — ALPHA → string[] of valid band sizes (1,226 species, from Validations.xlsx Tab 1)
+- `src/data/measurement-ranges.json` — ALPHA → `{ weight, wing, tail }` each with `{ femaleMin, femaleMax, maleMin, maleMax }` (815 species, 0 = omitted)
 - New validation rules in `src/utils/validation.ts`:
   - Band size mismatch: warn if selected band's size is not in the species' valid size list
   - Measurement out of range: warn if wing/bodyMass/tail is outside the expected range for the species + sex
+  - Sex unknown: warn only if outside *both* male and female ranges
   - Disposition requires notes: warn if Disposition is set but Notes is empty
-  - Disposition × Status: warn if Disposition is set but Status does not indicate mortality (TBD: confirm which Status codes are mortality — need to check with Hallie)
-- Sex unknown: warn only if value is outside *both* male and female ranges
-- Bird Record Form: wire warnings inline below band size (via BandSearchSelect context) and below wing/bodyMass/tail fields
-- Tests for all new rules
+  - Disposition × Status: deferred — need to confirm mortality status codes with Hallie
+- Bird Record Form: warnings inline below Band Number, Wing, Tail, Body Mass fields
+- Tests: 21 new (106 total)
 
 ---
 

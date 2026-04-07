@@ -4,6 +4,15 @@
  * All warnings are soft (never block saving).
  */
 import { isNewBanding } from '../data/codes'
+import bandSizesData from '../data/band-sizes.json'
+import measurementRangesData from '../data/measurement-ranges.json'
+
+const bandSizes = bandSizesData as Record<string, string[]>
+const measurementRanges = measurementRangesData as Record<string, {
+  weight?: { femaleMin?: number; femaleMax?: number; maleMin?: number; maleMax?: number }
+  wing?: { femaleMin?: number; femaleMax?: number; maleMin?: number; maleMax?: number }
+  tail?: { femaleMin?: number; femaleMax?: number; maleMin?: number; maleMax?: number }
+}>
 
 export interface ValidationInput {
   sex?: string
@@ -23,9 +32,49 @@ export interface ValidationInput {
   bandStatus?: string       // Band entity status: 'available', 'deployed', etc.
   captureCode?: string      // bbpCode: '1', 'R', 'U', 'F', etc.
   isOwnBand?: boolean       // true when editing a record that deployed this band
+  bandSize?: string         // Band entity size (e.g. '1B'), for species band-size validation
+  speciesCode?: string      // ALPHA code, for species range validation
+  wing?: number
+  bodyMass?: number
+  tail?: number
 }
 
 export type ValidationWarnings = Partial<Record<string, string>>
+
+/** Check if a measurement value is outside the expected range for a species + sex. */
+function measurementWarning(
+  value: number | undefined,
+  range: { femaleMin?: number; femaleMax?: number; maleMin?: number; maleMax?: number } | undefined,
+  sex: string | undefined,
+  label: string,
+): string | undefined {
+  if (value == null || !range) return undefined
+
+  if (sex === 'F') {
+    const { femaleMin, femaleMax } = range
+    if (femaleMin != null && femaleMax != null && (value < femaleMin || value > femaleMax)) {
+      return `${label} ${value} outside expected female range (${femaleMin}–${femaleMax})`
+    }
+  } else if (sex === 'M') {
+    const { maleMin, maleMax } = range
+    if (maleMin != null && maleMax != null && (value < maleMin || value > maleMax)) {
+      return `${label} ${value} outside expected male range (${maleMin}–${maleMax})`
+    }
+  } else {
+    // Unknown sex: warn only if outside BOTH ranges
+    const { femaleMin, femaleMax, maleMin, maleMax } = range
+    const outsideFemale = femaleMin != null && femaleMax != null && (value < femaleMin || value > femaleMax)
+    const outsideMale = maleMin != null && maleMax != null && (value < maleMin || value > maleMax)
+    const femaleSpecified = femaleMin != null && femaleMax != null
+    const maleSpecified = maleMin != null && maleMax != null
+    if (femaleSpecified && maleSpecified && outsideFemale && outsideMale) {
+      const min = Math.min(femaleMin!, maleMin!)
+      const max = Math.max(femaleMax!, maleMax!)
+      return `${label} ${value} outside expected range (${min}–${max})`
+    }
+  }
+  return undefined
+}
 
 /**
  * Evaluate all validation rules against current form values.
@@ -113,6 +162,36 @@ export function validateRecord(
     if (values.captureCode === 'R' && values.bandStatus === 'available') {
       warnings.bbpCode = 'This band shows as available — expected New (1), not Recapture (R)'
     }
+  }
+
+  // Band size mismatch for species
+  if (values.bandSize && values.speciesCode) {
+    const validSizes = bandSizes[values.speciesCode]
+    if (validSizes && !validSizes.includes(values.bandSize)) {
+      warnings.bandSize = `Band size ${values.bandSize} is unusual for ${values.speciesCode} (expected: ${validSizes.join(', ')})`
+    }
+  }
+
+  // Morphometric range validation
+  if (values.speciesCode) {
+    const speciesRanges = measurementRanges[values.speciesCode]
+    if (speciesRanges) {
+      const wingWarn = measurementWarning(values.wing, speciesRanges.wing, values.sex, 'Wing')
+      if (wingWarn) warnings.wing = wingWarn
+
+      const massWarn = measurementWarning(values.bodyMass, speciesRanges.weight, values.sex, 'Body mass')
+      if (massWarn) warnings.bodyMass = massWarn
+
+      const tailWarn = measurementWarning(values.tail, speciesRanges.tail, values.sex, 'Tail')
+      if (tailWarn) warnings.tail = tailWarn
+    }
+  }
+
+  // Disposition requires notes
+  if (values.disposition && !values.notes?.trim()) {
+    warnings.notes = warnings.notes
+      ? warnings.notes + '; also required when Disposition is set'
+      : 'Note required when Disposition is set'
   }
 
   return warnings

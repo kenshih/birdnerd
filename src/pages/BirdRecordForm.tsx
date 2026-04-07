@@ -154,13 +154,17 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
   const net = watch('net')
 
   const bbpCode = watch('bbpCode')
+  const wing = watch('wing')
+  const bodyMass = watch('bodyMass')
+  const tail = watch('tail')
   const bandStatus = bandSelection.kind === 'band' ? bandSelection.band.status : undefined
+  const bandSize = bandSelection.kind === 'band' ? bandSelection.band.bandSize : undefined
   const isOwnBand = bandSelection.kind === 'band' && bandSelection.band.id === record?.bandId
 
   const warnings = useMemo(() => validateRecord(
-    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, bandStatus, captureCode: bbpCode, isOwnBand },
+    { sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, bandStatus, captureCode: bbpCode, isOwnBand, bandSize, speciesCode, wing, bodyMass, tail },
     sessionNetLabels,
-  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels, bandStatus, bbpCode, isOwnBand])
+  ), [sex, bp, cp, howAged, howAged2, howSexed, howSexed2, age, skull, status, disposition, bloodSample, notes, net, sessionNetLabels, bandStatus, bbpCode, isOwnBand, bandSize, speciesCode, wing, bodyMass, tail])
 
   function handleBandSelect(sel: BandSelection) {
     setBandSelection(sel)
@@ -285,7 +289,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
 
         {/* ── Identity ── */}
         <Section title="Identity">
-          <Field label="Band Number">
+          <Field label="Band Number" warning={warnings.bandSize}>
             <BandSearchSelect
               bands={allBands}
               value={bandSelection}
@@ -503,7 +507,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
         {/* ── Morphometrics & Status ── */}
         <Section title="Morphometrics & Status">
           <Row>
-            <Field label="Wing (mm)">
+            <Field label="Wing (mm)" warning={warnings.wing}>
               <input
                 {...register('wing', { valueAsNumber: true })}
                 type="number"
@@ -512,7 +516,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 style={inputStyle}
               />
             </Field>
-            <Field label="Tail (mm)">
+            <Field label="Tail (mm)" warning={warnings.tail}>
               <input
                 {...register('tail', { valueAsNumber: true })}
                 type="number"
@@ -543,7 +547,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             </Field>
           </Row>
           <Row>
-            <Field label="Body Mass (g)">
+            <Field label="Body Mass (g)" warning={warnings.bodyMass}>
               <input
                 {...register('bodyMass', { valueAsNumber: true })}
                 type="number"

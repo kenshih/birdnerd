@@ -197,7 +197,7 @@ describe('combined warnings', () => {
   it('no warnings on clean record', () => {
     const w = v({
       sex: 'M', bp: '0', cp: '2', howAged: 'SK', skull: '6',
-      status: '300', disposition: 'M', notes: '',
+      status: '300', disposition: 'M', notes: 'Found deceased in net',
     })
     expect(Object.keys(w)).toHaveLength(0)
   })
@@ -240,5 +240,104 @@ describe('Band status vs capture code', () => {
 
   it('no warning when editing own band (New + deployed but isOwnBand)', () => {
     expect(v({ bandStatus: 'deployed', captureCode: '1', isOwnBand: true }).bbpCode).toBeUndefined()
+  })
+})
+
+// ─── Band size validation ────────────────────────────────────────────
+
+describe('Band size mismatch', () => {
+  it('warns when band size is not in species valid list', () => {
+    // SOSP valid sizes: 1B, 1, 1C — size 3 is wrong
+    expect(v({ speciesCode: 'SOSP', bandSize: '3' }).bandSize).toMatch(/unusual/)
+  })
+
+  it('no warning when band size is valid for species', () => {
+    expect(v({ speciesCode: 'SOSP', bandSize: '1B' }).bandSize).toBeUndefined()
+  })
+
+  it('no warning when species not in lookup', () => {
+    expect(v({ speciesCode: 'XXXX', bandSize: '3' }).bandSize).toBeUndefined()
+  })
+
+  it('no warning when bandSize is missing', () => {
+    expect(v({ speciesCode: 'SOSP' }).bandSize).toBeUndefined()
+  })
+
+  it('no warning when speciesCode is missing', () => {
+    expect(v({ bandSize: '3' }).bandSize).toBeUndefined()
+  })
+})
+
+// ─── Morphometric range validation ──────────────────────────────────
+
+describe('Wing range', () => {
+  it('warns when wing is below female range (Sex=F)', () => {
+    // SOSP female wing: 52–83
+    expect(v({ speciesCode: 'SOSP', sex: 'F', wing: 40 }).wing).toMatch(/Wing/)
+  })
+
+  it('warns when wing is above male range (Sex=M)', () => {
+    // SOSP male wing: 54–87
+    expect(v({ speciesCode: 'SOSP', sex: 'M', wing: 100 }).wing).toMatch(/Wing/)
+  })
+
+  it('no warning when wing is in range', () => {
+    expect(v({ speciesCode: 'SOSP', sex: 'F', wing: 65 }).wing).toBeUndefined()
+  })
+
+  it('warns when sex unknown and wing outside both ranges', () => {
+    // SOSP F: 52–83, M: 54–87 — value 20 is outside both
+    expect(v({ speciesCode: 'SOSP', sex: 'U', wing: 20 }).wing).toMatch(/Wing/)
+  })
+
+  it('no warning when sex unknown and wing inside one range', () => {
+    // SOSP F: 52–83, M: 54–87 — value 83 is inside female range
+    expect(v({ speciesCode: 'SOSP', sex: 'U', wing: 83 }).wing).toBeUndefined()
+  })
+
+  it('no warning when species not in lookup', () => {
+    expect(v({ speciesCode: 'XXXX', sex: 'F', wing: 1 }).wing).toBeUndefined()
+  })
+})
+
+describe('Body mass range', () => {
+  it('warns when body mass is outside range', () => {
+    // WIWA F weight: 6–10
+    expect(v({ speciesCode: 'WIWA', sex: 'F', bodyMass: 50 }).bodyMass).toMatch(/Body mass/)
+  })
+
+  it('no warning when body mass is in range', () => {
+    expect(v({ speciesCode: 'WIWA', sex: 'F', bodyMass: 8 }).bodyMass).toBeUndefined()
+  })
+})
+
+describe('Tail range', () => {
+  it('warns when tail is outside range', () => {
+    // SOSP F tail: 51–83
+    expect(v({ speciesCode: 'SOSP', sex: 'F', tail: 20 }).tail).toMatch(/Tail/)
+  })
+
+  it('no warning when tail is in range', () => {
+    expect(v({ speciesCode: 'SOSP', sex: 'F', tail: 60 }).tail).toBeUndefined()
+  })
+})
+
+// ─── Disposition requires notes ──────────────────────────────────────
+
+describe('Disposition requires notes', () => {
+  it('warns when disposition is set and notes is empty', () => {
+    expect(v({ disposition: 'M', notes: '' }).notes).toMatch(/Disposition/)
+  })
+
+  it('warns when disposition is set and notes is whitespace', () => {
+    expect(v({ disposition: 'M', notes: '   ' }).notes).toMatch(/Disposition/)
+  })
+
+  it('no warning when disposition is set and notes has content', () => {
+    expect(v({ disposition: 'M', notes: 'Found dead in net' }).notes).toBeUndefined()
+  })
+
+  it('no warning when disposition is not set', () => {
+    expect(v({ disposition: '', notes: '' }).notes).toBeUndefined()
   })
 })
