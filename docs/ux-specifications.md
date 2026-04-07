@@ -210,7 +210,8 @@ Validation warnings and errors display **inline below the relevant field**, appe
 | **Molt fields** | Select (single letters/numbers) | Coded values per molt tables in CodeTable. |
 | **Morphometrics** | Number inputs | Wing/Tail in whole mm. Tarsus/Culmen/Other in ##.## precision. Mass in ##.# g. Validation: soft warnings if outside species range. |
 | **Status** | Select | 300, 301, 318, 319, 333, 334, 380, 500, 700, "---" (Mortality), Other. 500 requires disposition + note. "---" requires note. |
-| **Release Time** | Time picker w/ button | "Tap to Fill" button populates current device time (HH:mm). |
+| **Capture Time** | Time picker w/ buttons | "Now" button populates current device time (HH:mm). "✕" button clears the field. |
+| **Release Time** | Time picker w/ buttons | "Now" button populates current device time (HH:mm). "✕" button clears the field. |
 | **Notes** | Text area | Auto-populates when validation rules trigger. User can add/edit. |
 | **Feather Pull** | Checkbox | Default: unchecked (false). |
 | **Blood Sample** | Checkbox | Default: unchecked (false). Validation: if checked, status must be valid for blood sampling. |
@@ -254,7 +255,7 @@ When Capture Code = R, a collapsible section auto-opens directly below the Captu
 Triggered from within a banding record. Photos are stored as blobs in IndexedDB; the filename is also saved for external reference.
 
 1. **User taps "Add Photo"** at the top of the banding record form
-2. **Device camera launches** via `<input type="file" accept="image/*" capture="environment">`
+2. **System sheet appears** via `<input type="file" accept="image/*">` — user chooses "Take Photo" or "Choose from Library"
 3. **Photo review modal appears** showing:
    - The captured image (preview)
    - Auto-generated filename (updates live as body part changes): `DAY_LOCCODE_BANDID_SPECIESCODE_BODYPART.ext`
