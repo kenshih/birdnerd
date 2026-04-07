@@ -1,6 +1,7 @@
 import { Component } from 'react'
 import type { ErrorInfo, ReactNode } from 'react'
-import { colors, btnStyle, cardElevatedStyle } from '../styles/theme'
+import { colors, btnStyle } from '../styles/theme'
+import { CardElevated } from './Card'
 
 interface Props {
   children: ReactNode
@@ -31,7 +32,7 @@ export default class ErrorBoundary extends Component<Props, State> {
 
     return (
       <div style={{ padding: '2rem', textAlign: 'center' }}>
-        <div style={{ ...cardElevatedStyle, maxWidth: 400, margin: '2rem auto', padding: '2rem' }}>
+        <CardElevated style={{ maxWidth: 400, margin: '2rem auto', padding: '2rem' }}>
           <h2 style={{ margin: '0 0 0.75rem', color: colors.text }}>Something went wrong</h2>
           <p style={{ color: colors.textSecondary, lineHeight: 1.5, margin: '0 0 1.5rem' }}>
             An unexpected error occurred. Your data is safe in local storage.
@@ -54,7 +55,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <button onClick={this.handleReset} style={btnStyle(colors.primary)}>
             Return to Home
           </button>
-        </div>
+        </CardElevated>
       </div>
     )
   }

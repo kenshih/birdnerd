@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { Location } from '../types'
 import { getLocations, saveLocation, deleteLocation, getNetsByLocation } from '../db'
 import PageHeader from '../components/PageHeader'
-import { btnStyle, cardStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { Card } from '../components/Card'
 
 interface Props {
   onSelectLocation: (location: Location) => void
@@ -75,7 +76,7 @@ export default function LocationList({ onSelectLocation, onHome }: Props) {
       </button>
 
       {showNew && (
-        <div style={cardStyle}>
+        <Card>
           <h3 style={{ marginTop: 0 }}>New Location</h3>
           <label style={labelStyle}>Name *</label>
           <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Galindo Creek Banding Station" style={inputStyle} />
@@ -120,7 +121,7 @@ export default function LocationList({ onSelectLocation, onHome }: Props) {
             <button onClick={handleCreate} style={btnStyle('#2d6a4f')}>Create</button>
             <button onClick={() => { setShowNew(false); setForm(emptyForm()) }} style={btnStyle('#888')}>Cancel</button>
           </div>
-        </div>
+        </Card>
       )}
 
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>

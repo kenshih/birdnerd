@@ -1,5 +1,6 @@
 import PageHeader from '../components/PageHeader'
-import { cardElevatedStyle, colors } from '../styles/theme'
+import { colors } from '../styles/theme'
+import { CardElevated } from '../components/Card'
 
 interface Props {
   onHome: () => void
@@ -10,7 +11,7 @@ export default function AboutPage({ onHome }: Props) {
     <div style={{ padding: '1rem' }}>
       <PageHeader title="About" onHome={onHome} />
 
-      <div style={{...cardElevatedStyle, padding: '1.25rem'}}>
+      <CardElevated style={{ padding: '1.25rem' }}>
         <p style={{ margin: '0 0 1rem', lineHeight: 1.6 }}>
           This app was created for the{' '}
           <strong>Mount Diablo Bird Alliance</strong>{' '}
@@ -29,7 +30,7 @@ export default function AboutPage({ onHome }: Props) {
         <p style={{ margin: '1rem 0 0', fontSize: '0.8rem', color: colors.textMuted }}>
           Version {__APP_VERSION__}
         </p>
-      </div>
+      </CardElevated>
     </div>
   )
 }

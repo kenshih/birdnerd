@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { Person, Bander, BanderRole } from '../types'
 import { savePerson, getBanderByPerson, saveBander, deleteBander } from '../db'
 import PageHeader from '../components/PageHeader'
-import { btnStyle, cardStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { Card } from '../components/Card'
 
 interface Props {
   person: Person
@@ -81,7 +82,7 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
 
       {/* Person info */}
       {editing ? (
-        <div style={cardStyle}>
+        <Card>
           <h3 style={{ marginTop: 0 }}>Edit Person</h3>
           <div style={rowStyle}>
             <div style={{ flex: 2 }}>
@@ -107,9 +108,9 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
             <button onClick={handleSave} style={btnStyle('#2d6a4f')}>Save</button>
             <button onClick={() => { setEditing(false); setForm(personToForm(person)) }} style={btnStyle('#888')}>Cancel</button>
           </div>
-        </div>
+        </Card>
       ) : (
-        <div style={cardStyle}>
+        <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{person.name}</div>
@@ -122,7 +123,7 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
             </div>
             <button onClick={() => setEditing(true)} style={editBtnStyle}>Edit</button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Bander role */}
@@ -130,7 +131,7 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
         <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.75rem' }}>Bander Role</h2>
 
         {bander ? (
-          <div style={cardStyle}>
+          <Card>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <label style={labelStyle}>Role</label>
@@ -146,7 +147,7 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
                 Remove
               </button>
             </div>
-          </div>
+          </Card>
         ) : (
           <div>
             <p style={{ color: '#888', fontSize: '0.9rem', marginTop: 0 }}>

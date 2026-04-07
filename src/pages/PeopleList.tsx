@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { Person, Bander, BanderRole } from '../types'
 import { getPeople, savePerson, deletePerson, getBanders, saveBander } from '../db'
 import PageHeader from '../components/PageHeader'
-import { btnStyle, cardStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { Card } from '../components/Card'
 
 interface Props {
   onSelectPerson: (person: Person) => void
@@ -87,7 +88,7 @@ export default function PeopleList({ onSelectPerson, onHome }: Props) {
       </button>
 
       {showNew && (
-        <div style={cardStyle}>
+        <Card>
           <h3 style={{ marginTop: 0 }}>New Person</h3>
           <div style={rowStyle}>
             <div style={{ flex: 2 }}>
@@ -137,7 +138,7 @@ export default function PeopleList({ onSelectPerson, onHome }: Props) {
             <button onClick={handleCreate} style={btnStyle('#2d6a4f')}>Create</button>
             <button onClick={() => { setShowNew(false); setForm(emptyForm()) }} style={btnStyle('#888')}>Cancel</button>
           </div>
-        </div>
+        </Card>
       )}
 
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>

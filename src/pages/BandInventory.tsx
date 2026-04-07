@@ -3,7 +3,8 @@ import type { Band, BandType } from '../types'
 import { getBands, saveBands, getBandByNumber } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'
-import { cardElevatedStyle, labelStyle, inputStyle } from '../styles/theme'
+import { labelStyle, inputStyle } from '../styles/theme'
+import { CardElevated } from '../components/Card'
 
 interface Props {
   onHome: () => void
@@ -51,7 +52,7 @@ export default function BandInventory({ onHome }: Props) {
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
       <PageHeader title="Band Inventory" onHome={onHome} />
 
-      <div style={cardElevatedStyle}>
+      <CardElevated>
         <div style={statRowStyle}>
           <span>Total Bands</span>
           <strong>{bands.length}</strong>
@@ -68,10 +69,10 @@ export default function BandInventory({ onHome }: Props) {
           <span>Destroyed / Lost / Replaced</span>
           <strong style={{ color: '#888' }}>{stats.other}</strong>
         </div>
-      </div>
+      </CardElevated>
 
       {stats.bySize.length > 0 && (
-        <div style={{ ...cardElevatedStyle, marginTop: '0.75rem' }}>
+        <CardElevated style={{ marginTop: '0.75rem' }}>
           <div style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>By Size</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '0.25rem 0.75rem', fontSize: '0.85rem' }}>
             <span style={{ fontWeight: 600, color: '#666' }}>Size</span>
@@ -81,7 +82,7 @@ export default function BandInventory({ onHome }: Props) {
               <SizeRow key={s.size} {...s} />
             ))}
           </div>
-        </div>
+        </CardElevated>
       )}
 
       <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
@@ -305,7 +306,7 @@ function AddBands({ onBack, onHome, onAdded }: { onBack: () => void; onHome: () 
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
       <PageHeader title="Add Bands" onBack={onBack} onHome={onHome} />
 
-      <div style={cardElevatedStyle}>
+      <CardElevated>
         <label style={labelStyle}>Prefix (4-digit)</label>
         <input
           type="text"
@@ -371,7 +372,7 @@ function AddBands({ onBack, onHome, onAdded }: { onBack: () => void; onHome: () 
         >
           {saving ? 'Adding...' : `Add ${count} Band${count !== 1 ? 's' : ''}`}
         </button>
-      </div>
+      </CardElevated>
     </div>
   )
 }

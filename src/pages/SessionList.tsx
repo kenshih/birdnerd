@@ -5,7 +5,8 @@ import { PROTOCOL_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'
 import Collapsible from '../components/Collapsible'
 import SearchableSelect from '../components/SearchableSelect'
-import { btnStyle, cardStyle, labelStyle, inputStyle, nowBtnStyle } from '../styles/theme'
+import { btnStyle, labelStyle, inputStyle, nowBtnStyle } from '../styles/theme'
+import { Card } from '../components/Card'
 
 const PRECIP_SUGGESTIONS = [
   { code: 'clear', label: 'Clear' },
@@ -208,7 +209,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
       </button>
 
       {showNew && (
-        <div style={{...cardStyle, marginTop: '1rem'}}>
+        <Card style={{ marginTop: '1rem' }}>
           <h3 style={{ marginTop: 0 }}>New Session</h3>
 
           <label style={labelStyle}>Location</label>
@@ -359,7 +360,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
             <button onClick={createSession} disabled={!formLocationId} style={btnStyle(formLocationId ? '#2d6a4f' : '#aaa')}>Create</button>
             <button onClick={() => setShowNew(false)} style={btnStyle('#888')}>Cancel</button>
           </div>
-        </div>
+        </Card>
       )}
 
       <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { cardStyle, labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
+import { labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
+import { Card } from '../components/Card'
 import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol } from '../types'
 import { getRecordsBySession, deleteRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
 import BirdRecordForm from './BirdRecordForm'
@@ -248,7 +249,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
           Manage Nets{netLogs.length > 0 ? ` (${netLogs.length} nets)` : ''}
         </button>
 
-        <div style={cardStyle}>
+        <Card>
           <label style={labelStyle}>Location</label>
           <select value={editLocationId} onChange={e => setEditLocationId(e.target.value)} style={inputStyle}>
             {locations.map(loc => (
@@ -362,7 +363,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
             <button onClick={saveEditSession} style={btnStyle('#2d6a4f')}>Save</button>
             <button onClick={() => setView({ mode: 'list' })} style={btnStyle('#888')}>Cancel</button>
           </div>
-        </div>
+        </Card>
       </div>
     )
   }

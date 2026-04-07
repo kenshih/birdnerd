@@ -103,9 +103,10 @@ Goal: Export in agency-specific formats. Built in-app (not separate tooling).
 
 Goal: Build on the shared theme by consolidating duplicated component patterns.
 
-### 18a — Card Variants
+### 18a — Card Variants ✅
 - Document card variant convention: `cardStyle` (gray+border) = editable forms/detail views, `cardElevatedStyle` (white+shadow) = read-only/dashboard content
-- Update tech spec § 11 with the documented convention
+- Updated tech spec § 11 with the documented convention; removed resolved backlog item
+- `<Card>` and `<CardElevated>` components wrapping the style objects; update all usages
 
 ### 18b — Vitest Browser Mode
 - Add `@vitest/browser` for real-browser component testing

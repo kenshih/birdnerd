@@ -553,8 +553,9 @@ A single JSON file that contains all managed reference and operational data, pro
 
 **Current state:** `src/styles/theme.ts` centralizes design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). Imported by 13+ files.
 
-**Card variants:** `cardStyle` (gray background + border) for inline/inset content, `cardElevatedStyle` (white background + shadow) for standalone cards.
+**Card variants:**
+- `cardStyle` — gray background + border. Use for editable forms and inline detail views (session edit, location/person forms, list row cards).
+- `cardElevatedStyle` — white background + drop shadow. Use for standalone display surfaces and dashboard content (band inventory, about page, error boundary).
 
 **Remaining backlog:**
 1. **Consolidate dropdown components** — BandSearchSelect, SearchableSelect, and SpeciesAutocomplete share dropdown/option/input styles and open/close/click-outside logic. Extract a shared `Dropdown` primitive.
-2. **Normalize card variants** — Confirm whether both variants are intentional and document when to use each.

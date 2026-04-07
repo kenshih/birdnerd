@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import type { Location, Net } from '../types'
 import { getNetsByLocation, saveNet, saveLocation } from '../db'
 import PageHeader from '../components/PageHeader'
-import { btnStyle, cardStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
+import { Card } from '../components/Card'
 
 interface Props {
   location: Location
@@ -92,7 +93,7 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
 
       {/* Location details */}
       {editing ? (
-        <div style={cardStyle}>
+        <Card>
           <h3 style={{ marginTop: 0 }}>Edit Location</h3>
           <label style={labelStyle}>Name</label>
           <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={inputStyle} />
@@ -137,9 +138,9 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
             <button onClick={handleSaveLocation} style={btnStyle('#2d6a4f')}>Save</button>
             <button onClick={() => { setEditing(false); setForm(locationToForm(location)) }} style={btnStyle('#888')}>Cancel</button>
           </div>
-        </div>
+        </Card>
       ) : (
-        <div style={cardStyle}>
+        <Card>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div>
               <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{location.name}</div>
@@ -156,7 +157,7 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
             </div>
             <button onClick={() => setEditing(true)} style={editBtnStyle}>Edit</button>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Net inventory */}
