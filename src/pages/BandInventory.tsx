@@ -1,38 +1,70 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Band, BandType } from '../types'
-import { getBands, saveBands, getBandByNumber } from '../db'
+import type { Band, BandType, Session } from '../types'
+import { getBands, saveBands, getBandByNumber, getAllRecords } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'
 import { labelStyle, inputStyle } from '../styles/theme'
 import { CardElevated } from '../components/Card'
+import BandHistoryView from '../components/BandHistoryView'
 
 interface Props {
   onHome: () => void
+  onSelectSession: (session: Session) => void
 }
 
-type View = 'overview' | 'list' | 'add'
+type View = 'overview' | 'list' | 'add' | 'history'
 
 function generateId(): string {
   return `band-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export default function BandInventory({ onHome }: Props) {
+export default function BandInventory({ onHome, onSelectSession }: Props) {
   const [bands, setBands] = useState<Band[]>([])
+  const [lastSeenMap, setLastSeenMap] = useState<Map<string, string>>(new Map())
   const [view, setView] = useState<View>('overview')
+  const [selectedBand, setSelectedBand] = useState<Band | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => { loadBands() }, [])
 
   async function loadBands() {
-    const all = await getBands()
+    const [all, records] = await Promise.all([getBands(), getAllRecords()])
     setBands(all)
+    // Build lastSeen map: bandId → most recent session date (via record.date or record.createdAt)
+    const map = new Map<string, string>()
+    for (const r of records) {
+      if (!r.bandId) continue
+      const date = r.date ?? r.createdAt.slice(0, 10)
+      const existing = map.get(r.bandId)
+      if (!existing || date > existing) map.set(r.bandId, date)
+    }
+    setLastSeenMap(map)
     setLoading(false)
   }
 
   if (loading) return <div style={{ padding: '1rem' }}>Loading...</div>
 
+  if (view === 'history' && selectedBand) {
+    return (
+      <BandHistoryView
+        band={selectedBand}
+        onBack={() => setView('list')}
+        onHome={onHome}
+        onSelectSession={onSelectSession}
+      />
+    )
+  }
+
   if (view === 'list') {
-    return <BandList bands={bands} onBack={() => setView('overview')} onHome={onHome} />
+    return (
+      <BandList
+        bands={bands}
+        lastSeenMap={lastSeenMap}
+        onBack={() => setView('overview')}
+        onHome={onHome}
+        onSelectBand={band => { setSelectedBand(band); setView('history') }}
+      />
+    )
   }
 
   if (view === 'add') {
@@ -129,10 +161,17 @@ function computeStats(bands: Band[]) {
 
 // ─── Band List View ──────────────────────────────────────────────────
 
-function BandList({ bands, onBack, onHome }: { bands: Band[]; onBack: () => void; onHome: () => void }) {
+function BandList({ bands, lastSeenMap, onBack, onHome, onSelectBand }: {
+  bands: Band[]
+  lastSeenMap: Map<string, string>
+  onBack: () => void
+  onHome: () => void
+  onSelectBand: (band: Band) => void
+}) {
   const [search, setSearch] = useState('')
   const [filterSize, setFilterSize] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
+  const [sortBy, setSortBy] = useState<'last-seen' | 'band-number'>('last-seen')
 
   const filtered = useMemo(() => {
     return bands.filter(b => {
@@ -140,8 +179,15 @@ function BandList({ bands, onBack, onHome }: { bands: Band[]; onBack: () => void
       if (filterSize && b.bandSize !== filterSize) return false
       if (filterStatus && b.status !== filterStatus) return false
       return true
-    }).sort((a, b) => a.bandNumber.localeCompare(b.bandNumber))
-  }, [bands, search, filterSize, filterStatus])
+    }).sort((a, b) => {
+      if (sortBy === 'last-seen') {
+        const da = lastSeenMap.get(a.id) ?? ''
+        const db2 = lastSeenMap.get(b.id) ?? ''
+        if (db2 !== da) return db2.localeCompare(da) // most recent first
+      }
+      return a.bandNumber.localeCompare(b.bandNumber)
+    })
+  }, [bands, search, filterSize, filterStatus, sortBy, lastSeenMap])
 
   // Collect unique sizes present in data
   const sizesInUse = useMemo(() => {
@@ -173,6 +219,10 @@ function BandList({ bands, onBack, onHome }: { bands: Band[]; onBack: () => void
           <option value="lost">Lost</option>
           <option value="replaced">Replaced</option>
         </select>
+        <select value={sortBy} onChange={e => setSortBy(e.target.value as 'last-seen' | 'band-number')} style={{ ...inputStyle, width: 'auto' }}>
+          <option value="last-seen">Last seen</option>
+          <option value="band-number">Band #</option>
+        </select>
       </div>
 
       <div style={{ fontSize: '0.8rem', color: '#666', marginBottom: '0.5rem' }}>
@@ -183,20 +233,26 @@ function BandList({ bands, onBack, onHome }: { bands: Band[]; onBack: () => void
         <div style={{ color: '#888', padding: '1rem', textAlign: 'center' }}>No bands match filters.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {filtered.slice(0, 200).map(b => (
-            <div key={b.id} style={bandRowStyle}>
-              <span style={{ fontWeight: 500, fontFamily: 'monospace' }}>{b.bandNumber}</span>
-              <span style={{ fontSize: '0.8rem', color: '#666' }}>
-                {b.bandSize} · {b.bandType}
-              </span>
-              <span style={{ ...statusChipStyle, background: statusColor(b.status) }}>
-                {b.status}
-              </span>
-              {b.currentSpecies && (
-                <span style={{ fontSize: '0.8rem', color: '#1a73e8' }}>{b.currentSpecies}</span>
-              )}
-            </div>
-          ))}
+          {filtered.slice(0, 200).map(b => {
+            const lastSeen = lastSeenMap.get(b.id)
+            return (
+              <button key={b.id} style={bandRowStyle} onClick={() => onSelectBand(b)}>
+                <span style={{ fontWeight: 500, fontFamily: 'monospace' }}>{b.bandNumber}</span>
+                <span style={{ fontSize: '0.8rem', color: '#666' }}>
+                  {b.bandSize} · {b.bandType}
+                </span>
+                <span style={{ ...statusChipStyle, background: statusColor(b.status) }}>
+                  {b.status}
+                </span>
+                {b.currentSpecies && (
+                  <span style={{ fontSize: '0.8rem', color: '#1a73e8' }}>{b.currentSpecies}</span>
+                )}
+                {lastSeen && (
+                  <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: 'auto' }}>{lastSeen}</span>
+                )}
+              </button>
+            )
+          })}
           {filtered.length > 200 && (
             <div style={{ textAlign: 'center', color: '#888', fontSize: '0.8rem', padding: '0.5rem' }}>
               Showing first 200 of {filtered.length}
@@ -395,6 +451,10 @@ const bandRowStyle: React.CSSProperties = {
   background: '#fff',
   borderRadius: 6,
   boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+  border: 'none',
+  cursor: 'pointer',
+  textAlign: 'left',
+  width: '100%',
 }
 
 const statusChipStyle: React.CSSProperties = {

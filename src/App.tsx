@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import type { Session, Location, Person } from './types'
+import type { Session, Location, Person, Band } from './types'
+import BandHistoryView from './components/BandHistoryView'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'
 import SessionView from './pages/SessionView'
@@ -26,6 +27,7 @@ type AppView =
   | { mode: 'export' }
   | { mode: 'feedback' }
   | { mode: 'about' }
+  | { mode: 'band-history-from-record'; band: Band; returnSession: Session }
 
 export default function App() {
   const [view, setView] = useState<AppView>({ mode: 'home' })
@@ -46,6 +48,7 @@ export default function App() {
         onHome={goHome}
         onSessionDeleted={() => setView({ mode: 'sessions' })}
         onSessionUpdated={(s) => setView({ mode: 'session', session: s })}
+        onViewBandHistory={(band: Band) => setView({ mode: 'band-history-from-record', band, returnSession: (view as { session: Session }).session })}
       />
     )
   } else if (view.mode === 'sessions') {
@@ -73,8 +76,22 @@ export default function App() {
         onHome={goHome}
       />
     )
+  } else if (view.mode === 'band-history-from-record') {
+    page = (
+      <BandHistoryView
+        band={view.band}
+        onBack={() => setView({ mode: 'session', session: view.returnSession })}
+        onHome={goHome}
+        onSelectSession={(session: Session) => setView({ mode: 'session', session })}
+      />
+    )
   } else if (view.mode === 'band-inventory') {
-    page = <BandInventory onHome={goHome} />
+    page = (
+      <BandInventory
+        onHome={goHome}
+        onSelectSession={session => setView({ mode: 'session', session })}
+      />
+    )
   } else if (view.mode === 'location-detail') {
     page = (
       <LocationDetail

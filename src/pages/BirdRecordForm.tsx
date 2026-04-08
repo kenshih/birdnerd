@@ -23,6 +23,7 @@ interface Props {
   onSaved: () => void
   onCancel: () => void
   onHome?: () => void
+  onViewBandHistory?: (band: Band) => void
 }
 
 function generateId(): string {
@@ -49,7 +50,7 @@ interface BanderOption {
   name: string
 }
 
-export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome }: Props) {
+export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome, onViewBandHistory }: Props) {
   const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
@@ -300,6 +301,15 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
               <div style={{ marginTop: '0.3rem', padding: '0.4rem 0.5rem', background: '#cce5ff', borderRadius: 6, fontSize: '0.8rem' }}>
                 Deployed on {bandSelection.band.deploymentDate ?? '?'} to {bandSelection.band.currentSpecies ?? '?'}
               </div>
+            )}
+            {bandSelection.kind === 'band' && onViewBandHistory && (
+              <button
+                type="button"
+                onClick={() => onViewBandHistory((bandSelection as { kind: 'band'; band: Band }).band)}
+                style={{ marginTop: '0.3rem', background: 'none', border: 'none', color: '#1a73e8', fontSize: '0.8rem', cursor: 'pointer', padding: 0 }}
+              >
+                View band history →
+              </button>
             )}
           </Field>
           <Field label="Species">

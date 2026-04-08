@@ -11,7 +11,7 @@ interface BirdNerdDB extends DBSchema {
   records: {
     key: string
     value: BirdRecord
-    indexes: { 'by-session': string }
+    indexes: { 'by-session': string; 'by-band': string }
   }
   locations: {
     key: string
@@ -67,7 +67,7 @@ export function resetDB() {
 
 export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
   if (db) return db
-  db = await openDB<BirdNerdDB>('birdnerd', 7, {
+  db = await openDB<BirdNerdDB>('birdnerd', 8, {
     upgrade(database, oldVersion, _newVersion, transaction) {
       if (oldVersion < 1) {
         const sessionStore = database.createObjectStore('sessions', { keyPath: 'id' })
@@ -140,6 +140,13 @@ export async function getDB(): Promise<IDBPDatabase<BirdNerdDB>> {
         const photoStore = database.createObjectStore('photos', { keyPath: 'id' })
         photoStore.createIndex('by-record', 'bandingRecordId')
       }
+
+      if (oldVersion < 8) {
+        const recordStore = transaction.objectStore('records')
+        if (!recordStore.indexNames.contains('by-band')) {
+          recordStore.createIndex('by-band', 'bandId')
+        }
+      }
     },
   })
 
@@ -197,6 +204,16 @@ export async function deleteSession(id: string): Promise<void> {
 export async function getRecordsBySession(sessionId: string): Promise<BirdRecord[]> {
   const db = await getDB()
   return db.getAllFromIndex('records', 'by-session', sessionId)
+}
+
+export async function getRecordsByBand(bandId: string): Promise<BirdRecord[]> {
+  const db = await getDB()
+  return db.getAllFromIndex('records', 'by-band', bandId)
+}
+
+export async function getAllRecords(): Promise<BirdRecord[]> {
+  const db = await getDB()
+  return db.getAll('records')
 }
 
 export async function saveRecord(record: BirdRecord): Promise<void> {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
 import { Card } from '../components/Card'
-import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol } from '../types'
+import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol, Band } from '../types'
 import { getRecordsBySession, deleteRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
 import BirdRecordForm from './BirdRecordForm'
 import { PROTOCOL_CODES, isNewBanding } from '../data/codes'
@@ -24,6 +24,7 @@ interface Props {
   onHome: () => void
   onSessionDeleted: () => void
   onSessionUpdated: (session: Session) => void
+  onViewBandHistory?: (band: Band) => void
 }
 
 type View = { mode: 'list' } | { mode: 'form'; record?: BirdRecord } | { mode: 'edit-session' } | { mode: 'net-effort' }
@@ -33,7 +34,7 @@ interface BanderWithPerson {
   person: Person
 }
 
-export default function SessionView({ session, onBack, onHome, onSessionDeleted, onSessionUpdated }: Props) {
+export default function SessionView({ session, onBack, onHome, onSessionDeleted, onSessionUpdated, onViewBandHistory }: Props) {
   const [records, setRecords] = useState<BirdRecord[]>([])
   const [view, setView] = useState<View>({ mode: 'list' })
   const [locations, setLocations] = useState<Location[]>([])
@@ -232,6 +233,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
         onSaved={() => { loadRecords(); setView({ mode: 'list' }) }}
         onCancel={() => setView({ mode: 'list' })}
         onHome={onHome}
+        onViewBandHistory={onViewBandHistory}
       />
     )
   }
