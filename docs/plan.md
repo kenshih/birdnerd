@@ -53,21 +53,26 @@ Phases 1–18 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases
 
 ## Phase 20 — Band History View
 
-Goal: Minimal encounter timeline for a band. From there, navigate to sessions.
+Goal: Encounter timeline for a band, accessible from Band Inventory and from banding records.
 
-Vision: start minimal, layer detail later.
+### 20a — Band Inventory Enhancements
+- Expand "View All Bands" with search/filter: filter by status ("deployed"), band size, sort by last seen date (default) or band number
+- Band row tap → Band History detail view
+- Last seen date derived from most recent banding record referencing the band
 
-- Band detail view: encounter timeline (date, species, station, capture code, bander)
-- Each encounter links to its session
-- Search by band number
+### 20b — Band History Detail View
+- Header: band number, current status, species banding code, recapped (Y/N), last encounter date
+- Encounter timeline: each row shows date, species, station, capture code, bander, WRP, sex, photo indicator, has-notes
+- Each encounter row links to its session
+- Read-only — no editing from this view
+- Entry points: Band Inventory row tap + band number link on banding record form
 
-**Open questions (TBD):**
-- Entry points: Band Inventory row? Band number on a banding record? Both? Standalone search?
-- Should timeline show band status changes (deployed → available → redeployed) or just encounters?
-- Unbanded/foreign records have no band history — is this view purely for inventory bands?
-- Read-only, or actions available (retire band, jump to edit record)?
-- Relationship to UX spec § 2.2 step 3 ("show encounter history table" on recapture) — same view inline, or link to this page?
-- How much band metadata to show (current status, deployment date, size, type, prefix)?
+### 20c — Foreign Band Entity Flow
+- Foreign bands get a Band entity (status: `foreign`) rather than freetext
+- When a user enters an unknown band number in BandSearchSelect, prompt to create a foreign Band entity (with optional size field)
+- Replaces current freetext "foreign recapture" flow
+- Foreign bands appear in Band Inventory and have history timelines like inventory bands
+- Note: full foreign band representation (BBL lookup, ownership, etc.) deferred to later phase
 
 ---
 
