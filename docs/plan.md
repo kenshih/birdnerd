@@ -6,7 +6,7 @@ See also: [product-specifications.md](product-specifications.md) | [tech-specifi
 
 ## Completed
 
-Phases 1–18 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14.
+Phases 1–20 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14.
 
 | Phase | Summary |
 |-------|---------|
@@ -33,46 +33,31 @@ Phases 1–18 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases
 | 17 | Error Boundary — class component, fallback UI, console logging |
 | 18 | UI Components & Styles — Card/CardElevated components, card variant convention |
 | 19 | Species Validation — band size + morphometric range warnings, disposition requires notes |
+| 20 | Band History View — encounter timeline, foreign band entities, Band Inventory enhancements |
 
 ---
 
-## Phase 19 — Species Validation ✅
-
-- `src/data/band-sizes.json` — ALPHA → string[] of valid band sizes (1,226 species, from Validations.xlsx Tab 1)
-- `src/data/measurement-ranges.json` — ALPHA → `{ weight, wing, tail }` each with `{ femaleMin, femaleMax, maleMin, maleMax }` (815 species, 0 = omitted)
-- New validation rules in `src/utils/validation.ts`:
-  - Band size mismatch: warn if selected band's size is not in the species' valid size list
-  - Measurement out of range: warn if wing/bodyMass/tail is outside the expected range for the species + sex
-  - Sex unknown: warn only if outside *both* male and female ranges
-  - Disposition requires notes: warn if Disposition is set but Notes is empty
-  - Disposition × Status: deferred — need to confirm mortality status codes with Hallie
-- Bird Record Form: warnings inline below Band Number, Wing, Tail, Body Mass fields
-- Tests: 21 new (106 total)
-
----
-
-## Phase 20 — Band History View
-
-Goal: Encounter timeline for a band, accessible from Band Inventory and from banding records.
+## Phase 20 — Band History View ✅
 
 ### 20a — Band Inventory Enhancements
-- Expand "View All Bands" with search/filter: filter by status ("deployed"), band size, sort by last seen date (default) or band number
+- Filter by status, band size; sort by last-seen date (default) or band number
+- Last seen date derived at load time from most recent record referencing the band
 - Band row tap → Band History detail view
-- Last seen date derived from most recent banding record referencing the band
 
 ### 20b — Band History Detail View
-- Header: band number, current status, species banding code, recapped (Y/N), last encounter date
-- Encounter timeline: each row shows date, species, station, capture code, bander, WRP, sex, photo indicator, has-notes
-- Each encounter row links to its session
-- Read-only — no editing from this view
-- Entry points: Band Inventory row tap + band number link on banding record form
+- `src/components/BandHistoryView.tsx` — encounter timeline component
+- Header: band number, status/species/recap/last-seen chips
+- Timeline sorted by date desc; each row links to its session
+- Each row: date+location, speciesCode, bbpCode chip, sex, WRP, bander initials, photo/notes indicators
+- Entry points: Band Inventory row + "View band history →" link in BirdRecordForm
 
 ### 20c — Foreign Band Entity Flow
-- Foreign bands get a Band entity (status: `foreign`) rather than freetext
-- When a user enters an unknown band number in BandSearchSelect, prompt to create a foreign Band entity (with optional size field)
-- Replaces current freetext "foreign recapture" flow
-- Foreign bands appear in Band Inventory and have history timelines like inventory bands
-- Note: full foreign band representation (BBL lookup, ownership, etc.) deferred to later phase
+- `BandStatus` expanded to include `'foreign'`
+- `BandSearchSelect` creates a real Band entity (status: `foreign`) via two-step mini-form when user enters an unknown band number (≥4 chars, no exact match)
+- Foreign bands appear in Band Inventory and have history timelines
+- Legacy `{ kind: 'foreign'; bandNumber: string }` kept in BandSelection for existing records without Band entities
+- DB: `by-band` index on records store (IndexedDB v8), `getRecordsByBand()` + `getAllRecords()` helpers
+- Tests: 6 new db-band tests (112 total)
 
 ---
 

@@ -14,7 +14,7 @@ export interface PhotoRecord {
   updatedAt: string
 }
 
-export type BandStatus = 'available' | 'deployed' | 'destroyed' | 'lost' | 'replaced'
+export type BandStatus = 'available' | 'deployed' | 'foreign' | 'destroyed' | 'lost' | 'replaced'
 export type BandType = 'Standard' | 'Buffy' | 'Giant' | 'Lockout'
 
 export interface Band {

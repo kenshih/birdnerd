@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session, Net, Location, Band } from '../types'
 import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate, savePhoto } from '../db'
@@ -51,7 +51,9 @@ interface BanderOption {
 }
 
 export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome, onViewBandHistory }: Props) {
-  const { register, handleSubmit, setValue, watch, reset } = useForm<FormValues>()
+  const { register, handleSubmit, setValue, watch, reset, getValues } = useForm<FormValues>()
+  const recordIdRef = useRef(record?.id ?? generateId())
+  const createdAtRef = useRef<string | undefined>(record?.createdAt)
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
   const [sessionLocation, setSessionLocation] = useState<Location | undefined>()
@@ -59,6 +61,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
   const [allBands, setAllBands] = useState<Band[]>([])
   const [bandSelection, setBandSelection] = useState<BandSelection>({ kind: 'none' })
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   const handlePendingPhotosChange = useCallback((photos: PendingPhoto[]) => {
     setPendingPhotos(photos)
@@ -191,22 +194,21 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
     setValue(field, `${hh}:${mm}`)
   }
 
-  async function onSubmit(data: FormValues) {
+  async function doSave(data: FormValues, bandSel: BandSelection) {
     const now = new Date().toISOString()
+    if (!createdAtRef.current) createdAtRef.current = now
 
-    // Resolve bandId and bandNumber from selection
     let bandId: string | undefined
     let bandNumber: string | undefined
-    if (bandSelection.kind === 'band') {
-      bandId = bandSelection.band.id
-      bandNumber = bandSelection.band.bandNumber
-    } else if (bandSelection.kind === 'unbanded') {
+    if (bandSel.kind === 'band') {
+      bandId = bandSel.band.id
+      bandNumber = bandSel.band.bandNumber
+    } else if (bandSel.kind === 'unbanded') {
       bandNumber = 'UNBANDED'
-    } else if (bandSelection.kind === 'foreign') {
-      bandNumber = bandSelection.bandNumber
+    } else if (bandSel.kind === 'foreign') {
+      bandNumber = bandSel.bandNumber
     }
 
-    // Discard recapture fields when capture code ≠ R
     if (data.bbpCode !== 'R') {
       data.presentCondition = undefined
       data.replacedBandNumber = undefined
@@ -214,19 +216,18 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
 
     const saved: BirdRecord = {
       ...data,
-      id: record?.id ?? generateId(),
+      id: recordIdRef.current,
       sessionId: session.id,
       bandId,
       bandNumber,
-      createdAt: record?.createdAt ?? now,
+      createdAt: createdAtRef.current,
       updatedAt: now,
     }
 
-    // If new banding (capture code = 1/N) and band is available, update band to deployed
     let bandUpdate: Band | undefined
-    if (bandSelection.kind === 'band' && bandSelection.band.status === 'available' && isNewBanding(data.bbpCode)) {
+    if (bandSel.kind === 'band' && bandSel.band.status === 'available' && isNewBanding(data.bbpCode)) {
       bandUpdate = {
-        ...bandSelection.band,
+        ...bandSel.band,
         status: 'deployed',
         currentSpecies: data.speciesCode,
         deploymentDate: session.date,
@@ -236,7 +237,6 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
 
     await saveRecordWithBandUpdate(saved, bandUpdate)
 
-    // Flush any pending photos (taken before record had an ID)
     for (const pp of pendingPhotos) {
       await savePhoto({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
@@ -248,8 +248,22 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
         updatedAt: now,
       })
     }
+  }
 
+  async function onSubmit(data: FormValues) {
+    await doSave(data, bandSelection)
     onSaved()
+  }
+
+  async function handleForeignBandCreated(band: Band) {
+    setAutoSaveStatus('saving')
+    try {
+      await doSave(getValues(), { kind: 'band', band })
+      setAutoSaveStatus('saved')
+    } catch (err) {
+      console.error('Auto-save failed:', err)
+      setAutoSaveStatus('error')
+    }
   }
 
   return (
@@ -270,6 +284,15 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
       <p style={{ color: '#555', fontSize: '0.85rem', marginTop: 0 }}>
         {sessionLocation?.banderLocationId ?? ''} · {session.date}
       </p>
+      {autoSaveStatus === 'saving' && (
+        <p style={{ color: '#888', fontSize: '0.8rem', margin: '0 0 0.5rem' }}>Saving draft…</p>
+      )}
+      {autoSaveStatus === 'saved' && (
+        <p style={{ color: '#2d6a4f', fontSize: '0.8rem', margin: '0 0 0.5rem' }}>Draft auto-saved — finish and submit to complete.</p>
+      )}
+      {autoSaveStatus === 'error' && (
+        <p style={{ color: '#c0392b', fontSize: '0.8rem', margin: '0 0 0.5rem' }}>Auto-save failed — check console for details.</p>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)}>
         <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
@@ -296,6 +319,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
               value={bandSelection}
               onChange={handleBandSelect}
               currentBandId={record?.bandId}
+              onForeignBandCreated={handleForeignBandCreated}
             />
             {bandSelection.kind === 'band' && bandSelection.band.status === 'deployed' && (
               <div style={{ marginTop: '0.3rem', padding: '0.4rem 0.5rem', background: '#cce5ff', borderRadius: 6, fontSize: '0.8rem' }}>

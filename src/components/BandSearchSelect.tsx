@@ -1,40 +1,57 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import type { Band } from '../types'
-import { inputStyle, dropdownStyle as baseDropdownStyle } from '../styles/theme'
+import type { Band, BandType } from '../types'
+import { inputStyle, dropdownStyle as baseDropdownStyle, btnStyle } from '../styles/theme'
+import { BAND_SIZE_CODES } from '../data/codes'
+import { saveBand } from '../db'
 
 export type BandSelection =
   | { kind: 'band'; band: Band }
   | { kind: 'unbanded' }
-  | { kind: 'foreign'; bandNumber: string }
+  | { kind: 'foreign'; bandNumber: string }  // legacy: existing records without a Band entity
   | { kind: 'none' }
 
 interface Props {
   bands: Band[]
   value: BandSelection
   onChange: (selection: BandSelection) => void
-  /** Band ID already assigned to this record (so it stays selectable even if deployed) */
+  /** Band ID already assigned to this record (so it stays selectable even if deployed/foreign) */
   currentBandId?: string
+  /** Called after a new foreign Band entity is created and selected, so the caller can auto-save the linked record */
+  onForeignBandCreated?: (band: Band) => Promise<void>
 }
 
-export default function BandSearchSelect({ bands, value, onChange, currentBandId }: Props) {
+function generateId(): string {
+  return `band-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+}
+
+export default function BandSearchSelect({ bands, value, onChange, currentBandId, onForeignBandCreated }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [showCreateForm, setShowCreateForm] = useState(false)
+  const [createSize, setCreateSize] = useState('')
+  const [creating, setCreating] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Close on outside click
   useEffect(() => {
     function handle(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+        setShowCreateForm(false)
+        setCreateSize('')
+      }
     }
     document.addEventListener('mousedown', handle)
     return () => document.removeEventListener('mousedown', handle)
   }, [])
 
-  // Show available and deployed bands — deployed bands are valid recapture targets
-  // Retired/destroyed bands are excluded unless they're the current record's band
+  // Show available, deployed, and foreign bands — all are valid selection targets
+  // Retired/destroyed bands excluded unless they're the current record's band
   const filtered = useMemo(() => {
-    const selectable = bands.filter(b => b.status === 'available' || b.status === 'deployed' || b.id === currentBandId)
+    const selectable = bands.filter(b =>
+      b.status === 'available' || b.status === 'deployed' || b.status === 'foreign' || b.id === currentBandId
+    )
     if (!search) return selectable.slice(0, 50)
     return selectable.filter(b => b.bandNumber.includes(search)).slice(0, 50)
   }, [bands, search, currentBandId])
@@ -55,19 +72,38 @@ export default function BandSearchSelect({ bands, value, onChange, currentBandId
   function handleSelect(sel: BandSelection) {
     onChange(sel)
     setSearch('')
+    setShowCreateForm(false)
+    setCreateSize('')
     setOpen(false)
   }
 
   function handleInputChange(text: string) {
     setSearch(text)
+    setShowCreateForm(false)
     if (!open) setOpen(true)
-    // Clear selection when user starts typing something different
-    if (value.kind !== 'none') {
-      onChange({ kind: 'none' })
-    }
+    if (value.kind !== 'none') onChange({ kind: 'none' })
   }
 
-  const showForeignOption = search.length >= 5 && !hasExactMatch
+  async function handleCreateForeign() {
+    if (!search.trim()) return
+    setCreating(true)
+    const now = new Date().toISOString()
+    const newBand: Band = {
+      id: generateId(),
+      bandNumber: search.trim(),
+      status: 'foreign',
+      bandSize: createSize,
+      bandType: 'Standard' as BandType,
+      createdAt: now,
+      updatedAt: now,
+    }
+    await saveBand(newBand)
+    setCreating(false)
+    handleSelect({ kind: 'band', band: newBand })
+    await onForeignBandCreated?.(newBand)
+  }
+
+  const showForeignOption = search.length >= 4 && !hasExactMatch
 
   return (
     <div ref={ref} style={{ position: 'relative' }}>
@@ -103,16 +139,52 @@ export default function BandSearchSelect({ bands, value, onChange, currentBandId
             </div>
           ))}
 
-          {showForeignOption && (
-            <div style={{ ...optionStyle, borderTop: '1px solid #eee' }} onClick={() => handleSelect({ kind: 'foreign', bandNumber: search })}>
+          {showForeignOption && !showCreateForm && (
+            <div
+              style={{ ...optionStyle, borderTop: '1px solid #eee' }}
+              onClick={() => setShowCreateForm(true)}
+            >
               <span style={{ fontFamily: 'monospace', fontWeight: 500 }}>{search}</span>
-              <span style={{ ...miniChip, background: '#fff3cd' }}>foreign recapture</span>
+              <span style={{ ...miniChip, background: '#fff3cd' }}>add as foreign band →</span>
+            </div>
+          )}
+
+          {showForeignOption && showCreateForm && (
+            <div style={{ padding: '0.5rem', borderTop: '1px solid #eee', background: '#fffdf0' }}>
+              <div style={{ fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.4rem' }}>
+                Add foreign band: <span style={{ fontFamily: 'monospace' }}>{search}</span>
+              </div>
+              <select
+                value={createSize}
+                onChange={e => setCreateSize(e.target.value)}
+                style={{ ...inputStyle, marginBottom: '0.4rem', fontSize: '0.85rem' }}
+              >
+                <option value="">Band size (optional)</option>
+                {BAND_SIZE_CODES.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}
+              </select>
+              <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  onClick={handleCreateForeign}
+                  disabled={creating}
+                  style={{ ...btnStyle('#2d6a4f'), fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
+                >
+                  {creating ? 'Adding...' : 'Add Foreign Band'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateForm(false) }}
+                  style={{ ...btnStyle('#888'), fontSize: '0.8rem', padding: '0.3rem 0.6rem' }}
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           )}
 
           {filtered.length === 0 && !showForeignOption && search && (
             <div style={{ padding: '0.5rem', color: '#888', fontSize: '0.85rem', textAlign: 'center' }}>
-              No bands match. Type full number for foreign recapture.
+              No bands match.
             </div>
           )}
         </div>
@@ -125,6 +197,7 @@ function statusBg(status: string): string {
   switch (status) {
     case 'available': return '#d4edda'
     case 'deployed': return '#cce5ff'
+    case 'foreign': return '#fff3cd'
     default: return '#e2e3e5'
   }
 }
@@ -150,7 +223,7 @@ function chipStyle(kind: string): React.CSSProperties {
 
 const dropdownStyle: React.CSSProperties = {
   ...baseDropdownStyle,
-  maxHeight: 250,
+  maxHeight: 300,
   overflowY: 'auto',
 }
 

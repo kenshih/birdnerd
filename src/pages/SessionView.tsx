@@ -231,7 +231,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
         record={view.record}
         recordSequence={recordSequence}
         onSaved={() => { loadRecords(); setView({ mode: 'list' }) }}
-        onCancel={() => setView({ mode: 'list' })}
+        onCancel={() => { loadRecords(); setView({ mode: 'list' }) }}
         onHome={onHome}
         onViewBandHistory={onViewBandHistory}
       />
