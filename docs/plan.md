@@ -80,13 +80,14 @@ Goal: Establish npm workspace structure with minimal disruption, keep the curren
 - Verify: field PWA offline, service worker, and bundle behavior unchanged after the move
 - All existing tests pass from new structure
 
-### 21b — OCR App Skeleton
+### 21b — OCR App Skeleton ✅
 - Create `apps/ocr/` as a separate Vite PWA with its own build and config
 - Add a minimal placeholder UI that proves the app builds, runs, and can evolve independently
 - Configure `apps/ocr/` base path / asset paths for GitHub Pages deploy to `/birdnerd/ocr/`
 - Establish app-specific version injection/display pattern for the OCR app as well
 - Add/update GitHub Actions workflow so both apps deploy correctly and the OCR app can be verified end to end on GitHub Pages
 - Verify OCR app loads successfully from its production subpath
+- Keep `/birdnerd/ocr/` excluded from the field app's Workbox navigation fallback so the field PWA does not hijack OCR routes on the shared GitHub Pages site
 
 ### 21c — Minimal Shared Package Bootstrap
 - Create `packages/shared/` as a tiny internal workspace package
