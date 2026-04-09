@@ -466,6 +466,7 @@ A single JSON file that contains all managed reference and operational data, pro
 - GitHub Pages static hosting
 - Client-side rendering only (no Node.js backend required)
 - **PWA update mechanism:** `registerType: 'prompt'` — new service worker waits for user action. `useRegisterSW()` hook detects updates; `UpdateBanner` component offers "Update now" (triggers `SKIP_WAITING` + reload) or "Later" (dismisses until next app open). App version from `package.json` injected at build time via Vite `define` and displayed on About page.
+- **Multi-app PWA constraint:** the field app is served from `/birdnerd/` and the OCR app from `/birdnerd/ocr/` under the same GitHub Pages site. The field app service worker scope overlaps the OCR subtree, so the field app's Workbox navigation fallback must denylist `/birdnerd/ocr/` to avoid serving the field app shell for OCR routes.
 
 ### Future (Phase 15+)
 

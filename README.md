@@ -74,6 +74,14 @@ apps/field/
   vitest.config.ts
 ```
 
+## Multi-App PWA Note
+
+Both PWAs are deployed under the same GitHub Pages site:
+- field app at `/birdnerd/`
+- OCR app at `/birdnerd/ocr/`
+
+Because the field app's service worker lives under `/birdnerd/`, it can otherwise intercept OCR navigations. The field app's Workbox navigation fallback must continue to denylist `/birdnerd/ocr/` so the OCR subtree remains independently loadable.
+
 ## Documentation
 
 | Document | Purpose |

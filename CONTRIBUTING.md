@@ -82,3 +82,5 @@ npm run preview:combined
 ```
 
 Note: The field app keeps the `/birdnerd/` base path in `apps/field/vite.config.ts`, and the OCR app uses `/birdnerd/ocr/` in `apps/ocr/vite.config.ts`.
+
+Important: because both PWAs share one GitHub Pages site, the field app service worker scope overlaps the OCR path. Keep `/birdnerd/ocr/` excluded from the field app's Workbox navigation fallback, or the field app can hijack OCR navigations.
