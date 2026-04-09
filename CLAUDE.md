@@ -21,16 +21,14 @@ PWA for bird banders to collect, manage, and export banding data. Offline-first,
 ## Project Structure
 
 ```
-src/
-  pages/        — top-level screens (HomeScreen, SessionView, BirdRecordForm, BandInventory, etc.)
-  components/   — reusable UI (SearchableSelect, BandSearchSelect, Collapsible, PageHeader, etc.)
-  data/         — code tables (codes.ts, species.ts), seed.json, bundle-schema.ts
-  db/           — IndexedDB setup, CRUD, migrations (index.ts)
-  types/        — TypeScript interfaces (index.ts)
-  utils/        — validation, CSV export/import, data bundle export/import
-  test/         — vitest tests
+apps/
+  field/
+    src/        — current field PWA source
+    public/     — field app static assets + seed data
+  ocr/          — future OCR PWA workspace
+packages/
+  shared/       — future shared domain package
 docs/           — specs, plan, entities, archives
-public/data/    — seed.json, example-data.json (Hallie's sample data)
 nogit/          — Hallie's source docs (not committed)
 ```
 
@@ -40,19 +38,18 @@ nogit/          — Hallie's source docs (not committed)
 - **Update specs when changing behavior.** Product spec, tech spec, ux spec, and plan should stay in sync.
 - **Bundle schema versioning.** Bump `BUNDLE_VERSION` in `bundle-schema.ts` when adding/removing/renaming fields on bundled entities. Write a migration function.
 - **IndexedDB versioning.** Bump version in `db/index.ts` upgrade handler when adding stores or indexes.
-- **Code tables** live in `src/data/codes.ts`. Species list in `src/data/species.ts`.
-- **Pure validation functions** in `src/utils/validation.ts` — no DB or React deps.
+- **Code tables** live in `apps/field/src/data/codes.ts`. Species list in `apps/field/src/data/species.ts`.
+- **Pure validation functions** in `apps/field/src/utils/validation.ts` — no DB or React deps.
 - **Tests** via vitest + fake-indexeddb. Run: `npm test`
 
 ## Commands
 
 ```bash
 npm run dev               # local dev server
-npm run dev -- --host     # dev server accessible on LAN (iPhone testing)
+npm run dev:host          # dev server accessible on LAN
 npm run build             # production build
-npm run preview -- --host # preview production build on LAN
+npm run preview:host      # preview production build on LAN
 npm test                  # run vitest
-npm run deploy            # build + deploy to GitHub Pages
 ```
 
 ## Working Style

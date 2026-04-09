@@ -24,7 +24,7 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 
 - **Frontend:** React 19 + TypeScript + Vite (client-side rendering only, no SSR ever)
 - **PWA:** vite-plugin-pwa (offline capability, installable, home screen icon)
-- **Forms:** React Hook Form + custom validation (src/utils/validation.ts)
+- **Forms:** React Hook Form + custom validation (`apps/field/src/utils/validation.ts`)
 - **Local Storage:** IndexedDB (via `idb` package)
 - **Database (future):** Supabase (PostgreSQL + Auth)
 - **API (future):** Generated from schema (OpenAPI or GraphQL TBD)
@@ -241,7 +241,7 @@ The master spreadsheet reveals that many fields have **IBP** and **BBL** code va
 
 ### Agency Export Formats
 
-Three export formats, all implemented in `src/utils/agencyExport.ts`.
+Three export formats, all implemented in `apps/field/src/utils/agencyExport.ts`.
 
 #### IBP (MAPS Master List) — 49 columns
 
@@ -312,7 +312,7 @@ All imported from MASTER BANDING DATA.xlsx → LOOKUPS sheet:
 
 ### Seed Data
 
-Seed data ships as a JSON file (`public/data/seed.json`) in the same format as the export bundle. On first launch (empty IndexedDB), the app loads this file to populate initial reference data (locations, nets, people, banders). The seed file can be swapped or emptied for new organizations.
+Seed data ships as a JSON file (`apps/field/public/data/seed.json`) in the same format as the export bundle. On first launch (empty IndexedDB), the app loads this file to populate initial reference data (locations, nets, people, banders). The seed file can be swapped or emptied for new organizations.
 
 ---
 
@@ -406,7 +406,7 @@ A single JSON file that contains all managed reference and operational data, pro
 
 **Not included:** Code tables and species list (static app resources, not user data).
 
-**Schema definition:** `src/data/bundle-schema.ts` — TypeScript interface + version constant. This is the single source of truth for the bundle format.
+**Schema definition:** `apps/field/src/data/bundle-schema.ts` — TypeScript interface + version constant. This is the single source of truth for the bundle format.
 
 **Versioning convention:**
 - `version` is an integer, starting at `1`
@@ -448,8 +448,8 @@ A single JSON file that contains all managed reference and operational data, pro
 - Preserve existing CSV import/export for banding records (simpler workflow for session-level data exchange)
 
 **Seed data:**
-- On first launch (empty IndexedDB), the app loads a bundled JSON seed file in the same format (`public/data/seed.json`)
-- This replaces the hardcoded `src/data/seed.ts` config — seed data becomes a runtime asset, not a build-time constant
+- On first launch (empty IndexedDB), the app loads a bundled JSON seed file in the same format (`apps/field/public/data/seed.json`)
+- This replaces the hardcoded `apps/field/src/data/seed.ts` config — seed data becomes a runtime asset, not a build-time constant
 
 ### Future: BBL & Legacy Data
 
@@ -538,7 +538,7 @@ A single JSON file that contains all managed reference and operational data, pro
 | **UpdateBanner** | "New version available" prompt with dismiss/update | App (global, fixed bottom) |
 | **ErrorBoundary** | Catches runtime errors, shows fallback UI with reset | App (wraps entire app) |
 
-**Shared styles:** `src/styles/theme.ts` exports design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). See § 11 for details.
+**Shared styles:** `apps/field/src/styles/theme.ts` exports design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). See § 11 for details.
 
 ---
 
@@ -551,7 +551,7 @@ A single JSON file that contains all managed reference and operational data, pro
 
 ### Inline Styles & Design Tokens
 
-**Current state:** `src/styles/theme.ts` centralizes design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). Imported by 13+ files.
+**Current state:** `apps/field/src/styles/theme.ts` centralizes design tokens (`colors`) and common style objects (`inputStyle`, `labelStyle`, `cardStyle`, `cardElevatedStyle`, `btnStyle`, `rowStyle`, `nowBtnStyle`, `dropdownStyle`). Imported by 13+ files.
 
 **Card variants:**
 - `cardStyle` — gray background + border. Use for editable forms and inline detail views (session edit, location/person forms, list row cards).

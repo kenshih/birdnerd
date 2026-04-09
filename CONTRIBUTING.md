@@ -5,56 +5,57 @@
 ```bash
 npm install
 npm run dev          # start dev server at localhost:5173
-npm run dev -- --host  # also expose on local network (for iPhone testing)
+npm run dev:host     # also expose on local network
 ```
 
 ## Commands
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start local dev server |
-| `npm run dev -- --host` | Expose on local network (iPhone testing) |
-| `npm run build` | TypeScript check + production build |
-| `npm run preview` | Preview production build locally |
-| `npm run test` | Run unit tests (Vitest) |
-| `npm run lint` | Run ESLint |
+| `npm run dev` | Start the field app dev server from the repo root |
+| `npm run dev:host` | Expose the field app on the local network (iPhone testing) |
+| `npm run build` | TypeScript check + production build for the field app |
+| `npm run preview` | Preview the field app production build locally |
+| `npm run preview:host` | Preview the production build on the local network |
+| `npm run test` | Run field app unit tests (Vitest) |
+| `npm run lint` | Run ESLint for the field app |
 
 ## iPhone / iPad Testing (Without Deploying)
 
 1. Make sure your Mac and phone are on the same WiFi
-2. Run `npm run dev -- --host`
+2. Run `npm run dev:host`
 3. Copy the `Network:` URL from the terminal output
 4. Open it in Safari on your iPhone
 5. To install as an app: Share → Add to Home Screen
 
 ## Code Organization
 
-- `src/types/` — shared TypeScript interfaces (edit here first when adding fields)
-- `src/data/` — species list, code tables, bundle schema (update species here, verify codes against IBP)
-  - `src/data/bundle-schema.ts` — DataBundle TypeScript interface + `BUNDLE_VERSION` constant (single source of truth for the backup format)
-  - `public/data/seed.json` — seed data loaded at runtime on first launch (same format as backup bundles)
-- `src/db/` — IndexedDB read/write functions
-- `src/pages/` — top-level screen components
-- `src/components/` — reusable UI components
+- `apps/field/src/types/` — shared TypeScript interfaces (edit here first when adding fields)
+- `apps/field/src/data/` — species list, code tables, bundle schema (update species here, verify codes against IBP)
+  - `apps/field/src/data/bundle-schema.ts` — DataBundle TypeScript interface + `BUNDLE_VERSION` constant
+  - `apps/field/public/data/seed.json` — seed data loaded at runtime on first launch
+- `apps/field/src/db/` — IndexedDB read/write functions
+- `apps/field/src/pages/` — top-level screen components
+- `apps/field/src/components/` — reusable UI components
 
 ## Adding a New Field
 
-1. Add it to `BirdRecord` in `src/types/index.ts`
+1. Add it to `BirdRecord` in `apps/field/src/types/index.ts`
 2. Add the input to `BirdRecordForm.tsx`
-3. Add any code table to `src/data/codes.ts` if needed
+3. Add any code table to `apps/field/src/data/codes.ts` if needed
 
 ## Testing
 
 ```bash
 npm test              # run tests in watch mode (re-runs on file changes)
-npx vitest run        # single run (CI-friendly)
+npm --workspace @birdnerd/field exec vitest run
 ```
 
 **Stack:** [Vitest](https://vitest.dev/) + [fake-indexeddb](https://github.com/nicedoc/fake-indexeddb) for IndexedDB integration tests.
 
 **Conventions:**
-- Test files live **next to the code they test**, named `*.test.ts` (e.g., `src/utils/dataBundle.test.ts` tests `src/utils/dataBundle.ts`)
-- `src/test/` is for **test infrastructure only** — setup files, shared fixtures, helpers. Not for test cases.
+- Test files live **next to the code they test**, named `*.test.ts` (e.g., `apps/field/src/utils/dataBundle.test.ts` tests `apps/field/src/utils/dataBundle.ts`)
+- `apps/field/src/test/` is for **test infrastructure only** — setup files, shared fixtures, helpers. Not for test cases.
 
 **Writing new tests:**
 - Pure utility functions: test directly, no special setup needed
@@ -65,7 +66,7 @@ npx vitest run        # single run (CI-friendly)
 
 ```bash
 npm run build
-# push dist/ to gh-pages branch, or configure GitHub Actions
+# GitHub Actions deploys apps/field/dist to GitHub Pages
 ```
 
-Note: When deploying to a repo subdirectory (e.g. `username.github.io/birdnerd`), uncomment the `base` line in `vite.config.ts`.
+Note: The field app keeps the `/birdnerd/` base path in `apps/field/vite.config.ts`.

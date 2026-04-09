@@ -45,7 +45,7 @@ Phases 1–20 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases
 - Band row tap → Band History detail view
 
 ### 20b — Band History Detail View
-- `src/components/BandHistoryView.tsx` — encounter timeline component
+- `apps/field/src/components/BandHistoryView.tsx` — encounter timeline component
 - Header: band number, status/species/recap/last-seen chips
 - Timeline sorted by date desc; each row links to its session
 - Each row: date+location, speciesCode, bbpCode chip, sex, WRP, bander initials, photo/notes indicators
