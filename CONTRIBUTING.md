@@ -6,6 +6,7 @@
 npm install
 npm run dev          # start dev server at localhost:5173
 npm run dev:host     # also expose on local network
+npm run dev:ocr      # start the OCR app dev server
 ```
 
 ## Commands
@@ -14,9 +15,16 @@ npm run dev:host     # also expose on local network
 |---|---|
 | `npm run dev` | Start the field app dev server from the repo root |
 | `npm run dev:host` | Expose the field app on the local network (iPhone testing) |
+| `npm run dev:ocr` | Start the OCR app dev server |
+| `npm run dev:ocr:host` | Expose the OCR app on the local network |
 | `npm run build` | TypeScript check + production build for the field app |
+| `npm run build:ocr` | TypeScript check + production build for the OCR app |
+| `npm run build:combined` | Build both apps and assemble a local Pages-style site folder |
 | `npm run preview` | Preview the field app production build locally |
 | `npm run preview:host` | Preview the production build on the local network |
+| `npm run preview:ocr` | Preview the OCR production build locally |
+| `npm run preview:ocr:host` | Preview the OCR production build on the local network |
+| `npm run preview:combined` | Serve the assembled Pages-style site locally on port `4173` under `/birdnerd/` |
 | `npm run test` | Run field app unit tests (Vitest) |
 | `npm run lint` | Run ESLint for the field app |
 
@@ -66,7 +74,11 @@ npm --workspace @birdnerd/field exec vitest run
 
 ```bash
 npm run build
-# GitHub Actions deploys apps/field/dist to GitHub Pages
+npm run build:ocr
+npm run preview:combined
+# GitHub Actions deploys a combined Pages artifact:
+# field app at /birdnerd/
+# OCR app at /birdnerd/ocr/
 ```
 
-Note: The field app keeps the `/birdnerd/` base path in `apps/field/vite.config.ts`.
+Note: The field app keeps the `/birdnerd/` base path in `apps/field/vite.config.ts`, and the OCR app uses `/birdnerd/ocr/` in `apps/ocr/vite.config.ts`.

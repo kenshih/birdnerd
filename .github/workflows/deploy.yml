@@ -30,10 +30,18 @@ jobs:
       - run: npm ci
 
       - run: npm run build
+      - run: npm run build:ocr
+
+      - name: Assemble Pages artifact
+        run: |
+          rm -rf site
+          mkdir -p site/ocr
+          cp -R apps/field/dist/. site/
+          cp -R apps/ocr/dist/. site/ocr/
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/field/dist
+          path: site
 
       - uses: actions/deploy-pages@v4
         id: deployment

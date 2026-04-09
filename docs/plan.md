@@ -65,7 +65,7 @@ Phases 1–20 complete. See [plan.v4 (archived)](archives/plan.v4.md) for phases
 
 Goal: Establish npm workspace structure with minimal disruption, keep the current field app working at the same URL, and create the foundation for a future OCR PWA.
 
-### 21a — Workspace Restructure (minimal disruption)
+### 21a — Workspace Restructure (minimal disruption) ✅
 - Convert to npm workspaces monorepo
 - Structure: `apps/field/` (current PWA), `apps/ocr/` (future OCR PWA), `packages/shared/` (domain logic), reserve `tools/` as an extension point for future offline utilities
 - Root `package.json` manages npm workspaces and shared scripts; each workspace (`apps/field`, `apps/ocr`, `packages/shared`) gets its own `package.json`

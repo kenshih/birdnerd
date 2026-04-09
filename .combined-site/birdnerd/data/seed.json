@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "exportedAt": "2026-03-21T00:00:00.000Z",
+  "locations": [
+    {
+      "id": "loc-gcbs",
+      "banderLocationId": "GCBS",
+      "bblLocationId": null,
+      "name": "Galindo Creek Banding Station",
+      "latitude": 37.9365,
+      "longitude": -122.0855,
+      "country": "US",
+      "stateProvince": "CA",
+      "remarks": "",
+      "createdAt": "2026-03-21T00:00:00.000Z",
+      "updatedAt": "2026-03-21T00:00:00.000Z"
+    },
+    {
+      "id": "loc-mcfs",
+      "banderLocationId": "MCFS",
+      "bblLocationId": null,
+      "name": "Mitchell Canyon Field Station",
+      "latitude": 37.9218,
+      "longitude": -121.9414,
+      "country": "US",
+      "stateProvince": "CA",
+      "remarks": "",
+      "createdAt": "2026-03-21T00:00:00.000Z",
+      "updatedAt": "2026-03-21T00:00:00.000Z"
+    }
+  ],
+  "nets": [
+    { "id": "net-gcbs-1", "locationId": "loc-gcbs", "label": "1", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-2", "locationId": "loc-gcbs", "label": "2", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-3", "locationId": "loc-gcbs", "label": "3", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-4", "locationId": "loc-gcbs", "label": "4", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-5", "locationId": "loc-gcbs", "label": "5", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-6", "locationId": "loc-gcbs", "label": "6", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-7", "locationId": "loc-gcbs", "label": "7", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-8", "locationId": "loc-gcbs", "label": "8", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-9", "locationId": "loc-gcbs", "label": "9", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "net-gcbs-10", "locationId": "loc-gcbs", "label": "10", "createdAt": "2026-03-21T00:00:00.000Z", "active": true, "updatedAt": "2026-03-21T00:00:00.000Z" }
+  ],
+  "people": [
+    { "id": "person-hd", "name": "Hallie Daly", "initials": "HD", "active": true, "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "person-jw", "name": "Julie Woodruff", "initials": "JW", "active": true, "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "person-ts", "name": "Tatyana Soto-Bartzi", "initials": "TS", "active": true, "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "person-jvd", "name": "Joanna van Dyk", "initials": "JVD", "active": true, "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "person-lc", "name": "Lucas Corneliussen", "initials": "LC", "active": true, "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" }
+  ],
+  "banders": [
+    { "id": "bander-hd", "personId": "person-hd", "role": "Master Bander", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "bander-jw", "personId": "person-jw", "role": "Sub-permittee", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "bander-ts", "personId": "person-ts", "role": "Sub-permittee", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "bander-jvd", "personId": "person-jvd", "role": "Sub-permittee", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" },
+    { "id": "bander-lc", "personId": "person-lc", "role": "Sub-permittee", "createdAt": "2026-03-21T00:00:00.000Z", "updatedAt": "2026-03-21T00:00:00.000Z" }
+  ],
+  "sessions": [],
+  "sessionBanderLogs": [],
+  "sessionNetLogs": [],
+  "bands": [],
+  "records": []
+}

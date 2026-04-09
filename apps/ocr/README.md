@@ -1,5 +1,15 @@
 # OCR App
 
-This workspace is reserved for the future BirdNerd OCR PWA.
+BirdNerd OCR is a separate PWA workspace that will live at `/birdnerd/ocr/`.
 
-Phase 21a creates the workspace and package boundary only. App implementation comes in Phase 21b.
+Phase 21b provides a minimal scaffold so the app can build and deploy end to end before OCR features are added.
+
+## Commands
+
+Run from the repo root:
+
+```bash
+npm run dev:ocr
+npm run build:ocr
+npm run preview:ocr
+```

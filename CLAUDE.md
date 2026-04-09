@@ -25,7 +25,7 @@ apps/
   field/
     src/        — current field PWA source
     public/     — field app static assets + seed data
-  ocr/          — future OCR PWA workspace
+  ocr/          — OCR PWA workspace
 packages/
   shared/       — future shared domain package
 docs/           — specs, plan, entities, archives
@@ -47,8 +47,13 @@ nogit/          — Hallie's source docs (not committed)
 ```bash
 npm run dev               # local dev server
 npm run dev:host          # dev server accessible on LAN
+npm run dev:ocr           # OCR app dev server
 npm run build             # production build
+npm run build:ocr         # OCR production build
+npm run build:combined    # assemble Pages-style site output
 npm run preview:host      # preview production build on LAN
+npm run preview:ocr       # OCR preview
+npm run preview:combined  # serve Pages-style combined site locally under /birdnerd/
 npm test                  # run vitest
 ```
 

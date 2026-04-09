@@ -6,7 +6,7 @@ A Progressive Web App for bird banders collecting field data, following protocol
 
 Targets iPhone and iPad (installable as a home screen app), with Android support. Works fully offline.
 
-This repository is an npm workspaces monorepo. The production field app currently lives in `apps/field/`.
+This repository is an npm workspaces monorepo. The production field app lives in `apps/field/`, and the OCR companion PWA lives in `apps/ocr/`.
 
 ## Quick Start
 
@@ -19,6 +19,7 @@ This repository is an npm workspaces monorepo. The production field app currentl
 ```bash
 npm install
 npm run dev
+npm run dev:ocr
 ```
 
 The dev server starts at `http://localhost:5173`.
@@ -33,7 +34,11 @@ The dev server starts at `http://localhost:5173`.
 
 ```bash
 npm run build
+npm run build:ocr
+npm run build:combined
 npm run preview
+npm run preview:ocr
+npm run preview:combined
 ```
 
 ## Tech Stack
@@ -50,7 +55,7 @@ npm run preview
 ```
 apps/
   field/        Production BirdNerd field PWA
-  ocr/          Future OCR PWA workspace (scaffold only in Phase 21a)
+  ocr/          OCR PWA workspace deployed at /birdnerd/ocr/
 packages/
   shared/       Future shared domain package (scaffold only in Phase 21a)
 docs/
@@ -78,6 +83,7 @@ apps/field/
 | [docs/ux-specifications.md](docs/ux-specifications.md) | Field app screens, layouts, wireframes, interaction patterns |
 | [docs/tech-specifications.md](docs/tech-specifications.md) | Field app architecture, data model (full schema), code systems, deployment |
 | [docs/entities.md](docs/entities.md) | Field app ER diagram, entity relationships |
+| [apps/ocr/README.md](apps/ocr/README.md) | OCR workspace purpose, commands, and current status |
 
 ## See also
 
