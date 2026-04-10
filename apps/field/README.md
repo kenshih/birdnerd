@@ -2,6 +2,8 @@
 
 BirdNerd's production field PWA lives in this workspace.
 
+Example data lives in `examples/`, including `birdnerd-full-sample.json`.
+
 ## Commands
 
 Run from the repo root:

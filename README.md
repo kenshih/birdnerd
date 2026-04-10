@@ -59,6 +59,8 @@ apps/
 packages/
   shared/       Future shared domain package (scaffold only in Phase 21a)
 docs/
+  apps/         App-specific specs and notes
+  repo/         Monorepo and deployment docs
   plan.md       Project plan and roadmap
   archives/     Previous plan versions
 ```
@@ -87,10 +89,12 @@ Because the field app's service worker lives under `/birdnerd/`, it can otherwis
 | Document | Purpose |
 |----------|---------|
 | [docs/plan.md](docs/plan.md) | Development roadmap, phase tracker, backlog |
-| [docs/product-specifications.md](docs/product-specifications.md) | Field app product vision, entity overview, validation rules |
-| [docs/ux-specifications.md](docs/ux-specifications.md) | Field app screens, layouts, wireframes, interaction patterns |
-| [docs/tech-specifications.md](docs/tech-specifications.md) | Field app architecture, data model (full schema), code systems, deployment |
-| [docs/entities.md](docs/entities.md) | Field app ER diagram, entity relationships |
+| [docs/apps/field/product-specifications.md](docs/apps/field/product-specifications.md) | Field app product vision, entity overview, validation rules |
+| [docs/apps/field/ux-specifications.md](docs/apps/field/ux-specifications.md) | Field app screens, layouts, wireframes, interaction patterns |
+| [docs/apps/field/tech-specifications.md](docs/apps/field/tech-specifications.md) | Field app architecture, data model (full schema), code systems, deployment |
+| [docs/apps/field/entities.md](docs/apps/field/entities.md) | Field app ER diagram, entity relationships |
+| [docs/repo/monorepo.md](docs/repo/monorepo.md) | Workspace layout and monorepo conventions |
+| [docs/repo/deployment.md](docs/repo/deployment.md) | GitHub Pages multi-app deployment and PWA notes |
 | [apps/ocr/README.md](apps/ocr/README.md) | OCR workspace purpose, commands, and current status |
 
 ## See also

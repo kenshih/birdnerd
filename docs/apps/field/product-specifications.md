@@ -1,6 +1,6 @@
 # BirdNerd — Product Specification
 
-**See also:** [tech-specifications.md](tech-specifications.md) (architecture, database schema, implementation details) | [entities.md](entities.md) (ER diagram) | [plan.md](plan.md) (development roadmap)
+**See also:** [tech-specifications.md](tech-specifications.md) (architecture, database schema, implementation details) | [entities.md](entities.md) (ER diagram) | [../../plan.md](../../plan.md) (development roadmap)
 
 ---
 
@@ -32,7 +32,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 ## 3. Screens & User Experience
 
-For comprehensive screen layouts, wireframes, and interaction patterns, see [docs/ux-specifications.md](ux-specifications.md).
+For comprehensive screen layouts, wireframes, and interaction patterns, see [ux-specifications.md](ux-specifications.md).
 
 ---
 

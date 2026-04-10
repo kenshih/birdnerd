@@ -46,9 +46,16 @@ npm run dev:ocr      # start the OCR app dev server
 - `apps/field/src/pages/` — top-level screen components
 - `apps/field/src/components/` — reusable UI components
 
+## Documentation & Changelog
+
+- `docs/plan.md` is forward-looking and tracks current/future work
+- `CHANGELOG.md` is backward-looking and records shipped changes
+- Update `CHANGELOG.md` when a change is user-visible, bumps an app/package version, or meaningfully changes repo/deployment structure
+- Group changelog entries under `Field`, `OCR`, `Shared`, or `Repo` as appropriate
+
 ## Adding a New Field
 
-1. Add it to `BirdRecord` in `apps/field/src/types/index.ts`
+1. Add it to `BirdRecord` in `packages/shared/src/index.ts`
 2. Add the input to `BirdRecordForm.tsx`
 3. Add any code table to `apps/field/src/data/codes.ts` if needed
 

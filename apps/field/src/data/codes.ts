@@ -249,6 +249,7 @@ export const MOLT_LIMITS_CODES = [
   { code: 'M', label: 'M — Molt' },
   { code: 'A', label: 'A — Alternate' },
   { code: 'N', label: 'N — Non-juvenal' },
+  { code: 'X', label: 'X — Mixed Formative & Alternate' },
   { code: 'U', label: 'U — Unknown' },
 ]
 
