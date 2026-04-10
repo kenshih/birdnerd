@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Location, Net } from '../types'
+import type { Location, Net } from '@birdnerd/shared'
 import { getNetsByLocation, saveNet, saveLocation } from '../db'
 import PageHeader from '../components/PageHeader'
 import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'

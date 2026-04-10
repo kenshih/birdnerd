@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { resetDB, saveLocation, saveNet, getActiveNetsByLocation, generateSessionNetLogs, getSessionNetLogs } from '../db'
-import type { Location, Net } from '../types'
+import type { Location, Net } from '@birdnerd/shared'
 import { calcNetHours } from '../pages/SessionView'
 
 // Mock fetch so getDB()'s seed check doesn't try to hit the network

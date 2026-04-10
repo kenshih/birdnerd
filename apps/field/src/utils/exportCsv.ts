@@ -1,4 +1,4 @@
-import type { BirdRecord, Session } from '../types'
+import type { BirdRecord, Session } from '@birdnerd/shared'
 
 const HEADERS = [
   'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howAged2',

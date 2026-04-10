@@ -1,5 +1,14 @@
 # Shared Package
 
-This workspace is reserved for shared BirdNerd domain code.
+This workspace contains shared BirdNerd domain types and other app-agnostic logic.
 
-Phase 21a creates the package boundary only. Shared code extraction begins in Phase 21c.
+Phase 21c establishes the first real shared surface by moving persisted domain types here.
+
+Current contents:
+- shared entity and record types consumed by the field app
+
+Still intentionally out of scope:
+- React/UI code
+- IndexedDB logic
+- PWA/service worker config
+- routing and app state

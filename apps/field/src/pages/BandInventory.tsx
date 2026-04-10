@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import type { Band, BandType, Session } from '../types'
+import type { Band, BandType, Session } from '@birdnerd/shared'
 import { getBands, saveBands, getBandByNumber, getAllRecords } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'

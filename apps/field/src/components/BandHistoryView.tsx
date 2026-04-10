@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import type { Band, BirdRecord, Session, Location, Person, Bander } from '../types'
+import type { Band, BirdRecord, Session, Location, Person, Bander } from '@birdnerd/shared'
 import { getRecordsByBand, getSessions, getLocations, getPeople, getBanders, getPhotosByRecord } from '../db'
 import PageHeader from './PageHeader'
 import { CardElevated } from './Card'
@@ -162,4 +162,3 @@ const rowBtnStyle: React.CSSProperties = {
   width: '100%',
   boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
 }
-

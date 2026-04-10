@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
+import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
 import { getSessions, getRecordsBySession, getLocations, getBands, getPeople, getBanders } from '../db'
 import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
 import { exportIBP, exportBBL, exportBBLRecap } from '../utils/agencyExport'

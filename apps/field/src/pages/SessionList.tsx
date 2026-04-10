@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Session, Location, Bander, Person, Protocol } from '../types'
+import type { Session, Location, Bander, Person, Protocol } from '@birdnerd/shared'
 import { getSessions, saveSession, getLocations, getBanders, getPeople, deleteSession, getRecordsBySession, getSessionBanderLogs, replaceSessionBanderLogs, generateSessionNetLogs } from '../db'
 import { PROTOCOL_CODES } from '../data/codes'
 import PageHeader from '../components/PageHeader'

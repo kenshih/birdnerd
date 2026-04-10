@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
 import { Card } from '../components/Card'
-import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol, Band } from '../types'
+import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol, Band } from '@birdnerd/shared'
 import { getRecordsBySession, deleteRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
 import BirdRecordForm from './BirdRecordForm'
 import { PROTOCOL_CODES, isNewBanding } from '../data/codes'
@@ -769,4 +769,3 @@ const notesStyle: React.CSSProperties = {
   borderRadius: 6,
   border: '1px solid #ffd43b',
 }
-

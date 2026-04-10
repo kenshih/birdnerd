@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Person, Bander, BanderRole } from '../types'
+import type { Person, Bander, BanderRole } from '@birdnerd/shared'
 import { getPeople, savePerson, deletePerson, getBanders, saveBander } from '../db'
 import PageHeader from '../components/PageHeader'
 import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'
@@ -186,4 +186,3 @@ const deleteBtnStyle: React.CSSProperties = {
   background: 'none', border: '1px solid #ddd', borderRadius: 8,
   padding: '0.75rem 0.75rem', cursor: 'pointer', color: '#c44', fontSize: '0.9rem',
 }
-

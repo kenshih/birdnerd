@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import type { PhotoRecord } from '../types'
+import type { PhotoRecord } from '@birdnerd/shared'
 import { getPhotosByRecord, savePhoto, deletePhoto } from '../db'
 import { generatePhotoFilename, getFileExtension } from '../utils/photoFilename'
 import PhotoReviewModal from './PhotoReviewModal'

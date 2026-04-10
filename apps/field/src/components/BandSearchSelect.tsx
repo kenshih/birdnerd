@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import type { Band, BandType } from '../types'
+import type { Band, BandType } from '@birdnerd/shared'
 import { inputStyle, dropdownStyle as baseDropdownStyle, btnStyle } from '../styles/theme'
 import { BAND_SIZE_CODES } from '../data/codes'
 import { saveBand } from '../db'

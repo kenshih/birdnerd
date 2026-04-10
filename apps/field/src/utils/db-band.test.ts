@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { resetDB, saveRecord, saveBand, getRecordsByBand, getAllRecords } from '../db'
-import type { BirdRecord, Band } from '../types'
+import type { BirdRecord, Band } from '@birdnerd/shared'
 
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
 

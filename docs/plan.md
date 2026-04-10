@@ -89,12 +89,13 @@ Goal: Establish npm workspace structure with minimal disruption, keep the curren
 - Verify OCR app loads successfully from its production subpath
 - Keep `/birdnerd/ocr/` excluded from the field app's Workbox navigation fallback so the field PWA does not hijack OCR routes on the shared GitHub Pages site
 
-### 21c — Minimal Shared Package Bootstrap
+### 21c — Minimal Shared Package Bootstrap ✅
 - Create `packages/shared/` as a tiny internal workspace package
 - Move only one or two low-risk, pure modules into `packages/shared/` to establish the import path and packaging pattern
 - Good first candidates: types, a small code table module, or other dependency-light domain constants
 - Do not move DB, PWA, routing, or React/UI code in the first pass
 - Defer broader shared-boundary decisions until OCR implementation reveals real reuse needs
+- Extract persisted domain types into `@birdnerd/shared` and update the field app to import them via the workspace package
 
 ### 21d — Documentation Restructure
 - Treat current BirdNerd-focused specs as field-app docs rather than repo-wide docs

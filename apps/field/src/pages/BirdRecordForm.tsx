@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { useForm } from 'react-hook-form'
-import type { BirdRecord, Session, Net, Location, Band } from '../types'
+import type { BirdRecord, Session, Net, Location, Band } from '@birdnerd/shared'
 import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate, savePhoto } from '../db'
 import { validateRecord } from '../utils/validation'
 import {

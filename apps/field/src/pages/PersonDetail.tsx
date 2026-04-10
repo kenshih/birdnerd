@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Person, Bander, BanderRole } from '../types'
+import type { Person, Bander, BanderRole } from '@birdnerd/shared'
 import { savePerson, getBanderByPerson, saveBander, deleteBander } from '../db'
 import PageHeader from '../components/PageHeader'
 import { btnStyle, labelStyle, inputStyle, rowStyle } from '../styles/theme'

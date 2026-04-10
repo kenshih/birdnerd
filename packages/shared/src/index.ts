@@ -42,8 +42,8 @@ export interface BirdRecord {
   howAged2?: string
   howSexed?: string
   howSexed2?: string
-  bbpCode?: string      // capture status code
-  wrp?: string           // WRP molt cycle code
+  bbpCode?: string          // capture status code
+  wrp?: string              // WRP molt cycle code
   // Condition
   skull?: string
   cp?: string
@@ -128,8 +128,8 @@ export interface SessionBanderLog {
 
 export interface Location {
   id: string
-  banderLocationId: string   // 4-letter code e.g. "GCBS"
-  bblLocationId: string | null  // 6-letter BBL code, nullable until registered
+  banderLocationId: string     // 4-letter code e.g. "GCBS"
+  bblLocationId: string | null // 6-letter BBL code, nullable until registered
   name: string
   latitude: number
   longitude: number
@@ -142,19 +142,19 @@ export interface Location {
 
 export interface Net {
   id: string
-  locationId: string         // FK to Location
-  label: string              // e.g. "1", "N-01", "Trap-A"
-  active: boolean            // soft-delete: false = removed from operation
+  locationId: string           // FK to Location
+  label: string                // e.g. "1", "N-01", "Trap-A"
+  active: boolean              // soft-delete: false = removed from operation
   createdAt: string
   updatedAt: string
 }
 
 export interface SessionNetLog {
   id: string
-  sessionId: string          // FK to Session
-  netId: string              // FK to Net
-  openTime?: string          // HH:mm — defaults to session open time
-  closeTime?: string         // HH:mm — defaults to session close time
+  sessionId: string            // FK to Session
+  netId: string                // FK to Net
+  openTime?: string            // HH:mm — defaults to session open time
+  closeTime?: string           // HH:mm — defaults to session close time
   remarks?: string
   createdAt: string
   updatedAt: string
@@ -163,7 +163,7 @@ export interface SessionNetLog {
 export interface Person {
   id: string
   name: string
-  initials: string           // 2-3 letter code e.g. "HD"
+  initials: string             // 2-3 letter code e.g. "HD"
   active: boolean
   createdAt: string
   updatedAt: string
@@ -173,7 +173,7 @@ export type BanderRole = 'Master Bander' | 'Sub-permittee' | 'Bander' | 'Trainee
 
 export interface Bander {
   id: string
-  personId: string           // FK to Person
+  personId: string             // FK to Person
   role: BanderRole
   createdAt: string
   updatedAt: string

@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander, Band, PhotoRecord } from '../types'
+import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander, Band, PhotoRecord } from '@birdnerd/shared'
 import { loadSeedData } from '../utils/dataBundle'
 
 interface BirdNerdDB extends DBSchema {

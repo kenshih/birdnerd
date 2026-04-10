@@ -1,6 +1,6 @@
 // Full species list extracted from MASTER BANDING DATA.xlsx SPECIES sheet
 // 4-letter BBL/IBP alpha codes with common and scientific names
-import type { Species } from '../types'
+import type { Species } from '@birdnerd/shared'
 
 export const SPECIES_LIST: Species[] = [
   { code: 'ABTO', commonName: 'Abert\'s Towhee', sciName: 'Melozone aberti' },
@@ -1223,4 +1223,3 @@ export const SPECIES_LIST: Species[] = [
   { code: 'ZTHA', commonName: 'Zone-tailed Hawk', sciName: 'Buteo albonotatus' },
   { code: 'ZSHY', commonName: 'Zonotrichia Sparrow Hybrid', sciName: '' },
 ].sort((a, b) => a.commonName.localeCompare(b.commonName))
-

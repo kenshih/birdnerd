@@ -3,7 +3,7 @@ import { BUNDLE_VERSION } from '../data/bundle-schema'
 import type { DataBundle } from '../data/bundle-schema'
 import { validateBundle, exportDataBundle, importDataBundle } from './dataBundle'
 import { getDB, resetDB, saveLocation, saveNet, savePerson, saveBander, saveSession, saveRecord, saveSessionBanderLog } from '../db'
-import type { Location, Net, Person, Bander, Session, SessionBanderLog, BirdRecord } from '../types'
+import type { Location, Net, Person, Bander, Session, SessionBanderLog, BirdRecord } from '@birdnerd/shared'
 
 // Mock fetch so getDB()'s seed check doesn't try to hit the network
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))

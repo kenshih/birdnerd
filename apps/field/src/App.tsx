@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
-import type { Session, Location, Person, Band } from './types'
+import type { Session, Location, Person, Band } from '@birdnerd/shared'
 import BandHistoryView from './components/BandHistoryView'
 import HomeScreen from './pages/HomeScreen'
 import SessionList from './pages/SessionList'

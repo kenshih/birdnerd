@@ -1,4 +1,4 @@
-import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
+import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
 import { isNewBanding, isRecapture } from '../data/codes'
 
 // ── Code Mappings ──────────────────────────────────────────────────

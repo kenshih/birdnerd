@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { SPECIES_LIST } from '../data/species'
-import type { Species } from '../types'
+import type { Species } from '@birdnerd/shared'
 import { inputStyle, dropdownStyle as baseDropdownStyle } from '../styles/theme'
 
 interface Props {

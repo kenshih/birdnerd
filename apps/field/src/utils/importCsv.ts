@@ -1,4 +1,4 @@
-import type { BirdRecord } from '../types'
+import type { BirdRecord } from '@birdnerd/shared'
 
 const NUMERIC_FIELDS = new Set(['wing', 'tail', 'tarsus', 'exposedCulmen', 'otherMeasurement', 'bodyMass'])
 const BOOLEAN_FIELDS = new Set(['featherPull', 'bloodSample'])

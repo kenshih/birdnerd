@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateIBPRows, generateBBLRows, generateBBLRecapRows } from './agencyExport'
-import type { BirdRecord, Session, Location, Band, Person, Bander } from '../types'
+import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
 
 const session: Session = {
   id: 'sess-1', locationId: 'loc-1', date: '2026-04-19',

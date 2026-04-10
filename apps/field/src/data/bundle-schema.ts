@@ -1,4 +1,4 @@
-import type { Location, Net, Person, Bander, Session, SessionBanderLog, SessionNetLog, BirdRecord, Band } from '../types'
+import type { Location, Net, Person, Bander, Session, SessionBanderLog, SessionNetLog, BirdRecord, Band } from '@birdnerd/shared'
 
 /** Photo metadata for bundle export (blob excluded — photos stored externally) */
 export interface PhotoRecordExport {
