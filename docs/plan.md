@@ -40,21 +40,55 @@ Phases 1–21 complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases
 
 ## Phase 22 — Bandsheet OCR
 
-Goal: Scan handwritten/printed bandsheets and import records into BirdNerd.
+Goal: Build a row-by-row transcription assistant for one supported BirdNerd bandsheet layout, with OCR layered in incrementally.
 
-- New app: `apps/ocr/` — separate Vite build, not part of the field PWA
-- Tesseract.js (WASM) for text recognition
-- Imports `packages/shared/` for types, validation, code tables, species list
-- Deploys to `/birdnerd/ocr/` (or separate path)
+Assumptions for Phase 22:
+- Focus on one known bandsheet layout for the foreseeable next phases
+- V1 output is reviewed CSV/table data, not direct BirdNerd import
+- Primary workflow is row-at-a-time review beside the source image
+- OCR is assistive, not the first milestone
+- Human correction is required before output is trusted
 
-**Open questions (TBD):**
-- Input: handwritten bandsheets, printed sheets, or both?
-- Output: JSON data bundle? Direct IndexedDB import? CSV?
-- Field mapping: how to map OCR'd regions to BandingRecord fields?
-- Correction UX: review/edit extracted data before import?
-- Camera vs file upload: scan live or upload photos?
-- Accuracy expectations: which fields are reliably OCR-able vs. need human review?
-- Does OCR app need offline support, or is it a desk/office tool only?
+### OCR 0.2.0 — Review Skeleton
+- Support one known bandsheet layout only
+- Upload image files of bandsheets
+- Manual entry of sheet/header metadata for now
+- Detect or manually define row regions
+- Show full sheet plus per-row crop view
+- Review one row at a time
+- Editable structured row form beside the image
+- Export reviewed rows as CSV/table output
+- No BirdNerd import yet
+
+### OCR 0.2.1 — Core Row Data Model & Review UX
+- Define OCR-app row draft schema for the first supported field subset
+- First-pass subset: band number, species alpha code, age, sex, how aged, how sexed, status/code, date, capture time, station, net
+- Add row status flow: unreviewed, in progress, reviewed
+- Add next/previous row workflow
+- Add field-aware inputs where useful: combobox/select/code helpers
+- Preserve image-to-row context while editing
+
+### OCR 0.2.2 — OCR-Assisted Prefill
+- Add OCR for row text/cell regions on the supported layout
+- Prefill draft values into the row editor
+- Keep human review mandatory
+- Highlight uncertain or incomplete fields
+- Improve preprocessing: crop, perspective correction, contrast normalization
+- Measure OCR usefulness on real bandsheet examples
+
+### OCR 0.2.3 — Validation-Assisted Correction
+- Reuse BirdNerd code/domain knowledge to flag likely OCR mistakes
+- Species alpha/code suggestions
+- Code-list constrained inputs for age/sex/how aged/how sexed/status
+- Soft warnings for suspicious combinations
+- Fast correction workflow optimized for many rows
+
+**Later OCR phases**
+- Expand supported row fields beyond the initial subset
+- Add header metadata OCR
+- Add direct BirdNerd import after review
+- Consider camera capture workflow
+- Consider model fine-tuning only after enough corrected examples exist
 
 ---
 
