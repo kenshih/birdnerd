@@ -52,6 +52,7 @@ Assumptions for Phase 22:
 ### OCR 0.2.0 — Review Skeleton
 - Support one known bandsheet layout only
 - Upload image files of bandsheets
+- Establish OCR-specific branding assets from the new media/logo work
 - Manual entry of sheet/header metadata for now
 - Detect or manually define row regions
 - Show full sheet plus per-row crop view
@@ -59,8 +60,9 @@ Assumptions for Phase 22:
 - Editable structured row form beside the image
 - Export reviewed rows as CSV/table output
 - No BirdNerd import yet
+- Initial implementation slices: upload image + full sheet viewer; manual row definition/adjustment; selected row crop + next/previous navigation; minimal row form for core fields; CSV/table export
 
-### OCR 0.2.1 — Core Row Data Model & Review UX
+### OCR 0.3.0 — Core Row Data Model & Review UX
 - Define OCR-app row draft schema for the first supported field subset
 - First-pass subset: band number, species alpha code, age, sex, how aged, how sexed, status/code, date, capture time, station, net
 - Add row status flow: unreviewed, in progress, reviewed
@@ -68,7 +70,7 @@ Assumptions for Phase 22:
 - Add field-aware inputs where useful: combobox/select/code helpers
 - Preserve image-to-row context while editing
 
-### OCR 0.2.2 — OCR-Assisted Prefill
+### OCR 0.4.0 — OCR-Assisted Prefill
 - Add OCR for row text/cell regions on the supported layout
 - Prefill draft values into the row editor
 - Keep human review mandatory
@@ -76,7 +78,7 @@ Assumptions for Phase 22:
 - Improve preprocessing: crop, perspective correction, contrast normalization
 - Measure OCR usefulness on real bandsheet examples
 
-### OCR 0.2.3 — Validation-Assisted Correction
+### OCR 0.5.0 — Validation-Assisted Correction
 - Reuse BirdNerd code/domain knowledge to flag likely OCR mistakes
 - Species alpha/code suggestions
 - Code-list constrained inputs for age/sex/how aged/how sexed/status
@@ -105,6 +107,7 @@ Assumptions for Phase 22:
 - App.tsx routing: replace if/else chain with a route map or lightweight router as view count grows
 
 **Dev tooling**
+- Dependency refresh pass: review and update app/package dependencies across the monorepo at an intentional checkpoint
 - E2E UX tests (Playwright): session CRUD, banding record flow, offline export/import round-trip
 - Storybook for component-level UX checks (optional)
 - Vitest Browser Mode (`@vitest/browser`): component tests for BandSearchSelect, SearchableSelect, SpeciesAutocomplete (open/close, click-outside, type-to-filter, selection); prerequisite for dropdown consolidation
