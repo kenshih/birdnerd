@@ -1,7 +1,16 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import SheetAnnotator from './components/SheetAnnotator'
+import RowCropPreview from './components/RowCropPreview'
+import RowList from './components/RowList'
+import { useObjectUrl } from './hooks/useObjectUrl'
+import type { NormalizedRect, RowBox } from './types'
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
+
+function makeRowId() {
+  return `row-${crypto.randomUUID()}`
+}
 
 export default function App() {
   const {
@@ -11,19 +20,11 @@ export default function App() {
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [zoom, setZoom] = useState<typeof ZOOM_LEVELS[number]>(1)
+  const [rowBoxes, setRowBoxes] = useState<RowBox[]>([])
+  const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
 
-  const imageUrl = useMemo(() => {
-    if (!selectedFile) return null
-    return URL.createObjectURL(selectedFile)
-  }, [selectedFile])
-
-  useEffect(() => {
-    if (!imageUrl) return
-
-    return () => {
-      URL.revokeObjectURL(imageUrl)
-    }
-  }, [imageUrl])
+  const imageUrl = useObjectUrl(selectedFile)
+  const selectedRowIndex = rowBoxes.findIndex((rowBox) => rowBox.id === selectedRowId)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -31,11 +32,42 @@ export default function App() {
 
     setSelectedFile(file)
     setZoom(1)
+    setRowBoxes([])
+    setSelectedRowId(null)
   }
 
   const clearSheet = () => {
     setSelectedFile(null)
     setZoom(1)
+    setRowBoxes([])
+    setSelectedRowId(null)
+  }
+
+  const addRow = (rect: NormalizedRect) => {
+    const newRow = { id: makeRowId(), rect }
+    setRowBoxes((current) => [...current, newRow])
+    setSelectedRowId(newRow.id)
+  }
+
+  const deleteSelectedRow = () => {
+    if (!selectedRowId) return
+
+    setRowBoxes((current) => {
+      const nextRows = current.filter((rowBox) => rowBox.id !== selectedRowId)
+      const nextSelection = nextRows[Math.min(selectedRowIndex, nextRows.length - 1)] ?? null
+      setSelectedRowId(nextSelection?.id ?? null)
+      return nextRows
+    })
+  }
+
+  const selectPreviousRow = () => {
+    if (selectedRowIndex <= 0) return
+    setSelectedRowId(rowBoxes[selectedRowIndex - 1]?.id ?? null)
+  }
+
+  const selectNextRow = () => {
+    if (selectedRowIndex < 0 || selectedRowIndex >= rowBoxes.length - 1) return
+    setSelectedRowId(rowBoxes[selectedRowIndex + 1]?.id ?? null)
   }
 
   return (
@@ -43,12 +75,11 @@ export default function App() {
       <section className="hero">
         <div className="hero-header">
           <div>
-            <p className="eyebrow">BirdNerd OCR 0.2.0</p>
-            <h1>Review Skeleton</h1>
+            <p className="eyebrow">BirdNerd OCR 0.2.1</p>
+            <h1>Manual Row Selection</h1>
             <p className="lede">
-              Start with a full-sheet review workflow: upload a bandsheet image,
-              inspect the page, and build toward row-by-row transcription from a
-              stable visual foundation.
+              Draw row boxes directly on the sheet, select a row, and confirm the
+              crop before we move on to row editing and CSV export.
             </p>
           </div>
 
@@ -62,9 +93,9 @@ export default function App() {
           <div className="toolbar-copy">
             <h2>Sheet Intake</h2>
             <p>
-              Upload one photo or scan of the supported bandsheet layout. This
-              first slice focuses on reliable image intake and full-sheet viewing;
-              row tools come next.
+              Upload one photo or scan of the supported bandsheet layout. For
+              this slice, row selection is fully manual so we can keep the
+              geometry and review flow easy to reason about.
             </p>
           </div>
 
@@ -121,14 +152,14 @@ export default function App() {
 
             <div className="viewer-surface">
               {imageUrl ? (
-                <div className="image-scroll">
-                  <img
-                    className="sheet-image"
-                    src={imageUrl}
-                    alt="Uploaded bandsheet"
-                    style={{ width: `${zoom * 100}%` }}
-                  />
-                </div>
+                <SheetAnnotator
+                  imageUrl={imageUrl}
+                  zoom={zoom}
+                  rowBoxes={rowBoxes}
+                  selectedRowId={selectedRowId}
+                  onAddRow={addRow}
+                  onSelectRow={setSelectedRowId}
+                />
               ) : (
                 <div className="empty-state">
                   <p>No bandsheet image loaded.</p>
@@ -138,21 +169,22 @@ export default function App() {
             </div>
           </article>
 
-          <aside className="card side-panel">
-            <h2>Current Scope</h2>
-            <ul className="scope-list">
-              <li>Upload one bandsheet image at a time</li>
-              <li>View the full sheet at adjustable zoom</li>
-              <li>Replace or clear the current image without leaving the page</li>
-            </ul>
+          <div className="sidebar-column">
+            <RowList
+              rowBoxes={rowBoxes}
+              selectedRowId={selectedRowId}
+              onSelectRow={setSelectedRowId}
+              onDeleteSelectedRow={deleteSelectedRow}
+            />
 
-            <h2>Next Slice</h2>
-            <ul className="scope-list">
-              <li>Manual row definition and adjustment</li>
-              <li>Selected row crop view</li>
-              <li>Next/previous row navigation</li>
-            </ul>
-          </aside>
+            <RowCropPreview
+              imageUrl={imageUrl}
+              rowBoxes={rowBoxes}
+              selectedIndex={selectedRowIndex}
+              onSelectPrevious={selectPreviousRow}
+              onSelectNext={selectNextRow}
+            />
+          </div>
         </section>
 
         {needRefresh && (

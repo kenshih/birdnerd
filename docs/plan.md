@@ -53,6 +53,7 @@ Assumptions for Phase 22:
 - Support one known bandsheet layout only
 - Upload image files of bandsheets
 - Establish OCR-specific branding assets from the new media/logo work
+- Add simple image rotation for slightly tilted sheet photos
 - Manual entry of sheet/header metadata for now
 - Detect or manually define row regions
 - Show full sheet plus per-row crop view
