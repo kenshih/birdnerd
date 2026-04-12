@@ -16,6 +16,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [2026-04-12]
 
+### Changed
+
+- OCR 0.3.3: Centralize the OCR row draft field schema so draft initialization, editor layout, and CSV export share one source of truth.
+- OCR 0.3.3: Refresh the OCR workspace copy so the UI reflects the current review-and-export workflow and version automatically.
+
+### Fixed
+
+- OCR 0.3.3: Remove the nested-button pattern in the sheet annotator so row selection and resize handles use a safer interactive structure.
+- OCR 0.3.3: Add keyboard focus/selection handling for row boxes after the annotator structure cleanup.
+
+## [2026-04-12]
+
 ### Added
 
 - OCR 0.3.2: Add an export preview table for non-empty OCR row drafts.

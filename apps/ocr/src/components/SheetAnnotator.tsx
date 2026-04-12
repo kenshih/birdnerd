@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react'
+import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { NormalizedRect, ResizeHandle, RowBox } from '../types'
 import { isMeaningfulRect, makeNormalizedRect, rectToPercentStyle, resizeRect } from '../utils/rect'
@@ -127,6 +128,15 @@ export default function SheetAnnotator({
     })
   }
 
+  const handleRowKeyDown = (
+    event: ReactKeyboardEvent<HTMLDivElement>,
+    rowId: string,
+  ) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return
+    event.preventDefault()
+    onSelectRow(rowId)
+  }
+
   return (
     <div className="image-scroll">
       <div className="annotator-stage" style={{ width: `${zoom * 100}%` }}>
@@ -145,13 +155,16 @@ export default function SheetAnnotator({
           onPointerCancel={endDraw}
         >
           {rowBoxes.map((rowBox, index) => (
-            <button
+            <div
               key={rowBox.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               className={`row-box${rowBox.id === selectedRowId ? ' is-selected' : ''}`}
               style={rectToPercentStyle(rowBox.rect)}
               onClick={() => onSelectRow(rowBox.id)}
+              onKeyDown={(event) => handleRowKeyDown(event, rowBox.id)}
               title={`Select row ${index + 1}`}
+              aria-label={`Select row ${index + 1}`}
             >
               <span className="row-box-label">{index + 1}</span>
               {rowBox.id === selectedRowId && (
@@ -167,7 +180,7 @@ export default function SheetAnnotator({
                   ))}
                 </>
               )}
-            </button>
+            </div>
           ))}
 
           {draftBox && (

@@ -27,7 +27,7 @@ export default function RowCropPreview({
         <div>
           <h2>Selected Row</h2>
           <p className="panel-copy">
-            Row crop preview lets us validate row selection before we add form fields.
+            Use the row crop preview to confirm geometry before refining the selected row's data.
           </p>
         </div>
 

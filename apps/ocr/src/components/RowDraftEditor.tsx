@@ -1,4 +1,5 @@
 import { useState, type ChangeEvent } from 'react'
+import { LEFT_SECTION_FIELDS, type RowDraftFieldKey } from '../rowDraftSchema'
 import type { RowBox, RowDraft } from '../types'
 
 interface Props {
@@ -7,34 +8,6 @@ interface Props {
   totalRows: number
   onUpdateDraft: (rowId: string, field: keyof RowDraft, value: string) => void
 }
-
-type DraftField = {
-  field: keyof Omit<RowDraft, 'status'>
-  label: string
-  placeholder?: string
-  compact?: boolean
-  wide?: boolean
-}
-
-const LEFT_FIELDS: DraftField[] = [
-  { field: 'banderInitials', label: "Bander's Initials", placeholder: 'e.g. HD', compact: true },
-  { field: 'code', label: 'Code', placeholder: 'e.g. N or R', compact: true },
-  { field: 'bandNumber', label: 'Band Number', placeholder: 'e.g. 1231-45678', wide: true },
-  { field: 'speciesCode', label: 'Species Alpha', placeholder: 'e.g. SOSP', compact: true },
-  { field: 'age', label: 'Age', placeholder: 'e.g. HY', compact: true },
-  { field: 'howAged', label: 'How Aged', placeholder: 'e.g. CP', compact: true },
-  { field: 'wrpCode', label: 'WRP Code', placeholder: 'e.g. DPAM', compact: true },
-  { field: 'sex', label: 'Sex', placeholder: 'e.g. M', compact: true },
-  { field: 'howSexed', label: 'How Sexed', placeholder: 'e.g. BP', compact: true },
-  { field: 'skull', label: 'Skull', placeholder: 'e.g. 3', compact: true },
-  { field: 'cloacalProtuberance', label: 'Cl. Prot.', placeholder: 'e.g. 2', compact: true },
-  { field: 'broodPatch', label: 'Br. Patch', placeholder: 'e.g. 3', compact: true },
-  { field: 'fat', label: 'Fat', placeholder: 'e.g. 1', compact: true },
-  { field: 'bodyMolt', label: 'Body Mlt', placeholder: 'e.g. 0', compact: true },
-  { field: 'flightFeatherMolt', label: 'FF Molt', placeholder: 'e.g. N', compact: true },
-  { field: 'flightFeatherWear', label: 'FF Wear', placeholder: 'e.g. L', compact: true },
-  { field: 'juvenileBodyPlumage', label: 'Juv Body Pl', placeholder: 'e.g. J', compact: true },
-]
 
 type SectionKey = 'left' | 'middle' | 'right'
 
@@ -56,6 +29,11 @@ export default function RowDraftEditor({
     onUpdateDraft(selectedRow.id, field, event.target.value)
   }
 
+  const handleFieldChange = (field: RowDraftFieldKey) => (event: ChangeEvent<HTMLInputElement>) => {
+    if (!selectedRow) return
+    onUpdateDraft(selectedRow.id, field, event.target.value)
+  }
+
   const toggleSection = (section: SectionKey) => {
     setExpandedSections((current) => ({
       ...current,
@@ -69,7 +47,7 @@ export default function RowDraftEditor({
         <div>
           <h2>Row Draft</h2>
           <p className="panel-copy">
-            Structured row transcription starts here. This is a first-pass field set before OCR, validation, or export helpers are added.
+            Structured row transcription lives here. The current layout mirrors the left side of the physical row first, with more guided inputs coming later.
           </p>
         </div>
 
@@ -105,17 +83,17 @@ export default function RowDraftEditor({
 
             {expandedSections.left && (
               <div className="editor-grid editor-grid-left">
-                {LEFT_FIELDS.map(({ field, label, placeholder, compact, wide }) => (
+                {LEFT_SECTION_FIELDS.map(({ key, label, placeholder, compact, wide }) => (
                   <label
-                    key={field}
+                    key={key}
                     className={`editor-field${compact ? ' is-compact' : ''}${wide ? ' is-wide' : ''}`}
                   >
                     <span>{label}</span>
                     <input
                       type="text"
-                      value={selectedRow.draft[field]}
+                      value={selectedRow.draft[key]}
                       placeholder={placeholder}
-                      onChange={handleChange(field)}
+                      onChange={handleFieldChange(key)}
                     />
                   </label>
                 ))}

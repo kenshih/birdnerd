@@ -270,14 +270,16 @@ h2 {
   display: flex;
   align-items: flex-start;
   justify-content: flex-start;
+  cursor: pointer;
   border: 2px solid rgba(42, 87, 63, 0.8);
   background: rgba(75, 141, 101, 0.12);
   border-radius: 10px;
   padding: 0;
 }
 
-button.row-box {
-  cursor: pointer;
+.row-box:focus-visible {
+  outline: 3px solid rgba(193, 110, 44, 0.55);
+  outline-offset: 2px;
 }
 
 .row-box.is-selected {

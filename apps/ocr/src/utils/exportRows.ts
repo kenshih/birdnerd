@@ -1,3 +1,4 @@
+import { LEFT_SECTION_FIELDS, rowDraftHasContent } from '../rowDraftSchema'
 import type { RowBox, RowDraft } from '../types'
 
 export interface RowExportRecord {
@@ -25,31 +26,8 @@ export interface RowExportRecord {
 const EXPORT_COLUMNS: Array<keyof RowExportRecord> = [
   'rowNumber',
   'reviewStatus',
-  'banderInitials',
-  'code',
-  'bandNumber',
-  'speciesCode',
-  'age',
-  'howAged',
-  'wrpCode',
-  'sex',
-  'howSexed',
-  'skull',
-  'cloacalProtuberance',
-  'broodPatch',
-  'fat',
-  'bodyMolt',
-  'flightFeatherMolt',
-  'flightFeatherWear',
-  'juvenileBodyPlumage',
+  ...LEFT_SECTION_FIELDS.map(({ key }) => key),
 ]
-
-function draftHasContent(draft: RowDraft): boolean {
-  return EXPORT_COLUMNS.some((column) => {
-    if (column === 'rowNumber' || column === 'reviewStatus') return false
-    return draft[column as keyof RowDraft].trim() !== ''
-  })
-}
 
 function escapeCsvValue(value: string | number): string {
   const stringValue = String(value)
@@ -64,7 +42,7 @@ function escapeCsvValue(value: string | number): string {
 export function getExportRecords(rowBoxes: RowBox[]): RowExportRecord[] {
   return rowBoxes
     .map((rowBox, index) => ({ rowBox, rowNumber: index + 1 }))
-    .filter(({ rowBox }) => draftHasContent(rowBox.draft))
+    .filter(({ rowBox }) => rowDraftHasContent(rowBox.draft))
     .map(({ rowBox, rowNumber }) => ({
       rowNumber,
       reviewStatus: rowBox.draft.status,
@@ -97,4 +75,3 @@ export function getExportCsv(records: RowExportRecord[]): string {
 
   return [header, ...rows].join('\n')
 }
-

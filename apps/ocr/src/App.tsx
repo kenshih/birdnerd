@@ -6,6 +6,7 @@ import RowDraftEditor from './components/RowDraftEditor'
 import RowExportPreview from './components/RowExportPreview'
 import RowList from './components/RowList'
 import { useObjectUrl } from './hooks/useObjectUrl'
+import { createEmptyRowDraft } from './rowDraftSchema'
 import type { NormalizedRect, RowBox, RowDraft } from './types'
 import { getExportCsv, getExportRecords } from './utils/exportRows'
 
@@ -13,29 +14,6 @@ const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
 
 function makeRowId() {
   return `row-${crypto.randomUUID()}`
-}
-
-function makeEmptyDraft(): RowDraft {
-  return {
-    banderInitials: '',
-    code: '',
-    bandNumber: '',
-    speciesCode: '',
-    age: '',
-    howAged: '',
-    howSexed: '',
-    wrpCode: '',
-    sex: '',
-    skull: '',
-    cloacalProtuberance: '',
-    broodPatch: '',
-    fat: '',
-    bodyMolt: '',
-    flightFeatherMolt: '',
-    flightFeatherWear: '',
-    juvenileBodyPlumage: '',
-    status: 'unreviewed',
-  }
 }
 
 export default function App() {
@@ -72,7 +50,7 @@ export default function App() {
   }
 
   const addRow = (rect: NormalizedRect) => {
-    const newRow = { id: makeRowId(), rect, draft: makeEmptyDraft() }
+    const newRow = { id: makeRowId(), rect, draft: createEmptyRowDraft() }
     setRowBoxes((current) => [...current, newRow])
     setSelectedRowId(newRow.id)
   }
@@ -138,11 +116,11 @@ export default function App() {
       <section className="hero">
         <div className="hero-header">
           <div>
-            <p className="eyebrow">BirdNerd OCR 0.2.1</p>
-            <h1>Manual Row Selection</h1>
+            <p className="eyebrow">BirdNerd OCR {__APP_VERSION__}</p>
+            <h1>Bandsheet Review Workspace</h1>
             <p className="lede">
-              Draw row boxes directly on the sheet, select a row, and confirm the
-              crop before we move on to row editing and CSV export.
+              Upload a bandsheet image, define rows, review structured row data,
+              and export the current draft set as CSV.
             </p>
           </div>
 
@@ -156,9 +134,9 @@ export default function App() {
           <div className="toolbar-copy">
             <h2>Sheet Intake</h2>
             <p>
-              Upload one photo or scan of the supported bandsheet layout. For
-              this slice, row selection is fully manual so we can keep the
-              geometry and review flow easy to reason about.
+              Upload one photo or scan of the supported bandsheet layout. Row
+              selection is still manual, which keeps the geometry and review
+              workflow easy to inspect while the OCR workflow is still taking shape.
             </p>
           </div>
 
