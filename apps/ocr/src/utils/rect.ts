@@ -1,5 +1,7 @@
 import type { NormalizedRect, ResizeHandle } from '../types'
 
+const MIN_MEANINGFUL_RECT_SIZE = 0.003
+
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value))
 }
@@ -19,7 +21,7 @@ export function makeNormalizedRect(startX: number, startY: number, endX: number,
 }
 
 export function isMeaningfulRect(rect: NormalizedRect) {
-  return rect.width > 0.01 && rect.height > 0.01
+  return rect.width > MIN_MEANINGFUL_RECT_SIZE && rect.height > MIN_MEANINGFUL_RECT_SIZE
 }
 
 export function rectToPercentStyle(rect: NormalizedRect) {

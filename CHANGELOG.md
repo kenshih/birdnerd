@@ -19,6 +19,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- OCR 0.4.0: Add the first browser OCR spike using `tesseract.js` in the OCR workspace.
+- OCR 0.4.0: Add a row-level OCR panel with raw OCR output inspection and targeted OCR test actions for species code and band number.
+
+### Changed
+
+- OCR 0.4.0: Keep the first OCR integration deliberately human-in-the-loop, with OCR running only on the selected row crop.
+- OCR 0.4.0: Expand OCR design notes to document the Tesseract-first direction, quality-guide references, and the current table/gridline limitations.
+- OCR 0.4.0: Increase OCR viewer zoom up to 500% and loosen the minimum selectable crop size so tighter field experiments are possible.
+
+## [2026-04-12]
+
+### Added
+
 - OCR 0.3.4: Add the first guided-input pass for constrained banding fields using shared code metadata.
 
 ### Changed

@@ -111,7 +111,7 @@ Assumptions for Phase 22:
 - Continue confirming and fixing any row-selection/draft persistence edge cases discovered during testing
 - Keep refining the row-review workflow now that export and the left-side coded layout are in place
 
-### OCR 0.4.0 — OCR Engine Integration
+### OCR 0.4.0 — OCR Engine Integration ✅
 - Introduce the first OCR engine/library for the supported bandsheet workflow
 - Start with a Tesseract-first browser experiment and treat it as a viability spike rather than a permanent architecture commitment
 - Run OCR against the current row-based review flow rather than a separate pipeline
@@ -119,17 +119,22 @@ Assumptions for Phase 22:
 - Keep human review mandatory
 - Revisit cloud OCR or heavier document-parsing options only if Tesseract quality or browser performance is not good enough
 - Initial implementation slices: dedicated OCR service/module; run OCR on the selected row crop only; add a `Run OCR on This Row` action with visible progress/error state; show raw OCR text for inspection; try first-pass prefill for a very small field subset such as band number, species alpha code, age, sex, and code
+- Current learning: generic row-level OCR is weaker than focused field-level OCR on this grid-heavy layout, so the next steps should bias toward tighter field windows and constrained recognition
 
 ### OCR 0.4.1 — OCR Row Prefill
 - Prefill draft values into the existing row editor from OCR output
 - Focus on the current constrained left-side field set first
 - Surface OCR output in a way that fits the existing row-by-row review workflow
 - Continue measuring OCR usefulness on real bandsheet examples
+- Shift from generic row OCR toward focused field-level OCR where the layout and value constraints are predictable
+- Start with species alpha code and band number experiments using tighter field windows and field-specific OCR constraints
 
 ### OCR 0.4.2 — OCR Review Tuning
 - Highlight uncertain or incomplete OCR-prefilled fields
 - Tune OCR-to-row mapping and review behavior based on real usage
 - Expand OCR field coverage only if the first-pass fields are working well
+- Add confidence-aware review cues such as yellow/red highlighting for low-confidence OCR results
+- Tune fixed-layout field segmentation and postprocessing rules before broadening field coverage
 
 ### OCR 0.5.0 — Validation-Assisted Correction
 - Reuse BirdNerd code/domain knowledge to flag likely OCR mistakes

@@ -28,11 +28,13 @@ Important limitations:
 - `tesseract.js` wraps the Tesseract engine in WebAssembly rather than changing the underlying recognition model
 - The project explicitly notes that it does not improve core Tesseract accuracy
 - Handwriting quality may therefore be the real ceiling for this path
+- Tesseract's own quality guide emphasizes preprocessing and notes that tables and visible cell borders can interfere with recognition, which is directly relevant to BirdNerd bandsheet rows
 
 Primary references:
 
 - Tesseract.js README: <https://github.com/naptha/tesseract.js>
 - Tesseract.js site: <https://tesseract.projectnaptha.com/>
+- Tesseract Improve Quality guide: <https://tesseract-ocr.github.io/tessdoc/ImproveQuality.html>
 
 ### 2. Cloud OCR APIs
 
@@ -81,6 +83,7 @@ For the roadmap, see [../../plan.md](../../plan.md). The technical direction for
 - Run OCR against the current row-based review flow
 - Treat the first integration as a viability spike rather than a permanent architecture commitment
 - Keep human review mandatory
+- Treat field-level OCR, not generic row-level OCR, as the more promising near-term path for this bandsheet layout
 
 Success means:
 
@@ -93,6 +96,19 @@ Failure signals that should trigger a rethink:
 - Recognition quality on real row crops is too weak to prefill anything useful
 - Performance or memory cost in-browser is unacceptably bad
 - The integration requires so much preprocessing that the browser-first path stops being the simple option
+
+## Current Design Notes
+
+- Tesseract is currently acceptable as the near-term OCR engine for BirdNerd, provided we keep the workflow human-in-the-loop and constrained to this one bandsheet layout.
+- Early testing suggests full row OCR with visible gridlines is weak, while tighter word- or character-level crops are materially better.
+- The likely path to useful quality is:
+  - tighter field-level segmentation within each reviewed row
+  - field-specific OCR settings such as page segmentation mode and character whitelists
+  - light preprocessing where needed
+  - postprocessing against known code/value constraints
+  - confidence-aware review cues such as yellow/red highlighting for low-confidence results
+- This means BirdNerd probably does not need to "solve handwriting OCR in general" to get useful results. It needs to get good enough at one layout with bounded field types and human review.
+- If future experimentation shows Tesseract cannot get beyond weak usefulness even with field-level constraints, preprocessing, and postprocessing, then we should reconsider cloud OCR or heavier document-parsing alternatives.
 
 ## Explicit Non-Goals For 0.4.x
 

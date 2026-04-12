@@ -1,16 +1,26 @@
 import { useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
+import type { OcrDraftSuggestion } from './ocr/mapRecognizedTextToDraft'
+import { mapFocusedRecognizedTextToDraft, mapRecognizedTextToDraft } from './ocr/mapRecognizedTextToDraft'
+import {
+  BAND_NUMBER_OCR_PRESET,
+  DEFAULT_ROW_OCR_PRESET,
+  SPECIES_CODE_OCR_PRESET,
+  recognizeRow,
+  type RowOcrPreset,
+} from './ocr/recognizeRow'
 import SheetAnnotator from './components/SheetAnnotator'
 import RowCropPreview from './components/RowCropPreview'
 import RowDraftEditor from './components/RowDraftEditor'
 import RowExportPreview from './components/RowExportPreview'
 import RowList from './components/RowList'
+import RowOcrPanel from './components/RowOcrPanel'
 import { useObjectUrl } from './hooks/useObjectUrl'
 import { createEmptyRowDraft } from './rowDraftSchema'
 import type { NormalizedRect, RowBox, RowDraft } from './types'
 import { getExportCsv, getExportRecords } from './utils/exportRows'
 
-const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
+const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4, 5] as const
 
 function makeRowId() {
   return `row-${crypto.randomUUID()}`
@@ -26,11 +36,20 @@ export default function App() {
   const [zoom, setZoom] = useState<typeof ZOOM_LEVELS[number]>(1)
   const [rowBoxes, setRowBoxes] = useState<RowBox[]>([])
   const [selectedRowId, setSelectedRowId] = useState<string | null>(null)
+  const [ocrRunningRowId, setOcrRunningRowId] = useState<string | null>(null)
+  const [ocrRawTextByRowId, setOcrRawTextByRowId] = useState<Record<string, string>>({})
+  const [ocrSuggestionsByRowId, setOcrSuggestionsByRowId] = useState<Record<string, OcrDraftSuggestion[]>>({})
+  const [ocrErrorByRowId, setOcrErrorByRowId] = useState<Record<string, string | null>>({})
+  const [ocrModeLabelByRowId, setOcrModeLabelByRowId] = useState<Record<string, string>>({})
 
   const imageUrl = useObjectUrl(selectedFile)
   const selectedRowIndex = rowBoxes.findIndex((rowBox) => rowBox.id === selectedRowId)
   const selectedRow = selectedRowIndex >= 0 ? rowBoxes[selectedRowIndex] : null
   const exportRecords = getExportRecords(rowBoxes)
+  const selectedRowRawText = selectedRow ? ocrRawTextByRowId[selectedRow.id] ?? '' : ''
+  const selectedRowSuggestions = selectedRow ? ocrSuggestionsByRowId[selectedRow.id] ?? [] : []
+  const selectedRowError = selectedRow ? ocrErrorByRowId[selectedRow.id] ?? null : null
+  const selectedRowModeLabel = selectedRow ? ocrModeLabelByRowId[selectedRow.id] ?? null : null
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -40,6 +59,11 @@ export default function App() {
     setZoom(1)
     setRowBoxes([])
     setSelectedRowId(null)
+    setOcrRunningRowId(null)
+    setOcrRawTextByRowId({})
+    setOcrSuggestionsByRowId({})
+    setOcrErrorByRowId({})
+    setOcrModeLabelByRowId({})
   }
 
   const clearSheet = () => {
@@ -47,6 +71,11 @@ export default function App() {
     setZoom(1)
     setRowBoxes([])
     setSelectedRowId(null)
+    setOcrRunningRowId(null)
+    setOcrRawTextByRowId({})
+    setOcrSuggestionsByRowId({})
+    setOcrErrorByRowId({})
+    setOcrModeLabelByRowId({})
   }
 
   const addRow = (rect: NormalizedRect) => {
@@ -82,6 +111,11 @@ export default function App() {
       setSelectedRowId(nextSelection?.id ?? null)
       return nextRows
     })
+
+    setOcrRawTextByRowId((current) => omitRowKey(current, selectedRowId))
+    setOcrSuggestionsByRowId((current) => omitRowKey(current, selectedRowId))
+    setOcrErrorByRowId((current) => omitRowKey(current, selectedRowId))
+    setOcrModeLabelByRowId((current) => omitRowKey(current, selectedRowId))
   }
 
   const selectPreviousRow = () => {
@@ -110,6 +144,69 @@ export default function App() {
     anchor.remove()
     URL.revokeObjectURL(url)
   }
+
+  const runOcrOnSelectedRow = async (
+    preset: RowOcrPreset = DEFAULT_ROW_OCR_PRESET,
+    mapper: (text: string) => OcrDraftSuggestion[] = mapRecognizedTextToDraft,
+  ) => {
+    if (!selectedRow || !imageUrl) return
+
+    setOcrRunningRowId(selectedRow.id)
+    setOcrErrorByRowId((current) => ({ ...current, [selectedRow.id]: null }))
+    setOcrModeLabelByRowId((current) => ({ ...current, [selectedRow.id]: preset.label }))
+
+    try {
+      const result = await recognizeRow(imageUrl, selectedRow.rect, preset)
+      const rawText = result.data.text.trim()
+      const suggestions = mapper(rawText)
+
+      setOcrRawTextByRowId((current) => ({ ...current, [selectedRow.id]: rawText }))
+      setOcrSuggestionsByRowId((current) => ({ ...current, [selectedRow.id]: suggestions }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'OCR failed for the selected row.'
+      setOcrErrorByRowId((current) => ({ ...current, [selectedRow.id]: message }))
+    } finally {
+      setOcrRunningRowId(null)
+    }
+  }
+
+  const applyOcrSuggestionsToSelectedRow = () => {
+    if (!selectedRow) return
+
+    const suggestions = ocrSuggestionsByRowId[selectedRow.id] ?? []
+    if (suggestions.length === 0) return
+
+    setRowBoxes((current) =>
+      current.map((rowBox) => {
+        if (rowBox.id !== selectedRow.id) return rowBox
+
+        const nextDraft = { ...rowBox.draft }
+        for (const suggestion of suggestions) {
+          if (!nextDraft[suggestion.field].trim()) {
+            nextDraft[suggestion.field] = suggestion.value
+          }
+        }
+
+        if (nextDraft.status === 'unreviewed') {
+          nextDraft.status = 'in-progress'
+        }
+
+        return { ...rowBox, draft: nextDraft }
+      })
+    )
+  }
+
+  const runSpeciesCodeOcrTest = () =>
+    runOcrOnSelectedRow(
+      SPECIES_CODE_OCR_PRESET,
+      (text) => mapFocusedRecognizedTextToDraft('speciesCode', text),
+    )
+
+  const runBandNumberOcrTest = () =>
+    runOcrOnSelectedRow(
+      BAND_NUMBER_OCR_PRESET,
+      (text) => mapFocusedRecognizedTextToDraft('bandNumber', text),
+    )
 
   return (
     <main className="shell">
@@ -227,6 +324,19 @@ export default function App() {
               onSelectNext={selectNextRow}
             />
 
+            <RowOcrPanel
+              hasSelectedRow={Boolean(selectedRow)}
+              isRunning={selectedRow ? ocrRunningRowId === selectedRow.id : false}
+              errorMessage={selectedRowError}
+              modeLabel={selectedRowModeLabel}
+              rawText={selectedRowRawText}
+              suggestions={selectedRowSuggestions}
+              onRun={() => runOcrOnSelectedRow()}
+              onRunSpeciesCodeTest={runSpeciesCodeOcrTest}
+              onRunBandNumberTest={runBandNumberOcrTest}
+              onApplySuggestions={applyOcrSuggestionsToSelectedRow}
+            />
+
             <RowDraftEditor
               selectedRow={selectedRow}
               selectedIndex={selectedRowIndex}
@@ -249,4 +359,14 @@ export default function App() {
       </section>
     </main>
   )
+}
+
+function omitRowKey<T>(record: Record<string, T>, rowId: string | null): Record<string, T> {
+  if (!rowId || !(rowId in record)) {
+    return record
+  }
+
+  const nextRecord = { ...record }
+  delete nextRecord[rowId]
+  return nextRecord
 }

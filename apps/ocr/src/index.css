@@ -522,6 +522,73 @@ h2 {
   align-self: start;
 }
 
+.ocr-card {
+  align-self: start;
+}
+
+.ocr-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ocr-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.ocr-results {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.ocr-result-block {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ocr-result-block h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #29412f;
+}
+
+.ocr-raw-text {
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(56, 76, 55, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #223023;
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.ocr-suggestion-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: #344434;
+  line-height: 1.5;
+}
+
+.ocr-placeholder {
+  margin: 0;
+  color: #5b6656;
+}
+
+.ocr-error {
+  margin: 0;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid rgba(179, 86, 49, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 242, 236, 0.92);
+  color: #9a4725;
+}
+
 .editor-header {
   display: flex;
   flex-wrap: wrap;
