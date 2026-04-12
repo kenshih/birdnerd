@@ -2,14 +2,29 @@ import { useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import SheetAnnotator from './components/SheetAnnotator'
 import RowCropPreview from './components/RowCropPreview'
+import RowDraftEditor from './components/RowDraftEditor'
 import RowList from './components/RowList'
 import { useObjectUrl } from './hooks/useObjectUrl'
-import type { NormalizedRect, RowBox } from './types'
+import type { NormalizedRect, RowBox, RowDraft } from './types'
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
 
 function makeRowId() {
   return `row-${crypto.randomUUID()}`
+}
+
+function makeEmptyDraft(): RowDraft {
+  return {
+    banderInitials: '',
+    code: '',
+    bandNumber: '',
+    speciesCode: '',
+    age: '',
+    howAged: '',
+    wrpCode: '',
+    sex: '',
+    status: 'unreviewed',
+  }
 }
 
 export default function App() {
@@ -25,6 +40,7 @@ export default function App() {
 
   const imageUrl = useObjectUrl(selectedFile)
   const selectedRowIndex = rowBoxes.findIndex((rowBox) => rowBox.id === selectedRowId)
+  const selectedRow = selectedRowIndex >= 0 ? rowBoxes[selectedRowIndex] : null
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -44,7 +60,7 @@ export default function App() {
   }
 
   const addRow = (rect: NormalizedRect) => {
-    const newRow = { id: makeRowId(), rect }
+    const newRow = { id: makeRowId(), rect, draft: makeEmptyDraft() }
     setRowBoxes((current) => [...current, newRow])
     setSelectedRowId(newRow.id)
   }
@@ -53,6 +69,16 @@ export default function App() {
     setRowBoxes((current) =>
       current.map((rowBox) =>
         rowBox.id === rowId ? { ...rowBox, rect } : rowBox
+      )
+    )
+  }
+
+  const updateRowDraft = (rowId: string, field: keyof RowDraft, value: string) => {
+    setRowBoxes((current) =>
+      current.map((rowBox) =>
+        rowBox.id === rowId
+          ? { ...rowBox, draft: { ...rowBox.draft, [field]: value } }
+          : rowBox
       )
     )
   }
@@ -192,6 +218,13 @@ export default function App() {
               selectedIndex={selectedRowIndex}
               onSelectPrevious={selectPreviousRow}
               onSelectNext={selectNextRow}
+            />
+
+            <RowDraftEditor
+              selectedRow={selectedRow}
+              selectedIndex={selectedRowIndex}
+              totalRows={rowBoxes.length}
+              onUpdateDraft={updateRowDraft}
             />
           </div>
         </section>

@@ -49,7 +49,7 @@ Assumptions for Phase 22:
 - OCR is assistive, not the first milestone
 - Human correction is required before output is trusted
 
-### OCR 0.2.0 — Sheet Review & Row Preparation
+### OCR 0.2.0 — Sheet Review & Row Preparation ✅
 - Support one known bandsheet layout only
 - Upload image files of bandsheets
 - Establish OCR-specific branding assets from the new media/logo work
@@ -63,15 +63,22 @@ Assumptions for Phase 22:
 - No BirdNerd import yet
 - Initial implementation slices: upload image + full sheet viewer; manual row definition/adjustment; selected row crop + next/previous navigation
 
-### OCR 0.3.0 — Core Row Data Model & Review UX
+### OCR 0.3.0 — Core Row Data Model & Review UX ✅
 - Begin structured row transcription after sheet/row geometry is in place
 - Define OCR-app row draft schema for the first supported field subset
-- First-pass subset: band number, species alpha code, age, sex, how aged, how sexed, status/code, date, capture time, station, net
+- First-pass subset: bander's initials, code, band number, species alpha code, age, how aged, WRP code, sex
 - Add row status flow: unreviewed, in progress, reviewed
 - Add next/previous row workflow
-- Add field-aware inputs where useful: combobox/select/code helpers
+- Add a selected-row draft editor tied to each manual row box
 - Preserve image-to-row context while editing
-- Export reviewed rows as CSV/table output
+
+### OCR 0.3.1 — Row Review Workflow Polish
+- Continue the structured row review workflow after the first editable draft milestone
+- Polish row editing and review interactions based on real usage
+- Confirm and fix row-selection/draft persistence edge cases discovered during testing
+- Add field-aware inputs where useful: combobox/select/code helpers
+- Add CSV/table export for reviewed rows
+- Evaluate layout refinements for preview, controls, and row list placement with desktop-first testing
 
 ### OCR 0.4.0 — OCR-Assisted Prefill
 - Add OCR for row text/cell regions on the supported layout
@@ -98,6 +105,12 @@ Assumptions for Phase 22:
 ---
 
 ## Backlog (unordered — to be phased later)
+
+**Distributed Database Architecture**
+- Research peer-to-peer sync model as an alternative to centralized cloud (Supabase/Postgres)
+- Candidate approaches: CRDTs (e.g. Automerge, Yjs), libp2p, gun.js, OrbitDB, or custom sync over WebRTC
+- Key questions: conflict resolution for banding records, identity/trust without a central auth server, offline-first compatibility with existing IndexedDB layer, partial sync (station-scoped vs. org-wide)
+- Compare against centralized sync (see Cloud Sync & Auth backlog item) on: complexity, cost, multi-org scalability, and auditability requirements (BBL/CDFW submissions)
 
 **Media**
 - Photo Log view: browse PhotoRecords grouped by session, filter by species/date

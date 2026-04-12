@@ -41,9 +41,14 @@ export default function RowList({
                 className={`row-list-item${rowBox.id === selectedRowId ? ' is-selected' : ''}`}
                 onClick={() => onSelectRow(rowBox.id)}
               >
-                <span>Row {index + 1}</span>
+                <span className="row-list-primary">
+                  <span>Row {index + 1}</span>
+                  <span className={`row-status-chip row-status-${rowBox.draft.status}`}>
+                    {rowBox.draft.status.replace('-', ' ')}
+                  </span>
+                </span>
                 <span className="row-list-meta">
-                  {Math.round(rowBox.rect.width * 100)}% × {Math.round(rowBox.rect.height * 100)}%
+                  {rowBox.draft.bandNumber || 'No band number yet'}
                 </span>
               </button>
             </li>

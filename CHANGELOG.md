@@ -14,6 +14,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Repo: Add a repo-level changelog to track shipped changes separately from the forward-looking plan.
 
+## [2026-04-11]
+
+### Added
+
+- OCR 0.3.0: Add the first usable bandsheet review workspace with image upload, full-sheet viewing, and adjustable zoom.
+- OCR 0.3.0: Add manual row box drawing, row selection, row crop preview, and previous/next row navigation.
+- OCR 0.3.0: Add row geometry refinement with resize handles for selected rows.
+- OCR 0.3.0: Add the first structured row draft editor with fields for bander's initials, code, band number, species alpha code, age, how aged, WRP code, and sex.
+- OCR 0.3.0: Add row review status tracking and row summaries in the row list.
+
+### Changed
+
+- OCR 0.3.0: Replace the placeholder OCR landing screen with the first real review workspace layout.
+- OCR 0.3.0: Refactor OCR review code into dedicated components, hooks, and geometry utilities with explanatory comments.
+- Repo: Add planning notes for OCR branding assets and simple image rotation in later OCR milestones.
+
+### Fixed
+
+- OCR 0.3.0: Tighten row crop preview sizing and offset math so the preview better matches the selected region.
+
 ## [2026-04-09]
 
 ### Added
