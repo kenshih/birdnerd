@@ -301,6 +301,64 @@ button.row-box {
   line-height: 1;
 }
 
+.resize-handle {
+  position: absolute;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 1px solid rgba(35, 44, 34, 0.6);
+  border-radius: 999px;
+  background: #fffdf8;
+  padding: 0;
+}
+
+.resize-handle-top-left {
+  top: -0.45rem;
+  left: -0.45rem;
+  cursor: nwse-resize;
+}
+
+.resize-handle-top {
+  top: -0.45rem;
+  left: calc(50% - 0.425rem);
+  cursor: ns-resize;
+}
+
+.resize-handle-top-right {
+  top: -0.45rem;
+  right: -0.45rem;
+  cursor: nesw-resize;
+}
+
+.resize-handle-right {
+  top: calc(50% - 0.425rem);
+  right: -0.45rem;
+  cursor: ew-resize;
+}
+
+.resize-handle-bottom-right {
+  right: -0.45rem;
+  bottom: -0.45rem;
+  cursor: nwse-resize;
+}
+
+.resize-handle-bottom {
+  bottom: -0.45rem;
+  left: calc(50% - 0.425rem);
+  cursor: ns-resize;
+}
+
+.resize-handle-bottom-left {
+  bottom: -0.45rem;
+  left: -0.45rem;
+  cursor: nesw-resize;
+}
+
+.resize-handle-left {
+  top: calc(50% - 0.425rem);
+  left: -0.45rem;
+  cursor: ew-resize;
+}
+
 .empty-state {
   display: grid;
   place-items: center;

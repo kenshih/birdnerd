@@ -49,6 +49,14 @@ export default function App() {
     setSelectedRowId(newRow.id)
   }
 
+  const updateRow = (rowId: string, rect: NormalizedRect) => {
+    setRowBoxes((current) =>
+      current.map((rowBox) =>
+        rowBox.id === rowId ? { ...rowBox, rect } : rowBox
+      )
+    )
+  }
+
   const deleteSelectedRow = () => {
     if (!selectedRowId) return
 
@@ -158,6 +166,7 @@ export default function App() {
                   rowBoxes={rowBoxes}
                   selectedRowId={selectedRowId}
                   onAddRow={addRow}
+                  onUpdateRow={updateRow}
                   onSelectRow={setSelectedRowId}
                 />
               ) : (

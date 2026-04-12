@@ -49,7 +49,7 @@ Assumptions for Phase 22:
 - OCR is assistive, not the first milestone
 - Human correction is required before output is trusted
 
-### OCR 0.2.0 — Review Skeleton
+### OCR 0.2.0 — Sheet Review & Row Preparation
 - Support one known bandsheet layout only
 - Upload image files of bandsheets
 - Establish OCR-specific branding assets from the new media/logo work
@@ -58,18 +58,20 @@ Assumptions for Phase 22:
 - Detect or manually define row regions
 - Show full sheet plus per-row crop view
 - Review one row at a time
-- Editable structured row form beside the image
-- Export reviewed rows as CSV/table output
+- Allow row geometry refinement before transcription
+- No structured row data entry yet
 - No BirdNerd import yet
-- Initial implementation slices: upload image + full sheet viewer; manual row definition/adjustment; selected row crop + next/previous navigation; minimal row form for core fields; CSV/table export
+- Initial implementation slices: upload image + full sheet viewer; manual row definition/adjustment; selected row crop + next/previous navigation
 
 ### OCR 0.3.0 — Core Row Data Model & Review UX
+- Begin structured row transcription after sheet/row geometry is in place
 - Define OCR-app row draft schema for the first supported field subset
 - First-pass subset: band number, species alpha code, age, sex, how aged, how sexed, status/code, date, capture time, station, net
 - Add row status flow: unreviewed, in progress, reviewed
 - Add next/previous row workflow
 - Add field-aware inputs where useful: combobox/select/code helpers
 - Preserve image-to-row context while editing
+- Export reviewed rows as CSV/table output
 
 ### OCR 0.4.0 — OCR-Assisted Prefill
 - Add OCR for row text/cell regions on the supported layout
