@@ -72,13 +72,20 @@ Assumptions for Phase 22:
 - Add a selected-row draft editor tied to each manual row box
 - Preserve image-to-row context while editing
 
-### OCR 0.3.1 — Row Review Workflow Polish
+### OCR 0.3.1 — Row Review Workflow Polish ✅
 - Continue the structured row review workflow after the first editable draft milestone
 - Polish row editing and review interactions based on real usage
+- Reorganize the row editor into left / middle / right sections that roughly mirror the physical row
+- Keep short coded fields visually compact, especially in the left-hand section
+- Expand the left-hand draft fields to cover the remaining short-coded row cells before moving deeper into middle/right sections
 - Confirm and fix row-selection/draft persistence edge cases discovered during testing
-- Add field-aware inputs where useful: combobox/select/code helpers
-- Add CSV/table export for reviewed rows
 - Evaluate layout refinements for preview, controls, and row list placement with desktop-first testing
+
+### OCR 0.3.2 — Export & Guided Entry
+- Add CSV/table export for reviewed rows
+- Add the first field-aware inputs where useful: combobox/select/code helpers for constrained fields
+- Continue confirming and fixing any row-selection/draft persistence edge cases discovered during testing
+- Keep refining the row-review workflow now that the left-side coded layout is in place
 
 ### OCR 0.4.0 — OCR-Assisted Prefill
 - Add OCR for row text/cell regions on the supported layout
@@ -121,6 +128,7 @@ Assumptions for Phase 22:
 - DB-layer band lifecycle tests: no tests for band status transitions (deploy, revert on delete, multi-record reference check)
 - FK integrity checks: deleting a location/person doesn't warn about referencing sessions/records
 - App.tsx routing: replace if/else chain with a route map or lightweight router as view count grows
+- OCR tests: wait until the row review workflow settles, then start with pure geometry/state helpers instead of drag-heavy UI interactions
 
 **Dev tooling**
 - Dependency refresh pass: review and update app/package dependencies across the monorepo at an intentional checkpoint

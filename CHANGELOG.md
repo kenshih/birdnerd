@@ -14,6 +14,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Repo: Add a repo-level changelog to track shipped changes separately from the forward-looking plan.
 
+## [2026-04-12]
+
+### Added
+
+- OCR 0.3.1: Expand the left-side row draft fields with additional short coded banding columns including how sexed, skull, cloacal protuberance, brood patch, fat, body molt, flight feather molt, flight feather wear, and juvenile body plumage.
+
+### Changed
+
+- OCR 0.3.1: Rework the row-review layout so the row list, selected-row preview, and row draft editor sit beneath the full-sheet viewer.
+- OCR 0.3.1: Reorganize the row editor into collapsible left, middle, and right sections for more focused data entry.
+- OCR 0.3.1: Tune the left-side row editor into a compact multi-row coded layout with a wider band-number field and tighter fixed-width tracks.
+- OCR 0.3.1: Move review status out of the transcription field strip and into row-level workflow metadata.
+- OCR 0.3.1: Left-align row editor controls and section toggles so they stay visually anchored near the row content.
+
 ## [2026-04-11]
 
 ### Added

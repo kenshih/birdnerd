@@ -20,8 +20,17 @@ export interface RowDraft {
   speciesCode: string
   age: string
   howAged: string
+  howSexed: string
   wrpCode: string
   sex: string
+  skull: string
+  cloacalProtuberance: string
+  broodPatch: string
+  fat: string
+  bodyMolt: string
+  flightFeatherMolt: string
+  flightFeatherWear: string
+  juvenileBodyPlumage: string
   status: RowStatus
 }
 

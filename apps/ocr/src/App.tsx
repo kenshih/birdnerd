@@ -21,8 +21,17 @@ function makeEmptyDraft(): RowDraft {
     speciesCode: '',
     age: '',
     howAged: '',
+    howSexed: '',
     wrpCode: '',
     sex: '',
+    skull: '',
+    cloacalProtuberance: '',
+    broodPatch: '',
+    fat: '',
+    bodyMolt: '',
+    flightFeatherMolt: '',
+    flightFeatherWear: '',
+    juvenileBodyPlumage: '',
     status: 'unreviewed',
   }
 }
@@ -204,7 +213,7 @@ export default function App() {
             </div>
           </article>
 
-          <div className="sidebar-column">
+          <div className="review-column">
             <RowList
               rowBoxes={rowBoxes}
               selectedRowId={selectedRowId}

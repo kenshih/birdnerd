@@ -184,21 +184,21 @@ h2 {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1.7fr) minmax(18rem, 0.8fr);
   gap: 1rem;
   margin-top: 1rem;
 }
 
-.sidebar-column {
+.review-column {
   display: grid;
   gap: 1rem;
-  align-self: start;
 }
 
 .viewer-card {
   display: flex;
   flex-direction: column;
   min-height: 38rem;
+  width: min(100%, 62rem);
+  justify-self: start;
 }
 
 .viewer-topbar {
@@ -523,25 +523,113 @@ button.row-box {
 .editor-header {
   display: flex;
   flex-wrap: wrap;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 1rem;
 }
 
 .editor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem 1rem;
   color: #5f6a57;
+}
+
+.editor-status-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.editor-status-field span {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #66705f;
+}
+
+.editor-status-field select {
+  border: 1px solid rgba(47, 87, 65, 0.2);
+  border-radius: 12px;
+  padding: 0.45rem 0.65rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #223023;
+}
+
+.editor-sections {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.editor-section {
+  padding: 1rem;
+  border: 1px solid rgba(47, 87, 65, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.editor-section-toggle {
+  display: flex;
+  align-items: start;
+  justify-content: flex-start;
+  gap: 1rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+
+.editor-section-header {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.editor-section-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #29412f;
+}
+
+.editor-section-indicator {
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+  border-radius: 999px;
+  padding: 0.28rem 0.6rem;
+  background: rgba(47, 87, 65, 0.1);
+  color: #2f5741;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .editor-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
   margin-top: 1rem;
+}
+
+.editor-grid-left {
+  grid-template-columns: repeat(6, minmax(4.25rem, max-content));
+  justify-content: start;
+  align-items: start;
 }
 
 .editor-field {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
+}
+
+.editor-field.is-compact {
+  max-width: 10rem;
+}
+
+.editor-field.is-wide {
+  grid-column: span 2;
+  max-width: none;
 }
 
 .editor-field span {
@@ -558,6 +646,20 @@ button.row-box {
   padding: 0.65rem 0.75rem;
   background: rgba(255, 255, 255, 0.9);
   color: #223023;
+}
+
+.editor-section-placeholder {
+  margin-top: 1rem;
+  min-height: 4.5rem;
+  display: grid;
+  place-items: center;
+  padding: 0.9rem;
+  border: 1px dashed rgba(47, 87, 65, 0.2);
+  border-radius: 14px;
+  background: rgba(248, 244, 236, 0.72);
+  text-align: center;
+  line-height: 1.5;
+  color: #66705f;
 }
 
 .scope-list {
@@ -578,16 +680,17 @@ button.row-box {
 }
 
 @media (max-width: 900px) {
-  .workspace {
-    grid-template-columns: 1fr;
-  }
-
   .viewer-card {
     min-height: 30rem;
   }
 
+  .editor-grid-left,
   .editor-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editor-field.is-wide {
+    grid-column: span 2;
   }
 }
 
@@ -603,5 +706,14 @@ button.row-box {
 
   .sheet-image {
     min-width: 18rem;
+  }
+
+  .editor-grid-left,
+  .editor-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-field.is-wide {
+    grid-column: span 1;
   }
 }
