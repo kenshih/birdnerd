@@ -1,0 +1,106 @@
+# BirdNerd OCR Technical Direction
+
+This note captures the OCR-engine options considered for BirdNerd OCR and the current implementation direction for `0.4.x`.
+
+Roadmap sequencing stays in [../../plan.md](../../plan.md). This document is for technical rationale, constraints, and pivot criteria.
+
+## Current Product Constraints
+
+- Support one known BirdNerd bandsheet layout first
+- Keep the existing row-by-row review workflow as the center of the product
+- Keep human review mandatory
+- Prefer a narrow experiment before committing to a larger OCR architecture
+- Ask before adding dependencies
+
+## Options Considered
+
+### 1. Tesseract.js in the Browser
+
+Why it is attractive for BirdNerd now:
+
+- Fits the current browser-first OCR app architecture
+- Can run directly against the existing row-based review flow
+- Keeps the first experiment small and local
+- Gives us a quick way to test whether OCR signal is useful on this bandsheet layout
+
+Important limitations:
+
+- `tesseract.js` wraps the Tesseract engine in WebAssembly rather than changing the underlying recognition model
+- The project explicitly notes that it does not improve core Tesseract accuracy
+- Handwriting quality may therefore be the real ceiling for this path
+
+Primary references:
+
+- Tesseract.js README: <https://github.com/naptha/tesseract.js>
+- Tesseract.js site: <https://tesseract.projectnaptha.com/>
+
+### 2. Cloud OCR APIs
+
+Why this remains a plausible fallback:
+
+- Cloud document OCR services are stronger candidates if handwriting quality is not good enough with a browser-first engine
+- These services can return richer document structure and confidence metadata
+
+Current examples reviewed:
+
+- Google Cloud Vision `DOCUMENT_TEXT_DETECTION`, which Google documents as suitable for dense documents and handwriting
+- Azure AI Document Intelligence Read, which Microsoft documents as extracting printed and handwritten text from scanned images and PDFs
+
+Tradeoffs:
+
+- Online dependency
+- Authentication and billing overhead
+- More infrastructure work before the OCR experiment becomes usable inside BirdNerd
+
+Primary references:
+
+- Google Cloud Vision handwriting OCR: <https://docs.cloud.google.com/vision/docs/handwriting>
+- Azure AI Document Intelligence Read: <https://learn.microsoft.com/en-us/azure/ai-services/document-intelligence/prebuilt/read?view=doc-intel-4.0.0>
+
+### 3. Heavier OCR / Document Parsing Toolkits
+
+Why they are not the first `0.4.0` choice:
+
+- Toolkits like PaddleOCR are promising for document parsing and skewed/scanned documents
+- They are more likely to pull BirdNerd toward a service-side or Python-assisted architecture sooner
+- That is heavier than needed for the first viability test
+
+Primary reference:
+
+- PaddleOCR docs home: <https://www.paddleocr.ai/main/en/index.html>
+
+## Decision For 0.4.x
+
+BirdNerd OCR should start `0.4.x` with a Tesseract-first experiment.
+
+This is a product decision about sequence, not a permanent commitment to Tesseract as the final OCR architecture.
+
+For the roadmap, see [../../plan.md](../../plan.md). The technical direction for that roadmap is:
+
+- Introduce `tesseract.js` first
+- Run OCR against the current row-based review flow
+- Treat the first integration as a viability spike rather than a permanent architecture commitment
+- Keep human review mandatory
+
+Success means:
+
+- We can OCR row crops in-browser
+- We get enough useful text fragments to prefill some existing row fields
+- The workflow still centers human review rather than trusting OCR output
+
+Failure signals that should trigger a rethink:
+
+- Recognition quality on real row crops is too weak to prefill anything useful
+- Performance or memory cost in-browser is unacceptably bad
+- The integration requires so much preprocessing that the browser-first path stops being the simple option
+
+## Explicit Non-Goals For 0.4.x
+
+These are intentionally deferred so `0.4.x` stays focused on OCR viability:
+
+- Image-rotation and intake polish
+- Replacing native `datalist` with a custom compact combobox
+- Direct BirdNerd import from OCR output
+- General multi-layout document support
+
+Those belong in later polish or follow-on OCR phases unless they become necessary to make the OCR experiment viable.
