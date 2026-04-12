@@ -3,9 +3,11 @@ import { useRegisterSW } from 'virtual:pwa-register/react'
 import SheetAnnotator from './components/SheetAnnotator'
 import RowCropPreview from './components/RowCropPreview'
 import RowDraftEditor from './components/RowDraftEditor'
+import RowExportPreview from './components/RowExportPreview'
 import RowList from './components/RowList'
 import { useObjectUrl } from './hooks/useObjectUrl'
 import type { NormalizedRect, RowBox, RowDraft } from './types'
+import { getExportCsv, getExportRecords } from './utils/exportRows'
 
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const
 
@@ -50,6 +52,7 @@ export default function App() {
   const imageUrl = useObjectUrl(selectedFile)
   const selectedRowIndex = rowBoxes.findIndex((rowBox) => rowBox.id === selectedRowId)
   const selectedRow = selectedRowIndex >= 0 ? rowBoxes[selectedRowIndex] : null
+  const exportRecords = getExportRecords(rowBoxes)
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -111,6 +114,23 @@ export default function App() {
   const selectNextRow = () => {
     if (selectedRowIndex < 0 || selectedRowIndex >= rowBoxes.length - 1) return
     setSelectedRowId(rowBoxes[selectedRowIndex + 1]?.id ?? null)
+  }
+
+  const exportCsv = () => {
+    if (exportRecords.length === 0) return
+
+    const csv = getExportCsv(exportRecords)
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    const date = new Date().toISOString().slice(0, 10)
+
+    anchor.href = url
+    anchor.download = `birdnerd-ocr-rows-${date}.csv`
+    document.body.append(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
   }
 
   return (
@@ -234,6 +254,11 @@ export default function App() {
               selectedIndex={selectedRowIndex}
               totalRows={rowBoxes.length}
               onUpdateDraft={updateRowDraft}
+            />
+
+            <RowExportPreview
+              records={exportRecords}
+              onExportCsv={exportCsv}
             />
           </div>
         </section>

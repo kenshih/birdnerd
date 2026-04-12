@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- OCR 0.3.2: Add an export preview table for non-empty OCR row drafts.
+- OCR 0.3.2: Add CSV export for reviewed OCR row data using the current draft field order.
+
+### Changed
+
+- OCR 0.3.2: Keep export logic modular with a pure row export utility and a dedicated preview component.
+
+## [2026-04-12]
+
+### Added
+
 - OCR 0.3.1: Expand the left-side row draft fields with additional short coded banding columns including how sexed, skull, cloacal protuberance, brood patch, fat, body molt, flight feather molt, flight feather wear, and juvenile body plumage.
 
 ### Changed

@@ -662,6 +662,54 @@ button.row-box {
   color: #66705f;
 }
 
+.export-card {
+  align-self: start;
+}
+
+.export-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.export-table-shell {
+  margin-top: 1rem;
+  overflow-x: auto;
+  border: 1px solid rgba(56, 76, 55, 0.14);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.export-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.export-table th,
+.export-table td {
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid rgba(56, 76, 55, 0.12);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.export-table th {
+  position: sticky;
+  top: 0;
+  background: rgba(242, 236, 224, 0.98);
+  color: #344434;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.export-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 .scope-list {
   padding-left: 1.2rem;
 }
