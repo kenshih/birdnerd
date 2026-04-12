@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
+- Repo: Refresh conservative workspace dependencies before OCR engine work, including React, React DOM, React Hook Form, `@typescript-eslint/*`, and Vite `7.3.2` for current security fixes.
 
 ### Added
 
