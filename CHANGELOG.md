@@ -16,6 +16,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [2026-04-12]
 
+### Added
+
+- Shared 0.2.0: Add reusable banding code metadata for constrained OCR and field-app inputs.
+
+### Changed
+
+- Field 0.22.0: Rewire the field app to consume shared banding code metadata from `@birdnerd/shared` without changing current behavior.
+- Shared 0.2.0: Expand `@birdnerd/shared` beyond domain types to include OCR-relevant banding code tables.
+
+## [2026-04-12]
+
 ### Changed
 
 - OCR 0.3.3: Centralize the OCR row draft field schema so draft initialization, editor layout, and CSV export share one source of truth.

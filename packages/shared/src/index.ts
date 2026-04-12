@@ -178,3 +178,5 @@ export interface Bander {
   createdAt: string
   updatedAt: string
 }
+
+export * from './bandingCodes'

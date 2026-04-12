@@ -81,11 +81,34 @@ Assumptions for Phase 22:
 - Confirm and fix row-selection/draft persistence edge cases discovered during testing
 - Evaluate layout refinements for preview, controls, and row list placement with desktop-first testing
 
-### OCR 0.3.2 — Export & Guided Entry
+### OCR 0.3.2 — Export & Guided Entry ✅
 - Add CSV/table export for reviewed rows
+- Add export preview table for non-empty row drafts before download
+- Keep export logic modular via a pure export utility and dedicated preview component
+
+### OCR 0.3.3 — Cleanup & Structure ✅
+- Centralize OCR row draft field schema so draft initialization, editor layout, and CSV export share one source of truth
+- Refresh OCR workspace copy so the UI reflects the current review-and-export workflow
+- Keep the displayed OCR version derived from `package.json` / `__APP_VERSION__`
+- Remove the nested-button annotator pattern and preserve keyboard focus/selection for row boxes
+
+### Shared 0.2.0 — OCR/Field Metadata Foundation ✅
+- Extract reusable field metadata from OCR into `packages/shared` where it is clearly domain-level rather than app-local
+- Define shared enum-like/code-list structures for constrained banding fields that both field app and OCR app can consume
+- Keep the shared package focused on pure metadata/types/helpers, not OCR UI behavior
+- Use this shared layer to support the first field-aware OCR inputs without duplicating code tables or option definitions
+
+### Field 0.22.0 — Shared Metadata Adoption ✅
+- Adopt the shared banding code metadata from `@birdnerd/shared`
+- Keep current field-app behavior unchanged while the source of truth for constrained code tables moves into the shared package
+- Verify field build and regression tests after the shared extraction
+
+### OCR 0.3.4 — Guided Entry Inputs
 - Add the first field-aware inputs where useful: combobox/select/code helpers for constrained fields
+- Start with constrained banding fields such as code, species alpha code, age, sex, how aged, and how sexed
+- Reuse shared metadata from `packages/shared` where practical instead of hardcoding OCR-only option lists
 - Continue confirming and fixing any row-selection/draft persistence edge cases discovered during testing
-- Keep refining the row-review workflow now that the left-side coded layout is in place
+- Keep refining the row-review workflow now that export and the left-side coded layout are in place
 
 ### OCR 0.4.0 — OCR-Assisted Prefill
 - Add OCR for row text/cell regions on the supported layout

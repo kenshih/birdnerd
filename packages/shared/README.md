@@ -6,6 +6,7 @@ Phase 21c establishes the first real shared surface by moving persisted domain t
 
 Current contents:
 - shared entity and record types consumed by the field app
+- shared banding code metadata consumed by the field and OCR apps
 
 Still intentionally out of scope:
 - React/UI code
