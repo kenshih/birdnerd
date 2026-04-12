@@ -18,6 +18,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- OCR 0.3.4: Add the first guided-input pass for constrained banding fields using shared code metadata.
+
+### Changed
+
+- OCR 0.3.4: Reuse banding code metadata from `@birdnerd/shared` for OCR row-entry suggestions instead of hardcoded OCR-only lists.
+- OCR 0.3.4: Use native `datalist` suggestions as the lightweight first guided-entry step while keeping the compact OCR row editor layout.
+
+## [2026-04-12]
+
+### Added
+
 - Shared 0.2.0: Add reusable banding code metadata for constrained OCR and field-app inputs.
 
 ### Changed

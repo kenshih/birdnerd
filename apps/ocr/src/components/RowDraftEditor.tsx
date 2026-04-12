@@ -83,7 +83,7 @@ export default function RowDraftEditor({
 
             {expandedSections.left && (
               <div className="editor-grid editor-grid-left">
-                {LEFT_SECTION_FIELDS.map(({ key, label, placeholder, compact, wide }) => (
+                {LEFT_SECTION_FIELDS.map(({ key, label, placeholder, compact, wide, options }) => (
                   <label
                     key={key}
                     className={`editor-field${compact ? ' is-compact' : ''}${wide ? ' is-wide' : ''}`}
@@ -93,8 +93,18 @@ export default function RowDraftEditor({
                       type="text"
                       value={selectedRow.draft[key]}
                       placeholder={placeholder}
+                      list={options ? `ocr-options-${key}` : undefined}
                       onChange={handleFieldChange(key)}
                     />
+                    {options ? (
+                      <datalist id={`ocr-options-${key}`}>
+                        {options.map((option) => (
+                          <option key={option.code} value={option.code}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </datalist>
+                    ) : null}
                   </label>
                 ))}
 

@@ -103,10 +103,11 @@ Assumptions for Phase 22:
 - Keep current field-app behavior unchanged while the source of truth for constrained code tables moves into the shared package
 - Verify field build and regression tests after the shared extraction
 
-### OCR 0.3.4 — Guided Entry Inputs
+### OCR 0.3.4 — Guided Entry Inputs ✅
 - Add the first field-aware inputs where useful: combobox/select/code helpers for constrained fields
 - Start with constrained banding fields such as code, species alpha code, age, sex, how aged, and how sexed
 - Reuse shared metadata from `packages/shared` where practical instead of hardcoding OCR-only option lists
+- Use native `datalist` as the lightweight first guided-input step; consider a custom compact one-line combobox later if browser rendering remains too noisy
 - Continue confirming and fixing any row-selection/draft persistence edge cases discovered during testing
 - Keep refining the row-review workflow now that export and the left-side coded layout are in place
 
