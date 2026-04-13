@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
+import { FIELD_WINDOWS } from '../ocr/fieldWindows'
 import type { RowBox } from '../types'
+import { cropImageToDataUrl } from '../utils/cropImage'
 
 /** Shows a zoomed crop of the selected row and provides previous/next navigation. */
 interface Props {
@@ -18,8 +21,32 @@ export default function RowCropPreview({
 }: Props) {
   const selectedRow = rowBoxes[selectedIndex] ?? null
   const cropAspectRatio = selectedRow ? `${selectedRow.rect.width} / ${selectedRow.rect.height}` : undefined
-  const cropLeft = selectedRow ? (selectedRow.rect.x / selectedRow.rect.width) * 100 : 0
-  const cropTop = selectedRow ? (selectedRow.rect.y / selectedRow.rect.height) * 100 : 0
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!imageUrl || !selectedRow) {
+      setPreviewUrl(null)
+      return
+    }
+
+    cropImageToDataUrl(imageUrl, selectedRow.rect, { maxDimension: 1800 })
+      .then((url) => {
+        if (!cancelled) {
+          setPreviewUrl(url)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPreviewUrl(null)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [imageUrl, selectedRow])
 
   return (
     <section className="card preview-card">
@@ -57,17 +84,28 @@ export default function RowCropPreview({
             className="crop-frame"
             style={{ aspectRatio: cropAspectRatio }}
           >
-            <img
-              className="crop-image"
-              src={imageUrl}
-              alt={`Bandsheet row ${selectedIndex + 1}`}
-              style={{
-                height: `${100 / selectedRow.rect.height}%`,
-                width: `${100 / selectedRow.rect.width}%`,
-                left: `-${cropLeft}%`,
-                top: `-${cropTop}%`,
-              }}
-            />
+            {previewUrl ? (
+              <img
+                className="crop-image crop-image-preview"
+                src={previewUrl}
+                alt={`Bandsheet row ${selectedIndex + 1}`}
+              />
+            ) : null}
+
+            {Object.entries(FIELD_WINDOWS).map(([fieldKey, definition]) => (
+              <div
+                key={fieldKey}
+                className={`field-window-overlay field-window-${fieldKey}`}
+                style={{
+                  left: `${definition.rect.x * 100}%`,
+                  top: `${definition.rect.y * 100}%`,
+                  width: `${definition.rect.width * 100}%`,
+                  height: `${definition.rect.height * 100}%`,
+                }}
+              >
+                <span>{definition.label}</span>
+              </div>
+            ))}
           </div>
 
           <div className="crop-meta">

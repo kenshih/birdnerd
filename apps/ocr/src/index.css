@@ -509,6 +509,43 @@ h2 {
   max-width: none;
 }
 
+.crop-image-preview {
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+.field-window-overlay {
+  position: absolute;
+  border: 2px solid;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  pointer-events: none;
+}
+
+.field-window-overlay span {
+  position: absolute;
+  top: 0.25rem;
+  left: 0.25rem;
+  border-radius: 999px;
+  padding: 0.12rem 0.4rem;
+  background: rgba(35, 44, 34, 0.82);
+  color: #fff9f2;
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+.field-window-bandNumber {
+  border-color: rgba(193, 110, 44, 0.95);
+  background: rgba(193, 110, 44, 0.08);
+}
+
+.field-window-speciesCode {
+  border-color: rgba(43, 92, 164, 0.95);
+  background: rgba(43, 92, 164, 0.08);
+}
+
 .crop-meta {
   display: flex;
   flex-wrap: wrap;
@@ -573,6 +610,26 @@ h2 {
   padding-left: 1.2rem;
   color: #344434;
   line-height: 1.5;
+}
+
+.ocr-focused-results {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ocr-focused-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(56, 76, 55, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.ocr-focused-card h4 {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #29412f;
 }
 
 .ocr-placeholder {

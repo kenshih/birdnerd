@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+import { FIELD_WINDOWS, getFieldWindowRect, type FocusedOcrField } from './ocr/fieldWindows'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import type { OcrDraftSuggestion } from './ocr/mapRecognizedTextToDraft'
 import { mapFocusedRecognizedTextToDraft, mapRecognizedTextToDraft } from './ocr/mapRecognizedTextToDraft'
@@ -41,15 +42,21 @@ export default function App() {
   const [ocrSuggestionsByRowId, setOcrSuggestionsByRowId] = useState<Record<string, OcrDraftSuggestion[]>>({})
   const [ocrErrorByRowId, setOcrErrorByRowId] = useState<Record<string, string | null>>({})
   const [ocrModeLabelByRowId, setOcrModeLabelByRowId] = useState<Record<string, string>>({})
+  const [focusedOcrByRowId, setFocusedOcrByRowId] = useState<
+    Record<string, Partial<Record<FocusedOcrField, FocusedOcrResultState>>>
+  >({})
 
   const imageUrl = useObjectUrl(selectedFile)
   const selectedRowIndex = rowBoxes.findIndex((rowBox) => rowBox.id === selectedRowId)
   const selectedRow = selectedRowIndex >= 0 ? rowBoxes[selectedRowIndex] : null
-  const exportRecords = getExportRecords(rowBoxes)
+  const exportRecords = useMemo(() => getExportRecords(rowBoxes), [rowBoxes])
   const selectedRowRawText = selectedRow ? ocrRawTextByRowId[selectedRow.id] ?? '' : ''
   const selectedRowSuggestions = selectedRow ? ocrSuggestionsByRowId[selectedRow.id] ?? [] : []
   const selectedRowError = selectedRow ? ocrErrorByRowId[selectedRow.id] ?? null : null
   const selectedRowModeLabel = selectedRow ? ocrModeLabelByRowId[selectedRow.id] ?? null : null
+  const selectedRowFocusedResults = selectedRow
+    ? getFocusedResultCards(focusedOcrByRowId[selectedRow.id] ?? {})
+    : []
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -64,6 +71,7 @@ export default function App() {
     setOcrSuggestionsByRowId({})
     setOcrErrorByRowId({})
     setOcrModeLabelByRowId({})
+    setFocusedOcrByRowId({})
   }
 
   const clearSheet = () => {
@@ -76,23 +84,24 @@ export default function App() {
     setOcrSuggestionsByRowId({})
     setOcrErrorByRowId({})
     setOcrModeLabelByRowId({})
+    setFocusedOcrByRowId({})
   }
 
-  const addRow = (rect: NormalizedRect) => {
+  const addRow = useCallback((rect: NormalizedRect) => {
     const newRow = { id: makeRowId(), rect, draft: createEmptyRowDraft() }
     setRowBoxes((current) => [...current, newRow])
     setSelectedRowId(newRow.id)
-  }
+  }, [])
 
-  const updateRow = (rowId: string, rect: NormalizedRect) => {
+  const updateRow = useCallback((rowId: string, rect: NormalizedRect) => {
     setRowBoxes((current) =>
       current.map((rowBox) =>
         rowBox.id === rowId ? { ...rowBox, rect } : rowBox
       )
     )
-  }
+  }, [])
 
-  const updateRowDraft = (rowId: string, field: keyof RowDraft, value: string) => {
+  const updateRowDraft = useCallback((rowId: string, field: keyof RowDraft, value: string) => {
     setRowBoxes((current) =>
       current.map((rowBox) =>
         rowBox.id === rowId
@@ -100,9 +109,9 @@ export default function App() {
           : rowBox
       )
     )
-  }
+  }, [])
 
-  const deleteSelectedRow = () => {
+  const deleteSelectedRow = useCallback(() => {
     if (!selectedRowId) return
 
     setRowBoxes((current) => {
@@ -116,19 +125,20 @@ export default function App() {
     setOcrSuggestionsByRowId((current) => omitRowKey(current, selectedRowId))
     setOcrErrorByRowId((current) => omitRowKey(current, selectedRowId))
     setOcrModeLabelByRowId((current) => omitRowKey(current, selectedRowId))
-  }
+    setFocusedOcrByRowId((current) => omitRowKey(current, selectedRowId))
+  }, [selectedRowId, selectedRowIndex])
 
-  const selectPreviousRow = () => {
+  const selectPreviousRow = useCallback(() => {
     if (selectedRowIndex <= 0) return
     setSelectedRowId(rowBoxes[selectedRowIndex - 1]?.id ?? null)
-  }
+  }, [rowBoxes, selectedRowIndex])
 
-  const selectNextRow = () => {
+  const selectNextRow = useCallback(() => {
     if (selectedRowIndex < 0 || selectedRowIndex >= rowBoxes.length - 1) return
     setSelectedRowId(rowBoxes[selectedRowIndex + 1]?.id ?? null)
-  }
+  }, [rowBoxes, selectedRowIndex])
 
-  const exportCsv = () => {
+  const exportCsv = useCallback(() => {
     if (exportRecords.length === 0) return
 
     const csv = getExportCsv(exportRecords)
@@ -143,7 +153,7 @@ export default function App() {
     anchor.click()
     anchor.remove()
     URL.revokeObjectURL(url)
-  }
+  }, [exportRecords])
 
   const runOcrOnSelectedRow = async (
     preset: RowOcrPreset = DEFAULT_ROW_OCR_PRESET,
@@ -173,7 +183,10 @@ export default function App() {
   const applyOcrSuggestionsToSelectedRow = () => {
     if (!selectedRow) return
 
-    const suggestions = ocrSuggestionsByRowId[selectedRow.id] ?? []
+    const suggestions = [
+      ...(ocrSuggestionsByRowId[selectedRow.id] ?? []),
+      ...Object.values(focusedOcrByRowId[selectedRow.id] ?? {}).flatMap((result) => result?.suggestions ?? []),
+    ]
     if (suggestions.length === 0) return
 
     setRowBoxes((current) =>
@@ -196,17 +209,60 @@ export default function App() {
     )
   }
 
-  const runSpeciesCodeOcrTest = () =>
-    runOcrOnSelectedRow(
-      SPECIES_CODE_OCR_PRESET,
-      (text) => mapFocusedRecognizedTextToDraft('speciesCode', text),
-    )
+  const runFocusedFieldOcrTest = async (field: FocusedOcrField, preset: RowOcrPreset) => {
+    if (!selectedRow || !imageUrl) return
 
-  const runBandNumberOcrTest = () =>
-    runOcrOnSelectedRow(
-      BAND_NUMBER_OCR_PRESET,
-      (text) => mapFocusedRecognizedTextToDraft('bandNumber', text),
-    )
+    const fieldRect = getFieldWindowRect(selectedRow.rect, field)
+    setOcrRunningRowId(selectedRow.id)
+
+    setFocusedOcrByRowId((current) => ({
+      ...current,
+      [selectedRow.id]: {
+        ...(current[selectedRow.id] ?? {}),
+        [field]: {
+          ...(current[selectedRow.id]?.[field] ?? createEmptyFocusedResultState()),
+          errorMessage: null,
+        },
+      },
+    }))
+
+    try {
+      const result = await recognizeRow(imageUrl, fieldRect, preset)
+      const rawText = result.data.text.trim()
+      const suggestions = mapFocusedRecognizedTextToDraft(field, rawText)
+
+      setFocusedOcrByRowId((current) => ({
+        ...current,
+        [selectedRow.id]: {
+          ...(current[selectedRow.id] ?? {}),
+          [field]: {
+            rawText,
+            suggestions,
+            errorMessage: null,
+          },
+        },
+      }))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Focused OCR failed for the selected field.'
+
+      setFocusedOcrByRowId((current) => ({
+        ...current,
+        [selectedRow.id]: {
+          ...(current[selectedRow.id] ?? {}),
+          [field]: {
+            ...(current[selectedRow.id]?.[field] ?? createEmptyFocusedResultState()),
+            errorMessage: message,
+          },
+        },
+      }))
+    } finally {
+      setOcrRunningRowId(null)
+    }
+  }
+
+  const runSpeciesCodeOcrTest = () => runFocusedFieldOcrTest('speciesCode', SPECIES_CODE_OCR_PRESET)
+
+  const runBandNumberOcrTest = () => runFocusedFieldOcrTest('bandNumber', BAND_NUMBER_OCR_PRESET)
 
   return (
     <main className="shell">
@@ -331,6 +387,7 @@ export default function App() {
               modeLabel={selectedRowModeLabel}
               rawText={selectedRowRawText}
               suggestions={selectedRowSuggestions}
+              focusedResults={selectedRowFocusedResults}
               onRun={() => runOcrOnSelectedRow()}
               onRunSpeciesCodeTest={runSpeciesCodeOcrTest}
               onRunBandNumberTest={runBandNumberOcrTest}
@@ -369,4 +426,30 @@ function omitRowKey<T>(record: Record<string, T>, rowId: string | null): Record<
   const nextRecord = { ...record }
   delete nextRecord[rowId]
   return nextRecord
+}
+
+interface FocusedOcrResultState {
+  rawText: string
+  suggestions: OcrDraftSuggestion[]
+  errorMessage: string | null
+}
+
+function createEmptyFocusedResultState(): FocusedOcrResultState {
+  return {
+    rawText: '',
+    suggestions: [],
+    errorMessage: null,
+  }
+}
+
+function getFocusedResultCards(
+  record: Partial<Record<FocusedOcrField, FocusedOcrResultState>>,
+) {
+  return (Object.keys(FIELD_WINDOWS) as FocusedOcrField[]).map((field) => ({
+    field,
+    label: FIELD_WINDOWS[field].label,
+    rawText: record[field]?.rawText ?? '',
+    suggestions: record[field]?.suggestions ?? [],
+    errorMessage: record[field]?.errorMessage ?? null,
+  }))
 }

@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import type { KeyboardEvent as ReactKeyboardEvent } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import type { NormalizedRect, ResizeHandle, RowBox } from '../types'
@@ -140,11 +140,7 @@ export default function SheetAnnotator({
   return (
     <div className="image-scroll">
       <div className="annotator-stage" style={{ width: `${zoom * 100}%` }}>
-        <img
-          className="sheet-image"
-          src={imageUrl}
-          alt="Uploaded bandsheet"
-        />
+        <SheetImage imageUrl={imageUrl} />
 
         <div
           ref={overlayRef}
@@ -194,3 +190,15 @@ export default function SheetAnnotator({
     </div>
   )
 }
+
+const SheetImage = memo(function SheetImage({ imageUrl }: { imageUrl: string }) {
+  return (
+    <img
+      className="sheet-image"
+      src={imageUrl}
+      alt="Uploaded bandsheet"
+      draggable={false}
+      decoding="async"
+    />
+  )
+})

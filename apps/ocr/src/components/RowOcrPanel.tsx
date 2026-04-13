@@ -1,4 +1,13 @@
 import type { OcrDraftSuggestion } from '../ocr/mapRecognizedTextToDraft'
+import type { FocusedOcrField } from '../ocr/fieldWindows'
+
+interface FocusedOcrResult {
+  field: FocusedOcrField
+  label: string
+  rawText: string
+  suggestions: OcrDraftSuggestion[]
+  errorMessage: string | null
+}
 
 interface Props {
   hasSelectedRow: boolean
@@ -7,6 +16,7 @@ interface Props {
   modeLabel: string | null
   rawText: string
   suggestions: OcrDraftSuggestion[]
+  focusedResults: FocusedOcrResult[]
   onRun: () => void
   onRunSpeciesCodeTest: () => void
   onRunBandNumberTest: () => void
@@ -21,6 +31,7 @@ export default function RowOcrPanel({
   modeLabel,
   rawText,
   suggestions,
+  focusedResults,
   onRun,
   onRunSpeciesCodeTest,
   onRunBandNumberTest,
@@ -105,6 +116,38 @@ export default function RowOcrPanel({
               </ul>
             ) : (
               <p className="ocr-placeholder">No basic suggestions yet.</p>
+            )}
+          </div>
+
+          <div className="ocr-result-block">
+            <h3>Focused Field OCR</h3>
+            {focusedResults.length > 0 ? (
+              <div className="ocr-focused-results">
+                {focusedResults.map((result) => (
+                  <article key={result.field} className="ocr-focused-card">
+                    <h4>{result.label}</h4>
+                    {result.errorMessage ? (
+                      <p className="ocr-error">{result.errorMessage}</p>
+                    ) : result.rawText ? (
+                      <pre className="ocr-raw-text">{result.rawText}</pre>
+                    ) : (
+                      <p className="ocr-placeholder">No result yet.</p>
+                    )}
+
+                    {result.suggestions.length > 0 ? (
+                      <ul className="ocr-suggestion-list">
+                        {result.suggestions.map((suggestion) => (
+                          <li key={`${result.field}-${suggestion.value}`}>
+                            <strong>{suggestion.field}</strong>: <code>{suggestion.value}</code> — {suggestion.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <p className="ocr-placeholder">No focused field OCR results yet.</p>
             )}
           </div>
         </div>

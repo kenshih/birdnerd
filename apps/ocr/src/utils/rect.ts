@@ -33,6 +33,15 @@ export function rectToPercentStyle(rect: NormalizedRect) {
   }
 }
 
+export function composeNormalizedRect(parent: NormalizedRect, child: NormalizedRect): NormalizedRect {
+  return {
+    x: parent.x + child.x * parent.width,
+    y: parent.y + child.y * parent.height,
+    width: child.width * parent.width,
+    height: child.height * parent.height,
+  }
+}
+
 function getRectEdges(rect: NormalizedRect) {
   return {
     left: rect.x,

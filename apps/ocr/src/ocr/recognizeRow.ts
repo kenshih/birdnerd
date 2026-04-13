@@ -1,5 +1,6 @@
 import { PSM, createWorker, type RecognizeResult } from 'tesseract.js'
 import type { NormalizedRect } from '../types'
+import { cropImageToDataUrl } from '../utils/cropImage'
 
 export interface RowOcrPreset {
   label: string
@@ -33,7 +34,7 @@ export async function recognizeRow(
   const worker = await createWorker('eng')
 
   try {
-    const croppedRowDataUrl = await getRowCropDataUrl(imageUrl, rect)
+    const croppedRowDataUrl = await cropImageToDataUrl(imageUrl, rect)
     await worker.setParameters({
       tessedit_pageseg_mode: preset.psm ?? PSM.SINGLE_LINE,
       ...(preset.whitelist ? { tessedit_char_whitelist: preset.whitelist } : {}),
@@ -42,44 +43,4 @@ export async function recognizeRow(
   } finally {
     await worker.terminate()
   }
-}
-
-async function getRowCropDataUrl(imageUrl: string, rect: NormalizedRect): Promise<string> {
-  const image = await loadImage(imageUrl)
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-
-  if (!context) {
-    throw new Error('Canvas 2D context is unavailable for OCR cropping.')
-  }
-
-  const cropX = Math.round(rect.x * image.naturalWidth)
-  const cropY = Math.round(rect.y * image.naturalHeight)
-  const cropWidth = Math.max(1, Math.round(rect.width * image.naturalWidth))
-  const cropHeight = Math.max(1, Math.round(rect.height * image.naturalHeight))
-
-  canvas.width = cropWidth
-  canvas.height = cropHeight
-  context.drawImage(
-    image,
-    cropX,
-    cropY,
-    cropWidth,
-    cropHeight,
-    0,
-    0,
-    cropWidth,
-    cropHeight,
-  )
-
-  return canvas.toDataURL('image/png')
-}
-
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image()
-    image.onload = () => resolve(image)
-    image.onerror = () => reject(new Error('Failed to load the selected row image for OCR.'))
-    image.src = src
-  })
 }

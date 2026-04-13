@@ -128,6 +128,7 @@ Assumptions for Phase 22:
 - Continue measuring OCR usefulness on real bandsheet examples
 - Shift from generic row OCR toward focused field-level OCR where the layout and value constraints are predictable
 - Start with species alpha code and band number experiments using tighter field windows and field-specific OCR constraints
+- Initial implementation slices: define layout-specific field windows within the selected row; crop species code and band number subregions from the selected row; run field-specific OCR presets on those subregions; keep raw field OCR results visible; prefill only `speciesCode` and `bandNumber` when the suggestions are usable
 
 ### OCR 0.4.2 — OCR Review Tuning
 - Highlight uncertain or incomplete OCR-prefilled fields
@@ -135,6 +136,7 @@ Assumptions for Phase 22:
 - Expand OCR field coverage only if the first-pass fields are working well
 - Add confidence-aware review cues such as yellow/red highlighting for low-confidence OCR results
 - Tune fixed-layout field segmentation and postprocessing rules before broadening field coverage
+- Add the first limited OCR tests at the pure-helper level (geometry and OCR mapping/postprocessing), not drag-heavy UI interactions yet
 
 ### OCR 0.5.0 — Validation-Assisted Correction
 - Reuse BirdNerd code/domain knowledge to flag likely OCR mistakes
