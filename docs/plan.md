@@ -121,7 +121,7 @@ Assumptions for Phase 22:
 - Initial implementation slices: dedicated OCR service/module; run OCR on the selected row crop only; add a `Run OCR on This Row` action with visible progress/error state; show raw OCR text for inspection; try first-pass prefill for a very small field subset such as band number, species alpha code, age, sex, and code
 - Current learning: generic row-level OCR is weaker than focused field-level OCR on this grid-heavy layout, so the next steps should bias toward tighter field windows and constrained recognition
 
-### OCR 0.4.1 — OCR Row Prefill
+### OCR 0.4.1 — OCR Row Prefill ✅
 - Prefill draft values into the existing row editor from OCR output
 - Focus on the current constrained left-side field set first
 - Surface OCR output in a way that fits the existing row-by-row review workflow
@@ -129,6 +129,7 @@ Assumptions for Phase 22:
 - Shift from generic row OCR toward focused field-level OCR where the layout and value constraints are predictable
 - Start with species alpha code and band number experiments using tighter field windows and field-specific OCR constraints
 - Initial implementation slices: define layout-specific field windows within the selected row; crop species code and band number subregions from the selected row; run field-specific OCR presets on those subregions; keep raw field OCR results visible; prefill only `speciesCode` and `bandNumber` when the suggestions are usable
+- Current learning: grouped species-code OCR is already promising with template-driven field windows, while grouped band-number OCR likely needs per-cell OCR in the next tuning pass
 
 ### OCR 0.4.2 — OCR Review Tuning
 - Highlight uncertain or incomplete OCR-prefilled fields
@@ -137,6 +138,7 @@ Assumptions for Phase 22:
 - Add confidence-aware review cues such as yellow/red highlighting for low-confidence OCR results
 - Tune fixed-layout field segmentation and postprocessing rules before broadening field coverage
 - Add the first limited OCR tests at the pure-helper level (geometry and OCR mapping/postprocessing), not drag-heavy UI interactions yet
+- Switch `bandNumber` from grouped-field OCR toward per-cell OCR if grouped recognition continues to collapse or skip digits
 
 ### OCR 0.5.0 — Validation-Assisted Correction
 - Reuse BirdNerd code/domain knowledge to flag likely OCR mistakes

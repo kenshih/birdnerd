@@ -19,6 +19,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- OCR 0.4.1: Add the first row-template-driven field segmentation for the supported left-side bandsheet layout.
+- OCR 0.4.1: Add visible field-window overlays for `bandNumber` and `speciesCode` so OCR geometry can be tuned against the selected row preview.
+- OCR 0.4.1: Add focused OCR result cards for species code and band number instead of overwriting a single generic OCR result area.
+
+### Changed
+
+- OCR 0.4.1: Replace rough percentage-only field guesses with a first machine-friendly row template plus template-derived field windows.
+- OCR 0.4.1: Improve OCR preview performance by rendering a true cropped row preview bitmap instead of scaling the full source image into the preview.
+- OCR 0.4.1: Tune the current `bandNumber` and `speciesCode` windows against real sheet examples and confirm that grouped species-code OCR is more promising than grouped band-number OCR.
+
+## [2026-04-12]
+
+### Added
+
 - OCR 0.4.0: Add the first browser OCR spike using `tesseract.js` in the OCR workspace.
 - OCR 0.4.0: Add a row-level OCR panel with raw OCR output inspection and targeted OCR test actions for species code and band number.
 
