@@ -161,13 +161,50 @@ Assumptions for Phase 22:
 
 ---
 
-## Backlog (unordered — to be phased later)
+## Phase 23 — P2P Sync Spike
 
-**Distributed Database Architecture**
-- Research peer-to-peer sync model as an alternative to centralized cloud (Supabase/Postgres)
-- Candidate approaches: CRDTs (e.g. Automerge, Yjs), libp2p, gun.js, OrbitDB, or custom sync over WebRTC
-- Key questions: conflict resolution for banding records, identity/trust without a central auth server, offline-first compatibility with existing IndexedDB layer, partial sync (station-scoped vs. org-wide)
-- Compare against centralized sync (see Cloud Sync & Auth backlog item) on: complexity, cost, multi-org scalability, and auditability requirements (BBL/CDFW submissions)
+Goal: Prove that 2–5 known devices can sync banding records without a central data server, using CRDT-based sync and cryptographic device identity with in-person enrollment. Runs as a parallel track to Phase 22 OCR work.
+
+Assumptions for Phase 23:
+- `apps/sync-spike` is a standalone PWA, isolated from the field app
+- Uses the field app's banding record shape but its own IndexedDB store
+- A signaling relay is acceptable — a tiny server that brokers WebRTC handshakes but is blind to data content; use free public relay to start
+- Two-track approach: sync mechanics first, identity/security second
+- Success = two real devices sync a banding record change across the internet, with access gated to enrolled devices only
+- Decision gate at Sync 0.5.0: integrate into field app, continue parallel, or deprioritize in favor of Supabase
+
+### Sync 0.1.0 — Scaffold & Yjs Baseline
+- Create `apps/sync-spike` workspace in monorepo
+- Integrate Yjs + y-webrtc
+- Two browser tabs sync a shared Yjs document
+- Room identified by a shared code/password for now
+- No banding record shape yet — just prove sync works
+
+### Sync 0.2.0 — Banding Record Shape
+- Model field app's capture record shape in Yjs (`Y.Map` per record)
+- CRUD operations (add, edit, delete) sync across peers
+- Test with real banding data shape across two devices
+
+### Sync 0.3.0 — Device Identity & Pairing
+- Web Crypto API keypair generation per device, stored in IndexedDB
+- QR code invite flow for in-person enrollment
+- Replace room password with device-keyed access
+- Org trusted-device list maintained per device
+- Key rotation: issuing a new group key excludes revoked devices
+
+### Sync 0.4.0 — Automerge Comparison (optional)
+- Port sync layer to Automerge
+- Compare CRDT merge behavior on banding records vs Yjs
+- Evaluate which handles field-edit conflicts more predictably
+
+### Sync 0.5.0 — Retrospective & Decision Gate
+- Evaluate merge correctness, offline behavior, and pairing UX on real devices
+- Compare P2P model against Supabase/centralized on complexity, cost, auditability
+- Document findings and decide next direction for sync in the field app
+
+---
+
+## Backlog (unordered — to be phased later)
 
 **Media**
 - Photo Log view: browse PhotoRecords grouped by session, filter by species/date
