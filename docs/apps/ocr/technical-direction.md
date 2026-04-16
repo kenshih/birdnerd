@@ -110,6 +110,41 @@ Failure signals that should trigger a rethink:
 - This means BirdNerd probably does not need to "solve handwriting OCR in general" to get useful results. It needs to get good enough at one layout with bounded field types and human review.
 - If future experimentation shows Tesseract cannot get beyond weak usefulness even with field-level constraints, preprocessing, and postprocessing, then we should reconsider cloud OCR or heavier document-parsing alternatives.
 
+## Manual Transcription Exercise
+
+A useful design exercise was to manually transcribe a real sheet into a CSV and pay attention to the steps involved.
+
+The most important result was that the work did not feel like "reading a row" in one pass. It felt more like:
+
+1. Find structural landmarks in the row
+2. Isolate a small field or cell group
+3. Use field expectations to interpret ambiguous marks
+4. Move to the next field
+
+That reinforces the current direction, but with a clearer product framing:
+
+- BirdNerd OCR should behave like a structured transcription assistant, not a generic row OCR engine
+- The useful unit of work is often a field or a single cell, not a whole row
+- The row template and field windows are not just OCR helpers; they are the backbone of the workflow
+
+This exercise increased confidence in the following design choices:
+
+- Grid-aware or template-aware segmentation is the right foundation
+- Species alpha code is a strong grouped-field OCR target
+- Band number likely wants per-cell OCR rather than one grouped digit run
+- Human review plus confidence-aware cues is still the right product posture
+
+It also surfaced a promising extension to the current path:
+
+- The product may eventually benefit from a lightweight per-sheet calibration step
+- That would mean aligning the known row template to one sheet once, then reusing that structure across many rows
+- This is a different problem from generic table detection and may be both simpler and more reliable for BirdNerd
+
+Practical implication:
+
+- The right near-term problem is not "OCR the row"
+- It is "navigate a known row template and generate field-level suggestions with constraints, review cues, and human confirmation"
+
 ## Explicit Non-Goals For 0.4.x
 
 These are intentionally deferred so `0.4.x` stays focused on OCR viability:

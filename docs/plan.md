@@ -173,7 +173,7 @@ Assumptions for Phase 23:
 - Success = two real devices sync a banding record change across the internet, with access gated to enrolled devices only
 - Decision gate at Sync 0.5.0: integrate into field app, continue parallel, or deprioritize in favor of Supabase
 
-### Sync 0.1.0 — Scaffold & Yjs Baseline
+### Sync 0.1.0 — Scaffold & Yjs Baseline ✅
 - Create `apps/sync-spike` workspace in monorepo
 - Integrate Yjs + y-webrtc
 - Two browser tabs sync a shared Yjs document

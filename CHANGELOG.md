@@ -13,7 +13,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Sync 0.1.0: Scaffold `apps/sync-spike` workspace with Yjs + y-webrtc. Two browser tabs (or devices) join a shared room code and sync a textarea via WebRTC using public signaling.
+- Repo: Add `dev:sync`, `dev:sync:host`, and `build:sync` root scripts for the sync spike workspace.
 - Repo: Add a repo-level changelog to track shipped changes separately from the forward-looking plan.
+
+### Removed
+
+- Repo: Drop the unused root `package.json` `version` field. Each workspace owns its own version; the changelog tracks repo-level history.
 
 ## [2026-04-12]
 

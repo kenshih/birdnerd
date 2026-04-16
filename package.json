@@ -4,6 +4,7 @@
   "workspaces": [
     "apps/field",
     "apps/ocr",
+    "apps/sync-spike",
     "packages/shared"
   ],
   "scripts": {
@@ -11,8 +12,11 @@
     "dev:host": "npm --workspace @birdnerd/field run dev -- --host",
     "dev:ocr": "npm --workspace @birdnerd/ocr run dev",
     "dev:ocr:host": "npm --workspace @birdnerd/ocr run dev -- --host",
+    "dev:sync": "npm --workspace @birdnerd/sync-spike run dev",
+    "dev:sync:host": "npm --workspace @birdnerd/sync-spike run dev -- --host",
     "build": "npm --workspace @birdnerd/field run build",
     "build:ocr": "npm --workspace @birdnerd/ocr run build",
+    "build:sync": "npm --workspace @birdnerd/sync-spike run build",
     "build:combined": "npm run build && npm run build:ocr && rm -rf .combined-site && mkdir -p .combined-site/birdnerd/ocr && cp -R apps/field/dist/. .combined-site/birdnerd/ && cp -R apps/ocr/dist/. .combined-site/birdnerd/ocr/",
     "preview": "npm --workspace @birdnerd/field run preview",
     "preview:host": "npm --workspace @birdnerd/field run preview -- --host",
