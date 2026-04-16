@@ -25,6 +25,15 @@ export default function SpeciesAutocomplete({ value, onChange }: Props) {
     setHighlighted(0)
   }, [query])
 
+  // Sync query to an external, non-empty value change (e.g. form reset for an existing record).
+  // Skip empty values so we don't wipe the user's in-progress typing when our own onChange('') fires.
+  useEffect(() => {
+    if (value && value !== query) {
+      setQuery(value)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value])
+
   function select(species: Species) {
     setQuery(species.code)
     onChange(species.code)

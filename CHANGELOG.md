@@ -10,12 +10,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
 - Repo: Refresh conservative workspace dependencies before OCR engine work, including React, React DOM, React Hook Form, `@typescript-eslint/*`, and Vite `7.3.2` for current security fixes.
+- Repo: Refresh transitive dependencies in `package-lock.json` via `npm audit fix` (lockfile-only, no `package.json` changes) before resuming sync spike work.
 
 ### Added
 
 - Sync 0.1.0: Scaffold `apps/sync-spike` workspace with Yjs + y-webrtc. Two browser tabs (or devices) join a shared room code and sync a textarea via WebRTC using public signaling.
 - Repo: Add `dev:sync`, `dev:sync:host`, and `build:sync` root scripts for the sync spike workspace.
 - Repo: Add a repo-level changelog to track shipped changes separately from the forward-looking plan.
+
+### Fixed
+
+- Field: Sync `SpeciesAutocomplete` input to external value changes so opening an existing banding record shows the saved species code instead of an empty field.
 
 ### Removed
 
