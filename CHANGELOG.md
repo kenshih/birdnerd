@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
 - Repo: Refresh conservative workspace dependencies before OCR engine work, including React, React DOM, React Hook Form, `@typescript-eslint/*`, and Vite `7.3.2` for current security fixes.
 - Repo: Refresh transitive dependencies in `package-lock.json` via `npm audit fix` (lockfile-only, no `package.json` changes) before resuming sync spike work.
+- Repo: Upgrade TypeScript from `5.9.x` to `6.0.3` across all workspaces. Zero type errors, no tsconfig changes needed.
 
 ### Added
 
