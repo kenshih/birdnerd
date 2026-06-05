@@ -81,7 +81,7 @@ export default function ExportPage({ onHome }: Props) {
   }
 
   function handleAgencyExport() {
-    let recs: BirdRecord[] = []
+    const recs: BirdRecord[] = []
     if (agencyScope.has('all')) {
       for (const s of sessions) {
         const sessionRecs = allRecords.get(s.id)

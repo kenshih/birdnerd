@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+- Repo: Repair the field-app lint — add an ESLint 9 flat config (`apps/field/eslint.config.js`: js + typescript-eslint recommended, React Hooks baseline) and drop the invalid `--ext` flag from the `lint` script. `npm run lint` now runs (it previously errored with no config present).
 - Field: Sync `SpeciesAutocomplete` input to external value changes so opening an existing banding record shows the saved species code instead of an empty field.
 
 ### Removed
