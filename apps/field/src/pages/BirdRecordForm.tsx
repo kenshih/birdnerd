@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session, Net, Location, Band } from '@birdnerd/shared'
 import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate, savePhoto } from '../db'
 import { validateRecord } from '../utils/validation'
+import { netCheckTimes } from '../utils/netCheckTimes'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
@@ -381,32 +382,32 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 {AGE_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
-            <Field label="Sex">
-              <select {...register('sex')} style={inputStyle}>
-                <option value="">—</option>
-                {SEX_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
-              </select>
-            </Field>
-          </Row>
-          <Row>
             <Field label="How Aged">
               <select {...register('howAged')} style={inputStyle}>
                 <option value="">—</option>
                 {HOW_AGED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
-            <Field label="How Aged (2nd)">
-              <select {...register('howAged2')} style={inputStyle}>
-                <option value="">—</option>
-                {HOW_AGED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
-              </select>
-            </Field>
           </Row>
           <Row>
+            <Field label="Sex">
+              <select {...register('sex')} style={inputStyle}>
+                <option value="">—</option>
+                {SEX_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+            </Field>
             <Field label="How Sexed">
               <select {...register('howSexed')} style={inputStyle}>
                 <option value="">—</option>
                 {HOW_SEXED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="How Aged (2nd)">
+              <select {...register('howAged2')} style={inputStyle}>
+                <option value="">—</option>
+                {HOW_AGED_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="How Sexed (2nd)">
@@ -427,24 +428,24 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 {SKULL_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="Fat">
-              <select {...register('fat')} style={inputStyle}>
-                <option value="">—</option>
-                {FAT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-              </select>
-            </Field>
-          </Row>
-          <Row>
             <Field label="CP" warning={warnings.cp}>
               <select {...register('cp')} style={inputStyle}>
                 <option value="">—</option>
                 {CP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
+          </Row>
+          <Row>
             <Field label="BP" warning={warnings.bp}>
               <select {...register('bp')} style={inputStyle}>
                 <option value="">—</option>
                 {BP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Fat">
+              <select {...register('fat')} style={inputStyle}>
+                <option value="">—</option>
+                {FAT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -455,14 +456,6 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 {MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="FF Wear">
-              <select {...register('ffWear')} style={inputStyle}>
-                <option value="">—</option>
-                {FF_WEAR_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-              </select>
-            </Field>
-          </Row>
-          <Row>
             <Field label="FF Molt">
               <select {...register('ffMolt')} style={inputStyle}>
                 <option value="">—</option>
@@ -470,12 +463,20 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
               </select>
             </Field>
           </Row>
-          <Field label="Juv Body Plumage">
-            <select {...register('juvBodyPlumage')} style={inputStyle}>
-              <option value="">—</option>
-              {JUV_BODY_PLUMAGE_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
-            </select>
-          </Field>
+          <Row>
+            <Field label="FF Wear">
+              <select {...register('ffWear')} style={inputStyle}>
+                <option value="">—</option>
+                {FF_WEAR_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+            <Field label="Juv Body Plumage">
+              <select {...register('juvBodyPlumage')} style={inputStyle}>
+                <option value="">—</option>
+                {JUV_BODY_PLUMAGE_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
         </Section>
 
         {/* ── Molt Limits & Plumage ── */}
@@ -633,6 +634,17 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>
                 <button type="button" onClick={() => setValue('captureTime', '')} style={nowBtnStyle}>✕</button>
               </div>
+              <select
+                value=""
+                onChange={e => { if (e.target.value) setValue('captureTime', e.target.value, { shouldDirty: true }) }}
+                style={{ ...inputStyle, marginTop: '0.25rem' }}
+                aria-label="Quick net-check time"
+              >
+                <option value="">Net-check time…</option>
+                {netCheckTimes(session.openTime, session.closeTime).map(t => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </Field>
             <Field label="Release Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>

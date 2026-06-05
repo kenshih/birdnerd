@@ -55,12 +55,12 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 - Skull: add `8` (invisible); remove `X` (not checked)
 - ✅ Add **Alula** to the molt limits & plumage section — same dropdown options as the rest, ordered immediately after S covs (now G Covs). _Captured in form + CSV + bundle (v5); NOT added to the fixed agency export — confirm with Hallie whether Alula belongs in the IBP/BBL export._
 - ✅ Rename `S covs` → `G Covs` — _display label only. The stored field (`moltLimitsSCovs`) and agency-export header still read "S covs"; confirm with Hallie whether the agency export header should also change (depends on whether the agency parses by header name) before renaming the data key (which would need an IndexedDB + bundle migration)._
-- Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
+- ✅ Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
 - WRP dropdown label expansions: in `AFCF`, `A` = Adult ("Adult First Complete Formative"); `M` = Minimum; `H` = Hatch Year — **DEFERRED**: scope (all prefixes vs. just these) ambiguous and `WRP_CODES` lives in `@birdnerd/shared` (also used by OCR); confirm with Hallie before editing shared
 - Disposition: add `X` for ectoparasite
 
 **Form layout**
-- Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
+- ✅ Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
 
 **Band Inventory**
 - Allow more than 500 bands per batch
@@ -74,7 +74,7 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 - View records in Data Manager
 - View records within a session without editing (read-only mode)
 - Session bird list: show WRP code instead of the BBL # for age
-- Faster capture time: select a standard net-check interval (e.g. every 30 min) instead of toggling each time
+- ✅ Faster capture time: select a standard net-check interval (e.g. every 30 min) instead of toggling each time
 
 ---
 
