@@ -1,12 +1,14 @@
 # BirdNerd — Plan
 
-See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v5.md](archives/plan.v5.md)
+See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
 ---
 
 ## Completed
 
 Phases 1–21 complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, and [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14.
+
+Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
 | Phase | Summary |
 |-------|---------|
@@ -38,9 +40,84 @@ Phases 1–21 complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases
 
 ---
 
+## Phase 24 — Bulk Data Import (Field 0.24.0)
+
+Goal: Get Hallie's existing banding data into the field app. Her current data isn't linked to sessions, so this phase **starts with a data-shape conversation, not a build** — we can't scope the importer until we see the structure.
+
+Open questions to resolve with Hallie first:
+- What is the source of truth — `MASTER BANDING DATA.xlsx`, or something else?
+- How are records currently organized if not by session (by date? by sheet? flat list)?
+- Decide import approach: a guided in-app import UI vs. a one-time developer-assisted import from the spreadsheet
+- How to handle session-less records: assign to a session on import, allow session-less records, or create a catch-all import session per date/sheet
+
+Once scoped:
+- Map existing columns to BirdNerd record / session / band schema
+- Validate on import as **soft warnings only — never block** (per project conventions)
+- Preserve idempotency / avoid duplicate imports on re-run
+- Confirm whether imported bands should reconcile against Band Inventory
+
+### Field 0.23.0 is intentionally skipped
+- Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the next field release is 0.24.0.
+
+---
+
+## Phase 25 — Field Small Fixes (Field 0.25.0)
+
+Goal: A batch of small, high-value field-app fixes from Hallie. All fields stay optional; soft warnings only.
+
+**Codes & form fields**
+- Add band sizes `4a`, `5`, `6`
+- Skull: add `8` (invisible); remove `X` (not checked)
+- Add **Alula** to the molt limits & plumage section — same dropdown options as the rest, ordered immediately after S covs (now G Covs)
+- Rename `S covs` → `G Covs`
+- Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
+- WRP dropdown label expansions: in `AFCF`, `A` = Adult ("Adult First Complete Formative"); `M` = Minimum; `H` = Hatch Year
+- Disposition: add `X` for ectoparasite
+
+**Form layout**
+- Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
+
+**Band Inventory**
+- Allow more than 500 bands per batch
+- Band-inventory-by-size summary: differentiate Standard, Lock-on, Stainless Steel, and 4-short
+- Delete or modify band inventory
+- All Bands view: show string range (by 100s)
+- All Bands view: fix pagination/scroll — currently caps at first ~100–200 with no way to view the rest
+- Export band inventory to share across devices
+
+**Views & read-only**
+- View records in Data Manager
+- View records within a session without editing (read-only mode)
+- Session bird list: show WRP code instead of the BBL # for age
+- Faster capture time: select a standard net-check interval (e.g. every 30 min) instead of toggling each time
+
+---
+
+## Phase 26 — Net Hours (Field 0.26.0)
+
+Goal: Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog / net-hours groundwork.
+
+- Open/close time per net
+- Calculate total NET HOURS (each net = 1 net-hour for every hour run)
+- Note field for nets opened or closed in a non-standard fashion
+- Surface the net-hours total when closing the session
+
+---
+
+## Phase 27 — Smart Band Entry (Field 0.27.0)
+
+Goal: Speed up band record entry and help catch missing or mis-deployed bands during banding.
+
+- Enter species → suggested band size(s) pop up on screen
+- Select a band size → auto-populate the next band in that series from inventory
+- Designed to help track missing bands / errors while deploying bands
+- Ties together species band-size data, Band Inventory, and band-series sequencing
+
+---
+
 ## Phase 22 — Bandsheet OCR
 
-Goal: Build a row-by-row transcription assistant for one supported BirdNerd bandsheet layout, with OCR layered in incrementally.
+Goal: Build a row-by-row transcription assistant for one supported BirdNerd bandsheet layout, with OCR layered in incrementally. **Completed sub-phases (0.2.0–0.4.1) are archived in [plan.v6](archives/plan.v6.md); only unfinished work remains below.**
 
 Assumptions for Phase 22:
 - Focus on one known bandsheet layout for the foreseeable next phases
@@ -48,88 +125,6 @@ Assumptions for Phase 22:
 - Primary workflow is row-at-a-time review beside the source image
 - OCR is assistive, not the first milestone
 - Human correction is required before output is trusted
-
-### OCR 0.2.0 — Sheet Review & Row Preparation ✅
-- Support one known bandsheet layout only
-- Upload image files of bandsheets
-- Establish OCR-specific branding assets from the new media/logo work
-- Add simple image rotation for slightly tilted sheet photos
-- Manual entry of sheet/header metadata for now
-- Detect or manually define row regions
-- Show full sheet plus per-row crop view
-- Review one row at a time
-- Allow row geometry refinement before transcription
-- No structured row data entry yet
-- No BirdNerd import yet
-- Initial implementation slices: upload image + full sheet viewer; manual row definition/adjustment; selected row crop + next/previous navigation
-
-### OCR 0.3.0 — Core Row Data Model & Review UX ✅
-- Begin structured row transcription after sheet/row geometry is in place
-- Define OCR-app row draft schema for the first supported field subset
-- First-pass subset: bander's initials, code, band number, species alpha code, age, how aged, WRP code, sex
-- Add row status flow: unreviewed, in progress, reviewed
-- Add next/previous row workflow
-- Add a selected-row draft editor tied to each manual row box
-- Preserve image-to-row context while editing
-
-### OCR 0.3.1 — Row Review Workflow Polish ✅
-- Continue the structured row review workflow after the first editable draft milestone
-- Polish row editing and review interactions based on real usage
-- Reorganize the row editor into left / middle / right sections that roughly mirror the physical row
-- Keep short coded fields visually compact, especially in the left-hand section
-- Expand the left-hand draft fields to cover the remaining short-coded row cells before moving deeper into middle/right sections
-- Confirm and fix row-selection/draft persistence edge cases discovered during testing
-- Evaluate layout refinements for preview, controls, and row list placement with desktop-first testing
-
-### OCR 0.3.2 — Export & Guided Entry ✅
-- Add CSV/table export for reviewed rows
-- Add export preview table for non-empty row drafts before download
-- Keep export logic modular via a pure export utility and dedicated preview component
-
-### OCR 0.3.3 — Cleanup & Structure ✅
-- Centralize OCR row draft field schema so draft initialization, editor layout, and CSV export share one source of truth
-- Refresh OCR workspace copy so the UI reflects the current review-and-export workflow
-- Keep the displayed OCR version derived from `package.json` / `__APP_VERSION__`
-- Remove the nested-button annotator pattern and preserve keyboard focus/selection for row boxes
-
-### Shared 0.2.0 — OCR/Field Metadata Foundation ✅
-- Extract reusable field metadata from OCR into `packages/shared` where it is clearly domain-level rather than app-local
-- Define shared enum-like/code-list structures for constrained banding fields that both field app and OCR app can consume
-- Keep the shared package focused on pure metadata/types/helpers, not OCR UI behavior
-- Use this shared layer to support the first field-aware OCR inputs without duplicating code tables or option definitions
-
-### Field 0.22.0 — Shared Metadata Adoption ✅
-- Adopt the shared banding code metadata from `@birdnerd/shared`
-- Keep current field-app behavior unchanged while the source of truth for constrained code tables moves into the shared package
-- Verify field build and regression tests after the shared extraction
-
-### OCR 0.3.4 — Guided Entry Inputs ✅
-- Add the first field-aware inputs where useful: combobox/select/code helpers for constrained fields
-- Start with constrained banding fields such as code, species alpha code, age, sex, how aged, and how sexed
-- Reuse shared metadata from `packages/shared` where practical instead of hardcoding OCR-only option lists
-- Use native `datalist` as the lightweight first guided-input step; consider a custom compact one-line combobox later if browser rendering remains too noisy
-- Continue confirming and fixing any row-selection/draft persistence edge cases discovered during testing
-- Keep refining the row-review workflow now that export and the left-side coded layout are in place
-
-### OCR 0.4.0 — OCR Engine Integration ✅
-- Introduce the first OCR engine/library for the supported bandsheet workflow
-- Start with a Tesseract-first browser experiment and treat it as a viability spike rather than a permanent architecture commitment
-- Run OCR against the current row-based review flow rather than a separate pipeline
-- Keep the initial OCR scope narrow and prove that browser-based OCR is viable for this layout
-- Keep human review mandatory
-- Revisit cloud OCR or heavier document-parsing options only if Tesseract quality or browser performance is not good enough
-- Initial implementation slices: dedicated OCR service/module; run OCR on the selected row crop only; add a `Run OCR on This Row` action with visible progress/error state; show raw OCR text for inspection; try first-pass prefill for a very small field subset such as band number, species alpha code, age, sex, and code
-- Current learning: generic row-level OCR is weaker than focused field-level OCR on this grid-heavy layout, so the next steps should bias toward tighter field windows and constrained recognition
-
-### OCR 0.4.1 — OCR Row Prefill ✅
-- Prefill draft values into the existing row editor from OCR output
-- Focus on the current constrained left-side field set first
-- Surface OCR output in a way that fits the existing row-by-row review workflow
-- Continue measuring OCR usefulness on real bandsheet examples
-- Shift from generic row OCR toward focused field-level OCR where the layout and value constraints are predictable
-- Start with species alpha code and band number experiments using tighter field windows and field-specific OCR constraints
-- Initial implementation slices: define layout-specific field windows within the selected row; crop species code and band number subregions from the selected row; run field-specific OCR presets on those subregions; keep raw field OCR results visible; prefill only `speciesCode` and `bandNumber` when the suggestions are usable
-- Current learning: grouped species-code OCR is already promising with template-driven field windows, while grouped band-number OCR likely needs per-cell OCR in the next tuning pass
 
 ### OCR 0.4.2 — OCR Review Tuning
 - Highlight uncertain or incomplete OCR-prefilled fields
@@ -173,17 +168,7 @@ Assumptions for Phase 23:
 - Success = two real devices sync a banding record change across the internet, with access gated to enrolled devices only
 - Decision gate at Sync 0.5.0: integrate into field app, continue parallel, or deprioritize in favor of Supabase
 
-### Sync 0.1.0 — Scaffold & Yjs Baseline ✅
-- Create `apps/sync-spike` workspace in monorepo
-- Integrate Yjs + y-webrtc
-- Two browser tabs sync a shared Yjs document
-- Room identified by a shared code/password for now
-- No banding record shape yet — just prove sync works
-
-### Sync 0.2.0 — Banding Record Shape
-- Model field app's capture record shape in Yjs (`Y.Map` per record)
-- CRUD operations (add, edit, delete) sync across peers
-- Test with real banding data shape across two devices
+**Completed sub-phases (Sync 0.1.0–0.2.0) are archived in [plan.v6](archives/plan.v6.md); only unfinished work remains below.**
 
 ### Sync 0.3.0 — Device Identity & Pairing
 - Web Crypto API keypair generation per device, stored in IndexedDB
