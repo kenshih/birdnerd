@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import type { Band, BandType, Session } from '@birdnerd/shared'
 import { getBands, saveBands, getBandByNumber, getAllRecords } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
+import { computeBandStats, computeBandStrings, bandInventoryToCsv, type SizeTypeCount } from '../utils/bandInventory'
 import PageHeader from '../components/PageHeader'
 import { labelStyle, inputStyle } from '../styles/theme'
 import { CardElevated } from '../components/Card'
@@ -13,6 +14,9 @@ interface Props {
 }
 
 type View = 'overview' | 'list' | 'add' | 'history'
+
+/** Guard against accidental gigantic batches from a typo'd suffix range. */
+const MAX_BATCH = 2000
 
 function generateId(): string {
   return `band-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
@@ -78,7 +82,18 @@ export default function BandInventory({ onHome, onSelectSession }: Props) {
   }
 
   // Overview
-  const stats = computeStats(bands)
+  const stats = computeBandStats(bands)
+
+  function exportInventory() {
+    const csv = bandInventoryToCsv(bands)
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `birdnerd_band_inventory_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
@@ -103,15 +118,16 @@ export default function BandInventory({ onHome, onSelectSession }: Props) {
         </div>
       </CardElevated>
 
-      {stats.bySize.length > 0 && (
+      {stats.bySizeType.length > 0 && (
         <CardElevated>
-          <div style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>By Size</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr 1fr', gap: '0.25rem 0.75rem', fontSize: '0.85rem' }}>
+          <div style={{ fontWeight: 600, marginBottom: '0.5rem', fontSize: '0.9rem' }}>By Size &amp; Type</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', gap: '0.25rem 0.75rem', fontSize: '0.85rem' }}>
             <span style={{ fontWeight: 600, color: '#666' }}>Size</span>
+            <span style={{ fontWeight: 600, color: '#666' }}>Type</span>
             <span style={{ fontWeight: 600, color: '#666' }}>Avail</span>
             <span style={{ fontWeight: 600, color: '#666' }}>Deployed</span>
-            {stats.bySize.map(s => (
-              <SizeRow key={s.size} {...s} />
+            {stats.bySizeType.map(s => (
+              <SizeTypeRow key={`${s.size} ${s.type}`} {...s} />
             ))}
           </div>
         </CardElevated>
@@ -121,42 +137,26 @@ export default function BandInventory({ onHome, onSelectSession }: Props) {
         <button onClick={() => setView('list')} style={actionBtnStyle('#2d6a4f')}>View All Bands</button>
         <button onClick={() => setView('add')} style={actionBtnStyle('#1a73e8')}>Add Bands</button>
       </div>
+      <button
+        onClick={exportInventory}
+        disabled={bands.length === 0}
+        style={{ ...actionBtnStyle(bands.length === 0 ? '#aaa' : '#555'), width: '100%', marginTop: '0.5rem' }}
+      >
+        Export Inventory (CSV)
+      </button>
     </div>
   )
 }
 
-function SizeRow({ size, available, deployed }: { size: string; available: number; deployed: number }) {
+function SizeTypeRow({ size, type, available, deployed }: SizeTypeCount) {
   return (
     <>
       <span style={{ fontWeight: 500 }}>{size}</span>
+      <span style={{ color: '#666' }}>{type}</span>
       <span style={{ color: '#2d6a4f' }}>{available}</span>
       <span style={{ color: '#1a73e8' }}>{deployed}</span>
     </>
   )
-}
-
-function computeStats(bands: Band[]) {
-  let available = 0, deployed = 0, other = 0
-  const sizeMap = new Map<string, { available: number; deployed: number }>()
-
-  for (const b of bands) {
-    if (b.status === 'available') available++
-    else if (b.status === 'deployed') deployed++
-    else other++
-
-    const entry = sizeMap.get(b.bandSize) ?? { available: 0, deployed: 0 }
-    if (b.status === 'available') entry.available++
-    else if (b.status === 'deployed') entry.deployed++
-    sizeMap.set(b.bandSize, entry)
-  }
-
-  // Sort by BBL size code order
-  const sizeOrder = BAND_SIZE_CODES.map(c => c.code)
-  const bySize = Array.from(sizeMap.entries())
-    .map(([size, counts]) => ({ size, ...counts }))
-    .sort((a, b) => sizeOrder.indexOf(a.size) - sizeOrder.indexOf(b.size))
-
-  return { available, deployed, other, bySize }
 }
 
 // ─── Band List View ──────────────────────────────────────────────────
@@ -195,6 +195,9 @@ function BandList({ bands, lastSeenMap, onBack, onHome, onSelectBand }: {
     return BAND_SIZE_CODES.filter(c => s.has(c.code))
   }, [bands])
 
+  // String ranges (by 100s) for the currently filtered set
+  const strings = useMemo(() => computeBandStrings(filtered), [filtered])
+
   return (
     <div style={{ padding: '1rem', maxWidth: 500, margin: '0 auto' }}>
       <PageHeader title="All Bands" onBack={onBack} onHome={onHome} />
@@ -229,11 +232,27 @@ function BandList({ bands, lastSeenMap, onBack, onHome, onSelectBand }: {
         {filtered.length} band{filtered.length !== 1 ? 's' : ''}
       </div>
 
+      {strings.length > 0 && (
+        <details style={{ marginBottom: '0.75rem' }}>
+          <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: '0.85rem' }}>
+            Strings by 100s ({strings.length})
+          </summary>
+          <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+            {strings.map(s => (
+              <div key={`${s.prefix}-${s.hundred}`} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                <span style={{ fontFamily: 'monospace' }}>{s.label}</span>
+                <span style={{ color: '#666' }}>{s.available}/{s.total} avail</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
       {filtered.length === 0 ? (
         <div style={{ color: '#888', padding: '1rem', textAlign: 'center' }}>No bands match filters.</div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {filtered.slice(0, 200).map(b => {
+          {filtered.map(b => {
             const lastSeen = lastSeenMap.get(b.id)
             return (
               <button key={b.id} style={bandRowStyle} onClick={() => onSelectBand(b)}>
@@ -253,11 +272,6 @@ function BandList({ bands, lastSeenMap, onBack, onHome, onSelectBand }: {
               </button>
             )
           })}
-          {filtered.length > 200 && (
-            <div style={{ textAlign: 'center', color: '#888', fontSize: '0.8rem', padding: '0.5rem' }}>
-              Showing first 200 of {filtered.length}
-            </div>
-          )}
         </div>
       )}
     </div>
@@ -318,8 +332,8 @@ function AddBands({ onBack, onHome, onAdded }: { onBack: () => void; onHome: () 
     if (end < start) {
       setError('End must be >= start'); return
     }
-    if (count > 500) {
-      setError('Maximum 500 bands per batch'); return
+    if (count > MAX_BATCH) {
+      setError(`Maximum ${MAX_BATCH} bands per batch`); return
     }
     if (!bandSize) {
       setError('Please select a band size'); return

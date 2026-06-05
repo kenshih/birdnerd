@@ -63,12 +63,12 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 - ✅ Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
 
 **Band Inventory**
-- Allow more than 500 bands per batch
-- Band-inventory-by-size summary: differentiate Standard, Lock-on, Stainless Steel, and 4-short
-- Delete or modify band inventory
-- All Bands view: show string range (by 100s)
-- All Bands view: fix pagination/scroll — currently caps at first ~100–200 with no way to view the rest
-- Export band inventory to share across devices
+- ✅ Allow more than 500 bands per batch (raised cap to 2000)
+- ✅ Band-inventory-by-size summary: differentiate Standard, Lock-on, Stainless Steel, and 4-short (now "By Size & Type")
+- Delete or modify band inventory _(commit 4b)_
+- ✅ All Bands view: show string range (by 100s)
+- ✅ All Bands view: fix pagination/scroll — currently caps at first ~100–200 with no way to view the rest
+- ✅ Export band inventory to share across devices (CSV export; cross-device restore also via the full JSON bundle in Data Manager)
 
 **Views & read-only**
 - View records in Data Manager
