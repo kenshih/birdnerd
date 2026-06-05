@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Bulk Data Import (next up; starts with a data-shape conversation with Hallie). Phases 25–27 queued behind it. _Update this line whenever the active phase changes._
+**Now:** Phase 24 — Field Small Fixes (next up). Phases 25–27 (Bulk Data Import, Net Hours, Smart Band Entry) queued behind it. _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -42,28 +42,9 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 
 ---
 
-## Phase 24 — Bulk Data Import (Field 0.24.0)
+> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The four field phases below (24–27) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
 
-Goal: Get Hallie's existing banding data into the field app. Her current data isn't linked to sessions, so this phase **starts with a data-shape conversation, not a build** — we can't scope the importer until we see the structure.
-
-Open questions to resolve with Hallie first:
-- What is the source of truth — `MASTER BANDING DATA.xlsx`, or something else?
-- How are records currently organized if not by session (by date? by sheet? flat list)?
-- Decide import approach: a guided in-app import UI vs. a one-time developer-assisted import from the spreadsheet
-- How to handle session-less records: assign to a session on import, allow session-less records, or create a catch-all import session per date/sheet
-
-Once scoped:
-- Map existing columns to BirdNerd record / session / band schema
-- Validate on import as **soft warnings only — never block** (per project conventions)
-- Preserve idempotency / avoid duplicate imports on re-run
-- Confirm whether imported bands should reconcile against Band Inventory
-
-### Field 0.23.0 is intentionally skipped
-- Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the next field release is 0.24.0.
-
----
-
-## Phase 25 — Field Small Fixes (Field 0.25.0)
+## Phase 24 — Field Small Fixes (Field 0.24.0)
 
 Goal: A batch of small, high-value field-app fixes from Hallie. All fields stay optional; soft warnings only.
 
@@ -92,6 +73,24 @@ Goal: A batch of small, high-value field-app fixes from Hallie. All fields stay 
 - View records within a session without editing (read-only mode)
 - Session bird list: show WRP code instead of the BBL # for age
 - Faster capture time: select a standard net-check interval (e.g. every 30 min) instead of toggling each time
+
+---
+
+## Phase 25 — Bulk Data Import (Field 0.25.0)
+
+Goal: Get Hallie's existing banding data into the field app. Her current data isn't linked to sessions, so this phase **starts with a data-shape conversation, not a build** — we can't scope the importer until we see the structure. Sequenced after Small Fixes so the form/code/inventory changes that affect the schema land first.
+
+Open questions to resolve with Hallie first:
+- What is the source of truth — `MASTER BANDING DATA.xlsx`, or something else?
+- How are records currently organized if not by session (by date? by sheet? flat list)?
+- Decide import approach: a guided in-app import UI vs. a one-time developer-assisted import from the spreadsheet
+- How to handle session-less records: assign to a session on import, allow session-less records, or create a catch-all import session per date/sheet
+
+Once scoped:
+- Map existing columns to BirdNerd record / session / band schema
+- Validate on import as **soft warnings only — never block** (per project conventions)
+- Preserve idempotency / avoid duplicate imports on re-run
+- Confirm whether imported bands should reconcile against Band Inventory
 
 ---
 
