@@ -41,6 +41,7 @@ nogit/          — Hallie's source docs (not committed)
 - **`CHANGELOG.md`** — what shipped.
 - **`docs/apps/*/`* specs** — how things work (product/tech/ux/entities).
 - **`MEMORY.md`** (auto-memory) — stable project facts loaded each session; update its `Current Phase` + `Completed Phases` whenever a phase completes (see Conventions, version-bump step).
+- **Heads-up:** the progress trackers (`plan.md` `**Now:**` / ✅, `MEMORY.md` `Current Phase`) can lag actual state — Ken sometimes works off-session or skips the phase-end update. When a task is about what's next / versioning / roadmap, reconcile against `git log` + `package.json` first; flag mismatches rather than trusting the docs blindly.
 
 ## Conventions
 
