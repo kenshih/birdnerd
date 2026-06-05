@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- Field: Phase 24 — relabel the molt-limits "S Covs" tract to "G Covs" in the banding record form (display label only; the stored `moltLimitsSCovs` field and agency-export header are unchanged pending confirmation with Hallie).
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
 - Repo: Refresh conservative workspace dependencies before OCR engine work, including React, React DOM, React Hook Form, `@typescript-eslint/*`, and Vite `7.3.2` for current security fixes.
 - Repo: Refresh transitive dependencies in `package-lock.json` via `npm audit fix` (lockfile-only, no `package.json` changes) before resuming sync spike work.
@@ -19,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Sync 0.1.0: Scaffold `apps/sync-spike` workspace with Yjs + y-webrtc. Two browser tabs (or devices) join a shared room code and sync a textarea via WebRTC using public signaling.
 - Repo: Add `dev:sync`, `dev:sync:host`, and `build:sync` root scripts for the sync spike workspace.
 - Repo: Add a repo-level changelog to track shipped changes separately from the forward-looking plan.
+- Field: Phase 24 — add band sizes `4A`, `5`, `6`; add skull code `8 — Invisible`; add disposition code `X — Ectoparasite`.
+- Repo: Add a Playwright E2E smoke harness for the field app (`apps/field/e2e/`, `npm run test:e2e`) — app-boot, key-screen render, and commit-1 code-table regression guards; not CI-gated.
+- Field: Phase 24 — add the "Alula" molt-limit tract (`BirdRecord.moltLimitsAlula`) to the banding record form and the app CSV round-trip; bump JSON bundle schema v4 → v5 (additive — older records validly omit it, no backfill).
 
 ### Fixed
 
@@ -27,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 
 - Repo: Drop the unused root `package.json` `version` field. Each workspace owns its own version; the changelog tracks repo-level history.
+- Field: Phase 24 — remove skull code `X — Not checked`.
 
 ## [2026-04-12]
 

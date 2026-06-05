@@ -25,10 +25,12 @@ export interface PhotoRecordExport {
  *   v3 — Added bands array (Band entity)
  *         Added BirdRecord.bandId FK
  *   v4 — Added photos array (PhotoRecord metadata, no blobs)
+ *   v5 — Added BirdRecord.moltLimitsAlula (optional molt-limit tract).
+ *         Additive — older records validly omit it, so no backfill is needed.
  */
 
 /** Increment when entity fields are added, removed, or renamed. */
-export const BUNDLE_VERSION = 4
+export const BUNDLE_VERSION = 5
 
 export interface DataBundle {
   version: number

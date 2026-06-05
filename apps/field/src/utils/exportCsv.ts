@@ -5,7 +5,7 @@ const HEADERS = [
   'howSexed', 'howSexed2', 'bbpCode', 'wrp',
   'skull', 'cp', 'bp', 'fat', 'bodyMolt', 'ffMolt', 'tfMolt',
   'ffWear', 'juvBodyPlumage',
-  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
+  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsAlula', 'moltLimitsPP', 'moltLimitsSS',
   'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
   'moltLimitsPlumage',
   'presentCondition', 'replacedBandNumber',

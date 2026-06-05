@@ -487,8 +487,16 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="S Covs">
+            <Field label="G Covs">
               <select {...register('moltLimitsSCovs')} style={inputStyle}>
+                <option value="">—</option>
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+              </select>
+            </Field>
+          </Row>
+          <Row>
+            <Field label="Alula">
+              <select {...register('moltLimitsAlula')} style={inputStyle}>
                 <option value="">—</option>
                 {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
               </select>

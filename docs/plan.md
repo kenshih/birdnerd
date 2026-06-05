@@ -53,8 +53,8 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 **Codes & form fields**
 - Add band sizes `4a`, `5`, `6`
 - Skull: add `8` (invisible); remove `X` (not checked)
-- Add **Alula** to the molt limits & plumage section — same dropdown options as the rest, ordered immediately after S covs (now G Covs)
-- Rename `S covs` → `G Covs`
+- ✅ Add **Alula** to the molt limits & plumage section — same dropdown options as the rest, ordered immediately after S covs (now G Covs). _Captured in form + CSV + bundle (v5); NOT added to the fixed agency export — confirm with Hallie whether Alula belongs in the IBP/BBL export._
+- ✅ Rename `S covs` → `G Covs` — _display label only. The stored field (`moltLimitsSCovs`) and agency-export header still read "S covs"; confirm with Hallie whether the agency export header should also change (depends on whether the agency parses by header name) before renaming the data key (which would need an IndexedDB + bundle migration)._
 - Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
 - WRP dropdown label expansions: in `AFCF`, `A` = Adult ("Adult First Complete Formative"); `M` = Minimum; `H` = Hatch Year — **DEFERRED**: scope (all prefixes vs. just these) ambiguous and `WRP_CODES` lives in `@birdnerd/shared` (also used by OCR); confirm with Hallie before editing shared
 - Disposition: add `X` for ectoparasite

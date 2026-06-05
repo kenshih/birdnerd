@@ -146,6 +146,16 @@ function migrateV3ToV4(bundle: Record<string, unknown>): void {
 }
 
 /**
+ * v5 adds the optional BirdRecord.moltLimitsAlula molt-limit tract. It is purely
+ * additive — records from older bundles validly omit it — so there is nothing to
+ * backfill. Kept for migration-chain consistency and as a home for any future
+ * v4→v5 record transforms.
+ */
+function migrateV4ToV5(_bundle: Record<string, unknown>): void {
+  // no-op: optional scalar field, no transform required
+}
+
+/**
  * Import a DataBundle into IndexedDB (replace mode: wipes all existing data).
  * Caller should validate the bundle first with validateBundle().
  */
@@ -155,6 +165,7 @@ export async function importDataBundle(bundle: DataBundle): Promise<void> {
   if ((raw.version as number) < 2) migrateV1ToV2(raw)
   if ((raw.version as number) < 3) migrateV2ToV3(raw)
   if ((raw.version as number) < 4) migrateV3ToV4(raw)
+  if ((raw.version as number) < 5) migrateV4ToV5(raw)
 
   const db = await getDB()
 

@@ -56,7 +56,8 @@ export interface BirdRecord {
   juvBodyPlumage?: string
   // Molt Limits (per feather tract)
   moltLimitsPCovs?: string
-  moltLimitsSCovs?: string
+  moltLimitsSCovs?: string  // labeled "G Covs" in the field-app UI
+  moltLimitsAlula?: string
   moltLimitsPP?: string
   moltLimitsSS?: string
   moltLimitsTert?: string
