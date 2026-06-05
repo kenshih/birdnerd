@@ -1,5 +1,7 @@
 # BirdNerd — Plan
 
+**Now:** Phase 24 — Bulk Data Import (next up; starts with a data-shape conversation with Hallie). Phases 25–27 queued behind it. _Update this line whenever the active phase changes._
+
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
 ---

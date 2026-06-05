@@ -18,7 +18,7 @@ PWA for bird banders to collect, manage, and export banding data. Offline-first,
 - React 19 + TypeScript + Vite 7
 - vite-plugin-pwa (offline, installable)
 - React Hook Form
-- IndexedDB via `idb` (currently v7)
+- IndexedDB via `idb` (see `package.json` for version)
 - GitHub Pages — client-side rendering only, no SSR ever
 
 ## Project Structure
@@ -35,6 +35,13 @@ docs/           — specs, plan, entities, archives
 nogit/          — Hallie's source docs (not committed)
 ```
 
+## Source of Truth (which doc to trust when they disagree)
+
+- **`docs/plan.md`** — what's next and what's in progress (`**Now:**` line at top). Forward-looking only.
+- **`CHANGELOG.md`** — what shipped.
+- **`docs/apps/*/`* specs** — how things work (product/tech/ux/entities).
+- **`MEMORY.md`** (auto-memory) — stable project facts loaded each session; update its `Current Phase` + `Completed Phases` whenever a phase completes (see Conventions, version-bump step).
+
 ## Conventions
 
 - **All fields optional.** Partial records are valid. Soft warnings only, never block save.
@@ -45,6 +52,7 @@ nogit/          — Hallie's source docs (not committed)
 - **Code tables** live in `apps/field/src/data/codes.ts`. Species list in `apps/field/src/data/species.ts`.
 - **Pure validation functions** in `apps/field/src/utils/validation.ts` — no DB or React deps.
 - **Tests** via vitest + fake-indexeddb. Run: `npm test`
+- **On phase completion** (same moment as the version-bump step): mark the sub-phase ✅, archive it out of active `plan.md`, update the `**Now:**` line, and update `MEMORY.md` (`Current Phase` + `Completed Phases`). Keeps the always-loaded context from going stale.
 
 ## Commands
 
