@@ -24,6 +24,7 @@
     "preview:ocr:host": "npm --workspace @birdnerd/ocr run preview -- --host",
     "preview:combined": "npm run build:combined && python3 -m http.server 4173 -d .combined-site",
     "lint": "npm --workspace @birdnerd/field run lint",
-    "test": "npm --workspace @birdnerd/field run test"
+    "test": "npm --workspace @birdnerd/field run test",
+    "test:e2e": "npm --workspace @birdnerd/field run test:e2e"
   }
 }

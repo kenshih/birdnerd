@@ -74,6 +74,7 @@ export const DISPOSITION_CODES = [
   { code: 'L', label: 'L — Leg Injury' },
   { code: 'P', label: 'P — Predation' },
   { code: 'D', label: 'D — Dead' },
+  { code: 'X', label: 'X — Ectoparasite' },
 ]
 
 // Molt Limits & Plumage codes
@@ -114,6 +115,9 @@ export const BAND_SIZE_CODES = [
   { code: '3A', label: '3A' },
   { code: '3B', label: '3B' },
   { code: '4', label: '4' },
+  { code: '4A', label: '4A' },
+  { code: '5', label: '5' },
+  { code: '6', label: '6' },
   { code: '7', label: '7' },
   { code: '7A', label: '7A' },
   { code: '7B', label: '7B' },

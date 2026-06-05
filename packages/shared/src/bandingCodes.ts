@@ -135,7 +135,7 @@ export const SKULL_CODES: CodeOption[] = [
   { code: '4', label: '4 — ~75% complete' },
   { code: '5', label: '5 — ~90% complete' },
   { code: '6', label: '6 — Fully complete' },
-  { code: 'X', label: 'X — Not checked' },
+  { code: '8', label: '8 — Invisible' },
 ]
 
 export const FAT_CODES: CodeOption[] = [

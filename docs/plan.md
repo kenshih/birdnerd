@@ -48,13 +48,15 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 
 Goal: A batch of small, high-value field-app fixes from Hallie. All fields stay optional; soft warnings only.
 
+_Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm run test:e2e`) so the UI-heavy commits below can be verified in a real browser without ad-hoc setup. Smoke = app-boot + key-screen render; plus regression guards on the commit-1 code tables. Detailed flows deferred (see Backlog)._
+
 **Codes & form fields**
 - Add band sizes `4a`, `5`, `6`
 - Skull: add `8` (invisible); remove `X` (not checked)
 - Add **Alula** to the molt limits & plumage section — same dropdown options as the rest, ordered immediately after S covs (now G Covs)
 - Rename `S covs` → `G Covs`
 - Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
-- WRP dropdown label expansions: in `AFCF`, `A` = Adult ("Adult First Complete Formative"); `M` = Minimum; `H` = Hatch Year
+- WRP dropdown label expansions: in `AFCF`, `A` = Adult ("Adult First Complete Formative"); `M` = Minimum; `H` = Hatch Year — **DEFERRED**: scope (all prefixes vs. just these) ambiguous and `WRP_CODES` lives in `@birdnerd/shared` (also used by OCR); confirm with Hallie before editing shared
 - Disposition: add `X` for ectoparasite
 
 **Form layout**
@@ -205,7 +207,7 @@ Assumptions for Phase 23:
 
 **Dev tooling**
 - Dependency refresh pass: review and update app/package dependencies across the monorepo at an intentional checkpoint
-- E2E UX tests (Playwright): session CRUD, banding record flow, offline export/import round-trip
+- E2E UX tests (Playwright): **thin smoke harness landed in Phase 24** (`apps/field/e2e/`, `npm run test:e2e`, not CI-gated) — app-boot + form/inventory render + commit-1 code-table guards. Still to do: detailed flows (session CRUD, banding record round-trip, offline export/import) once the Phase 24 form/view changes settle
 - Storybook for component-level UX checks (optional)
 - Vitest Browser Mode (`@vitest/browser`): component tests for BandSearchSelect, SearchableSelect, SpeciesAutocomplete (open/close, click-outside, type-to-filter, selection); prerequisite for dropdown consolidation
 - Dropdown Consolidation: extract shared `Dropdown` primitive from BandSearchSelect, SearchableSelect, SpeciesAutocomplete; do after browser tests are in place as safety net
