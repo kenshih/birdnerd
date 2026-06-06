@@ -44,6 +44,12 @@ export async function addBandBatch(
   await expect(page.getByText('By Size & Type')).toBeVisible()
 }
 
+/** In an open record form, pick a band in the BandSearchSelect by its number. */
+export async function selectBand(page: Page, bandNumber: string) {
+  await page.getByPlaceholder('Search band # or UNBANDED').fill(bandNumber)
+  await page.getByText(bandNumber, { exact: true }).click() // dropdown option
+}
+
 /**
  * A "rich" banding record fixture — values across every form section — used to
  * guard data round-trips (form save→reopen, bundle export→import). It targets

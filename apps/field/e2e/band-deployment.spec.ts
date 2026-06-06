@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { gotoHome, openNewRecordForm, addBandBatch } from './helpers'
+import { gotoHome, openNewRecordForm, addBandBatch, selectBand } from './helpers'
 
 /**
  * #3 Band deployment flow: recording a new banding on an available band must
@@ -15,8 +15,7 @@ test('a new banding deploys the selected band', async ({ page }) => {
 
   // 2. record a new banding on that band
   await openNewRecordForm(page)
-  await page.getByPlaceholder('Search band # or UNBANDED').fill('1154-00001')
-  await page.getByText('1154-00001', { exact: true }).click() // dropdown option
+  await selectBand(page, '1154-00001')
   await page.locator('select[name="bbpCode"]').selectOption('1') // new band
   await page.getByRole('button', { name: /Save Record/i }).first().click()
   await expect(page.getByRole('button', { name: /^View$/ }).first()).toBeVisible() // saved + listed
