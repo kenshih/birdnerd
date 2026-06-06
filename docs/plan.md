@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Field Small Fixes ✅ complete. Hardening at **field 0.24.4** (test-buildout: data round-trips + band-deployment e2e; Pages deploy now gated on lint + unit tests) / shared 0.2.1. Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
+**Now:** Phase 24 — Field Small Fixes ✅ complete. Hardening at **field 0.24.5** (test-buildout: data round-trips + band-deployment e2e; Pages deploy gated on lint + unit tests; Pages actions upgraded to Node-24 majors) / shared 0.2.1. Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 

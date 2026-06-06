@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Phase 24 — banding record form layout: place Age next to How Aged and Sex next to How Sexed (the secondary entries stay together below); reorder the Condition section to skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage.
 - Field: Phase 24 — session bird list now shows the WRP code instead of the BBL age code.
 - Repo: Gate the Pages deploy workflow on `npm run lint` + `npm test` in addition to the build, so a lint error or failing unit test stops the deploy.
+- Repo: Upgrade Pages workflow actions to current majors (checkout v6, setup-node v6, upload-pages-artifact v5, deploy-pages v5) so they run on Node 24, clearing the Node 20 deprecation warning.
 - Field: Phase 24 — Band Inventory: raise the Add Bands batch limit from 500 to 2000; remove the All Bands "first 200" cap so the full filtered list scrolls.
 - Repo: Correct the `BandType` union in `@birdnerd/shared` to the values actually used (`Standard`, `Stainless-steel`, `4-short`, `Lock-on`), replacing the stale `Standard/Buffy/Giant/Lockout`.
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
