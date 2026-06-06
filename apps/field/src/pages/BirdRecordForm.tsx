@@ -37,7 +37,7 @@ const ALL_FIELDS: (keyof FormValues)[] = [
   'bandNumber', 'speciesCode', 'age', 'sex', 'howAged', 'howAged2',
   'howSexed', 'howSexed2', 'bbpCode', 'wrp', 'skull', 'cp', 'bp', 'fat',
   'bodyMolt', 'ffMolt', 'ffWear', 'juvBodyPlumage',
-  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsPP', 'moltLimitsSS',
+  'moltLimitsPCovs', 'moltLimitsSCovs', 'moltLimitsAlula', 'moltLimitsPP', 'moltLimitsSS',
   'moltLimitsTert', 'moltLimitsRec', 'moltLimitsBodyPlum', 'moltLimitsNonFeather',
   'moltLimitsPlumage',
   'presentCondition', 'replacedBandNumber',
