@@ -29,6 +29,10 @@ jobs:
 
       - run: npm ci
 
+      # Gate the deploy on lint + unit tests (not just the build)
+      - run: npm run lint
+      - run: npm test
+
       - run: npm run build
       - run: npm run build:ocr
 
