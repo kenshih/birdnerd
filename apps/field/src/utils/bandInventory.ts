@@ -144,7 +144,7 @@ function csvEscape(value: unknown): string {
 export function bandInventoryToCsv(bands: Band[]): string {
   const rows = [CSV_HEADERS.join(',')]
   for (const b of bands) {
-    rows.push(CSV_HEADERS.map(h => csvEscape((b as Record<string, unknown>)[h])).join(','))
+    rows.push(CSV_HEADERS.map(h => csvEscape(b[h])).join(','))
   }
   return rows.join('\n')
 }

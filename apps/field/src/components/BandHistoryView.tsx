@@ -16,8 +16,8 @@ interface Props {
   onBack: () => void
   onHome: () => void
   onSelectSession: (session: Session) => void
-  /** Notify the parent to reload its band list after an edit or delete. */
-  onChanged: () => void
+  /** Optional: notify the parent to reload its band list after an edit or delete. */
+  onChanged?: () => void
 }
 
 interface EncounterRow {
@@ -52,7 +52,7 @@ export default function BandHistoryView({ band: initialBand, onBack, onHome, onS
     await saveBand(updated)
     setBand(updated)
     setEditing(false)
-    onChanged()
+    onChanged?.()
   }
 
   async function handleDelete() {
@@ -62,7 +62,7 @@ export default function BandHistoryView({ band: initialBand, onBack, onHome, onS
       : `Delete band ${band.bandNumber} from inventory?`
     if (!window.confirm(msg)) return
     await deleteBand(band.id)
-    onChanged()
+    onChanged?.()
     onBack()
   }
 
