@@ -65,7 +65,7 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 **Band Inventory**
 - ✅ Allow more than 500 bands per batch (raised cap to 2000)
 - ✅ Band-inventory-by-size summary: differentiate Standard, Lock-on, Stainless Steel, and 4-short (now "By Size & Type")
-- Delete or modify band inventory _(commit 4b)_
+- ✅ Delete or modify band inventory (edit size/type/status + delete, from the band detail view; delete warns when the band is referenced by records)
 - ✅ All Bands view: show string range (by 100s)
 - ✅ All Bands view: fix pagination/scroll — currently caps at first ~100–200 with no way to view the rest
 - ✅ Export band inventory to share across devices (CSV export; cross-device restore also via the full JSON bundle in Data Manager)

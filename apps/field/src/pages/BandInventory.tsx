@@ -55,6 +55,7 @@ export default function BandInventory({ onHome, onSelectSession }: Props) {
         onBack={() => setView('list')}
         onHome={onHome}
         onSelectSession={onSelectSession}
+        onChanged={loadBands}
       />
     )
   }

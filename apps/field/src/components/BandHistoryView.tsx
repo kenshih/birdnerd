@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react'
-import type { Band, BirdRecord, Session, Location, Person, Bander } from '@birdnerd/shared'
-import { getRecordsByBand, getSessions, getLocations, getPeople, getBanders, getPhotosByRecord } from '../db'
+import type { Band, BandType, BandStatus, BirdRecord, Session, Location, Person, Bander } from '@birdnerd/shared'
+import { getRecordsByBand, getSessions, getLocations, getPeople, getBanders, getPhotosByRecord, saveBand, deleteBand } from '../db'
+import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
 import PageHeader from './PageHeader'
 import { CardElevated } from './Card'
-import { colors } from '../styles/theme'
+import { colors, inputStyle } from '../styles/theme'
+
+// Statuses a user can set by hand. 'foreign' is reserved for foreign-band
+// entities; 'available'/'deployed' are normally managed automatically by
+// deploying/removing a band on a record, but are editable here for corrections.
+const EDITABLE_STATUSES: BandStatus[] = ['available', 'deployed', 'destroyed', 'lost', 'replaced']
 
 interface Props {
   band: Band
   onBack: () => void
   onHome: () => void
   onSelectSession: (session: Session) => void
+  /** Notify the parent to reload its band list after an edit or delete. */
+  onChanged: () => void
 }
 
 interface EncounterRow {
@@ -20,13 +28,43 @@ interface EncounterRow {
   hasPhotos: boolean
 }
 
-export default function BandHistoryView({ band, onBack, onHome, onSelectSession }: Props) {
+export default function BandHistoryView({ band: initialBand, onBack, onHome, onSelectSession, onChanged }: Props) {
+  const [band, setBand] = useState(initialBand)
   const [encounters, setEncounters] = useState<EncounterRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [editing, setEditing] = useState(false)
+  const [draftSize, setDraftSize] = useState(initialBand.bandSize)
+  const [draftType, setDraftType] = useState<BandType>(initialBand.bandType)
+  const [draftStatus, setDraftStatus] = useState<BandStatus>(initialBand.status)
 
   useEffect(() => {
     loadHistory()
-  }, [band.id])
+  }, [initialBand.id])
+
+  async function handleSave() {
+    const updated: Band = {
+      ...band,
+      bandSize: draftSize,
+      bandType: draftType,
+      status: draftStatus,
+      updatedAt: new Date().toISOString(),
+    }
+    await saveBand(updated)
+    setBand(updated)
+    setEditing(false)
+    onChanged()
+  }
+
+  async function handleDelete() {
+    const n = encounters.length
+    const msg = n > 0
+      ? `Delete band ${band.bandNumber}? It has ${n} banding record${n !== 1 ? 's' : ''} — those records remain but will reference a missing band.`
+      : `Delete band ${band.bandNumber} from inventory?`
+    if (!window.confirm(msg)) return
+    await deleteBand(band.id)
+    onChanged()
+    onBack()
+  }
 
   async function loadHistory() {
     setLoading(true)
@@ -95,6 +133,32 @@ export default function BandHistoryView({ band, onBack, onHome, onSelectSession 
         <div style={{ marginTop: '0.5rem', fontSize: '0.85rem', color: colors.textSecondary }}>
           Last seen: <strong>{lastDate}</strong> · {encounters.length} encounter{encounters.length !== 1 ? 's' : ''}
         </div>
+
+        {editing ? (
+          <div style={{ marginTop: '0.75rem', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.4rem' }}>
+            <select value={draftSize} onChange={e => setDraftSize(e.target.value)} style={inputStyle} aria-label="Band size">
+              {BAND_SIZE_CODES.map(s => <option key={s.code} value={s.code}>{s.code}</option>)}
+            </select>
+            <select value={draftType} onChange={e => setDraftType(e.target.value as BandType)} style={inputStyle} aria-label="Band type">
+              {BAND_TYPE_CODES.map(t => <option key={t.code} value={t.code}>{t.code}</option>)}
+            </select>
+            <select value={draftStatus} onChange={e => setDraftStatus(e.target.value as BandStatus)} style={inputStyle} aria-label="Band status">
+              {EDITABLE_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <button onClick={handleSave} style={miniBtn('#2d6a4f')}>Save</button>
+            <button onClick={() => setEditing(false)} style={miniBtn('#888')}>Cancel</button>
+          </div>
+        ) : (
+          <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
+            <button
+              onClick={() => { setDraftSize(band.bandSize); setDraftType(band.bandType); setDraftStatus(band.status); setEditing(true) }}
+              style={miniBtn('#1a73e8')}
+            >
+              Edit
+            </button>
+            <button onClick={handleDelete} style={miniBtn('#c0392b')}>Delete</button>
+          </div>
+        )}
       </CardElevated>
 
       {encounters.length === 0 ? (
@@ -162,3 +226,14 @@ const rowBtnStyle: React.CSSProperties = {
   width: '100%',
   boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
 }
+
+const miniBtn = (bg: string): React.CSSProperties => ({
+  padding: '0.45rem 0.75rem',
+  background: bg,
+  color: '#fff',
+  border: 'none',
+  borderRadius: 6,
+  cursor: 'pointer',
+  fontWeight: 600,
+  fontSize: '0.85rem',
+})

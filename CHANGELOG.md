@@ -28,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Phase 24 — add the "Alula" molt-limit tract (`BirdRecord.moltLimitsAlula`) to the banding record form and the app CSV round-trip; bump JSON bundle schema v4 → v5 (additive — older records validly omit it, no backfill).
 - Field: Phase 24 — capture-time quick-select offering standard 30-min net-check slots derived from the session open/close window, so banders pick a check time instead of typing it.
 - Field: Phase 24 — Band Inventory "By Size & Type" breakdown, a "Strings by 100s" range summary in All Bands, and Export Inventory (CSV).
+- Field: Phase 24 — modify (size / type / status) and delete a band from the band detail view; delete warns when the band is referenced by banding records.
 
 ### Fixed
 
