@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Repo: Phase 24 test-buildout (field 0.24.3) — Playwright data round-trip coverage: a shared rich-record fixture (`e2e/helpers.ts`) plus a record save→reopen round-trip and a JSON bundle export→import round-trip (bundle v5). Guards the field-completeness / silent-data-loss class (e.g. the Alula reload gap).
 - Repo: Phase 24 test-buildout (field 0.24.4) — add a band-deployment e2e (recording a new banding flips the selected band to "deployed") + a shared `addBandBatch` helper.
 - Repo: Phase 24 test-buildout (field 0.24.6) — add band-recapture (links to the deployed band, two encounters, no re-deploy) and deployed-band delete-warning e2e; shared `selectBand` helper.
+- Repo: Field 0.24.7 — dedup the band e2e specs by extracting `deployBand` and `openBandList` helpers (the deploy-a-band preamble and View-All-Bands navigation were duplicated across all three band specs).
 
 
 ### Fixed

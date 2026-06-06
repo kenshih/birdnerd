@@ -50,6 +50,33 @@ export async function selectBand(page: Page, bandNumber: string) {
   await page.getByText(bandNumber, { exact: true }).click() // dropdown option
 }
 
+/** Home → Band Inventory → View All Bands (the full band list). */
+export async function openBandList(page: Page) {
+  await gotoHome(page)
+  await page.getByText('Band Inventory').first().click()
+  await page.getByRole('button', { name: /View All Bands/i }).click()
+}
+
+/**
+ * Add a band to inventory and record a new banding on it, leaving it "deployed"
+ * and the page on the saved-record view. Returns the band number for follow-on
+ * assertions. Setup for specs that test what happens *after* deployment
+ * (recapture, FK-aware delete) — band-deployment.spec.ts keeps these steps
+ * inline since deployment is its system under test.
+ */
+export async function deployBand(page: Page, prefix = '1154', num = '00001', size = '1B') {
+  const bandNumber = `${prefix}-${num}`
+  await gotoHome(page)
+  await page.getByText('Band Inventory').first().click()
+  await addBandBatch(page, prefix, num, num, size, 'Standard')
+  await openNewRecordForm(page)
+  await selectBand(page, bandNumber)
+  await page.locator('select[name="bbpCode"]').selectOption('1') // new banding
+  await page.getByRole('button', { name: /Save Record/i }).first().click()
+  await expect(page.getByRole('button', { name: /^View$/ }).first()).toBeVisible()
+  return bandNumber
+}
+
 /**
  * A "rich" banding record fixture — values across every form section — used to
  * guard data round-trips (form save→reopen, bundle export→import). It targets

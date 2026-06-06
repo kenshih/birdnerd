@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { gotoHome, openNewRecordForm, addBandBatch, selectBand } from './helpers'
+import { gotoHome, openNewRecordForm, addBandBatch, selectBand, openBandList } from './helpers'
 
 /**
  * #3 Band deployment flow: recording a new banding on an available band must
@@ -21,8 +21,6 @@ test('a new banding deploys the selected band', async ({ page }) => {
   await expect(page.getByRole('button', { name: /^View$/ }).first()).toBeVisible() // saved + listed
 
   // 3. the band now reads "deployed" in inventory
-  await gotoHome(page)
-  await page.getByText('Band Inventory').first().click()
-  await page.getByRole('button', { name: /View All Bands/i }).click()
+  await openBandList(page)
   await expect(page.getByRole('button', { name: /1154-00001/ })).toContainText('deployed')
 })
