@@ -30,6 +30,20 @@ export async function openAddBandsForm(page: Page) {
   await expect(page.getByText('— Select size —')).toBeAttached()
 }
 
+/** From the Band Inventory overview: add a batch of bands (leaves you on the overview). */
+export async function addBandBatch(
+  page: Page, prefix: string, start: string, end: string, size: string, type = 'Standard',
+) {
+  await page.getByRole('button', { name: /Add Bands/i }).click()
+  await page.getByPlaceholder('e.g. 1154').fill(prefix)
+  await page.getByPlaceholder('e.g. 81501').fill(start)
+  await page.getByPlaceholder('e.g. 81550').fill(end)
+  await page.locator('select', { has: page.locator('option', { hasText: '— Select size —' }) }).selectOption(size)
+  await page.locator('select', { has: page.locator('option', { hasText: 'Lock-on' }) }).selectOption(type)
+  await page.getByRole('button', { name: /^Add \d+ Band/ }).click()
+  await expect(page.getByText('By Size & Type')).toBeVisible()
+}
+
 /**
  * A "rich" banding record fixture — values across every form section — used to
  * guard data round-trips (form save→reopen, bundle export→import). It targets

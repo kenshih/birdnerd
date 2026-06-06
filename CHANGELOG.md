@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Phase 24 — relabel the molt-limits "S Covs" tract to "G Covs" in the banding record form (display label only; the stored `moltLimitsSCovs` field and agency-export header are unchanged pending confirmation with Hallie).
 - Field: Phase 24 — banding record form layout: place Age next to How Aged and Sex next to How Sexed (the secondary entries stay together below); reorder the Condition section to skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage.
 - Field: Phase 24 — session bird list now shows the WRP code instead of the BBL age code.
+- Repo: Gate the Pages deploy workflow on `npm run lint` + `npm test` in addition to the build, so a lint error or failing unit test stops the deploy.
 - Field: Phase 24 — Band Inventory: raise the Add Bands batch limit from 500 to 2000; remove the All Bands "first 200" cap so the full filtered list scrolls.
 - Repo: Correct the `BandType` union in `@birdnerd/shared` to the values actually used (`Standard`, `Stainless-steel`, `4-short`, `Lock-on`), replacing the stale `Standard/Buffy/Giant/Lockout`.
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
@@ -32,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Phase 24 — modify (size / type / status) and delete a band from the band detail view; delete warns when the band is referenced by banding records.
 - Field: Phase 24 — read-only record view (disabled full form), reached via "View" on a session record and via Data Manager → Browse Records (grouped by session).
 - Repo: Phase 24 test-buildout (field 0.24.3) — Playwright data round-trip coverage: a shared rich-record fixture (`e2e/helpers.ts`) plus a record save→reopen round-trip and a JSON bundle export→import round-trip (bundle v5). Guards the field-completeness / silent-data-loss class (e.g. the Alula reload gap).
+- Repo: Phase 24 test-buildout (field 0.24.4) — add a band-deployment e2e (recording a new banding flips the selected band to "deployed") + a shared `addBandBatch` helper.
 
 
 ### Fixed
