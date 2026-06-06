@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Field Small Fixes ✅ complete (shipped field 0.24.1 / shared 0.2.1; 0.24.1 = Pages-build typecheck fix). Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
+**Now:** Phase 24 — Field Small Fixes ✅ complete. Hardening at **field 0.24.3** (test-buildout: data round-trip e2e) / shared 0.2.1; 0.24.1 was a Pages-build typecheck fix. Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -213,7 +213,7 @@ Assumptions for Phase 23:
 
 **Dev tooling**
 - Dependency refresh pass: review and update app/package dependencies across the monorepo at an intentional checkpoint
-- E2E UX tests (Playwright): **thin smoke harness landed in Phase 24** (`apps/field/e2e/`, `npm run test:e2e`, not CI-gated) — app-boot + form/inventory render + Phase 24 guards. Still to do: detailed flows (session CRUD, banding record round-trip, export *content*, offline import/export, validation/conflict warnings). **Planned as a dedicated test-buildout phase**, goal: enough coverage that Claude can work more autonomously and Ken trusts no UX regressions.
+- E2E UX tests (Playwright): smoke harness + Phase 24 guards (`apps/field/e2e/`, `npm run test:e2e`, not CI-gated). **Test-buildout in progress (0.24.3):** shared rich-record fixture + record save→reopen and JSON bundle export→import round-trips landed. Still to do: band-deployment/recapture flow, agency-export *content* (unit), CSV download, FK-warning on deleting a deployed band, mobile width; and **add `npm test`/lint(/e2e) to the Pages workflow** so CI gates more than the build. Goal: enough coverage that Claude can work more autonomously and Ken trusts no UX regressions.
 - Storybook for component-level UX checks (optional)
 - Vitest Browser Mode (`@vitest/browser`): component tests for BandSearchSelect, SearchableSelect, SpeciesAutocomplete (open/close, click-outside, type-to-filter, selection); prerequisite for dropdown consolidation
 - Dropdown Consolidation: extract shared `Dropdown` primitive from BandSearchSelect, SearchableSelect, SpeciesAutocomplete; do after browser tests are in place as safety net

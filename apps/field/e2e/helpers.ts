@@ -29,3 +29,59 @@ export async function openAddBandsForm(page: Page) {
   await page.getByRole('button', { name: /Add Bands/i }).click()
   await expect(page.getByText('— Select size —')).toBeAttached()
 }
+
+/**
+ * A "rich" banding record fixture — values across every form section — used to
+ * guard data round-trips (form save→reopen, bundle export→import). It targets
+ * the `ALL_FIELDS`/register-completeness class of bug (e.g. the Alula load gap):
+ * if a field stops persisting/reloading, the round-trip assertion fails.
+ *
+ * Excludes species (custom autocomplete) and band (needs inventory) by design;
+ * numbers avoid trailing zeros so they reload as the same string. Fields are
+ * addressed by their `name` (react-hook-form `register` sets it).
+ */
+export const richRecord = {
+  selects: {
+    bbpCode: '1', age: '1', sex: 'F', howAged: 'SK', howSexed: 'CC',
+    skull: '6', cp: '2', bp: '3', fat: '4',
+    bodyMolt: '2', ffMolt: 'S', ffWear: '3', juvBodyPlumage: '1',
+    moltLimitsPCovs: 'F', moltLimitsSCovs: 'B', moltLimitsAlula: 'F',
+    moltLimitsPP: 'R', moltLimitsSS: 'M', moltLimitsTert: 'L',
+    moltLimitsRec: 'N', moltLimitsBodyPlum: 'J', moltLimitsNonFeather: 'U',
+    status: '300', disposition: 'X',
+  } as Record<string, string>,
+  inputs: {
+    captureTime: '07:30', releaseTime: '08:00',
+    wing: '67', tail: '55', tarsus: '22.5', exposedCulmen: '11.2', bodyMass: '18.3',
+  } as Record<string, string>,
+  notes: 'round-trip fixture',
+  checkboxes: ['featherPull', 'bloodSample'],
+}
+
+/** Fill the open New Bird Record form with the rich fixture. */
+export async function fillRichRecord(page: Page) {
+  for (const [name, value] of Object.entries(richRecord.selects)) {
+    await page.locator(`select[name="${name}"]`).selectOption(value)
+  }
+  for (const [name, value] of Object.entries(richRecord.inputs)) {
+    await page.locator(`input[name="${name}"]`).fill(value)
+  }
+  await page.locator('textarea[name="notes"]').fill(richRecord.notes)
+  for (const name of richRecord.checkboxes) {
+    await page.locator(`input[name="${name}"]`).check()
+  }
+}
+
+/** Assert the rich fixture's values are present (works on an editable or disabled form). */
+export async function assertRichRecord(page: Page) {
+  for (const [name, value] of Object.entries(richRecord.selects)) {
+    await expect(page.locator(`select[name="${name}"]`)).toHaveValue(value)
+  }
+  for (const [name, value] of Object.entries(richRecord.inputs)) {
+    await expect(page.locator(`input[name="${name}"]`)).toHaveValue(value)
+  }
+  await expect(page.locator('textarea[name="notes"]')).toHaveValue(richRecord.notes)
+  for (const name of richRecord.checkboxes) {
+    await expect(page.locator(`input[name="${name}"]`)).toBeChecked()
+  }
+}

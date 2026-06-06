@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Phase 24 — Band Inventory "By Size & Type" breakdown, a "Strings by 100s" range summary in All Bands, and Export Inventory (CSV).
 - Field: Phase 24 — modify (size / type / status) and delete a band from the band detail view; delete warns when the band is referenced by banding records.
 - Field: Phase 24 — read-only record view (disabled full form), reached via "View" on a session record and via Data Manager → Browse Records (grouped by session).
+- Repo: Phase 24 test-buildout (field 0.24.3) — Playwright data round-trip coverage: a shared rich-record fixture (`e2e/helpers.ts`) plus a record save→reopen round-trip and a JSON bundle export→import round-trip (bundle v5). Guards the field-completeness / silent-data-loss class (e.g. the Alula reload gap).
 
 
 ### Fixed
