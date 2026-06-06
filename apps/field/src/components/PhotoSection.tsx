@@ -18,13 +18,15 @@ interface Props {
   bandNumber: string
   recordSequence: number
   onPendingPhotosChange?: (pending: PendingPhoto[]) => void
+  /** Hide add/delete affordances; show existing photos only. */
+  readOnly?: boolean
 }
 
 function generateId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
-export default function PhotoSection({ recordId, date, station, speciesCode, bandNumber, recordSequence, onPendingPhotosChange }: Props) {
+export default function PhotoSection({ recordId, date, station, speciesCode, bandNumber, recordSequence, onPendingPhotosChange, readOnly = false }: Props) {
   const [savedPhotos, setSavedPhotos] = useState<PhotoRecord[]>([])
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [modalBlob, setModalBlob] = useState<Blob | null>(null)
@@ -96,22 +98,24 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
 
   return (
     <div style={{ marginBottom: '1rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileCapture}
-          style={{ display: 'none' }}
-        />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          style={photoBtnStyle}
-        >
-          Add Photo {allPhotos.length > 0 && <span style={badgeStyle}>{allPhotos.length}</span>}
-        </button>
-      </div>
+      {!readOnly && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleFileCapture}
+            style={{ display: 'none' }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            style={photoBtnStyle}
+          >
+            Add Photo {allPhotos.length > 0 && <span style={badgeStyle}>{allPhotos.length}</span>}
+          </button>
+        </div>
+      )}
 
       {allPhotos.length > 0 && (
         <div style={{ marginBottom: '0.5rem' }}>
@@ -126,13 +130,15 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
               {p.type === 'pending' && (
                 <span style={{ fontSize: '0.65rem', color: '#e67e22', fontWeight: 600 }}>pending</span>
               )}
-              <button
-                type="button"
-                onClick={() => p.type === 'saved' ? handleDelete(p.id) : handleDeletePending((p as { idx: number }).idx)}
-                style={deleteBtnStyle}
-              >
-                ×
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  onClick={() => p.type === 'saved' ? handleDelete(p.id) : handleDeletePending((p as { idx: number }).idx)}
+                  style={deleteBtnStyle}
+                >
+                  ×
+                </button>
+              )}
             </div>
           ))}
         </div>

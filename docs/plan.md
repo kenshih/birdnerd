@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Field Small Fixes (next up). Phases 25–27 (Bulk Data Import, Net Hours, Smart Band Entry) queued behind it. _Update this line whenever the active phase changes._
+**Now:** Phase 24 — Field Small Fixes ✅ complete (pending version bump to field 0.24.0 / shared 0.2.1 at push). Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -51,13 +51,13 @@ Goal: A batch of small, high-value field-app fixes from Hallie. All fields stay 
 _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm run test:e2e`) so the UI-heavy commits below can be verified in a real browser without ad-hoc setup. Smoke = app-boot + key-screen render; plus regression guards on the commit-1 code tables. Detailed flows deferred (see Backlog)._
 
 **Codes & form fields**
-- Add band sizes `4a`, `5`, `6`
-- Skull: add `8` (invisible); remove `X` (not checked)
-- ✅ Add **Alula** to the molt limits & plumage section — same dropdown options as the rest, ordered immediately after S covs (now G Covs). _Captured in form + CSV + bundle (v5); NOT added to the fixed agency export — confirm with Hallie whether Alula belongs in the IBP/BBL export._
-- ✅ Rename `S covs` → `G Covs` — _display label only. The stored field (`moltLimitsSCovs`) and agency-export header still read "S covs"; confirm with Hallie whether the agency export header should also change (depends on whether the agency parses by header name) before renaming the data key (which would need an IndexedDB + bundle migration)._
+- ✅ Add band sizes `4a`, `5`, `6`
+- ✅ Skull: add `8` (invisible); remove `X` (not checked)
+- ✅ Add **Alula** to the molt limits & plumage section, ordered immediately after S covs (now G Covs) — captured in form + CSV + bundle (v5). _(Agency-export follow-up → Phase 25.)_
+- ✅ Rename `S covs` → `G Covs` — display label only; stored field `moltLimitsSCovs` unchanged. _(Agency-export/data-key follow-up → Phase 25.)_
 - ✅ Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
-- WRP dropdown label expansions: in `AFCF`, `A` = Adult ("Adult First Complete Formative"); `M` = Minimum; `H` = Hatch Year — **DEFERRED**: scope (all prefixes vs. just these) ambiguous and `WRP_CODES` lives in `@birdnerd/shared` (also used by OCR); confirm with Hallie before editing shared
-- Disposition: add `X` for ectoparasite
+- ✅ Disposition: add `X` for ectoparasite
+- WRP dropdown label expansions (#4) → **moved to Phase 25** (cross-package, scope to confirm with Hallie)
 
 **Form layout**
 - ✅ Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
@@ -71,9 +71,9 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 - ✅ Export band inventory to share across devices (CSV export; cross-device restore also via the full JSON bundle in Data Manager)
 
 **Views & read-only**
-- View records in Data Manager
-- View records within a session without editing (read-only mode)
-- Session bird list: show WRP code instead of the BBL # for age
+- ✅ View records in Data Manager (Browse Records, grouped by session → opens read-only view)
+- ✅ View records within a session without editing ("View" button → read-only record)
+- ✅ Session bird list: show WRP code instead of the BBL # for age
 - ✅ Faster capture time: select a standard net-check interval (e.g. every 30 min) instead of toggling each time
 
 ---
@@ -87,6 +87,12 @@ Open questions to resolve with Hallie first:
 - How are records currently organized if not by session (by date? by sheet? flat list)?
 - Decide import approach: a guided in-app import UI vs. a one-time developer-assisted import from the spreadsheet
 - How to handle session-less records: assign to a session on import, allow session-less records, or create a catch-all import session per date/sheet
+
+Also confirm with Hallie (carried from Phase 24 — same conversation; then implement the relevant fix):
+- **WRP label expansion (#4):** expand every `A`→Adult / `M`→Minimum / `H`→Hatch Year prefix across all WRP codes, or just `AFCF` + the specific M/H codes she named? `WRP_CODES` lives in `@birdnerd/shared` (also used by OCR), so confirm before editing.
+- **Molt-limits agency export:** should the export header `S covs` become `G covs`, and/or the stored field `moltLimitsSCovs` be renamed to match the UI? Depends on whether the agency parses by header name; a data-key rename needs an IndexedDB + bundle migration.
+- **Alula in agency export:** should the new `Alula` tract appear in the IBP/BBL agency export? (Currently captured in app data + CSV only.)
+- **Legacy skull `X`:** any historical records use skull `X` (now removed)? Decide the mapping (→ blank or `8`) when importing legacy data.
 
 Once scoped:
 - Map existing columns to BirdNerd record / session / band schema
@@ -207,7 +213,7 @@ Assumptions for Phase 23:
 
 **Dev tooling**
 - Dependency refresh pass: review and update app/package dependencies across the monorepo at an intentional checkpoint
-- E2E UX tests (Playwright): **thin smoke harness landed in Phase 24** (`apps/field/e2e/`, `npm run test:e2e`, not CI-gated) — app-boot + form/inventory render + commit-1 code-table guards. Still to do: detailed flows (session CRUD, banding record round-trip, offline export/import) once the Phase 24 form/view changes settle
+- E2E UX tests (Playwright): **thin smoke harness landed in Phase 24** (`apps/field/e2e/`, `npm run test:e2e`, not CI-gated) — app-boot + form/inventory render + Phase 24 guards. Still to do: detailed flows (session CRUD, banding record round-trip, export *content*, offline import/export, validation/conflict warnings). **Planned as a dedicated test-buildout phase**, goal: enough coverage that Claude can work more autonomously and Ken trusts no UX regressions.
 - Storybook for component-level UX checks (optional)
 - Vitest Browser Mode (`@vitest/browser`): component tests for BandSearchSelect, SearchableSelect, SpeciesAutocomplete (open/close, click-outside, type-to-filter, selection); prerequisite for dropdown consolidation
 - Dropdown Consolidation: extract shared `Dropdown` primitive from BandSearchSelect, SearchableSelect, SpeciesAutocomplete; do after browser tests are in place as safety net

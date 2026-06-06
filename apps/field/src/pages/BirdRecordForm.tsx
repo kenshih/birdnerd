@@ -25,6 +25,8 @@ interface Props {
   onCancel: () => void
   onHome?: () => void
   onViewBandHistory?: (band: Band) => void
+  /** Render every field disabled and hide the save/cancel actions (view-only). */
+  readOnly?: boolean
 }
 
 function generateId(): string {
@@ -51,7 +53,7 @@ interface BanderOption {
   name: string
 }
 
-export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome, onViewBandHistory }: Props) {
+export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome, onViewBandHistory, readOnly = false }: Props) {
   const { register, handleSubmit, setValue, watch, reset, getValues } = useForm<FormValues>()
   const recordIdRef = useRef(record?.id ?? generateId())
   const createdAtRef = useRef<string | undefined>(record?.createdAt)
@@ -273,7 +275,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <button onClick={onCancel} style={backBtnStyle}>← Back</button>
           <h2 style={{ margin: 0, fontSize: '1.1rem' }}>
-            {record ? 'Edit Record' : 'New Bird Record'}
+            {readOnly ? 'View Record' : record ? 'Edit Record' : 'New Bird Record'}
           </h2>
         </div>
         {onHome && (
@@ -295,11 +297,14 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
         <p style={{ color: '#c0392b', fontSize: '0.8rem', margin: '0 0 0.5rem' }}>Auto-save failed — check console for details.</p>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-          <button type="submit" style={btnStyle('#2d6a4f')}>Save Record</button>
-          <button type="button" onClick={onCancel} style={btnStyle('#888')}>Cancel</button>
-        </div>
+      <form onSubmit={readOnly ? e => e.preventDefault() : handleSubmit(onSubmit)}>
+        <fieldset disabled={readOnly} style={{ border: 'none', padding: 0, margin: 0, minWidth: 0 }}>
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+            <button type="submit" style={btnStyle('#2d6a4f')}>Save Record</button>
+            <button type="button" onClick={onCancel} style={btnStyle('#888')}>Cancel</button>
+          </div>
+        )}
 
         {/* ── Photo Capture ── */}
         <PhotoSection
@@ -310,6 +315,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
           bandNumber={bandSelection.kind === 'band' ? bandSelection.band.bandNumber : bandSelection.kind === 'foreign' ? bandSelection.bandNumber : bandSelection.kind === 'unbanded' ? 'UNBANDED' : ''}
           recordSequence={recordSequence}
           onPendingPhotosChange={handlePendingPhotosChange}
+          readOnly={readOnly}
         />
 
         {/* ── Identity ── */}
@@ -631,26 +637,28 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Capture Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>
                 <input {...register('captureTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
-                <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>
-                <button type="button" onClick={() => setValue('captureTime', '')} style={nowBtnStyle}>✕</button>
+                {!readOnly && <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>}
+                {!readOnly && <button type="button" onClick={() => setValue('captureTime', '')} style={nowBtnStyle}>✕</button>}
               </div>
-              <select
-                value=""
-                onChange={e => { if (e.target.value) setValue('captureTime', e.target.value, { shouldDirty: true }) }}
-                style={{ ...inputStyle, marginTop: '0.25rem' }}
-                aria-label="Quick net-check time"
-              >
-                <option value="">Net-check time…</option>
-                {netCheckTimes(session.openTime, session.closeTime).map(t => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
+              {!readOnly && (
+                <select
+                  value=""
+                  onChange={e => { if (e.target.value) setValue('captureTime', e.target.value, { shouldDirty: true }) }}
+                  style={{ ...inputStyle, marginTop: '0.25rem' }}
+                  aria-label="Quick net-check time"
+                >
+                  <option value="">Net-check time…</option>
+                  {netCheckTimes(session.openTime, session.closeTime).map(t => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
+              )}
             </Field>
             <Field label="Release Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>
                 <input {...register('releaseTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
-                <button type="button" onClick={() => fillNow('releaseTime')} style={nowBtnStyle}>Now</button>
-                <button type="button" onClick={() => setValue('releaseTime', '')} style={nowBtnStyle}>✕</button>
+                {!readOnly && <button type="button" onClick={() => fillNow('releaseTime')} style={nowBtnStyle}>Now</button>}
+                {!readOnly && <button type="button" onClick={() => setValue('releaseTime', '')} style={nowBtnStyle}>✕</button>}
               </div>
             </Field>
           </Row>
@@ -691,10 +699,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
           </Field>
         </Section>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
-          <button type="submit" style={btnStyle('#2d6a4f')}>Save Record</button>
-          <button type="button" onClick={onCancel} style={btnStyle('#888')}>Cancel</button>
-        </div>
+        {!readOnly && (
+          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem' }}>
+            <button type="submit" style={btnStyle('#2d6a4f')}>Save Record</button>
+            <button type="button" onClick={onCancel} style={btnStyle('#888')}>Cancel</button>
+          </div>
+        )}
+        </fieldset>
       </form>
     </div>
   )

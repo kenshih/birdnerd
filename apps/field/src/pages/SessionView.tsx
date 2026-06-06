@@ -27,7 +27,7 @@ interface Props {
   onViewBandHistory?: (band: Band) => void
 }
 
-type View = { mode: 'list' } | { mode: 'form'; record?: BirdRecord } | { mode: 'edit-session' } | { mode: 'net-effort' }
+type View = { mode: 'list' } | { mode: 'form'; record?: BirdRecord; readOnly?: boolean } | { mode: 'edit-session' } | { mode: 'net-effort' }
 
 interface BanderWithPerson {
   bander: Bander
@@ -234,6 +234,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
         onCancel={() => { loadRecords(); setView({ mode: 'list' }) }}
         onHome={onHome}
         onViewBandHistory={onViewBandHistory}
+        readOnly={view.readOnly}
       />
     )
   }
@@ -451,10 +452,11 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
                 {r.bandNumber && <span style={{ color: '#555', marginLeft: '0.5rem', fontSize: '0.85rem' }}>{r.bandNumber}</span>}
                 {r.bbpCode === 'R' && <span style={recapChipStyle}>recap</span>}
                 <div style={{ fontSize: '0.8rem', color: '#777', marginTop: '0.2rem' }}>
-                  {[r.age, r.sex, r.captureTime, r.net ? `Net ${r.net}` : null].filter(Boolean).join(' · ')}
+                  {[r.wrp, r.sex, r.captureTime, r.net ? `Net ${r.net}` : null].filter(Boolean).join(' · ')}
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '0.4rem' }}>
+                <button onClick={() => setView({ mode: 'form', record: r, readOnly: true })} style={smallBtnStyle('#1a73e8')}>View</button>
                 <button onClick={() => setView({ mode: 'form', record: r })} style={smallBtnStyle('#2d6a4f')}>Edit</button>
                 <button
                   onClick={async () => {

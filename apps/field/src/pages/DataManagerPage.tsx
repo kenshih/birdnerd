@@ -5,6 +5,7 @@ import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } fr
 import { exportIBP, exportBBL, exportBBLRecap } from '../utils/agencyExport'
 import type { DataBundle } from '../data/bundle-schema'
 import PageHeader from '../components/PageHeader'
+import BirdRecordForm from './BirdRecordForm'
 
 interface Props {
   onHome: () => void
@@ -23,6 +24,7 @@ export default function ExportPage({ onHome }: Props) {
   const [importStatus, setImportStatus] = useState<string | null>(null)
   const [agencyFormat, setAgencyFormat] = useState<AgencyFormat>('ibp')
   const [agencyScope, setAgencyScope] = useState<Set<string>>(new Set(['all']))
+  const [viewRecord, setViewRecord] = useState<BirdRecord | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   function locationCode(locId: string): string {
@@ -181,6 +183,23 @@ export default function ExportPage({ onHome }: Props) {
     ? totalRecords
     : Array.from(agencyScope).reduce((n, sid) => n + (allRecords.get(sid)?.length ?? 0), 0)
 
+  if (viewRecord) {
+    const recSession = sessions.find(s => s.id === viewRecord.sessionId)
+    if (recSession) {
+      return (
+        <BirdRecordForm
+          session={recSession}
+          record={viewRecord}
+          recordSequence={0}
+          readOnly
+          onSaved={() => {}}
+          onCancel={() => setViewRecord(null)}
+          onHome={onHome}
+        />
+      )
+    }
+  }
+
   return (
     <div style={styles.page}>
       <PageHeader title="Data Manager" onHome={onHome} />
@@ -258,6 +277,37 @@ export default function ExportPage({ onHome }: Props) {
                 <button onClick={handleAgencyExport} style={styles.primaryBtn}>
                   ↓ Export {selectedRecordCount} record{selectedRecordCount !== 1 ? 's' : ''}
                 </button>
+              </div>
+            </>
+          )}
+
+          {/* Browse Records section */}
+          {totalRecords > 0 && (
+            <>
+              <div style={styles.divider} />
+              <div style={styles.section}>
+                <h3 style={styles.sectionTitle}>Browse Records</h3>
+                <p style={styles.desc}>View any banding record (read-only), grouped by session.</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {sessions.filter(s => (allRecords.get(s.id) ?? []).length > 0).map(s => (
+                    <div key={s.id}>
+                      <div style={{ fontWeight: 600, fontSize: '0.85rem', margin: '0.25rem 0' }}>
+                        {locationCode(s.locationId)} · {s.date}
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        {(allRecords.get(s.id) ?? []).map(r => (
+                          <button key={r.id} onClick={() => setViewRecord(r)} style={styles.recordBtn}>
+                            <span style={{ fontWeight: 600 }}>{r.speciesCode ?? '—'}</span>
+                            {r.bandNumber && <span style={{ color: '#555', fontSize: '0.8rem' }}>{r.bandNumber}</span>}
+                            <span style={{ marginLeft: 'auto', fontSize: '0.8rem', color: '#888' }}>
+                              {[r.wrp, r.sex].filter(Boolean).join(' · ')}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </>
           )}
@@ -411,5 +461,18 @@ const styles: Record<string, React.CSSProperties> = {
     background: '#fff',
     borderRadius: 6,
     border: '1px solid #e0e0e0',
+  },
+  recordBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    padding: '0.5rem 0.75rem',
+    background: '#fff',
+    border: '1px solid #e0e0e0',
+    borderRadius: 6,
+    cursor: 'pointer',
+    textAlign: 'left',
+    width: '100%',
+    fontSize: '0.9rem',
   },
 }

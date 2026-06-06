@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 - Field: Phase 24 — relabel the molt-limits "S Covs" tract to "G Covs" in the banding record form (display label only; the stored `moltLimitsSCovs` field and agency-export header are unchanged pending confirmation with Hallie).
 - Field: Phase 24 — banding record form layout: place Age next to How Aged and Sex next to How Sexed (the secondary entries stay together below); reorder the Condition section to skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage.
+- Field: Phase 24 — session bird list now shows the WRP code instead of the BBL age code.
 - Field: Phase 24 — Band Inventory: raise the Add Bands batch limit from 500 to 2000; remove the All Bands "first 200" cap so the full filtered list scrolls.
 - Repo: Correct the `BandType` union in `@birdnerd/shared` to the values actually used (`Standard`, `Stainless-steel`, `4-short`, `Lock-on`), replacing the stale `Standard/Buffy/Giant/Lockout`.
 - Field: Move `birdnerd-full-sample.json` into `apps/field/examples/`.
@@ -29,6 +30,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Field: Phase 24 — capture-time quick-select offering standard 30-min net-check slots derived from the session open/close window, so banders pick a check time instead of typing it.
 - Field: Phase 24 — Band Inventory "By Size & Type" breakdown, a "Strings by 100s" range summary in All Bands, and Export Inventory (CSV).
 - Field: Phase 24 — modify (size / type / status) and delete a band from the band detail view; delete warns when the band is referenced by banding records.
+- Field: Phase 24 — read-only record view (disabled full form), reached via "View" on a session record and via Data Manager → Browse Records (grouped by session).
+
 
 ### Fixed
 
