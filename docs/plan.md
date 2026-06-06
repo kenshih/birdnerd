@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Field Small Fixes ✅ complete (pending version bump to field 0.24.0 / shared 0.2.1 at push). Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
+**Now:** Phase 24 — Field Small Fixes ✅ complete (shipped field 0.24.1 / shared 0.2.1; 0.24.1 = Pages-build typecheck fix). Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
