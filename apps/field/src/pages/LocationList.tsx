@@ -79,12 +79,12 @@ export default function LocationList({ onSelectLocation, onHome }: Props) {
         <Card>
           <h3 style={{ marginTop: 0 }}>New Location</h3>
           <label style={labelStyle}>Name *</label>
-          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Galindo Creek Banding Station" style={inputStyle} />
+          <input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="e.g. Galindo Creek" style={inputStyle} />
 
           <div style={rowStyle}>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>Bander Location ID (4-letter) *</label>
-              <input value={form.banderLocationId} onChange={e => setForm({ ...form, banderLocationId: e.target.value })} placeholder="e.g. GCBS" maxLength={4} style={inputStyle} />
+              <input value={form.banderLocationId} onChange={e => setForm({ ...form, banderLocationId: e.target.value })} placeholder="e.g. GCFS" maxLength={4} style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
               <label style={labelStyle}>BBL Location ID (6-letter)</label>

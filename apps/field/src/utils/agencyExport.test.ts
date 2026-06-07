@@ -7,7 +7,7 @@ const session: Session = {
   createdAt: '', updatedAt: '',
 }
 const location: Location = {
-  id: 'loc-1', banderLocationId: 'GCBS', bblLocationId: null,
+  id: 'loc-1', banderLocationId: 'GCFS', bblLocationId: null,
   name: 'Galindo Creek', latitude: 37.9, longitude: -122.1,
   country: 'US', stateProvince: 'CA', remarks: '',
   createdAt: '', updatedAt: '',
@@ -81,7 +81,7 @@ describe('IBP Export — generateIBPRows', () => {
       wing: 88, bodyMass: 49.3,
       status: '300',
       date: '2026-04-19', captureTime: '07:10',
-      station: 'GCBS', net: 'T4', bander: 'bdr-1',
+      station: 'GCFS', net: 'T4', bander: 'bdr-1',
       featherPull: false, bloodSample: false, notes: '',
       createdAt: '', updatedAt: '',
     }
@@ -143,7 +143,7 @@ describe('IBP Export — generateIBPRows', () => {
     // Capture Time (numeric)
     expect(row[41]).toBe('710')
     // Station
-    expect(row[42]).toBe('GCBS')
+    expect(row[42]).toBe('GCFS')
     // Net
     expect(row[43]).toBe('T4')
     // Disposition
@@ -184,7 +184,7 @@ describe('IBP Export — generateIBPRows', () => {
     }
     const { rows } = generateIBPRows([rec], ctx)
     // Station should resolve from session → location
-    expect(rows[0][42]).toBe('GCBS')
+    expect(rows[0][42]).toBe('GCFS')
   })
 
   it('handles body molt Y for values 1-4', () => {
@@ -277,7 +277,7 @@ describe('BBL Upload — generateBBLRows', () => {
     expect(row[8]).toBe('M')               // Sex
     expect(row[9]).toBe('CL')             // How Sexed (BBL 2-letter)
     expect(row[10]).toBe('300')            // Bird Status
-    expect(row[11]).toBe('GCBS')           // Location (from session FK)
+    expect(row[11]).toBe('GCFS')           // Location (from session FK)
     expect(row[12]).toBe('test note')      // Remarks
     expect(row[15]).toBe('TS')             // Bander ID (initials)
     expect(row[17]).toBe('Mist net')       // How Captured (hardcoded)

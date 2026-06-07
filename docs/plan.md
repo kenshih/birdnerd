@@ -92,7 +92,7 @@ Entity derivation:
 - **BirdRecords** = the capture rows (330 here), linked to session + band. The band-status rows (12 here) create bands only — no bird record.
 - `bbpCode` ← **Code IBP/BBL** (not the `Status` column). `Status` (BBL composite, e.g. `300`/`318`) → maps **directly** to `BirdRecord.status`; validate against `BIRD_STATUS_CODES`, soft-warn on values outside the table.
 - **Aging/sexing:** primary criterion (`howAged`/`howSexed`) ← the **BBL column directly** — verified lossless on the 330 captures (BBL never blank, perfect 1:1 with IBP, fills `NA`, all values valid app codes). Second criterion (`howAged2`/`howSexed2`) exists in the sheet **only as IBP single-letters** (`How Aged/Sexed IBP 2`), so derive it via a deterministic IBP→BBL lookup (`P→PL, M→MR, S→SK, L→LP, C→CL, I→MB, F→FF, J→PL, E→EY, B→BP, O→OT`). Data wart: one `How Sexed BBL` cell is the Excel artifact `FALSE` → treat as blank + warn.
-- Unknown station `GCFS` → auto-create a stub `Location` (blank lat/long/name to fill in later).
+- Unknown station codes → auto-create a stub `Location` (blank lat/long to fill in later). Note: the seed station was renamed `GCBS`→`GCFS` (name "Galindo Creek") at field 0.25.1, so Hallie's `GCFS` sheet now matches the seed location instead of creating a stub.
 
 No-clobber: **skip-if-exists, never overwrite.** Match keys: band# (bands), station+date (sessions), band#+date (records). Skips reported in the summary.
 

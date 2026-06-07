@@ -4,9 +4,9 @@
   "locations": [
     {
       "id": "loc-gcbs",
-      "banderLocationId": "GCBS",
+      "banderLocationId": "GCFS",
       "bblLocationId": null,
-      "name": "Galindo Creek Banding Station",
+      "name": "Galindo Creek",
       "latitude": 37.9365,
       "longitude": -122.0855,
       "country": "US",

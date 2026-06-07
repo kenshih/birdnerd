@@ -129,7 +129,7 @@ export interface SessionBanderLog {
 
 export interface Location {
   id: string
-  banderLocationId: string     // 4-letter code e.g. "GCBS"
+  banderLocationId: string     // 4-letter code e.g. "GCFS"
   bblLocationId: string | null // 6-letter BBL code, nullable until registered
   name: string
   latitude: number

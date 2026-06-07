@@ -259,8 +259,8 @@ Triggered from within a banding record. Photos are stored as blobs in IndexedDB;
 3. **Photo review modal appears** showing:
    - The captured image (preview)
    - Auto-generated filename (updates live as body part changes): `DAY_LOCCODE_BANDID_SPECIESCODE_BODYPART.ext`
-     - Banded example: `2026-03-22_GCBS_1154-81501_SOSP_WING.jpg`
-     - Unbanded example: `2026-03-22_GCBS_UNBANDED003_SOSP_WING.jpg` (003 = record sequence in session)
+     - Banded example: `2026-03-22_GCFS_1154-81501_SOSP_WING.jpg`
+     - Unbanded example: `2026-03-22_GCFS_UNBANDED003_SOSP_WING.jpg` (003 = record sequence in session)
      - Extension derived from uploaded file type (jpg, png, heic, etc.)
    - Body part chip selector: WING, TAIL, HEAD, BODY, BAND + "Other..." for free text
 4. **User taps "Save to Drive"**
@@ -293,7 +293,7 @@ Triggered from within a banding record. Photos are stored as blobs in IndexedDB;
 │  [ Search / Filter ]                 │
 │                                      │
 │  2026-03-19 | Gal Creek | 6:30-13:00│
-│  Location: GCBS | Protocol: MAPS 3  │
+│  Location: GCFS | Protocol: MAPS 3  │
 │  Master: HD | Banders: HD, TS, JW  │
 │  Records: 42 | [Edit] [Delete]      │
 │                                      │
@@ -452,8 +452,8 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 │                                      │
 │  [ Search / Filter ]                 │
 │                                      │
-│  🔴 Galindo Creek Banding Station    │
-│    Code: GCBS | Nets: 8              │
+│  🔴 Galindo Creek    │
+│    Code: GCFS | Nets: 8              │
 │    Lat: 33.217° | Lon: -116.432°    │
 │    [ Edit ] [ Delete ]               │
 │                                      │
@@ -470,8 +470,8 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 | Field | Type | Notes |
 |-------|------|-------|
-| **Name** | Text | Display name (e.g., "Galindo Creek Banding Station") |
-| **Bander Location Code (Local)** | Text | 4-letter ALPHA code (e.g., GCBS). Set by bander. |
+| **Name** | Text | Display name (e.g., "Galindo Creek") |
+| **Bander Location Code (Local)** | Text | 4-letter ALPHA code (e.g., GCFS). Set by bander. |
 | **BBL Location Code** | Text | 6-letter code issued by BBL after submission. Nullable until submitted. |
 | **Latitude** | Decimal number | Decimal degrees (e.g., 33.217). Optional future: GPS auto-capture. |
 | **Longitude** | Decimal number | Decimal degrees (e.g., -116.432). |
@@ -484,7 +484,7 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 **Sub-section: Nets at this Location**
 
 ```
-┌─ NETS AT GCBS ─────────────────────┐
+┌─ NETS AT GCFS ─────────────────────┐
 │                                    │
 │  N-01 [Mist net]    [Edit][Delete]│
 │  N-02 [Mist net]    [Edit][Delete]│
@@ -563,8 +563,8 @@ The Data Manager page has two sections: **Agency Export** (IBP/BBL format export
 │                                      │
 │  Sessions:                           │
 │  ☑ All Sessions                      │
-│  ☑ GCBS · 2026-03-19 (12 recs)     │
-│  ☑ GCBS · 2026-03-18 (20 recs)     │
+│  ☑ GCFS · 2026-03-19 (12 recs)     │
+│  ☑ GCFS · 2026-03-18 (20 recs)     │
 │  ☑ MCFS · 2026-03-15 (15 recs)     │
 │                                      │
 │  [ ↓ Export 47 records ]             │

@@ -96,7 +96,7 @@ function migrateV1ToV2(bundle: Record<string, unknown>): void {
 
   for (const session of sessions) {
     if ('station' in session && !('locationId' in session)) {
-      // Map station code (e.g. "GCBS") to location ID
+      // Map station code (e.g. "GCFS") to location ID
       const loc = locations.find(l => l.banderLocationId === session.station)
       session.locationId = loc?.id ?? ''
       delete session.station

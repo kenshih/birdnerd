@@ -5,7 +5,7 @@
  */
 export function generatePhotoFilename(params: {
   date: string           // YYYY-MM-DD
-  station: string        // e.g. "GCBS"
+  station: string        // e.g. "GCFS"
   species: string        // e.g. "SOSP" or empty
   bandNumber: string     // e.g. "1234-56789" or "UNBANDED"
   recordSequence: number // 1-based index in session

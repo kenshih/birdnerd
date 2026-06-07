@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- Field 0.25.1 — Correct the Galindo Creek station code from `GCBS` to `GCFS` and its name to "Galindo Creek", across the `STATIONS` table, seed data, example/sample bundles, the agency-export test, and the field specs. Existing databases keep whatever code they already stored (this only affects the seed/defaults for fresh installs). Side benefit: importing Hallie's `GCFS` master sheet now matches the seed location instead of creating a stub.
 - Shared: Expand the abbreviated `M-`/`H-`/`A-` prefixes on WRP code labels to their full words (`Minimum`/`Hatch Year`/`Adult`), e.g. `MFCF` now reads "Minimum First Cycle Formative" and `AFCF` "Adult First Cycle Formative". Codes are unchanged; labels are display-only, so existing records and the OCR app are unaffected.
 - Field: Phase 24 — relabel the molt-limits "S Covs" tract to "G Covs" in the banding record form (display label only; the stored `moltLimitsSCovs` field and agency-export header are unchanged pending confirmation with Hallie).
 - Field: Phase 24 — banding record form layout: place Age next to How Aged and Sex next to How Sexed (the secondary entries stay together below); reorder the Condition section to skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage.
