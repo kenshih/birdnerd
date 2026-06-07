@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Field Small Fixes ✅ complete. Hardening at **field 0.24.6** (test-buildout: data round-trips, band deployment/recapture/delete-warning e2e; Pages deploy gated on lint + unit tests; Pages actions on Node-24 majors) / shared 0.2.1. Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; also carries the WRP + agency-export questions). _Update this line whenever the active phase changes._
+**Now:** Phase 24 — Field Small Fixes ✅ complete. At **field 0.24.10** / shared 0.2.2 (WRP label expansion shipped — full `Minimum`/`Hatch Year`/`Adult` words; 0.24.7–0.24.9 were a test-buildout + cleanup-sweep run). Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; still carries the remaining agency-export questions). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -57,7 +57,7 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 - ✅ Rename `S covs` → `G Covs` — display label only; stored field `moltLimitsSCovs` unchanged. _(Agency-export/data-key follow-up → Phase 25.)_
 - ✅ Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
 - ✅ Disposition: add `X` for ectoparasite
-- WRP dropdown label expansions (#4) → **moved to Phase 25** (cross-package, scope to confirm with Hallie)
+- ✅ **WRP label expansion (#4):** expanded every `A`→Adult / `M`→Minimum / `H`→Hatch Year prefix to full words across all WRP code labels in `@birdnerd/shared` (shared 0.2.2 / field 0.24.10). Codes unchanged (display-only), so OCR + existing records unaffected.
 
 **Form layout**
 - ✅ Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
@@ -89,7 +89,6 @@ Open questions to resolve with Hallie first:
 - How to handle session-less records: assign to a session on import, allow session-less records, or create a catch-all import session per date/sheet
 
 Also confirm with Hallie (carried from Phase 24 — same conversation; then implement the relevant fix):
-- **WRP label expansion (#4):** expand every `A`→Adult / `M`→Minimum / `H`→Hatch Year prefix across all WRP codes, or just `AFCF` + the specific M/H codes she named? `WRP_CODES` lives in `@birdnerd/shared` (also used by OCR), so confirm before editing.
 - **Molt-limits agency export:** should the export header `S covs` become `G covs`, and/or the stored field `moltLimitsSCovs` be renamed to match the UI? Depends on whether the agency parses by header name; a data-key rename needs an IndexedDB + bundle migration.
 - **Alula in agency export:** should the new `Alula` tract appear in the IBP/BBL agency export? (Currently captured in app data + CSV only.)
 - **Legacy skull `X`:** any historical records use skull `X` (now removed)? Decide the mapping (→ blank or `8`) when importing legacy data.

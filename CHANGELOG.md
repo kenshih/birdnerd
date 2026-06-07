@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- Shared: Expand the abbreviated `M-`/`H-`/`A-` prefixes on WRP code labels to their full words (`Minimum`/`Hatch Year`/`Adult`), e.g. `MFCF` now reads "Minimum First Cycle Formative" and `AFCF` "Adult First Cycle Formative". Codes are unchanged; labels are display-only, so existing records and the OCR app are unaffected.
 - Field: Phase 24 — relabel the molt-limits "S Covs" tract to "G Covs" in the banding record form (display label only; the stored `moltLimitsSCovs` field and agency-export header are unchanged pending confirmation with Hallie).
 - Field: Phase 24 — banding record form layout: place Age next to How Aged and Sex next to How Sexed (the secondary entries stay together below); reorder the Condition section to skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage.
 - Field: Phase 24 — session bird list now shows the WRP code instead of the BBL age code.
