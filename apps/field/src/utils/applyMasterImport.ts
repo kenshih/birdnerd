@@ -1,6 +1,15 @@
-import type { BirdRecord, Session, Band, Location, SessionBanderLog } from '@birdnerd/shared'
+import type { BirdRecord, Session, Band, Location, SessionBanderLog, Person, Bander } from '@birdnerd/shared'
 import { getDB } from '../db'
 import type { ImportPlan, ImportWarning } from './masterSheetImport'
+
+/**
+ * Bander-initials reconciliation: the master sheet abbreviates some banders
+ * differently than our People records. Map sheet initials → canonical People
+ * initials so they link to the existing person instead of creating a duplicate.
+ */
+const BANDER_INITIALS_ALIASES: Record<string, string> = {
+  JV: 'JVD', // Joanna van Dyk — sheet uses "JV", People record is "JVD"
+}
 
 /**
  * Apply a master-sheet ImportPlan to IndexedDB (Phase 25).
@@ -20,7 +29,7 @@ export interface ImportSummary {
   recordsSkipped: number
   locationsCreated: string[]   // station codes
   banderLogsCreated: number
-  unknownBanders: string[]     // initials seen but not linked (no matching Bander)
+  peopleCreated: string[]      // initials auto-created as People (placeholder names)
   warnings: ImportWarning[]
   rejectCount: number
 }
@@ -59,20 +68,17 @@ export async function applyImportPlan(
     existingRecords.map(r => `${digitsOf(r.bandNumber)}|${r.date ?? ''}`),
   )
 
-  // initials → banderId (via person)
+  // initials → banderId (via person), seeded from existing data and grown as we
+  // auto-create people for unknown helpers.
   const personIdByInitials = new Map(people.map(p => [p.initials, p.id]))
   const banderIdByPersonId = new Map(banders.map(b => [b.personId, b.id]))
-  const banderIdByInitials = (initials: string): string | undefined => {
-    const pid = personIdByInitials.get(initials)
-    return pid ? banderIdByPersonId.get(pid) : undefined
-  }
 
   const summary: ImportSummary = {
     sessionsCreated: 0, sessionsSkipped: 0,
     bandsCreated: 0, bandsSkipped: 0,
     recordsCreated: 0, recordsSkipped: 0,
     locationsCreated: [], banderLogsCreated: 0,
-    unknownBanders: [],
+    peopleCreated: [],
     warnings: [...plan.warnings],
     rejectCount: plan.rejects.length,
   }
@@ -83,6 +89,34 @@ export async function applyImportPlan(
   const newBands: Band[] = []
   const newRecords: BirdRecord[] = []
   const newBanderLogs: SessionBanderLog[] = []
+  const newPeople: Person[] = []
+  const newBanders: Bander[] = []
+
+  // Resolve sheet initials to a Bander id, applying aliases and auto-creating a
+  // stub Person + Bander (placeholder name = initials) for unknown helpers.
+  const createdPeopleInitials = new Set<string>()
+  function resolveBanderId(rawInitials: string): string | undefined {
+    const initials = BANDER_INITIALS_ALIASES[rawInitials] ?? rawInitials
+    if (!initials) return undefined
+    const existingPid = personIdByInitials.get(initials)
+    if (existingPid) {
+      const bid = banderIdByPersonId.get(existingPid)
+      if (bid) return bid
+      // Person exists without a Bander record — link one.
+      const banderId = newId('bdr-')
+      banderIdByPersonId.set(existingPid, banderId)
+      newBanders.push({ id: banderId, personId: existingPid, role: 'Bander', createdAt: now, updatedAt: now })
+      return banderId
+    }
+    const personId = newId('per-')
+    const banderId = newId('bdr-')
+    personIdByInitials.set(initials, personId)
+    banderIdByPersonId.set(personId, banderId)
+    createdPeopleInitials.add(initials)
+    newPeople.push({ id: personId, name: initials, initials, active: true, createdAt: now, updatedAt: now })
+    newBanders.push({ id: banderId, personId, role: 'Bander', createdAt: now, updatedAt: now })
+    return banderId
+  }
 
   // ── Locations (resolve / stub-create for each station code in the plan) ──
   const stationCodes = new Set(plan.sessions.map(s => s.stationCode))
@@ -104,7 +138,6 @@ export async function applyImportPlan(
   for (const s of existingSessions) {
     sessionIdByKey.set(`${codeByLocationId.get(s.locationId) ?? ''}|${s.date}`, s.id)
   }
-  const unknownBanderSet = new Set<string>()
   for (const draft of plan.sessions) {
     if (existingSessionKeys.has(draft.key)) {
       summary.sessionsSkipped++
@@ -114,24 +147,21 @@ export async function applyImportPlan(
     sessionIdByKey.set(draft.key, id)
     summary.sessionsCreated++
 
-    const masterBanderId = draft.banders.includes('HD') ? banderIdByInitials('HD') : undefined
+    const masterBanderId = draft.banders.includes('HD') ? resolveBanderId('HD') : undefined
     newSessions.push({
       id, locationId: locationIdByCode.get(draft.stationCode) ?? '',
       date: draft.date, masterBanderId, createdAt: now, updatedAt: now,
     })
 
-    // Session participant logs — link known banders, warn on unknown.
+    // Session participant logs — link each bander (auto-creating unknown helpers).
     for (const initials of draft.banders) {
-      const banderId = banderIdByInitials(initials)
-      if (!banderId) { unknownBanderSet.add(initials); continue }
+      const banderId = resolveBanderId(initials)
+      if (!banderId) continue
       summary.banderLogsCreated++
       newBanderLogs.push({ id: newId('sbl-'), sessionId: id, banderId, createdAt: now, updatedAt: now })
     }
   }
-  summary.unknownBanders = [...unknownBanderSet].sort()
-  for (const initials of summary.unknownBanders) {
-    summary.warnings.push({ row: 0, field: 'Bander', message: `Initials "${initials}" not found in People — recorded on bird records but not linked as a session participant` })
-  }
+  summary.peopleCreated = [...createdPeopleInitials].sort()
 
   // ── Bands ──
   const bandIdByDigits = new Map<string, string>()
@@ -174,10 +204,12 @@ export async function applyImportPlan(
 
   // ── Write everything in one transaction ──
   const tx = db.transaction(
-    ['locations', 'sessions', 'sessionBanderLogs', 'bands', 'records'],
+    ['locations', 'people', 'banders', 'sessions', 'sessionBanderLogs', 'bands', 'records'],
     'readwrite',
   )
   for (const l of newLocations) await tx.objectStore('locations').put(l)
+  for (const p of newPeople) await tx.objectStore('people').put(p)
+  for (const bd of newBanders) await tx.objectStore('banders').put(bd)
   for (const s of newSessions) await tx.objectStore('sessions').put(s)
   for (const sbl of newBanderLogs) await tx.objectStore('sessionBanderLogs').put(sbl)
   for (const b of newBands) await tx.objectStore('bands').put(b)

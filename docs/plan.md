@@ -87,7 +87,7 @@ Goal: Get Hallie's existing banding data into the field app via an in-app CSV im
 In-app CSV importer in Data Manager: upload → **preview summary** (sessions / bands / records to create, skips, rejects, warnings) → confirm → write to IndexedDB. Re-runnable.
 
 Entity derivation:
-- **Sessions** = station + date (~37). Distinct banders that day → `SessionBanderLog`; `masterBanderId` = HD when present among them, else blank. Protocol/weather left blank.
+- **Sessions** = station + date (~37). Distinct banders that day → `SessionBanderLog`; `masterBanderId` = HD when present among them, else blank. Protocol/weather left blank. Bander initials resolve to People via a small alias map (`JV`→`JVD`); unknown initials are auto-created as stub People + Banders (placeholder name = initials).
 - **Bands** = every Band Number → inventory entry. Status: `deployed` (capture, Code IBP `N`), `destroyed` (`BAND DESTROYED`, `D`), `lost` (`BAND LOST`, `L`). `bandType` defaults to `Standard` (the master sheet has no band-type column).
 - **BirdRecords** = the capture rows (330 here), linked to session + band. The band-status rows (12 here) create bands only — no bird record.
 - `bbpCode` ← **Code IBP/BBL** (not the `Status` column). `Status` (BBL composite, e.g. `300`/`318`) → maps **directly** to `BirdRecord.status`; validate against `BIRD_STATUS_CODES`, soft-warn on values outside the table.

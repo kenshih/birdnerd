@@ -414,6 +414,9 @@ export default function ExportPage({ onHome }: Props) {
                   {importPreview.locationsCreated.length > 0 && (
                     <li>New station{importPreview.locationsCreated.length !== 1 ? 's' : ''}: {importPreview.locationsCreated.join(', ')} (stub location created)</li>
                   )}
+                  {importPreview.peopleCreated.length > 0 && (
+                    <li>{importPreview.peopleCreated.length} new {importPreview.peopleCreated.length !== 1 ? 'people' : 'person'} from bander initials: {importPreview.peopleCreated.join(', ')} (placeholder names)</li>
+                  )}
                   {importPreview.warnings.length > 0 && <li>{importPreview.warnings.length} warning{importPreview.warnings.length !== 1 ? 's' : ''}</li>}
                   {importPreview.rejectCount > 0 && <li style={{ color: '#a33' }}>{importPreview.rejectCount} row{importPreview.rejectCount !== 1 ? 's' : ''} cannot be imported (rejected)</li>}
                 </ul>
@@ -433,6 +436,7 @@ export default function ExportPage({ onHome }: Props) {
                   <li>{importResult.sessionsCreated} sessions, {importResult.bandsCreated} bands, {importResult.recordsCreated} records created</li>
                   <li>{importResult.sessionsSkipped + importResult.bandsSkipped + importResult.recordsSkipped} items skipped (already present)</li>
                   {importResult.locationsCreated.length > 0 && <li>Stub location{importResult.locationsCreated.length !== 1 ? 's' : ''} created: {importResult.locationsCreated.join(', ')} — fill in details under Locations</li>}
+                  {importResult.peopleCreated.length > 0 && <li>{importResult.peopleCreated.length} new {importResult.peopleCreated.length !== 1 ? 'people' : 'person'} created from bander initials: {importResult.peopleCreated.join(', ')} — set their names under People</li>}
                 </ul>
                 {(importResult.warnings.length > 0 || importResult.rejectCount > 0) && (
                   <div style={styles.buttonStack}>

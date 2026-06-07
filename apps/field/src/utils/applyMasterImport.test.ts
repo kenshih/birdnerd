@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   resetDB, getLocations, getSessions, getBands, getAllRecords,
-  getAllSessionBanderLogs, saveLocation, savePerson, saveBander,
+  getAllSessionBanderLogs, getPeople, saveLocation, savePerson, saveBander,
 } from '../db'
 import { buildImportPlan, type ParsedSheet } from './masterSheetImport'
 import { applyImportPlan } from './applyMasterImport'
@@ -96,24 +96,40 @@ describe('applyImportPlan — dry run', () => {
 })
 
 describe('applyImportPlan — bander linking', () => {
-  it('links known banders and sets masterBander; warns on unknown', async () => {
+  it('links known banders, sets masterBander, and auto-creates unknown helpers', async () => {
     await savePerson({ id: 'p-hd', name: 'Hallie Daly', initials: 'HD', active: true, createdAt: now, updatedAt: now })
     await saveBander({ id: 'b-hd', personId: 'p-hd', role: 'Master Bander', createdAt: now, updatedAt: now })
 
     const plan = buildImportPlan(sheet([
       cap({ Bander: 'HD', 'Band Number': '142263301' }),
-      cap({ Bander: 'TS', 'Band Number': '142263302' }),
+      cap({ Bander: 'AF', 'Band Number': '142263302' }), // unknown helper
     ]))
     const summary = await applyImportPlan(plan)
 
-    expect(summary.banderLogsCreated).toBe(1)         // HD linked, TS unknown
-    expect(summary.unknownBanders).toEqual(['TS'])
-    expect(summary.warnings.some(w => w.field === 'Bander' && w.message.includes('TS'))).toBe(true)
+    expect(summary.banderLogsCreated).toBe(2)        // HD linked + AF auto-created & linked
+    expect(summary.peopleCreated).toEqual(['AF'])
 
     const sess = await getSessions()
     expect(sess[0]!.masterBanderId).toBe('b-hd')
     const logs = await getAllSessionBanderLogs()
-    expect(logs).toHaveLength(1)
-    expect(logs[0]!.banderId).toBe('b-hd')
+    expect(logs).toHaveLength(2)
+
+    // AF now exists as a Person (placeholder name = initials) with a Bander record
+    const people = await getPeople()
+    const af = people.find(p => p.initials === 'AF')
+    expect(af).toMatchObject({ initials: 'AF', name: 'AF', active: true })
+  })
+
+  it('aliases JV → JVD to link an existing person instead of creating a duplicate', async () => {
+    await savePerson({ id: 'p-jvd', name: 'Joanna van Dyk', initials: 'JVD', active: true, createdAt: now, updatedAt: now })
+    await saveBander({ id: 'b-jvd', personId: 'p-jvd', role: 'Sub-permittee', createdAt: now, updatedAt: now })
+
+    const summary = await applyImportPlan(buildImportPlan(sheet([cap({ Bander: 'JV' })])))
+
+    expect(summary.peopleCreated).toEqual([])         // no new person — aliased to JVD
+    expect(summary.banderLogsCreated).toBe(1)
+    const logs = await getAllSessionBanderLogs()
+    expect(logs[0]!.banderId).toBe('b-jvd')
+    expect((await getPeople())).toHaveLength(1)
   })
 })
