@@ -22,6 +22,13 @@ export async function openNewRecordForm(page: Page) {
   await expect(page.getByRole('button', { name: /Save Record/i }).first()).toBeVisible()
 }
 
+/** Home → Session Data (the Banding Sessions list). */
+export async function openSessionList(page: Page) {
+  await gotoHome(page)
+  await page.getByText('Session Data').first().click()
+  await expect(page.getByRole('button', { name: /New Session/i })).toBeVisible()
+}
+
 /** Home → Band Inventory → Add Bands form. */
 export async function openAddBandsForm(page: Page) {
   await gotoHome(page)
