@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.25.0 — Phase 25 Bulk Data Import: upload Hallie's master banding CSV from Data Manager. Sessions are derived per station + date, bands and records are loaded, and unknown stations get a stub location. Upload shows a preview summary (sessions/bands/records to create, plus skips/warnings/rejects) before anything is written; **skip-if-exists, never overwrites** existing data. Band-status rows (`BAND DESTROYED`/`BAND LOST`) create bands only. Soft warnings and a downloadable rejects CSV; nothing blocks. Column mapping is the inverse of the IBP agency export.
 - Sync 0.2.0: Model `BirdRecord` as `Y.Map` entries in Yjs with real-time CRUD sync across peers. Add/edit/delete banding records from either tab and watch changes propagate instantly.
 - Sync 0.1.0: Scaffold `apps/sync-spike` workspace with Yjs + y-webrtc. Two browser tabs (or devices) join a shared room code and sync a textarea via WebRTC using public signaling.
 - Repo: Add `dev:sync`, `dev:sync:host`, and `build:sync` root scripts for the sync spike workspace.

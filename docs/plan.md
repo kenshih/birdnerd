@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 24 — Field Small Fixes ✅ complete. At **field 0.24.10** / shared 0.2.2 (WRP label expansion shipped — full `Minimum`/`Hatch Year`/`Adult` words; 0.24.7–0.24.9 were a test-buildout + cleanup-sweep run). Next: Phase 25 — Bulk Data Import (opens with a Hallie conversation; still carries the remaining agency-export questions). _Update this line whenever the active phase changes._
+**Now:** Phase 25 — Bulk Data Import: in-app master-sheet CSV importer **shipped at field 0.25.0** (parse → preview → skip-if-exists apply; derives sessions/bands/records, stub locations, soft warnings + rejects CSV). Verified against the real 342-row master sheet (37 sessions / 342 bands / 330 records / 0 rejects). Remaining: the Hallie confirmations (agency-export `S covs`/`G covs`, Alula, any extra IBP letters) — see Phase 25 below. _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -100,12 +100,12 @@ Two outputs:
 - **Rejects CSV** — only structurally un-importable rows (e.g. unparseable date; none in this dataset). Original columns + a `_problem` column.
 - **Warnings** — soft issues (blank band type, unrepresentable code values) shown in the summary; rows still import (all fields optional, soft warnings only).
 
-Build steps:
-- Finalize the ~50-column → record/session/band mapping table (first task).
-- Build the IBP→BBL single-letter lookup (for the second aging/sexing criterion); soft-warn on any IBP letter not in the table.
-- Parser + entity builders + dedup as pure functions (testable without DB/React).
-- Preview/summary UI + confirm + IndexedDB writes; rejects/warnings download.
-- Validate as **soft warnings only — never block** (per conventions).
+Build steps (✅ shipped at field 0.25.0):
+- ✅ ~50-column → record/session/band mapping (`masterSheetImport.ts`, inverse of the IBP export).
+- ✅ IBP→BBL single-letter lookup for the second aging/sexing criterion; soft-warns on unmapped letters.
+- ✅ Parser + entity builders + dedup as pure functions (`masterSheetImport.ts` + `applyMasterImport.ts`), tested without DB and with fake-indexeddb.
+- ✅ Preview/summary UI + confirm + IndexedDB writes; rejects/warnings CSV download (Data Manager).
+- ✅ Soft warnings only — never blocks; structural rejects (bad date / no station) routed to the rejects CSV.
 
 Also confirm with Hallie (carried from Phase 24 — same conversation; then implement the relevant fix):
 - **Molt-limits `S covs` vs `G covs`:** ⚠️ `G covs` (greater coverts) and `S covs` (secondary coverts) are **different feather tracts, not synonyms** — yet Phase 24 relabeled `S covs` → `G Covs` in the UI (display only; stored field `moltLimitsSCovs` and the export header still say `S covs`, matching the master sheet). Ask Hallie whether she genuinely wants `G covs` added/used, or whether the relabel request was a **mistake**. If real: it's a distinct tract → data-key change (IndexedDB + bundle migration) + export-header decision. If a mistake: revert the UI label back to `S covs`.

@@ -3,6 +3,8 @@ import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdn
 import { getSessions, getRecordsBySession, getLocations, getBands, getPeople, getBanders } from '../db'
 import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
 import { exportIBP, exportBBL, exportBBLRecap } from '../utils/agencyExport'
+import { parseMasterSheet, buildImportPlan, rejectsToCsv, type ImportPlan } from '../utils/masterSheetImport'
+import { applyImportPlan, type ImportSummary } from '../utils/applyMasterImport'
 import type { DataBundle } from '../data/bundle-schema'
 import PageHeader from '../components/PageHeader'
 import BirdRecordForm from './BirdRecordForm'
@@ -26,6 +28,12 @@ export default function ExportPage({ onHome }: Props) {
   const [agencyScope, setAgencyScope] = useState<Set<string>>(new Set(['all']))
   const [viewRecord, setViewRecord] = useState<BirdRecord | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const masterFileRef = useRef<HTMLInputElement>(null)
+  const [importPlan, setImportPlan] = useState<ImportPlan | null>(null)
+  const [importPreview, setImportPreview] = useState<ImportSummary | null>(null)
+  const [importResult, setImportResult] = useState<ImportSummary | null>(null)
+  const [importBusy, setImportBusy] = useState(false)
+  const [importError, setImportError] = useState<string | null>(null)
 
   function locationCode(locId: string): string {
     return locations.find(l => l.id === locId)?.banderLocationId ?? ''
@@ -178,6 +186,68 @@ export default function ExportPage({ onHome }: Props) {
     }
   }
 
+  function downloadCsvText(filename: string, text: string) {
+    const blob = new Blob([text], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function handleMasterFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+    setImportError(null)
+    setImportResult(null)
+    setImportPlan(null)
+    setImportPreview(null)
+    try {
+      const text = await file.text()
+      const plan = buildImportPlan(parseMasterSheet(text))
+      if (plan.sessions.length === 0 && plan.bands.length === 0 && plan.records.length === 0 && plan.rejects.length === 0) {
+        setImportError('No rows found. Is this the master banding CSV?')
+        return
+      }
+      const preview = await applyImportPlan(plan, { dryRun: true })
+      setImportPlan(plan)
+      setImportPreview(preview)
+    } catch {
+      setImportError('Failed to read or parse the CSV file.')
+    }
+  }
+
+  async function handleConfirmImport() {
+    if (!importPlan) return
+    setImportBusy(true)
+    try {
+      const result = await applyImportPlan(importPlan)
+      setImportResult(result)
+      setImportPreview(null)
+      await loadData()
+    } catch {
+      setImportError('Import failed while writing to the database.')
+    } finally {
+      setImportBusy(false)
+    }
+  }
+
+  function cancelImport() {
+    setImportPlan(null)
+    setImportPreview(null)
+  }
+
+  function warningsToCsv(summary: ImportSummary): string {
+    const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)
+    const lines = ['row,field,message']
+    for (const w of summary.warnings) lines.push([String(w.row), w.field, w.message].map(esc).join(','))
+    return lines.join('\n')
+  }
+
+  const today = new Date().toISOString().slice(0, 10)
+
   // Count selected records for export button label
   const selectedRecordCount = agencyScope.has('all')
     ? totalRecords
@@ -312,6 +382,76 @@ export default function ExportPage({ onHome }: Props) {
             </>
           )}
 
+          {/* Import Master Sheet section */}
+          <div style={styles.divider} />
+          <div style={styles.section}>
+            <h3 style={styles.sectionTitle}>Import Master Sheet (CSV)</h3>
+            <p style={styles.desc}>
+              Upload the master banding CSV. Sessions are created per station + date, bands and records are
+              loaded, and anything already in the app is skipped (never overwritten).
+            </p>
+
+            <button onClick={() => masterFileRef.current?.click()} style={styles.secondaryBtn}>
+              ↑ Choose Master CSV…
+            </button>
+            <input
+              ref={masterFileRef}
+              type="file"
+              accept=".csv,text/csv"
+              onChange={handleMasterFile}
+              style={{ display: 'none' }}
+            />
+
+            {importError && <p style={styles.importError}>{importError}</p>}
+
+            {importPreview && !importResult && (
+              <div style={styles.previewPanel}>
+                <div style={{ fontWeight: 600, marginBottom: '0.4rem' }}>Preview — nothing saved yet</div>
+                <ul style={styles.summaryList}>
+                  <li>{importPreview.sessionsCreated} new session{importPreview.sessionsCreated !== 1 ? 's' : ''} ({importPreview.sessionsSkipped} already exist)</li>
+                  <li>{importPreview.bandsCreated} new band{importPreview.bandsCreated !== 1 ? 's' : ''} ({importPreview.bandsSkipped} already exist)</li>
+                  <li>{importPreview.recordsCreated} new record{importPreview.recordsCreated !== 1 ? 's' : ''} ({importPreview.recordsSkipped} already exist)</li>
+                  {importPreview.locationsCreated.length > 0 && (
+                    <li>New station{importPreview.locationsCreated.length !== 1 ? 's' : ''}: {importPreview.locationsCreated.join(', ')} (stub location created)</li>
+                  )}
+                  {importPreview.warnings.length > 0 && <li>{importPreview.warnings.length} warning{importPreview.warnings.length !== 1 ? 's' : ''}</li>}
+                  {importPreview.rejectCount > 0 && <li style={{ color: '#a33' }}>{importPreview.rejectCount} row{importPreview.rejectCount !== 1 ? 's' : ''} cannot be imported (rejected)</li>}
+                </ul>
+                <div style={styles.buttonStack}>
+                  <button onClick={handleConfirmImport} disabled={importBusy} style={styles.primaryBtn}>
+                    {importBusy ? 'Importing…' : `Confirm import of ${importPreview.recordsCreated} record${importPreview.recordsCreated !== 1 ? 's' : ''}`}
+                  </button>
+                  <button onClick={cancelImport} disabled={importBusy} style={styles.secondaryBtn}>Cancel</button>
+                </div>
+              </div>
+            )}
+
+            {importResult && (
+              <div style={styles.previewPanel}>
+                <div style={{ fontWeight: 600, marginBottom: '0.4rem', color: '#155724' }}>Import complete</div>
+                <ul style={styles.summaryList}>
+                  <li>{importResult.sessionsCreated} sessions, {importResult.bandsCreated} bands, {importResult.recordsCreated} records created</li>
+                  <li>{importResult.sessionsSkipped + importResult.bandsSkipped + importResult.recordsSkipped} items skipped (already present)</li>
+                  {importResult.locationsCreated.length > 0 && <li>Stub location{importResult.locationsCreated.length !== 1 ? 's' : ''} created: {importResult.locationsCreated.join(', ')} — fill in details under Locations</li>}
+                </ul>
+                {(importResult.warnings.length > 0 || importResult.rejectCount > 0) && (
+                  <div style={styles.buttonStack}>
+                    {importResult.rejectCount > 0 && importPlan && (
+                      <button onClick={() => downloadCsvText(`birdnerd-import-rejects_${today}.csv`, rejectsToCsv(importPlan.headers, importPlan.rejects))} style={styles.secondaryBtn}>
+                        ↓ Download {importResult.rejectCount} rejected row{importResult.rejectCount !== 1 ? 's' : ''} (CSV)
+                      </button>
+                    )}
+                    {importResult.warnings.length > 0 && (
+                      <button onClick={() => downloadCsvText(`birdnerd-import-warnings_${today}.csv`, warningsToCsv(importResult))} style={styles.secondaryBtn}>
+                        ↓ Download {importResult.warnings.length} warning{importResult.warnings.length !== 1 ? 's' : ''} (CSV)
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Data Backup section */}
           <div style={styles.divider} />
 
@@ -437,6 +577,32 @@ const styles: Record<string, React.CSSProperties> = {
     borderRadius: '6px',
     fontSize: '0.85rem',
     color: '#155724',
+  },
+  importError: {
+    margin: 0,
+    padding: '0.5rem 0.75rem',
+    background: '#f8d7da',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    color: '#721c24',
+  },
+  previewPanel: {
+    padding: '0.75rem',
+    background: '#fff',
+    border: '1px solid #e0e0e0',
+    borderRadius: 8,
+    fontSize: '0.85rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.6rem',
+  },
+  summaryList: {
+    margin: 0,
+    paddingLeft: '1.1rem',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.2rem',
+    lineHeight: 1.4,
   },
   radioLabel: {
     display: 'flex',

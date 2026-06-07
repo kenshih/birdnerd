@@ -1,0 +1,119 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import {
+  resetDB, getLocations, getSessions, getBands, getAllRecords,
+  getAllSessionBanderLogs, saveLocation, savePerson, saveBander,
+} from '../db'
+import { buildImportPlan, type ParsedSheet } from './masterSheetImport'
+import { applyImportPlan } from './applyMasterImport'
+
+vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
+
+const HEADERS = [
+  'Bander', 'Code IBP', 'Code BBL', 'Band Size', 'Band Number', 'Species Name', 'ALPHA Code',
+  'Age NUMBER', 'How Aged BBL', 'WRP', 'Sex', 'How Sexed BBL', 'Wing', 'Body Mass', 'Status',
+  'Month', 'Day', 'Year', 'Capture Time', 'Station', 'Net', 'Blood Sample BBL',
+]
+
+function sheet(rows: Record<string, string>[]): ParsedSheet {
+  return {
+    headers: HEADERS,
+    rows: rows.map(r => { const f: Record<string, string> = {}; for (const h of HEADERS) f[h] = r[h] ?? ''; return f }),
+  }
+}
+
+const cap = (over: Record<string, string> = {}): Record<string, string> => ({
+  Bander: 'TS', 'Code BBL': '1', 'Band Size': '1B', 'Band Number': '142263301', 'ALPHA Code': 'CALT',
+  'How Aged BBL': 'PL', Sex: 'M', Month: '4', Day: '19', Year: '2025', Station: 'GCFS', ...over,
+})
+
+const now = new Date().toISOString()
+
+beforeEach(async () => {
+  resetDB()
+  indexedDB.deleteDatabase('birdnerd')
+})
+
+describe('applyImportPlan — fresh import', () => {
+  it('creates a stub location, session, band, and record', async () => {
+    const plan = buildImportPlan(sheet([cap()]))
+    const summary = await applyImportPlan(plan)
+
+    expect(summary).toMatchObject({ sessionsCreated: 1, bandsCreated: 1, recordsCreated: 1, locationsCreated: ['GCFS'] })
+
+    const [locs, sess, bands, recs] = await Promise.all([getLocations(), getSessions(), getBands(), getAllRecords()])
+    expect(locs.find(l => l.banderLocationId === 'GCFS')).toBeTruthy()
+    expect(sess).toHaveLength(1)
+    expect(bands[0]).toMatchObject({ bandNumber: '1422-63301', status: 'deployed', bandType: '' })
+    expect(recs[0]).toMatchObject({ speciesCode: 'CALT', date: '2025-04-19' })
+    // record links to the created session + band
+    expect(recs[0]!.sessionId).toBe(sess[0]!.id)
+    expect(recs[0]!.bandId).toBe(bands[0]!.id)
+  })
+
+  it('reuses an existing location instead of creating a stub', async () => {
+    await saveLocation({
+      id: 'loc-existing', banderLocationId: 'GCFS', bblLocationId: null, name: 'Galindo',
+      latitude: 0, longitude: 0, country: 'USA', stateProvince: 'CA', remarks: '', createdAt: now, updatedAt: now,
+    })
+    const summary = await applyImportPlan(buildImportPlan(sheet([cap()])))
+    expect(summary.locationsCreated).toEqual([])
+    const sess = await getSessions()
+    expect(sess[0]!.locationId).toBe('loc-existing')
+  })
+})
+
+describe('applyImportPlan — no-clobber dedup', () => {
+  it('skips everything on a second identical import', async () => {
+    const plan = buildImportPlan(sheet([cap()]))
+    await applyImportPlan(plan)
+    const second = await applyImportPlan(buildImportPlan(sheet([cap()])))
+
+    expect(second).toMatchObject({ sessionsCreated: 0, sessionsSkipped: 1, bandsCreated: 0, bandsSkipped: 1, recordsCreated: 0, recordsSkipped: 1 })
+    expect(await getSessions()).toHaveLength(1)
+    expect(await getBands()).toHaveLength(1)
+    expect(await getAllRecords()).toHaveLength(1)
+  })
+
+  it('adds a new record to an existing session/band without duplicating them', async () => {
+    await applyImportPlan(buildImportPlan(sheet([cap()])))
+    // Same station-day + same band, different date-less detail won't dedup; use a new band same day.
+    const summary = await applyImportPlan(buildImportPlan(sheet([cap({ 'Band Number': '142263302' })])))
+    expect(summary).toMatchObject({ sessionsCreated: 0, sessionsSkipped: 1, bandsCreated: 1, recordsCreated: 1 })
+    expect(await getSessions()).toHaveLength(1)
+    expect(await getBands()).toHaveLength(2)
+  })
+})
+
+describe('applyImportPlan — dry run', () => {
+  it('computes the same counts without writing', async () => {
+    const plan = buildImportPlan(sheet([cap()]))
+    const summary = await applyImportPlan(plan, { dryRun: true })
+    expect(summary).toMatchObject({ sessionsCreated: 1, bandsCreated: 1, recordsCreated: 1 })
+    expect(await getSessions()).toHaveLength(0)
+    expect(await getBands()).toHaveLength(0)
+    expect(await getAllRecords()).toHaveLength(0)
+  })
+})
+
+describe('applyImportPlan — bander linking', () => {
+  it('links known banders and sets masterBander; warns on unknown', async () => {
+    await savePerson({ id: 'p-hd', name: 'Hallie Daly', initials: 'HD', active: true, createdAt: now, updatedAt: now })
+    await saveBander({ id: 'b-hd', personId: 'p-hd', role: 'Master Bander', createdAt: now, updatedAt: now })
+
+    const plan = buildImportPlan(sheet([
+      cap({ Bander: 'HD', 'Band Number': '142263301' }),
+      cap({ Bander: 'TS', 'Band Number': '142263302' }),
+    ]))
+    const summary = await applyImportPlan(plan)
+
+    expect(summary.banderLogsCreated).toBe(1)         // HD linked, TS unknown
+    expect(summary.unknownBanders).toEqual(['TS'])
+    expect(summary.warnings.some(w => w.field === 'Bander' && w.message.includes('TS'))).toBe(true)
+
+    const sess = await getSessions()
+    expect(sess[0]!.masterBanderId).toBe('b-hd')
+    const logs = await getAllSessionBanderLogs()
+    expect(logs).toHaveLength(1)
+    expect(logs[0]!.banderId).toBe('b-hd')
+  })
+})

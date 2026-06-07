@@ -18,7 +18,7 @@ const KNOWN_HEADERS = new Set([
   'featherPull', 'bloodSample', 'notes',
 ])
 
-function parseCSVLine(line: string): string[] {
+export function parseCSVLine(line: string): string[] {
   const fields: string[] = []
   let current = ''
   let inQuotes = false
