@@ -70,11 +70,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
     setPendingPhotos(photos)
   }, [])
 
-  useEffect(() => {
-    loadDropdownData()
-  }, [])
-
-  async function loadDropdownData() {
+  const loadDropdownData = useCallback(async () => {
     // Load session location
     if (session.locationId) {
       const loc = await getLocation(session.locationId)
@@ -112,7 +108,11 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
       const netMap = new Map(allNets.map(n => [n.id, n.label]))
       setSessionNetLabels(new Set(netLogs.map(l => netMap.get(l.netId) ?? '').filter(Boolean)))
     }
-  }
+  }, [session.id, session.locationId])
+
+  useEffect(() => {
+    loadDropdownData()
+  }, [loadDropdownData])
 
   useEffect(() => {
     if (record) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Location, Net } from '@birdnerd/shared'
 import { getNetsByLocation, saveNet, saveLocation } from '../db'
 import PageHeader from '../components/PageHeader'
@@ -22,18 +22,18 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(locationToForm(location))
 
-  useEffect(() => {
-    loadNets()
-  }, [location.id])
-
-  async function loadNets() {
+  const loadNets = useCallback(async () => {
     const n = await getNetsByLocation(location.id)
     setNets(n.sort((a, b) => {
       const aNum = parseInt(a.label), bNum = parseInt(b.label)
       if (!isNaN(aNum) && !isNaN(bNum)) return aNum - bNum
       return a.label.localeCompare(b.label)
     }))
-  }
+  }, [location.id])
+
+  useEffect(() => {
+    loadNets()
+  }, [loadNets])
 
   function locationToForm(loc: Location) {
     return {

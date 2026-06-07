@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Person, Bander, BanderRole } from '@birdnerd/shared'
 import { savePerson, getBanderByPerson, saveBander, deleteBander } from '../db'
 import PageHeader from '../components/PageHeader'
@@ -19,14 +19,14 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
   const [editing, setEditing] = useState(false)
   const [form, setForm] = useState(personToForm(person))
 
-  useEffect(() => {
-    loadBander()
-  }, [person.id])
-
-  async function loadBander() {
+  const loadBander = useCallback(async () => {
     const b = await getBanderByPerson(person.id)
     setBander(b ?? null)
-  }
+  }, [person.id])
+
+  useEffect(() => {
+    loadBander()
+  }, [loadBander])
 
   function personToForm(p: Person) {
     return { name: p.name, initials: p.initials, active: p.active }

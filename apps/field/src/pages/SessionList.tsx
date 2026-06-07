@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { Session, Location, Bander, Person, Protocol } from '@birdnerd/shared'
 import { getSessions, saveSession, getLocations, getBanders, getPeople, deleteSession, getRecordsBySession, getSessionBanderLogs, replaceSessionBanderLogs, generateSessionNetLogs } from '../db'
 import { PROTOCOL_CODES } from '../data/codes'
@@ -69,11 +69,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
   const [formWeatherCloseCloud, setFormWeatherCloseCloud] = useState('')
   const [formWeatherClosePrecip, setFormWeatherClosePrecip] = useState('')
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  async function loadData() {
+  const loadData = useCallback(async () => {
     const [sess, locs, banders, people] = await Promise.all([
       getSessions(),
       getLocations(),
@@ -82,7 +78,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
     ])
     setSessions(sess)
     setLocations(locs)
-    if (locs.length > 0 && !formLocationId) setFormLocationId(locs[0]!.id)
+    if (locs.length > 0) setFormLocationId(prev => prev || locs[0]!.id)
 
     // Build bander options sorted: Master Bander first, then Sub-permittee, then others
     const roleOrder: Record<string, number> = { 'Master Bander': 0, 'Sub-permittee': 1, 'Bander': 2, 'Trainee': 3 }
@@ -103,7 +99,11 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
     }
     setRecordCounts(counts)
     setBanderLogCounts(blCounts)
-  }
+  }, [])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   function resetForm() {
     setFormDate(todayISO())

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
 import { Card } from '../components/Card'
 import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol, Band } from '@birdnerd/shared'
@@ -64,12 +64,12 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
   const [editWeatherClosePrecip, setEditWeatherClosePrecip] = useState(session.weatherClosePrecip ?? '')
 
 
-  async function loadRecords() {
+  const loadRecords = useCallback(async () => {
     const r = await getRecordsBySession(session.id)
     setRecords(r.sort((a, b) => a.createdAt.localeCompare(b.createdAt)))
-  }
+  }, [session.id])
 
-  async function loadReferenceData(locationIdOverride?: string) {
+  const loadReferenceData = useCallback(async (locationIdOverride?: string) => {
     const locId = locationIdOverride ?? session.locationId
     const [locs, banders, people, banderLogs, snLogs] = await Promise.all([
       getLocations(),
@@ -95,12 +95,12 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
     // Load nets for this location (use override when location just changed)
     const locationNets = await getNetsByLocation(locId)
     setNets(locationNets)
-  }
+  }, [session.id, session.locationId])
 
   useEffect(() => {
     loadRecords()
     loadReferenceData()
-  }, [session.id])
+  }, [loadRecords, loadReferenceData])
 
   function locationCode(locId: string): string {
     return locations.find(l => l.id === locId)?.banderLocationId ?? ''

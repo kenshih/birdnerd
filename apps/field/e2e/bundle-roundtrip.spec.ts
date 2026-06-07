@@ -37,7 +37,7 @@ test('rich record survives a JSON backup export → import round-trip', async ({
   expect(rec.featherPull).toBe(true)
 
   // import fidelity: re-import the file, then read the record back through the UI
-  await page.setInputFiles('input[type="file"]', file)
+  await page.setInputFiles('input[accept=".json"]', file)
   await expect(page.getByText(/Imported .* items successfully/i)).toBeVisible()
   await page.getByRole('button', { name: /—.*F/ }).first().click() // Browse Records row
   await expect(page.getByRole('heading', { name: /View Record/i })).toBeVisible()

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { Band, BandType, BandStatus, BirdRecord, Session, Location, Person, Bander } from '@birdnerd/shared'
 import { getRecordsByBand, getSessions, getLocations, getPeople, getBanders, getPhotosByRecord, saveBand, deleteBand } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
@@ -37,36 +37,7 @@ export default function BandHistoryView({ band: initialBand, onBack, onHome, onS
   const [draftType, setDraftType] = useState<BandType>(initialBand.bandType)
   const [draftStatus, setDraftStatus] = useState<BandStatus>(initialBand.status)
 
-  useEffect(() => {
-    loadHistory()
-  }, [initialBand.id])
-
-  async function handleSave() {
-    const updated: Band = {
-      ...band,
-      bandSize: draftSize,
-      bandType: draftType,
-      status: draftStatus,
-      updatedAt: new Date().toISOString(),
-    }
-    await saveBand(updated)
-    setBand(updated)
-    setEditing(false)
-    onChanged?.()
-  }
-
-  async function handleDelete() {
-    const n = encounters.length
-    const msg = n > 0
-      ? `Delete band ${band.bandNumber}? It has ${n} banding record${n !== 1 ? 's' : ''} — those records remain but will reference a missing band.`
-      : `Delete band ${band.bandNumber} from inventory?`
-    if (!window.confirm(msg)) return
-    await deleteBand(band.id)
-    onChanged?.()
-    onBack()
-  }
-
-  async function loadHistory() {
+  const loadHistory = useCallback(async () => {
     setLoading(true)
     const [records, sessions, locations, people, banders] = await Promise.all([
       getRecordsByBand(band.id),
@@ -110,6 +81,35 @@ export default function BandHistoryView({ band: initialBand, onBack, onHome, onS
 
     setEncounters(rows)
     setLoading(false)
+  }, [band.id])
+
+  useEffect(() => {
+    loadHistory()
+  }, [loadHistory])
+
+  async function handleSave() {
+    const updated: Band = {
+      ...band,
+      bandSize: draftSize,
+      bandType: draftType,
+      status: draftStatus,
+      updatedAt: new Date().toISOString(),
+    }
+    await saveBand(updated)
+    setBand(updated)
+    setEditing(false)
+    onChanged?.()
+  }
+
+  async function handleDelete() {
+    const n = encounters.length
+    const msg = n > 0
+      ? `Delete band ${band.bandNumber}? It has ${n} banding record${n !== 1 ? 's' : ''} — those records remain but will reference a missing band.`
+      : `Delete band ${band.bandNumber} from inventory?`
+    if (!window.confirm(msg)) return
+    await deleteBand(band.id)
+    onChanged?.()
+    onBack()
   }
 
   const hasRecap = encounters.some(e => e.record.bbpCode === 'R' || e.record.bbpCode === 'F')
