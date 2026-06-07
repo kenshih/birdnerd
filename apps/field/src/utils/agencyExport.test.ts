@@ -34,6 +34,27 @@ const ctx = {
   banders: [bander],
 }
 
+// Each format is a header array kept positionally in lockstep with its row
+// builder. Guard that they can't silently desync (insert/reorder a column in
+// one but not the other) — the failure mode the parallel-array design invites.
+describe('header/row column counts stay in lockstep', () => {
+  const rec: BirdRecord = {
+    id: 'g1', sessionId: 'sess-1', bbpCode: '1',
+    bandNumber: '1422-63301', speciesCode: 'CALT',
+    createdAt: '', updatedAt: '',
+  }
+  it.each([
+    ['IBP', generateIBPRows],
+    ['BBL', generateBBLRows],
+    ['BBL Recap', generateBBLRecapRows],
+  ])('%s row width matches header width', (_name, generate) => {
+    const recap = { ...rec, bbpCode: 'R' as const } // satisfies both new-banding & recapture filters
+    const { headers, rows } = generate([rec, recap], ctx)
+    expect(rows.length).toBeGreaterThan(0)
+    for (const row of rows) expect(row.length).toBe(headers.length)
+  })
+})
+
 describe('IBP Export — generateIBPRows', () => {
   it('generates correct headers (49 columns)', () => {
     const { headers } = generateIBPRows([], ctx)

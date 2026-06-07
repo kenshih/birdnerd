@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Repo: Phase 24 test-buildout (field 0.24.4) — add a band-deployment e2e (recording a new banding flips the selected band to "deployed") + a shared `addBandBatch` helper.
 - Repo: Phase 24 test-buildout (field 0.24.6) — add band-recapture (links to the deployed band, two encounters, no re-deploy) and deployed-band delete-warning e2e; shared `selectBand` helper.
 - Repo: Field 0.24.7 — dedup the band e2e specs by extracting `deployBand` and `openBandList` helpers (the deploy-a-band preamble and View-All-Bands navigation were duplicated across all three band specs).
+- Repo: Field 0.24.8 — internal cleanup of `agencyExport.ts` (output unchanged): index the export context once per run so FK lookups are O(1) instead of per-record linear scans; extract `num()`/`dateParts()` helpers; hoist `Mist net`/`R` to named defaults; collapse the three `exportX` wrappers; drop dead `speciesNameFromCode`. Added a header↔row column-count guard test.
 
 
 ### Fixed

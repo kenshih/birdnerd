@@ -17,18 +17,6 @@ const HOW_SEXED_BBL_TO_IBP: Record<string, string> = {
   'EG': 'EG', 'MB': 'MB', 'NA': 'NA', 'TL': 'TL', 'WL': 'WL', 'OT': 'OT',
 }
 
-// Body Molt: IBP numeric 0-4 → BBL Y/N
-function bodyMoltToBBL(ibp: string | undefined): string {
-  if (!ibp) return ''
-  return ibp === '0' ? 'N' : 'Y'
-}
-
-// FF Molt: IBP letter → BBL Y/N
-function ffMoltToBBL(ibp: string | undefined): string {
-  if (!ibp) return ''
-  return ibp === 'N' ? 'N' : ibp === '0' ? 'N' : 'Y'
-}
-
 // Capture Code: our codes are a mix of IBP/BBL (1, U, R, F, 4, 5, 6, 8, X)
 // IBP uses letters (N, U, R, F, D, etc.), BBL uses numbers (1, U, R, F, 4, 5, 6, 8, X)
 // Our app stores the BBL version already
@@ -41,6 +29,24 @@ const CAPTURE_CODE_TO_IBP: Record<string, string> = {
 const AGE_NUM_TO_ALPHA: Record<string, string> = {
   '1': 'AHY', '2': 'HY', '4': 'ASY', '5': 'SY',
   '6': 'ATY', '7': 'TY', '8': 'L', 'U': 'U',
+}
+
+// Station defaults — MAPS protocol assumes mist-net capture on the right leg.
+// Hoisted so they read as policy defaults, not magic strings (and become a
+// single edit point if capture method / leg ever become per-record fields).
+const DEFAULT_CAPTURE_METHOD = 'Mist net'
+const DEFAULT_BANDED_LEG = 'R'
+
+// Body Molt: IBP numeric 0-4 → BBL Y/N
+function bodyMoltToBBL(ibp: string | undefined): string {
+  if (!ibp) return ''
+  return ibp === '0' ? 'N' : 'Y'
+}
+
+// FF Molt: IBP letter → BBL Y/N
+function ffMoltToBBL(ibp: string | undefined): string {
+  if (!ibp) return ''
+  return ibp === 'N' || ibp === '0' ? 'N' : 'Y'
 }
 
 // Feather Pull / Blood Sample: boolean → Y/N
@@ -60,6 +66,19 @@ function captureTimeToNum(time: string | undefined): string {
   return String(parseInt(time.replace(':', ''), 10))
 }
 
+// Numeric measurement → string, blank when absent (avoids "0" for missing values)
+function num(n: number | undefined): string {
+  return n != null ? String(n) : ''
+}
+
+// Split a record's date (falling back to its session) into the agency export's
+// year / month / day columns — month & day with no leading zero.
+function dateParts(rec: BirdRecord, session: Session | undefined): { year: string; month: string; day: string } {
+  const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
+  const noZero = (v: string | undefined) => (v ? String(parseInt(v, 10)) : '')
+  return { year: year ?? '', month: noZero(month), day: noZero(day) }
+}
+
 // ── Lookup helpers ─────────────────────────────────────────────────
 
 interface ExportContext {
@@ -70,34 +89,34 @@ interface ExportContext {
   banders: Bander[]
 }
 
-function lookupSession(ctx: ExportContext, sessionId: string): Session | undefined {
-  return ctx.sessions.find(s => s.id === sessionId)
+/**
+ * Pre-indexed view of an ExportContext. Built once per export so row builders
+ * resolve FKs via O(1) Map lookups instead of an O(records × entities) linear
+ * `.find()` scan per record (a multi-season export can be thousands of rows).
+ */
+interface IndexedContext {
+  sessionById: Map<string, Session>
+  locationById: Map<string, Location>
+  bandById: Map<string, Band>
+  initialsByBander: Map<string, string>
 }
 
-function lookupLocation(ctx: ExportContext, locationId: string): Location | undefined {
-  return ctx.locations.find(l => l.id === locationId)
-}
-
-function lookupBand(ctx: ExportContext, bandId: string | undefined): Band | undefined {
-  if (!bandId) return undefined
-  return ctx.bands.find(b => b.id === bandId)
-}
-
-function lookupBanderInitials(ctx: ExportContext, banderField: string | undefined): string {
-  if (!banderField) return ''
-  // banderField might be initials directly or a bander ID
-  const bander = ctx.banders.find(b => b.id === banderField)
-  if (bander) {
-    const person = ctx.people.find(p => p.id === bander.personId)
-    return person?.initials ?? ''
+function indexContext(ctx: ExportContext): IndexedContext {
+  const personById = new Map(ctx.people.map((p): [string, Person] => [p.id, p]))
+  return {
+    sessionById: new Map(ctx.sessions.map((s): [string, Session] => [s.id, s])),
+    locationById: new Map(ctx.locations.map((l): [string, Location] => [l.id, l])),
+    bandById: new Map(ctx.bands.map((b): [string, Band] => [b.id, b])),
+    initialsByBander: new Map(
+      ctx.banders.map((b): [string, string] => [b.id, personById.get(b.personId)?.initials ?? '']),
+    ),
   }
-  return banderField // fallback: already initials
 }
 
-function speciesNameFromCode(_code: string | undefined): string {
-  // Species name lookup would require the full species list
-  // For now, return empty — the ALPHA code is the primary identifier
-  return ''
+function banderInitials(idx: IndexedContext, banderField: string | undefined): string {
+  if (!banderField) return ''
+  // banderField might be a bander ID or already-initials; fall back to itself.
+  return idx.initialsByBander.get(banderField) ?? banderField
 }
 
 // ── IBP (MASTER) Format Export ─────────────────────────────────────
@@ -124,22 +143,20 @@ const IBP_HEADERS = [
   'Feather Pull', 'Feather Pull BBL', 'Blood Sample BBL',
 ]
 
-function recordToIBPRow(rec: BirdRecord, ctx: ExportContext): string[] {
-  const session = lookupSession(ctx, rec.sessionId)
-  const location = session ? lookupLocation(ctx, session.locationId) : undefined
-  const band = lookupBand(ctx, rec.bandId)
-
-  // Date components
-  const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
+function recordToIBPRow(rec: BirdRecord, idx: IndexedContext): string[] {
+  const session = idx.sessionById.get(rec.sessionId)
+  const location = session ? idx.locationById.get(session.locationId) : undefined
+  const band = rec.bandId ? idx.bandById.get(rec.bandId) : undefined
+  const { year, month, day } = dateParts(rec, session)
 
   return [
-    lookupBanderInitials(ctx, rec.bander),                          // Bander
+    banderInitials(idx, rec.bander),                                // Bander
     CAPTURE_CODE_TO_IBP[rec.bbpCode ?? ''] ?? rec.bbpCode ?? '',    // Code IBP
     rec.bbpCode ?? '',                                               // Code BBL
     band?.bandSize ?? '',                                            // Band Size
     bandNumberRaw(rec.bandNumber),                                   // Band Number
-    speciesNameFromCode(rec.speciesCode),                            // Species Name
-    rec.speciesCode ?? '',                                           // ALPHA Code
+    '',                                                             // Species Name (not stored; ALPHA code below is the identifier)
+    rec.speciesCode ?? '',                                          // ALPHA Code
     rec.age ?? '',                                                   // Age NUMBER
     AGE_NUM_TO_ALPHA[rec.age ?? ''] ?? rec.age ?? '',                // Age (alpha)
     HOW_AGED_BBL_TO_IBP[rec.howAged ?? ''] ?? rec.howAged ?? '',     // How Aged IBP
@@ -168,14 +185,14 @@ function recordToIBPRow(rec: BirdRecord, ctx: ExportContext): string[] {
     rec.moltLimitsRec ?? '',                                         // Rec
     rec.moltLimitsBodyPlum ?? '',                                    // Body Plum
     rec.moltLimitsNonFeather ?? '',                                  // Non-Feath
-    rec.wing != null ? String(rec.wing) : '',                        // Wing
-    rec.bodyMass != null ? String(rec.bodyMass) : '',                // Body Mass
+    num(rec.wing),                                                   // Wing
+    num(rec.bodyMass),                                               // Body Mass
     rec.status ?? '',                                                // Status
-    month ? String(parseInt(month, 10)) : '',                        // Month (no leading zero)
-    day ? String(parseInt(day, 10)) : '',                            // Day (no leading zero)
-    year ?? '',                                                      // Year
+    month,                                                           // Month (no leading zero)
+    day,                                                             // Day (no leading zero)
+    year,                                                            // Year
     captureTimeToNum(rec.captureTime),                               // Capture Time
-    location?.banderLocationId ?? rec.station ?? '',                  // Station
+    location?.banderLocationId ?? rec.station ?? '',                 // Station
     rec.net ?? '',                                                   // Net
     rec.disposition ?? '',                                           // Disposition
     rec.notes ?? '',                                                 // Note
@@ -211,42 +228,41 @@ const BBL_HEADERS = [
   'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5',
 ]
 
-function recordToBBLRow(rec: BirdRecord, ctx: ExportContext): string[] {
-  const session = lookupSession(ctx, rec.sessionId)
-  const location = session ? lookupLocation(ctx, session.locationId) : undefined
-
-  const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
+function recordToBBLRow(rec: BirdRecord, idx: IndexedContext): string[] {
+  const session = idx.sessionById.get(rec.sessionId)
+  const location = session ? idx.locationById.get(session.locationId) : undefined
+  const { year, month, day } = dateParts(rec, session)
 
   return [
     bandNumberRaw(rec.bandNumber),                                   // Band Number
     rec.speciesCode ?? '',                                           // Species (ALPHA code)
     rec.bbpCode ?? '',                                               // Disposition (BBL capture code)
-    year ?? '',                                                      // Banding Year
-    month ? String(parseInt(month, 10)) : '',                        // Banding Month
-    day ? String(parseInt(day, 10)) : '',                            // Banding Day
+    year,                                                            // Banding Year
+    month,                                                           // Banding Month
+    day,                                                             // Banding Day
     rec.age ?? '',                                                   // Age
     rec.howAged ?? '',                                               // How Aged (BBL 2-letter)
     rec.sex ?? '',                                                   // Sex
     rec.howSexed ?? '',                                              // How Sexed (BBL 2-letter)
     rec.status ?? '',                                                // Bird Status
-    location?.banderLocationId ?? rec.station ?? '',                  // Location
+    location?.banderLocationId ?? rec.station ?? '',                 // Location
     rec.notes ?? '',                                                 // Remarks
-    bandNumberRaw(rec.replacedBandNumber),                            // Replaced Band Number
+    bandNumberRaw(rec.replacedBandNumber),                           // Replaced Band Number
     '',                                                              // Reward Band Number
-    lookupBanderInitials(ctx, rec.bander),                           // Bander ID
+    banderInitials(idx, rec.bander),                                 // Bander ID
     '',                                                              // Scribe
-    'Mist net',                                                      // How Captured (hardcoded)
+    DEFAULT_CAPTURE_METHOD,                                          // How Captured
     captureTimeToNum(rec.captureTime),                               // Capture Time Enter or Paste Here
     rec.captureTime ?? '',                                           // Capture Time (HH:MM)
-    'R',                                                             // Banded Leg (hardcoded)
-    rec.wing != null ? String(rec.wing) : '',                        // Wing Chord
-    rec.tail != null ? String(rec.tail) : '',                        // Tail Length
-    rec.tarsus != null ? String(rec.tarsus) : '',                    // Tarsus Length
-    rec.exposedCulmen != null ? String(rec.exposedCulmen) : '',      // Culmen Length
+    DEFAULT_BANDED_LEG,                                              // Banded Leg
+    num(rec.wing),                                                   // Wing Chord
+    num(rec.tail),                                                   // Tail Length
+    num(rec.tarsus),                                                 // Tarsus Length
+    num(rec.exposedCulmen),                                          // Culmen Length
     '',                                                              // Bill Length
     '',                                                              // Bill Width
     '',                                                              // Bill Height
-    rec.bodyMass != null ? String(rec.bodyMass) : '',                // Bird Weight
+    num(rec.bodyMass),                                               // Bird Weight
     '',                                                              // Weight Time Enter or Paste Here
     '',                                                              // Weight Time
     '',                                                              // Eye color
@@ -305,44 +321,43 @@ const BBL_RECAP_HEADERS = [
   'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5',
 ]
 
-function recordToBBLRecapRow(rec: BirdRecord, ctx: ExportContext): string[] {
-  const session = lookupSession(ctx, rec.sessionId)
-  const location = session ? lookupLocation(ctx, session.locationId) : undefined
-
-  const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
+function recordToBBLRecapRow(rec: BirdRecord, idx: IndexedContext): string[] {
+  const session = idx.sessionById.get(rec.sessionId)
+  const location = session ? idx.locationById.get(session.locationId) : undefined
+  const { year, month, day } = dateParts(rec, session)
 
   return [
     bandNumberRaw(rec.bandNumber),                                   // Band Number
     rec.speciesCode ?? '',                                           // Species (ALPHA code)
     rec.bbpCode ?? '',                                               // Disposition (BBL capture code)
-    year ?? '',                                                      // Recapture Year
-    month ? String(parseInt(month, 10)) : '',                        // Recapture Month
-    day ? String(parseInt(day, 10)) : '',                            // Recapture Day
+    year,                                                            // Recapture Year
+    month,                                                           // Recapture Month
+    day,                                                             // Recapture Day
     rec.age ?? '',                                                   // Age
     rec.howAged ?? '',                                               // How Aged (BBL 2-letter)
     rec.sex ?? '',                                                   // Sex
     rec.howSexed ?? '',                                              // How Sexed (BBL 2-letter)
     rec.status ?? '',                                                // Bird Status
-    'Mist net',                                                      // How Obtained (hardcoded)
+    DEFAULT_CAPTURE_METHOD,                                          // How Obtained
     rec.presentCondition ?? '',                                      // Present Condition
-    location?.banderLocationId ?? rec.station ?? '',                  // Location
+    location?.banderLocationId ?? rec.station ?? '',                 // Location
     rec.notes ?? '',                                                 // Remarks
-    bandNumberRaw(rec.replacedBandNumber),                            // Second Band Number
+    bandNumberRaw(rec.replacedBandNumber),                           // Second Band Number
     '',                                                              // Reward Band Number
-    lookupBanderInitials(ctx, rec.bander),                           // Bander ID
+    banderInitials(idx, rec.bander),                                 // Bander ID
     '',                                                              // Scribe
-    'Mist net',                                                      // How Captured (hardcoded)
+    DEFAULT_CAPTURE_METHOD,                                          // How Captured
     captureTimeToNum(rec.captureTime),                               // Capture Time Enter or Paste Here
     rec.captureTime ?? '',                                           // Capture Time (HH:MM)
-    'R',                                                             // Banded Leg (hardcoded)
-    rec.wing != null ? String(rec.wing) : '',                        // Wing Chord
-    rec.tail != null ? String(rec.tail) : '',                        // Tail Length
-    rec.tarsus != null ? String(rec.tarsus) : '',                    // Tarsus Length
-    rec.exposedCulmen != null ? String(rec.exposedCulmen) : '',      // Culmen Length
+    DEFAULT_BANDED_LEG,                                              // Banded Leg
+    num(rec.wing),                                                   // Wing Chord
+    num(rec.tail),                                                   // Tail Length
+    num(rec.tarsus),                                                 // Tarsus Length
+    num(rec.exposedCulmen),                                          // Culmen Length
     '',                                                              // Bill Length
     '',                                                              // Bill Width
     '',                                                              // Bill Height
-    rec.bodyMass != null ? String(rec.bodyMass) : '',                // Bird Weight
+    num(rec.bodyMass),                                               // Bird Weight
     '',                                                              // Weight Time Enter or Paste Here
     '',                                                              // Weight Time
     '',                                                              // Eye color
@@ -398,6 +413,12 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
   URL.revokeObjectURL(url)
 }
 
+/** Download a generated table as `<prefix>_<YYYY-MM-DD>.csv`. */
+function downloadRows(prefix: string, { headers, rows }: { headers: string[]; rows: string[][] }): void {
+  const date = new Date().toISOString().slice(0, 10)
+  downloadCSV(`${prefix}_${date}.csv`, headers, rows)
+}
+
 // ── Public API ─────────────────────────────────────────────────────
 
 /** Generate IBP rows without triggering download (for testing) */
@@ -405,7 +426,8 @@ export function generateIBPRows(
   records: BirdRecord[],
   ctx: ExportContext,
 ): { headers: string[]; rows: string[][] } {
-  return { headers: IBP_HEADERS, rows: records.map(r => recordToIBPRow(r, ctx)) }
+  const idx = indexContext(ctx)
+  return { headers: IBP_HEADERS, rows: records.map(r => recordToIBPRow(r, idx)) }
 }
 
 export function exportIBP(
@@ -413,9 +435,7 @@ export function exportIBP(
   ctx: ExportContext,
   filenamePrefix: string = 'birdnerd-ibp',
 ): void {
-  const { headers, rows } = generateIBPRows(records, ctx)
-  const date = new Date().toISOString().slice(0, 10)
-  downloadCSV(`${filenamePrefix}_${date}.csv`, headers, rows)
+  downloadRows(filenamePrefix, generateIBPRows(records, ctx))
 }
 
 /** Generate BBL Upload rows (new bandings only) without triggering download */
@@ -423,8 +443,9 @@ export function generateBBLRows(
   records: BirdRecord[],
   ctx: ExportContext,
 ): { headers: string[]; rows: string[][] } {
+  const idx = indexContext(ctx)
   const newBandings = records.filter(r => isNewBanding(r.bbpCode))
-  return { headers: BBL_HEADERS, rows: newBandings.map(r => recordToBBLRow(r, ctx)) }
+  return { headers: BBL_HEADERS, rows: newBandings.map(r => recordToBBLRow(r, idx)) }
 }
 
 export function exportBBL(
@@ -432,9 +453,7 @@ export function exportBBL(
   ctx: ExportContext,
   filenamePrefix: string = 'birdnerd-bbl',
 ): void {
-  const { headers, rows } = generateBBLRows(records, ctx)
-  const date = new Date().toISOString().slice(0, 10)
-  downloadCSV(`${filenamePrefix}_${date}.csv`, headers, rows)
+  downloadRows(filenamePrefix, generateBBLRows(records, ctx))
 }
 
 /** Generate BBL Recapture Upload rows without triggering download */
@@ -442,8 +461,9 @@ export function generateBBLRecapRows(
   records: BirdRecord[],
   ctx: ExportContext,
 ): { headers: string[]; rows: string[][] } {
+  const idx = indexContext(ctx)
   const recaps = records.filter(r => isRecapture(r.bbpCode))
-  return { headers: BBL_RECAP_HEADERS, rows: recaps.map(r => recordToBBLRecapRow(r, ctx)) }
+  return { headers: BBL_RECAP_HEADERS, rows: recaps.map(r => recordToBBLRecapRow(r, idx)) }
 }
 
 export function exportBBLRecap(
@@ -451,7 +471,5 @@ export function exportBBLRecap(
   ctx: ExportContext,
   filenamePrefix: string = 'birdnerd-bbl-recap',
 ): void {
-  const { headers, rows } = generateBBLRecapRows(records, ctx)
-  const date = new Date().toISOString().slice(0, 10)
-  downloadCSV(`${filenamePrefix}_${date}.csv`, headers, rows)
+  downloadRows(filenamePrefix, generateBBLRecapRows(records, ctx))
 }
