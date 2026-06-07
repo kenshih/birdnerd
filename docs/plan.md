@@ -52,7 +52,7 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 
 **Codes & form fields**
 - ✅ Add band sizes `4a`, `5`, `6`
-- ✅ Skull: add `8` (invisible); remove `X` (not checked)
+- ✅ Skull: add `8` (invisible); remove `X` (not checked). _Decision: legacy records with skull `X` map to `8` on import (Phase 25 importer to apply)._
 - ✅ Add **Alula** to the molt limits & plumage section, ordered immediately after S covs (now G Covs) — captured in form + CSV + bundle (v5). _(Agency-export follow-up → Phase 25.)_
 - ✅ Rename `S covs` → `G Covs` — display label only; stored field `moltLimitsSCovs` unchanged. _(Agency-export/data-key follow-up → Phase 25.)_
 - ✅ Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
@@ -91,7 +91,6 @@ Open questions to resolve with Hallie first:
 Also confirm with Hallie (carried from Phase 24 — same conversation; then implement the relevant fix):
 - **Molt-limits agency export:** should the export header `S covs` become `G covs`, and/or the stored field `moltLimitsSCovs` be renamed to match the UI? Depends on whether the agency parses by header name; a data-key rename needs an IndexedDB + bundle migration.
 - **Alula in agency export:** should the new `Alula` tract appear in the IBP/BBL agency export? (Currently captured in app data + CSV only.)
-- **Legacy skull `X`:** any historical records use skull `X` (now removed)? Decide the mapping (→ blank or `8`) when importing legacy data.
 
 Once scoped:
 - Map existing columns to BirdNerd record / session / band schema
