@@ -17,9 +17,9 @@
     },
     {
       "id": "loc-mcfs",
-      "banderLocationId": "MCFS",
+      "banderLocationId": "MICA",
       "bblLocationId": null,
-      "name": "Mitchell Canyon Field Station",
+      "name": "Mitchell Canyon",
       "latitude": 37.9218,
       "longitude": -121.9414,
       "country": "US",

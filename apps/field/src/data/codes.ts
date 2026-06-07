@@ -135,7 +135,7 @@ export const BAND_TYPE_CODES = [
 
 export const STATIONS = [
   { code: 'GCFS', name: 'Galindo Creek' },
-  { code: 'MCFS', name: 'Mitchell Canyon Field Station' },
+  { code: 'MICA', name: 'Mitchell Canyon' },
 ]
 
 export const PROTOCOL_CODES = [
