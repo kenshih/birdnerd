@@ -80,23 +80,38 @@ _Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm ru
 
 ## Phase 25 — Bulk Data Import (Field 0.25.0)
 
-Goal: Get Hallie's existing banding data into the field app. Her current data isn't linked to sessions, so this phase **starts with a data-shape conversation, not a build** — we can't scope the importer until we see the structure. Sequenced after Small Fixes so the form/code/inventory changes that affect the schema land first.
+Goal: Get Hallie's existing banding data into the field app via an in-app CSV importer. Sequenced after Small Fixes so the form/code/inventory changes that affect the schema land first.
 
-Open questions to resolve with Hallie first:
-- What is the source of truth — `MASTER BANDING DATA.xlsx`, or something else?
-- How are records currently organized if not by session (by date? by sheet? flat list)?
-- Decide import approach: a guided in-app import UI vs. a one-time developer-assisted import from the spreadsheet
-- How to handle session-less records: assign to a session on import, allow session-less records, or create a catch-all import session per date/sheet
+**Design** (data-shape conversation done, grounded in `nogit/MASTER-BANDING-DATA.csv` — 342 rows, 1 station `GCFS`, 37 days, Dec 2024–Mar 2026):
+
+In-app CSV importer in Data Manager: upload → **preview summary** (sessions / bands / records to create, skips, rejects, warnings) → confirm → write to IndexedDB. Re-runnable.
+
+Entity derivation:
+- **Sessions** = station + date (~37). Distinct banders that day → `SessionBanderLog`; `masterBanderId` = HD when present among them, else blank. Protocol/weather left blank.
+- **Bands** = every Band Number → inventory entry. Status: `deployed` (capture, Code IBP `N`), `destroyed` (`BAND DESTROYED`, `D`), `lost` (`BAND LOST`, `L`). `bandType` left blank + warned (not in the sheet).
+- **BirdRecords** = the capture rows (330 here), linked to session + band. The band-status rows (12 here) create bands only — no bird record.
+- `bbpCode` ← **Code IBP/BBL** (not the `Status` column). `Status` (BBL composite, e.g. `300`/`318`) → maps **directly** to `BirdRecord.status`; validate against `BIRD_STATUS_CODES`, soft-warn on values outside the table.
+- **Aging/sexing:** primary criterion (`howAged`/`howSexed`) ← the **BBL column directly** — verified lossless on the 330 captures (BBL never blank, perfect 1:1 with IBP, fills `NA`, all values valid app codes). Second criterion (`howAged2`/`howSexed2`) exists in the sheet **only as IBP single-letters** (`How Aged/Sexed IBP 2`), so derive it via a deterministic IBP→BBL lookup (`P→PL, M→MR, S→SK, L→LP, C→CL, I→MB, F→FF, J→PL, E→EY, B→BP, O→OT`). Data wart: one `How Sexed BBL` cell is the Excel artifact `FALSE` → treat as blank + warn.
+- Unknown station `GCFS` → auto-create a stub `Location` (blank lat/long/name to fill in later).
+
+No-clobber: **skip-if-exists, never overwrite.** Match keys: band# (bands), station+date (sessions), band#+date (records). Skips reported in the summary.
+
+Two outputs:
+- **Rejects CSV** — only structurally un-importable rows (e.g. unparseable date; none in this dataset). Original columns + a `_problem` column.
+- **Warnings** — soft issues (blank band type, unrepresentable code values) shown in the summary; rows still import (all fields optional, soft warnings only).
+
+Build steps:
+- Finalize the ~50-column → record/session/band mapping table (first task).
+- Build the IBP→BBL single-letter lookup (for the second aging/sexing criterion); soft-warn on any IBP letter not in the table.
+- Parser + entity builders + dedup as pure functions (testable without DB/React).
+- Preview/summary UI + confirm + IndexedDB writes; rejects/warnings download.
+- Validate as **soft warnings only — never block** (per conventions).
 
 Also confirm with Hallie (carried from Phase 24 — same conversation; then implement the relevant fix):
-- **Molt-limits agency export:** should the export header `S covs` become `G covs`, and/or the stored field `moltLimitsSCovs` be renamed to match the UI? Depends on whether the agency parses by header name; a data-key rename needs an IndexedDB + bundle migration.
-- **Alula in agency export:** should the new `Alula` tract appear in the IBP/BBL agency export? (Currently captured in app data + CSV only.)
-
-Once scoped:
-- Map existing columns to BirdNerd record / session / band schema
-- Validate on import as **soft warnings only — never block** (per project conventions)
-- Preserve idempotency / avoid duplicate imports on re-run
-- Confirm whether imported bands should reconcile against Band Inventory
+- **Molt-limits `S covs` vs `G covs`:** ⚠️ `G covs` (greater coverts) and `S covs` (secondary coverts) are **different feather tracts, not synonyms** — yet Phase 24 relabeled `S covs` → `G Covs` in the UI (display only; stored field `moltLimitsSCovs` and the export header still say `S covs`, matching the master sheet). Ask Hallie whether she genuinely wants `G covs` added/used, or whether the relabel request was a **mistake**. If real: it's a distinct tract → data-key change (IndexedDB + bundle migration) + export-header decision. If a mistake: revert the UI label back to `S covs`.
+- **Alula in agency export:** point out to Hallie that the **master sheet has no `Alula` column** (verified — 0 occurrences), so the agency format historically excludes it; our export omits it too, and Alula is captured in app data + the app's own CSV only. Ask whether she expects to start submitting `Alula` to the agency soon (evolve the format) or keep it app-only.
+- **`Status` column (master sheet):** decoded — BBL composite (base `3`/`5`/`7` = normal/sick/rehabbed + suffix, e.g. `00` band only, `18` blood sample); maps to `BirdRecord.status` / `BIRD_STATUS_CODES`. Only open ask: does her **full** master sheet use status values outside our table (`300, 301, 318, 319, 333, 334, 380, 500, 700, ---`) so we can extend it?
+- **IBP vs BBL code systems:** resolved from the data — primary criterion maps losslessly from the BBL column; second criterion derives via an IBP→BBL lookup (see Design). Only open ask: does her **full** master sheet contain IBP aging/sexing letters beyond those seen here, so the lookup is complete? (Low-stakes — unmapped letters just warn.)
 
 ---
 
