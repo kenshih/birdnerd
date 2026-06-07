@@ -207,8 +207,7 @@ export function buildImportPlan(parsed: ParsedSheet): ImportPlan {
         deploymentDate: status === 'deployed' ? date : undefined,
       })
       if (!get('Band Size')) warnings.push({ row, field: 'Band Size', message: `Band ${bn.formatted}: no band size in sheet` })
-      // Band type is never in the master sheet — flag it (left blank on import).
-      warnings.push({ row, field: 'Band Type', message: `Band ${bn.formatted}: band type not in sheet — left blank` })
+      // Band type is never in the master sheet; the apply layer defaults it to 'Standard'.
     }
 
     // Band-event rows create the band only — no bird record.

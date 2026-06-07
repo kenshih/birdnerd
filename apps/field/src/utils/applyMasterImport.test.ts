@@ -43,7 +43,7 @@ describe('applyImportPlan — fresh import', () => {
     const [locs, sess, bands, recs] = await Promise.all([getLocations(), getSessions(), getBands(), getAllRecords()])
     expect(locs.find(l => l.banderLocationId === 'GCFS')).toBeTruthy()
     expect(sess).toHaveLength(1)
-    expect(bands[0]).toMatchObject({ bandNumber: '1422-63301', status: 'deployed', bandType: '' })
+    expect(bands[0]).toMatchObject({ bandNumber: '1422-63301', status: 'deployed', bandType: 'Standard' })
     expect(recs[0]).toMatchObject({ speciesCode: 'CALT', date: '2025-04-19' })
     // record links to the created session + band
     expect(recs[0]!.sessionId).toBe(sess[0]!.id)

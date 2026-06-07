@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 
+- Field 0.25.3 — Master-sheet import now defaults imported bands' `bandType` to `Standard` (the sheet has no band-type column), replacing the previous blank value + per-band warning. Cuts the import warnings down to genuine issues.
 - Field 0.25.2 — Correct the Mitchell Canyon station code from `MCFS` to `MICA` and its name to "Mitchell Canyon", across the `STATIONS` table, seed data, example/sample bundles, and the field specs. As with the Galindo Creek rename, this only affects the seed/defaults for fresh installs; existing databases are unchanged.
 - Field 0.25.1 — Correct the Galindo Creek station code from `GCBS` to `GCFS` and its name to "Galindo Creek", across the `STATIONS` table, seed data, example/sample bundles, the agency-export test, and the field specs. Existing databases keep whatever code they already stored (this only affects the seed/defaults for fresh installs). Side benefit: importing Hallie's `GCFS` master sheet now matches the seed location instead of creating a stub.
 - Shared: Expand the abbreviated `M-`/`H-`/`A-` prefixes on WRP code labels to their full words (`Minimum`/`Hatch Year`/`Adult`), e.g. `MFCF` now reads "Minimum First Cycle Formative" and `AFCF` "Adult First Cycle Formative". Codes are unchanged; labels are display-only, so existing records and the OCR app are unaffected.

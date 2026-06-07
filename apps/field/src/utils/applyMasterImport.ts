@@ -1,4 +1,4 @@
-import type { BirdRecord, Session, Band, BandType, Location, SessionBanderLog } from '@birdnerd/shared'
+import type { BirdRecord, Session, Band, Location, SessionBanderLog } from '@birdnerd/shared'
 import { getDB } from '../db'
 import type { ImportPlan, ImportWarning } from './masterSheetImport'
 
@@ -146,7 +146,7 @@ export async function applyImportPlan(
     summary.bandsCreated++
     newBands.push({
       id, bandNumber: draft.bandNumber, status: draft.status,
-      bandSize: draft.bandSize, bandType: '' as BandType, // not in sheet (warned in plan)
+      bandSize: draft.bandSize, bandType: 'Standard', // master sheet has no band-type column; default per import policy
       currentSpecies: draft.currentSpecies, deploymentDate: draft.deploymentDate,
       createdAt: now, updatedAt: now,
     })

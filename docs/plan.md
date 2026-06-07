@@ -88,7 +88,7 @@ In-app CSV importer in Data Manager: upload → **preview summary** (sessions / 
 
 Entity derivation:
 - **Sessions** = station + date (~37). Distinct banders that day → `SessionBanderLog`; `masterBanderId` = HD when present among them, else blank. Protocol/weather left blank.
-- **Bands** = every Band Number → inventory entry. Status: `deployed` (capture, Code IBP `N`), `destroyed` (`BAND DESTROYED`, `D`), `lost` (`BAND LOST`, `L`). `bandType` left blank + warned (not in the sheet).
+- **Bands** = every Band Number → inventory entry. Status: `deployed` (capture, Code IBP `N`), `destroyed` (`BAND DESTROYED`, `D`), `lost` (`BAND LOST`, `L`). `bandType` defaults to `Standard` (the master sheet has no band-type column).
 - **BirdRecords** = the capture rows (330 here), linked to session + band. The band-status rows (12 here) create bands only — no bird record.
 - `bbpCode` ← **Code IBP/BBL** (not the `Status` column). `Status` (BBL composite, e.g. `300`/`318`) → maps **directly** to `BirdRecord.status`; validate against `BIRD_STATUS_CODES`, soft-warn on values outside the table.
 - **Aging/sexing:** primary criterion (`howAged`/`howSexed`) ← the **BBL column directly** — verified lossless on the 330 captures (BBL never blank, perfect 1:1 with IBP, fills `NA`, all values valid app codes). Second criterion (`howAged2`/`howSexed2`) exists in the sheet **only as IBP single-letters** (`How Aged/Sexed IBP 2`), so derive it via a deterministic IBP→BBL lookup (`P→PL, M→MR, S→SK, L→LP, C→CL, I→MB, F→FF, J→PL, E→EY, B→BP, O→OT`). Data wart: one `How Sexed BBL` cell is the Excel artifact `FALSE` → treat as blank + warn.
@@ -98,7 +98,7 @@ No-clobber: **skip-if-exists, never overwrite.** Match keys: band# (bands), stat
 
 Two outputs:
 - **Rejects CSV** — only structurally un-importable rows (e.g. unparseable date; none in this dataset). Original columns + a `_problem` column.
-- **Warnings** — soft issues (blank band type, unrepresentable code values) shown in the summary; rows still import (all fields optional, soft warnings only).
+- **Warnings** — soft issues (unrepresentable code values, etc.) shown in the summary; rows still import (all fields optional, soft warnings only).
 
 Build steps (✅ shipped at field 0.25.0):
 - ✅ ~50-column → record/session/band mapping (`masterSheetImport.ts`, inverse of the IBP export).
@@ -247,7 +247,7 @@ Assumptions for Phase 23:
 - Band replacement tracking (old band → new band, linked history)
 - Hummingbird band prefix → alpha mapping
 - `how_obtained` field: currently hardcoded to "mist net" in export. Needs per-record or per-session config when generalizing to non-MAPS protocols or stations with varied capture methods.
-- Confirm band types with Hallie (Standard, Buffy, Giant, Lockout)
+- Confirm the full band-type list with Hallie (current: Standard, Stainless-steel, 4-short, Lock-on — see the `BAND_TYPE_CODES` TODO in `codes.ts`)
 
 **Special Forms**
 - Empidonax flycatcher supplemental datasheet
