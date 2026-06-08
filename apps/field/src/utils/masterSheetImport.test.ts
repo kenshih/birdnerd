@@ -75,6 +75,13 @@ describe('buildImportPlan — captures', () => {
     })
   })
 
+  it('maps BBL unknown age (0, or blank + alpha U) to our U code', () => {
+    expect(buildImportPlan(sheet([capture({ 'Age NUMBER': '0', Age: 'U' })])).records[0]!.fields.age).toBe('U')
+    expect(buildImportPlan(sheet([capture({ 'Age NUMBER': '', Age: 'U' })])).records[0]!.fields.age).toBe('U')
+    expect(buildImportPlan(sheet([capture({ 'Age NUMBER': '', Age: '' })])).records[0]!.fields.age).toBeUndefined()
+    expect(buildImportPlan(sheet([capture({ 'Age NUMBER': '6' })])).records[0]!.fields.age).toBe('6') // passes through
+  })
+
   it('does not warn on in-table status, warns on out-of-table status', () => {
     const ok = buildImportPlan(sheet([capture({ Status: '318', 'Blood Sample BBL': 'Y' })]))
     expect(ok.warnings.some(w => w.field === 'Status')).toBe(false)

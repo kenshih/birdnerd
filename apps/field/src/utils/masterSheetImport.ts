@@ -154,6 +154,19 @@ function blankIfEmpty(v: string): string | undefined {
   return v ? v : undefined
 }
 
+/**
+ * Age NUMBER → our age code. BBL `0` means Unknown, which the app codes as `U`;
+ * a blank number with an explicit `U` in the alpha column is also Unknown.
+ * Other numeric codes pass through (BBL standard: 1 AHY, 2 HY, 4 L, 5 SY, 6 ASY,
+ * 7 TY, 8 ATY — matching `AGE_CODES`).
+ */
+function mapAge(numberRaw: string, alphaRaw: string): string | undefined {
+  const n = numberRaw.trim()
+  if (n === '0') return 'U'
+  if (n) return n
+  return alphaRaw.trim().toUpperCase() === 'U' ? 'U' : undefined
+}
+
 // ── Build plan ─────────────────────────────────────────────────────
 
 export function buildImportPlan(parsed: ParsedSheet): ImportPlan {
@@ -237,7 +250,7 @@ export function buildImportPlan(parsed: ParsedSheet): ImportPlan {
     const fields: RecordFields = {
       bandNumber: bn?.formatted,
       speciesCode,
-      age: blankIfEmpty(get('Age NUMBER')),
+      age: mapAge(get('Age NUMBER'), get('Age')),
       sex: blankIfEmpty(get('Sex')),
       howAged,
       howAged2,
