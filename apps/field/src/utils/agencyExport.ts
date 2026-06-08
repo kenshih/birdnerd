@@ -27,8 +27,8 @@ const CAPTURE_CODE_TO_IBP: Record<string, string> = {
 
 // Age: our app stores numeric BBL codes → alpha for display
 const AGE_NUM_TO_ALPHA: Record<string, string> = {
-  '1': 'AHY', '2': 'HY', '4': 'ASY', '5': 'SY',
-  '6': 'ATY', '7': 'TY', '8': 'L', 'U': 'U',
+  '1': 'AHY', '2': 'HY', '4': 'L', '5': 'SY',
+  '6': 'ASY', '7': 'TY', '8': 'ATY', 'U': 'U',
 }
 
 // Station defaults — MAPS protocol assumes mist-net capture on the right leg.

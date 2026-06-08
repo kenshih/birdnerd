@@ -6,11 +6,11 @@ export interface CodeOption {
 export const AGE_CODES: CodeOption[] = [
   { code: '1', label: 'After Hatch Year (AHY)' },
   { code: '2', label: 'Hatch Year (HY)' },
-  { code: '4', label: 'After Second Year (ASY)' },
+  { code: '4', label: 'Local (L)' },
   { code: '5', label: 'Second Year (SY)' },
-  { code: '6', label: 'After Third Year (ATY)' },
+  { code: '6', label: 'After Second Year (ASY)' },
   { code: '7', label: 'Third Year (TY)' },
-  { code: '8', label: 'Local (L)' },
+  { code: '8', label: 'After Third Year (ATY)' },
   { code: 'U', label: 'Unknown' },
 ]
 
