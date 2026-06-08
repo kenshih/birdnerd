@@ -100,6 +100,8 @@ describe('IBP Export — generateIBPRows', () => {
     expect(row[3]).toBe('2')
     // Band Number (no hyphen)
     expect(row[4]).toBe('142263301')
+    // Species Name (common name resolved from ALPHA code)
+    expect(row[5]).toBe('California Towhee')
     // ALPHA Code
     expect(row[6]).toBe('CALT')
     // Age NUMBER

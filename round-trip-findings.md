@@ -21,7 +21,7 @@ Everything below is a difference the test found, grouped by *why* it happens. Th
 3. **Row order differs** — export is grouped by session/date, not the master's original row order.
 
 ## By design (app stores a normalized subset)
-4. **`Species Name` blank on all 330** — the app keys on the ALPHA code only; it doesn't store the common name.
+4. **`Species Name` resolved from the ALPHA code** — the app stores the 4-letter code; on export it fills the common name from the official species list. Matches your sheet except where your typed name differs from the standard common name (5 cases — the export uses the standard spelling): `Says Phoebe`→`Say's Phoebe`, `California Scrub Jay`→`California Scrub-Jay`, and a few White-crowned Sparrow subspecies namings.
 5. **`Feather Pull` `""` → `N`** (all rows) — the master left the non-BBL column blank; the app has one feather-pull boolean and writes it to both Feather Pull columns.
 6. **`How Sexed IBP` (197) / some `How Aged IBP` blanks → `NA`** — the master left the IBP method blank but put `NA` in the BBL column; the app fills the IBP column from the BBL value.
 7. **`Body Mass` `10.0` → `10`** (33) — numeric reformat, same value.

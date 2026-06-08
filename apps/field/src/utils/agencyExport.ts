@@ -1,7 +1,11 @@
 import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
 import { isNewBanding, isRecapture } from '../data/codes'
+import { SPECIES_LIST } from '../data/species'
 
 // ── Code Mappings ──────────────────────────────────────────────────
+
+// Resolve a record's ALPHA species code → common name for the master export.
+const COMMON_NAME_BY_CODE = new Map(SPECIES_LIST.map(s => [s.code, s.commonName]))
 
 // How Aged: app stores BBL 2-letter → IBP single-letter for MASTER export
 const HOW_AGED_BBL_TO_IBP: Record<string, string> = {
@@ -155,7 +159,7 @@ function recordToIBPRow(rec: BirdRecord, idx: IndexedContext): string[] {
     rec.bbpCode ?? '',                                               // Code BBL
     band?.bandSize ?? '',                                            // Band Size
     bandNumberRaw(rec.bandNumber),                                   // Band Number
-    '',                                                             // Species Name (not stored; ALPHA code below is the identifier)
+    COMMON_NAME_BY_CODE.get(rec.speciesCode ?? '') ?? '',           // Species Name (common name resolved from the ALPHA code)
     rec.speciesCode ?? '',                                          // ALPHA Code
     rec.age ?? '',                                                   // Age NUMBER
     AGE_NUM_TO_ALPHA[rec.age ?? ''] ?? rec.age ?? '',                // Age (alpha)
