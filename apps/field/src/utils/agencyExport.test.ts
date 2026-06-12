@@ -213,6 +213,36 @@ describe('IBP Export — generateIBPRows', () => {
     expect(rows[0][47]).toBe('Y')  // Feather Pull BBL
     expect(rows[0][48]).toBe('Y')  // Blood Sample BBL
   })
+
+  it.each([
+    ['D', 'BAND DESTROYED', '4'],
+    ['L', 'BAND LOST', '8'],
+  ])('reconstructs a band-fate row from bbpCode %s (inverse of import)', (code, speciesName, bblCode) => {
+    const rec: BirdRecord = {
+      id: 'rf1', sessionId: 'sess-1', bbpCode: code,
+      bandNumber: '1154-81501', speciesCode: undefined,
+      createdAt: '', updatedAt: '',
+    }
+    const { rows } = generateIBPRows([rec], ctx)
+    expect(rows[0][1]).toBe(code)         // Code IBP — the fate letter
+    expect(rows[0][2]).toBe(bblCode)      // Code BBL — back to 4/8
+    expect(rows[0][5]).toBe(speciesName)  // Species Name marker
+    expect(rows[0][4]).toBe('115481501')  // Band Number still present
+  })
+})
+
+describe('band-fate rows are excluded from BBL new + recapture exports', () => {
+  it.each(['D', 'L'])('bbpCode %s appears in neither upload', code => {
+    const rec: BirdRecord = {
+      id: 'rf2', sessionId: 'sess-1', bbpCode: code,
+      bandNumber: '1154-81501',
+      createdAt: '', updatedAt: '',
+    }
+    expect(generateBBLRows([rec], ctx).rows).toHaveLength(0)
+    expect(generateBBLRecapRows([rec], ctx).rows).toHaveLength(0)
+    // …but it IS present in the IBP master export
+    expect(generateIBPRows([rec], ctx).rows).toHaveLength(1)
+  })
 })
 
 describe('BBL Upload — generateBBLRows', () => {

@@ -3,7 +3,7 @@
  * Pure function — no DB or React dependencies. Returns a map of field name → warning message.
  * All warnings are soft (never block saving).
  */
-import { isNewBanding } from '../data/codes'
+import { isNewBanding, isBandFate } from '../data/codes'
 import bandSizesData from '../data/band-sizes.json'
 import measurementRangesData from '../data/measurement-ranges.json'
 
@@ -86,6 +86,9 @@ export function validateRecord(
   sessionNetLabels?: Set<string>,
 ): ValidationWarnings {
   const warnings: ValidationWarnings = {}
+
+  // Band-fate rows (destroyed/lost) carry no bird data — skip all bird-field warnings.
+  if (isBandFate(values.captureCode)) return warnings
 
   // Sex=M + Brood Patch 3/4 → error on BP
   if (values.sex === 'M' && (values.bp === '3' || values.bp === '4')) {

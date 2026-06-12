@@ -124,6 +124,13 @@ export const CAPTURE_STATUS_CODES: CodeOption[] = [
   { code: '5', label: '5 — Band removed' },
   { code: '6', label: '6 — Recapture (band added)' },
   { code: '8', label: '8 — Band lost' },
+  // Band-fate markers — the MAPS IBP capture-code letters for a band removed from
+  // inventory without a bird encounter. These are recorded as their own rows on the
+  // Banding Sheet (no bird data) and count as neither new bands nor recaptures.
+  // We deliberately key these to the IBP letters, NOT the BBL numerics 4/8, because
+  // 4/8 already mean recapture in this app. See docs/apps/field/research-destroyed-bands.md.
+  { code: 'D', label: 'D — Band destroyed' },
+  { code: 'L', label: 'L — Band lost' },
   { code: 'X', label: 'X — Other' },
 ]
 

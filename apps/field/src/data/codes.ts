@@ -36,6 +36,17 @@ export {
 const NEW_BANDING_CODES = new Set(['1', 'N'])
 /** Capture codes that represent a recapture encounter */
 const RECAPTURE_CODES = new Set(['R', 'F', '4', '5', '6', '8'])
+/**
+ * Capture codes that record a band's *fate* (removed from inventory) rather than a
+ * bird capture — IBP letters D (destroyed) / L (lost). Per the MAPS protocol these
+ * are omitted from new/recapture tallies, so they belong to neither set above.
+ * See docs/apps/field/research-destroyed-bands.md.
+ */
+const BAND_FATE_CODES = new Set(['D', 'L'])
+const BAND_FATE_LABELS: Record<string, string> = {
+  D: 'Band destroyed',
+  L: 'Band lost',
+}
 
 export function isNewBanding(code: string | undefined): boolean {
   return NEW_BANDING_CODES.has(code ?? '')
@@ -43,6 +54,16 @@ export function isNewBanding(code: string | undefined): boolean {
 
 export function isRecapture(code: string | undefined): boolean {
   return RECAPTURE_CODES.has(code ?? '')
+}
+
+/** True for band-fate rows (destroyed/lost) — not a bird capture. */
+export function isBandFate(code: string | undefined): boolean {
+  return BAND_FATE_CODES.has(code ?? '')
+}
+
+/** Human label for a band-fate code ("Band destroyed"/"Band lost"), else undefined. */
+export function bandFateLabel(code: string | undefined): string | undefined {
+  return code ? BAND_FATE_LABELS[code] : undefined
 }
 
 

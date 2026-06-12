@@ -223,10 +223,15 @@ export function buildImportPlan(parsed: ParsedSheet): ImportPlan {
       // Band type is never in the master sheet; the apply layer defaults it to 'Standard'.
     }
 
-    // Band-event rows create the band only — no bird record.
-    if (bandEventStatus) return
-
     // ── Bird record field mapping ──
+    // Band-event rows (BAND DESTROYED/LOST) are real session rows in MAPS — emit a
+    // BirdRecord too, not just a band. Their fate lives in the capture code as the
+    // IBP letter D/L (NOT the BBL 4/8, which mean recapture here), bird fields blank.
+    // See docs/apps/field/research-destroyed-bands.md.
+    const bbpCode = bandEventStatus
+      ? (blankIfEmpty(get('Code IBP')) ?? (bandEventStatus === 'destroyed' ? 'D' : 'L'))
+      : blankIfEmpty(get('Code BBL'))
+
     const howAged = blankIfEmpty(get('How Aged BBL'))
 
     // How Sexed BBL: the sheet has one Excel-artifact "FALSE" cell → treat as blank + warn.
@@ -256,7 +261,7 @@ export function buildImportPlan(parsed: ParsedSheet): ImportPlan {
       howAged2,
       howSexed,
       howSexed2,
-      bbpCode: blankIfEmpty(get('Code BBL')),
+      bbpCode,
       wrp: blankIfEmpty(get('WRP')),
       skull: blankIfEmpty(get('Skull')),
       cp: blankIfEmpty(get('Cloacal Protuberance')),

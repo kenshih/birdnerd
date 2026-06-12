@@ -93,20 +93,31 @@ describe('buildImportPlan — captures', () => {
 })
 
 describe('buildImportPlan — band-event rows', () => {
-  it('creates a band only (no record) for BAND DESTROYED', () => {
+  it('emits BOTH a band and a record for BAND DESTROYED, fate as IBP letter D', () => {
     const plan = buildImportPlan(sheet([{
       Bander: 'HD', 'Code IBP': 'D', 'Code BBL': '4', 'Band Size': '4', 'Band Number': '115481501',
       'Species Name': 'BAND DESTROYED', Month: '9', Day: '14', Year: '2025', Station: 'GCFS',
     }]))
-    expect(plan.records).toHaveLength(0)
     expect(plan.bands).toHaveLength(1)
     expect(plan.bands[0]).toMatchObject({ status: 'destroyed', currentSpecies: undefined, deploymentDate: undefined })
-    expect(plan.sessions).toHaveLength(1) // still forms a session
+    expect(plan.sessions).toHaveLength(1)
+    expect(plan.records).toHaveLength(1)
+    expect(plan.records[0]!.fields).toMatchObject({
+      // bbpCode is the IBP letter D — NOT the BBL 4 (which would read as a recapture)
+      bbpCode: 'D', speciesCode: undefined, bandNumber: '1154-81501',
+      date: '2025-09-14', station: 'GCFS', bander: 'HD',
+    })
   })
 
-  it('maps BAND LOST to lost', () => {
-    const plan = buildImportPlan(sheet([{ 'Species Name': 'BAND LOST', 'Band Number': '999000111', Month: '1', Day: '2', Year: '2025', Station: 'GCFS' }]))
+  it('maps BAND LOST to lost and emits a record with bbpCode L', () => {
+    const plan = buildImportPlan(sheet([{ 'Code IBP': 'L', 'Code BBL': '8', 'Species Name': 'BAND LOST', 'Band Number': '999000111', Month: '1', Day: '2', Year: '2025', Station: 'GCFS' }]))
     expect(plan.bands[0]!.status).toBe('lost')
+    expect(plan.records[0]!.fields.bbpCode).toBe('L')
+  })
+
+  it('derives the fate code from the species marker when Code IBP is blank', () => {
+    const plan = buildImportPlan(sheet([{ 'Species Name': 'BAND DESTROYED', 'Band Number': '111222333', Month: '1', Day: '2', Year: '2025', Station: 'GCFS' }]))
+    expect(plan.records[0]!.fields.bbpCode).toBe('D')
   })
 })
 

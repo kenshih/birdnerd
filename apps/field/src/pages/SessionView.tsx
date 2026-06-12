@@ -4,7 +4,7 @@ import { Card } from '../components/Card'
 import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol, Band } from '@birdnerd/shared'
 import { getRecordsBySession, deleteRecord, getLocations, getBanders, getPeople, saveSession, deleteSession, getSessionBanderLogs, replaceSessionBanderLogs, getSessionNetLogs, saveSessionNetLog, deleteSessionNetLog, getNetsByLocation } from '../db'
 import BirdRecordForm from './BirdRecordForm'
-import { PROTOCOL_CODES, isNewBanding } from '../data/codes'
+import { PROTOCOL_CODES, isNewBanding, isBandFate, bandFateLabel } from '../data/codes'
 import PageHeader from '../components/PageHeader'
 import Collapsible from '../components/Collapsible'
 import SearchableSelect from '../components/SearchableSelect'
@@ -448,9 +448,10 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
           <li key={r.id} style={recordRowStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
-                <strong>{r.speciesCode ?? '—'}</strong>
+                <strong>{bandFateLabel(r.bbpCode) ?? r.speciesCode ?? '—'}</strong>
                 {r.bandNumber && <span style={{ color: '#555', marginLeft: '0.5rem', fontSize: '0.85rem' }}>{r.bandNumber}</span>}
                 {r.bbpCode === 'R' && <span style={recapChipStyle}>recap</span>}
+                {isBandFate(r.bbpCode) && <span style={bandFateChipStyle}>band event</span>}
                 <div style={{ fontSize: '0.8rem', color: '#777', marginTop: '0.2rem' }}>
                   {[r.wrp, r.sex, r.captureTime, r.net ? `Net ${r.net}` : null].filter(Boolean).join(' · ')}
                 </div>
@@ -700,6 +701,12 @@ const recapChipStyle: React.CSSProperties = {
   background: '#e9ecef',
   borderRadius: 4,
   verticalAlign: 'middle',
+}
+
+const bandFateChipStyle: React.CSSProperties = {
+  ...recapChipStyle,
+  color: '#842029',
+  background: '#f8d7da',
 }
 
 

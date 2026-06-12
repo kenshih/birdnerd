@@ -1,8 +1,7 @@
 # Research — Lost / Destroyed Bands in Session Data
 
-**Status:** research complete, design direction chosen, implementation NOT started.
-**Owner pickup:** new session — start here, then implement under Phase 25 follow-up.
-**Date:** 2026-06-10.
+**Status:** ✅ IMPLEMENTED 2026-06-11 (Option 2 — L/D as first-class capture codes). Tests green, build clean.
+**Date:** 2026-06-10 (research); 2026-06-11 (implementation).
 
 ## Problem
 
@@ -100,23 +99,26 @@ The MAPS finding **sharpens** Option 2: the marker is best modeled as **adding `
 as first-class capture-code values** (`bbpCode` / `CAPTURE_STATUS_CODES`) rather than a new
 `bandEvent?` field — more MAPS-faithful and reuses the column the source already uses.
 
-### Implementation checklist (to flesh out / confirm next session)
-- [ ] Add `L` (lost) and `D` (destroyed) as capture-code values in `CAPTURE_STATUS_CODES`
-      (`@birdnerd/shared`); keep `bbpCode` as the home.
-- [ ] `isNewBanding` / `isRecapture` → treat `L`/`D` as **neither** (omit from tallies);
-      align with the summary "omit lost and destroyed bands" rule.
-- [ ] Import (`masterSheetImport.ts`): for band-event rows, **emit a `BirdRecord`** (drop
-      the early `return`) with `bbpCode = L/D` (from `Code IBP`, NOT the BBL `4/8`),
-      `speciesCode` blank, date/station/bander/size/note mapped, and still create the Band
-      with `status: destroyed/lost`.
-- [ ] Export (`agencyExport.ts`): for `bbpCode` `L`/`D`, reconstruct `Species Name =
-      "BAND LOST"/"BAND DESTROYED"`, `Code IBP = L/D`, `Code BBL = 8/4`. Keep import = inverse.
-- [ ] Session-browse / record view: render band-event rows sensibly (no bird fields).
-- [ ] Validation: band-event rows skip bird-field warnings.
-- [ ] Bundle schema: if any field added, bump `BUNDLE_VERSION` + migration. (Likely none if
-      we only extend the code table + reuse `bbpCode`.)
-- [ ] Station-less band-event rows: keep rejecting + report (no change needed).
-- [ ] Tests: import emits records for L/D; export round-trips; tallies exclude L/D.
+### Implementation checklist — DONE 2026-06-11
+- [x] Added `L` (lost) and `D` (destroyed) to `CAPTURE_STATUS_CODES` (`@birdnerd/shared`);
+      `bbpCode` stays the home.
+- [x] Added `isBandFate()` + `bandFateLabel()` helpers (`codes.ts`); `isNewBanding`/`isRecapture`
+      already exclude `L`/`D` (not in either set) → omitted from tallies, per the summary rule.
+- [x] Import (`masterSheetImport.ts`): dropped the early `return`; band-event rows now emit a
+      `BirdRecord` with `bbpCode = D/L` sourced from `Code IBP` (fallback derived from the
+      species marker), NOT the BBL `4/8`; band still created with `status: destroyed/lost`.
+- [x] Export (`agencyExport.ts`): `bbpCode` `D`/`L` → `Species Name = "BAND DESTROYED"/"BAND
+      LOST"`, `Code IBP = D/L`, `Code BBL = 4/8` (`BAND_FATE_TO_BBL` / `BAND_FATE_SPECIES_NAME`).
+      Import = inverse; round-trip test added.
+- [x] Session view (`SessionView.tsx`): band-fate rows show "Band destroyed"/"Band lost" + a
+      red "band event" chip instead of the "—" species placeholder.
+- [x] Validation (`validation.ts`): early-returns no warnings for band-fate capture codes.
+- [x] Bundle schema: no field added (reused `bbpCode` + extended the code table) → no
+      `BUNDLE_VERSION` bump / migration needed.
+- [x] Station-less band-event rows: still rejected + reported (unchanged).
+- [x] Tests: import emits D/L records (incl. blank-`Code IBP` fallback); export round-trips
+      D/L → Species Name + Code IBP/BBL; band-fate excluded from BBL new + recap uploads. All
+      155 tests pass; `npm run build` clean.
 
 ## Open question for Hallie / domain (low risk — data says no today)
 Does a band ever need **two dated events** (deployed on a bird, then later lost/destroyed as

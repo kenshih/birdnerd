@@ -27,6 +27,17 @@ const HOW_SEXED_BBL_TO_IBP: Record<string, string> = {
 const CAPTURE_CODE_TO_IBP: Record<string, string> = {
   '1': 'N', 'N': 'N', '4': 'D', '5': '5', '6': '6', '8': 'L',
   'U': 'U', 'R': 'R', 'F': 'F', 'X': 'X',
+  // Band-fate markers are already IBP letters — pass through unchanged.
+  'D': 'D', 'L': 'L',
+}
+
+// Band-fate capture codes (IBP letters) → the BBL numeric for the "Code BBL" column,
+// and → the Species Name marker the master sheet uses. Inverse of the importer's
+// band-event handling. See docs/apps/field/research-destroyed-bands.md.
+const BAND_FATE_TO_BBL: Record<string, string> = { D: '4', L: '8' }
+const BAND_FATE_SPECIES_NAME: Record<string, string> = {
+  D: 'BAND DESTROYED',
+  L: 'BAND LOST',
 }
 
 // Age: our app stores numeric BBL codes → alpha for display
@@ -156,10 +167,11 @@ function recordToIBPRow(rec: BirdRecord, idx: IndexedContext): string[] {
   return [
     banderInitials(idx, rec.bander),                                // Bander
     CAPTURE_CODE_TO_IBP[rec.bbpCode ?? ''] ?? rec.bbpCode ?? '',    // Code IBP
-    rec.bbpCode ?? '',                                               // Code BBL
+    BAND_FATE_TO_BBL[rec.bbpCode ?? ''] ?? rec.bbpCode ?? '',        // Code BBL (band fate D/L → 4/8)
     band?.bandSize ?? '',                                            // Band Size
     bandNumberRaw(rec.bandNumber),                                   // Band Number
-    COMMON_NAME_BY_CODE.get(rec.speciesCode ?? '') ?? '',           // Species Name (common name resolved from the ALPHA code)
+    BAND_FATE_SPECIES_NAME[rec.bbpCode ?? '']                        // Species Name: band-fate marker, else
+      ?? COMMON_NAME_BY_CODE.get(rec.speciesCode ?? '') ?? '',       //   common name resolved from the ALPHA code
     rec.speciesCode ?? '',                                          // ALPHA Code
     rec.age ?? '',                                                   // Age NUMBER
     AGE_NUM_TO_ALPHA[rec.age ?? ''] ?? rec.age ?? '',                // Age (alpha)
