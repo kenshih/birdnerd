@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phase 25 — Bulk Data Import: in-app master-sheet CSV importer **shipped at field 0.25.0** (parse → preview → skip-if-exists apply; derives sessions/bands/records, stub locations, soft warnings + rejects CSV). Verified against the real 342-row master sheet. **Lost/destroyed-band records shipped at field 0.25.8 / shared 0.2.4** — `BAND DESTROYED`/`BAND LOST` rows now import as `BirdRecord`s marked with IBP capture code `D`/`L` (Option 2), excluded from new/recap tallies, round-tripping through the IBP export. Findings + final checklist in [research-destroyed-bands.md](apps/field/research-destroyed-bands.md). Remaining: the Hallie confirmations (agency-export `S covs`/`G covs`, Alula, any extra IBP letters) — see Phase 25 below; plus the code-table reconciliation vs the 2025 MAPS manual ([research-banding-codes-2023-vs-2025.md](resources/research-banding-codes-2023-vs-2025.md)). _Update this line whenever the active phase changes._
+**Now:** Phases 24–25 shipped (Field Small Fixes + Bulk Data Import incl. lost/destroyed-band records, field 0.25.8 / shared 0.2.4; detail in [plan.v7](archives/plan.v7.md)). **Phase 25 wrap-up** = the open Hallie confirmations only (agency-export `S covs`/`G covs`, Alula, status values — see below). **Next phase: 26 — Long-term Architecture Review** (review [research-long-term-architecture.md](resources/research-long-term-architecture.md), produce a decision doc + roadmap), then Phase 27 Net Hours, Phase 28 Smart Band Entry. Also open (unscheduled): code-table reconciliation vs the 2025 MAPS manual ([research-banding-codes-2023-vs-2025.md](resources/research-banding-codes-2023-vs-2025.md)). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -8,7 +8,7 @@ See also: [apps/field/product-specifications.md](apps/field/product-specificatio
 
 ## Completed
 
-Phases 1–21 complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, and [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14.
+Phases 1–21 complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, and [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14. Field phases **24–25** are complete — full detail in [plan.v7 (archived)](archives/plan.v7.md).
 
 Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
@@ -39,84 +39,42 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 | 19 | Species Validation — band size + morphometric range warnings, disposition requires notes |
 | 20 | Band History View — encounter timeline, foreign band entities, Band Inventory enhancements |
 | 21 | Monorepo Migration — npm workspaces, OCR PWA scaffold, shared types package, docs restructure |
+| 24 | Field Small Fixes (0.24.x) — code tables, Alula tract (bundle v5), form reorg, band inventory, read-only views, Playwright smoke harness + CI gate ([plan.v7](archives/plan.v7.md)) |
+| 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer + lost/destroyed-band records ([plan.v7](archives/plan.v7.md)) |
 
 ---
 
-> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The four field phases below (24–27) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
+> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (26–28) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
 
-## Phase 24 — Field Small Fixes (Field 0.24.0)
+## Phase 25 wrap-up — Hallie confirmations (open)
 
-Goal: A batch of small, high-value field-app fixes from Hallie. All fields stay optional; soft warnings only.
+Phases 24 and 25 shipped (detail archived in [plan.v7](archives/plan.v7.md)). What's left from the Phase 25 conversation — confirm with Hallie, then implement the relevant fix:
 
-_Prelude (done): thin Playwright smoke harness added (`apps/field/e2e/`, `npm run test:e2e`) so the UI-heavy commits below can be verified in a real browser without ad-hoc setup. Smoke = app-boot + key-screen render; plus regression guards on the commit-1 code tables. Detailed flows deferred (see Backlog)._
+- **Molt-limits `S covs` vs `G covs`:** ⚠️ `G covs` (greater coverts) and `S covs` (secondary coverts) are **different feather tracts, not synonyms** — yet Phase 24 relabeled `S covs` → `G Covs` in the UI (display only; stored field `moltLimitsSCovs` and the export header still say `S covs`). Ask Hallie whether she genuinely wants `G covs` added/used, or whether the relabel request was a **mistake**. If real: distinct tract → data-key change (IndexedDB + bundle migration) + export-header decision. If a mistake: revert the UI label.
+- **Alula in agency export:** the **master sheet has no `Alula` column** (verified), so the agency format historically excludes it; our export omits it too (Alula is app-data + app-CSV only). Ask whether she expects to start submitting `Alula` to the agency soon (evolve the format) or keep it app-only.
+- **`Status` column:** does her **full** master sheet use status values outside our table (`300, 301, 318, 319, 333, 334, 380, 500, 700, ---`) so we can extend `BIRD_STATUS_CODES`?
 
-**Codes & form fields**
-- ✅ Add band sizes `4a`, `5`, `6`
-- ✅ Skull: add `8` (invisible); remove `X` (not checked). _Decision: legacy records with skull `X` map to `8` on import (Phase 25 importer to apply)._
-- ✅ Add **Alula** to the molt limits & plumage section, ordered immediately after S covs (now G Covs) — captured in form + CSV + bundle (v5). _(Agency-export follow-up → Phase 25.)_
-- ✅ Rename `S covs` → `G Covs` — display label only; stored field `moltLimitsSCovs` unchanged. _(Agency-export/data-key follow-up → Phase 25.)_
-- ✅ Reorder the condition section read-out: skull → CP → BP → Fat → body molt → ff molt → ff wear → juv body plumage
-- ✅ Disposition: add `X` for ectoparasite
-- ✅ **WRP label expansion (#4):** expanded every `A`→Adult / `M`→Minimum / `H`→Hatch Year prefix to full words across all WRP code labels in `@birdnerd/shared` (shared 0.2.2 / field 0.24.10). Codes unchanged (display-only), so OCR + existing records unaffected.
-
-**Form layout**
-- ✅ Place age and how-aged next to each other; sex and how-sexed next to each other (leave the 2nd entries as-is for now)
-
-**Band Inventory**
-- ✅ Allow more than 500 bands per batch (raised cap to 2000)
-- ✅ Band-inventory-by-size summary: differentiate Standard, Lock-on, Stainless Steel, and 4-short (now "By Size & Type")
-- ✅ Delete or modify band inventory (edit size/type/status + delete, from the band detail view; delete warns when the band is referenced by records)
-- ✅ All Bands view: show string range (by 100s)
-- ✅ All Bands view: fix pagination/scroll — currently caps at first ~100–200 with no way to view the rest
-- ✅ Export band inventory to share across devices (CSV export; cross-device restore also via the full JSON bundle in Data Manager)
-
-**Views & read-only**
-- ✅ View records in Data Manager (Browse Records, grouped by session → opens read-only view)
-- ✅ View records within a session without editing ("View" button → read-only record)
-- ✅ Session bird list: show WRP code instead of the BBL # for age
-- ✅ Faster capture time: select a standard net-check interval (e.g. every 30 min) instead of toggling each time
+_Separate research, not yet scheduled:_ reconcile our code tables against the 2025 MAPS manual ([research-banding-codes-2023-vs-2025.md](resources/research-banding-codes-2023-vs-2025.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
 
 ---
 
-## Phase 25 — Bulk Data Import (Field 0.25.0)
+## Phase 26 — Long-term Architecture Review (design phase)
 
-Goal: Get Hallie's existing banding data into the field app via an in-app CSV importer. Sequenced after Small Fixes so the form/code/inventory changes that affect the schema land first.
+Goal: review the long-term architecture vision in [research-long-term-architecture.md](resources/research-long-term-architecture.md) against BirdNerd's current shape, and turn it into a concrete, sequenced action list. This is a **planning/design phase** — produce decisions + a roadmap, not a big-bang rewrite.
 
-**Design** (data-shape conversation done, grounded in `nogit/MASTER-BANDING-DATA.csv` — 342 rows, 1 station `GCFS`, 37 days, Dec 2024–Mar 2026):
+The vision (Ken's notes): a local-first science PWA where **immutable domain events** are the durable source of truth, **relational projection tables** serve the UI/queries, writes go through a **command → validate → event → projection** pipeline, schema is versioned **per event type** (not one global app-schema version), **workspaces** scope multi-station collaboration, and a **sync-adapter abstraction** keeps the domain model ignorant of the sync mechanism (Supabase + PowerSync/RxDB first, P2P later). Core principle: event log = durable truth, tables = rebuildable projections, sync providers = replaceable infra.
 
-In-app CSV importer in Data Manager: upload → **preview summary** (sessions / bands / records to create, skips, rejects, warnings) → confirm → write to IndexedDB. Re-runnable.
+Review tasks:
+- **Gap analysis** — contrast the vision with today: mutable IndexedDB entities via `idb`, single `BUNDLE_VERSION` + migration, FK-linked relational-ish stores, the Phase 23 Yjs sync spike. Name what already aligns (local-first, client IDs, soft deletes in places) vs what doesn't (mutable records, global schema version, no event log/command layer).
+- **Reconcile with existing backlog** — this vision overlaps and should absorb/supersede several Backlog items: **Schema Migration Framework**, **Cloud Sync & Auth** (Supabase/multi-tenant/workspaces), **UUIDv7 ID migration**, and the **Sync spike** (Phase 23) decision gate. Decide which of those become steps here.
+- **Decide adoption order & scope** — what's worth doing *now* on a single-station offline app (e.g. UUIDv7 IDs, soft-delete + version/`workspace_id`/`station_id` columns, a command layer in front of writes) vs deferred until multi-station/cloud is real (full event sourcing, projection rebuilds, Supabase + PowerSync, P2P). Flag the riskiest/most-irreversible decisions.
+- **Output** — a short ADR-style decision doc (likely under `docs/resources/` or `docs/repo/`) + concrete follow-up phases/tickets, and prune/merge the overlapping Backlog entries.
 
-Entity derivation:
-- **Sessions** = station + date (~37). Distinct banders that day → `SessionBanderLog`; `masterBanderId` = HD when present among them, else blank. Protocol/weather left blank. Bander initials resolve to People via a small alias map (`JV`→`JVD`); unknown initials are auto-created as stub People + Banders (placeholder name = initials).
-- **Bands** = every Band Number → inventory entry. Status: `deployed` (capture, Code IBP `N`), `destroyed` (`BAND DESTROYED`, `D`), `lost` (`BAND LOST`, `L`). `bandType` defaults to `Standard` (the master sheet has no band-type column).
-- **BirdRecords** = the capture rows (330 here), linked to session + band. ~~The band-status rows (12 here) create bands only — no bird record.~~ **⚠️ Revised — see follow-up below:** band-status (`BAND DESTROYED`/`LOST`) rows must also emit a `BirdRecord` so the event stays in the session.
-- `bbpCode` ← **Code IBP/BBL** (not the `Status` column). `Status` (BBL composite, e.g. `300`/`318`) → maps **directly** to `BirdRecord.status`; validate against `BIRD_STATUS_CODES`, soft-warn on values outside the table.
-- **Aging/sexing (IBP vs BBL):** the sheet carries **both** code systems for each criterion — IBP single-letters and BBL 2-letter codes — and our app's codes *are* the BBL set, so the BBL columns map straight in with no translation. Primary criterion (`howAged`/`howSexed`) ← the **BBL column directly** — verified lossless on the 330 captures (BBL never blank, perfect 1:1 with IBP, fills `NA`, all values valid app codes). The second criterion (`howAged2`/`howSexed2`) is the exception: it exists in the sheet **only as IBP single-letters** (`How Aged/Sexed IBP 2`, no BBL-2 column), so derive it via a deterministic IBP→BBL lookup (`P→PL, M→MR, S→SK, L→LP, C→CL, I→MB, F→FF, J→PL, E→EY, B→BP, O→OT`) — the inverse of the agency export's BBL→IBP table; any IBP letter outside the table just soft-warns and is dropped. Data wart: one `How Sexed BBL` cell is the Excel artifact `FALSE` → treat as blank + warn.
-- Unknown station codes → auto-create a stub `Location` (blank lat/long to fill in later). Note: the seed station was renamed `GCBS`→`GCFS` (name "Galindo Creek") at field 0.25.1, so Hallie's `GCFS` sheet now matches the seed location instead of creating a stub.
-
-No-clobber: **skip-if-exists, never overwrite.** Match keys: band# (bands), station+date (sessions), band#+date (records). Skips reported in the summary.
-
-Two outputs:
-- **Rejects CSV** — only structurally un-importable rows (e.g. unparseable date; none in this dataset). Original columns + a `_problem` column.
-- **Warnings** — soft issues (unrepresentable code values, etc.) shown in the summary; rows still import (all fields optional, soft warnings only).
-
-Build steps (✅ shipped at field 0.25.0):
-- ✅ ~50-column → record/session/band mapping (`masterSheetImport.ts`, inverse of the IBP export).
-- ✅ IBP→BBL single-letter lookup for the second aging/sexing criterion; soft-warns on unmapped letters.
-- ✅ Parser + entity builders + dedup as pure functions (`masterSheetImport.ts` + `applyMasterImport.ts`), tested without DB and with fake-indexeddb.
-- ✅ Preview/summary UI + confirm + IndexedDB writes; rejects/warnings CSV download (Data Manager).
-- ✅ Soft warnings only — never blocks; structural rejects (bad date / no station) routed to the rejects CSV.
-
-**Follow-up — Lost/destroyed-band records (research done, NOT started):** Band-event rows (`BAND DESTROYED`/`LOST`) currently create a band only and **vanish from the session** (early `return` in `masterSheetImport.ts:227`). MAPS models a band fate as a Banding-Sheet row marked with capture code `L`/`D` (Manual p.38/41) — so we'll emit a `BirdRecord` with `bbpCode = L/D` (Option 2), extend `CAPTURE_STATUS_CODES`, make `isNewBanding`/`isRecapture` omit `L`/`D`, and round-trip export back to `BAND LOST`/`DESTROYED`. Station-less band-event rows keep rejecting. **Full findings + implementation checklist:** [research-destroyed-bands.md](apps/field/research-destroyed-bands.md). _(Separate later item: full pass over the MAPS Manual codes section to reconcile our code tables.)_
-
-Also confirm with Hallie (carried from Phase 24 — same conversation; then implement the relevant fix):
-- **Molt-limits `S covs` vs `G covs`:** ⚠️ `G covs` (greater coverts) and `S covs` (secondary coverts) are **different feather tracts, not synonyms** — yet Phase 24 relabeled `S covs` → `G Covs` in the UI (display only; stored field `moltLimitsSCovs` and the export header still say `S covs`, matching the master sheet). Ask Hallie whether she genuinely wants `G covs` added/used, or whether the relabel request was a **mistake**. If real: it's a distinct tract → data-key change (IndexedDB + bundle migration) + export-header decision. If a mistake: revert the UI label back to `S covs`.
-- **Alula in agency export:** point out to Hallie that the **master sheet has no `Alula` column** (verified — 0 occurrences), so the agency format historically excludes it; our export omits it too, and Alula is captured in app data + the app's own CSV only. Ask whether she expects to start submitting `Alula` to the agency soon (evolve the format) or keep it app-only.
-- **`Status` column (master sheet):** decoded — BBL composite (base `3`/`5`/`7` = normal/sick/rehabbed + suffix, e.g. `00` band only, `18` blood sample); maps to `BirdRecord.status` / `BIRD_STATUS_CODES`. Only open ask: does her **full** master sheet use status values outside our table (`300, 301, 318, 319, 333, 334, 380, 500, 700, ---`) so we can extend it?
+Open question for Ken: what's the real near-term trigger — a second station/user, a specific reproducibility/audit need, or just future-proofing? That sets how much of this to pull forward vs leave as a documented target.
 
 ---
 
-## Phase 26 — Net Hours (Field 0.26.0)
+## Phase 27 — Net Hours (Field 0.27.0)
 
 Goal: Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog / net-hours groundwork.
 
@@ -127,7 +85,7 @@ Goal: Per-net effort tracking and total net-hours at session close. Extends the 
 
 ---
 
-## Phase 27 — Smart Band Entry (Field 0.27.0)
+## Phase 28 — Smart Band Entry (Field 0.28.0)
 
 Goal: Speed up band record entry and help catch missing or mis-deployed bands during banding.
 
