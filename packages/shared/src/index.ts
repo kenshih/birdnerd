@@ -181,3 +181,4 @@ export interface Bander {
 }
 
 export * from './bandingCodes'
+export * from './lexicon'

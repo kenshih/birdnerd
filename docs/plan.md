@@ -50,7 +50,7 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 
 Phases 24 and 25 shipped (detail archived in [plan.v7](archives/plan.v7.md)). What's left from the Phase 25 conversation — confirm with Hallie, then implement the relevant fix:
 
-- **Molt-limits `S covs` vs `G covs`:** ⚠️ `G covs` (greater coverts) and `S covs` (secondary coverts) are **different feather tracts, not synonyms** — yet Phase 24 relabeled `S covs` → `G Covs` in the UI (display only; stored field `moltLimitsSCovs` and the export header still say `S covs`). Ask Hallie whether she genuinely wants `G covs` added/used, or whether the relabel request was a **mistake**. If real: distinct tract → data-key change (IndexedDB + bundle migration) + export-header decision. If a mistake: revert the UI label.
+- **Molt-limits `S covs` vs `G covs`:** ✅ Confirmed with Hallie — "S covs" and "G covs" (greater coverts) are synonyms in banding usage; both refer to the greater secondary coverts. The Phase 24 UI relabel to "G Covs" is correct and intentional. No data-key or export-header change needed; `moltLimitsSCovs` and the export column "S covs" match the master sheet and remain unchanged.
 - **Alula in agency export:** the **master sheet has no `Alula` column** (verified), so the agency format historically excludes it; our export omits it too (Alula is app-data + app-CSV only). Ask whether she expects to start submitting `Alula` to the agency soon (evolve the format) or keep it app-only.
 - **`Status` column:** does her **full** master sheet use status values outside our table (`300, 301, 318, 319, 333, 334, 380, 500, 700, ---`) so we can extend `BIRD_STATUS_CODES`?
 
@@ -71,6 +71,8 @@ Review tasks:
 - **Output** — a short ADR-style decision doc (likely under `docs/resources/` or `docs/repo/`) + concrete follow-up phases/tickets, and prune/merge the overlapping Backlog entries.
 
 Open question for Ken: what's the real near-term trigger — a second station/user, a specific reproducibility/audit need, or just future-proofing? That sets how much of this to pull forward vs leave as a documented target.
+
+**Also in Phase 26:** Seed `packages/shared/src/lexicon.ts` — ✅ done (shared 0.2.5). Canonical `LexiconEntry[]` for ~38 banding terms (feather tracts, molt, age/sex, condition, capture codes, protocol, morphometrics, band). TypeScript now; YAML migration is a future portability step. Exported from `@birdnerd/shared`. Future layers: developer reference, info hovers, 1-sheet handout, i18n, ontology.
 
 ---
 

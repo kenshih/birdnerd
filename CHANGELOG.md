@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Shared 0.2.5 — **Domain lexicon.** `packages/shared/src/lexicon.ts` exports `LexiconEntry` (type), `LexiconCategory` (union), and `LEXICON` (38 entries). Covers feather tracts (P Covs, S Covs/G Covs, Alula, PP, SS, Tert, Rec), molt concepts (WRP, molt limits, body molt, FF/TF molt, FF wear, juv body plumage), age/sex (HY–ATY, Local), condition (skull, BP, CP, fat, feather pull), capture codes, protocol (MAPS, IBP, BBL, MAPS period), morphometrics, and band terminology. Pure data — no logic, no UI wiring. TypeScript now; YAML migration is a future portability step. Directly resolves the S covs/G covs terminology question: the `Secondary Coverts` entry documents that "S covs" and "G covs" are synonyms in banding usage (both = greater secondary coverts).
+
 ### Changed
 
 - Shared/Field 0.25.8 — **Lost/destroyed-band records.** Master-sheet `BAND DESTROYED` / `BAND LOST` rows no longer vanish on import: they now create a `BirdRecord` (alongside the band) marked with the MAPS IBP capture code `D` (destroyed) / `L` (lost). New `D`/`L` values added to `CAPTURE_STATUS_CODES` (shared 0.2.4); they count as neither new bandings nor recaptures (per the MAPS "omit lost and destroyed bands" rule), so they're excluded from the BBL new-banding and recapture uploads but appear in the IBP master export. The fate is keyed to the IBP letter, **not** the BBL `4`/`8` (which already mean recapture here). The IBP export round-trips these back to `Species Name = BAND DESTROYED/LOST` + `Code IBP = D/L` + `Code BBL = 4/8` (exact inverse of import). Session view shows them as "Band destroyed"/"Band lost" with a "band event" chip; validation skips bird-field warnings for them. No schema field added (reuses `bbpCode`), so no bundle-version bump. See [research-destroyed-bands.md](docs/apps/field/research-destroyed-bands.md).

@@ -13,7 +13,7 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@birdnerd/shared": "0.2.4",
+    "@birdnerd/shared": "0.2.5",
     "idb": "^8.0.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
