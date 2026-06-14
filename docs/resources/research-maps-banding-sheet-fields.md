@@ -81,7 +81,7 @@ template, with one substantive content difference in the Disposition legend.**
 - HOW AGED / HOW SEXED legend uses the **single-letter MAPS codes** (S skull, C cloacal, B brood
   patch, M mouth/bill, E eye, W wing length, T tail length, L molt limit, P plumage, M molt, O other)
   — i.e. the manual's scheme, **not** the two-letter BBL codes the app currently uses
-  (see [research-banding-codes-2023-vs-2025.md](research-banding-codes-2023-vs-2025.md), inconsistency #5).
+  (see [research-banding-codes-reconciliation.md](research-banding-codes-reconciliation.md), inconsistency #5).
 
 Full column order is confirmed (clearer `smalls.rows.sheared.JPG` + Ken's read of the right edge,
 2026-06-11): BANDER'S INITIALS → CODE → BAND NUMBER → SPECIES NAME → SPECIES ALPHA → AGE → HOW AGED →

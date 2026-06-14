@@ -13,6 +13,13 @@ PWA for bird banders to collect, manage, and export banding data. Offline-first,
 - [docs/repo/monorepo.md](docs/repo/monorepo.md) — repo/workspace layout and responsibilities
 - [docs/repo/deployment.md](docs/repo/deployment.md) — GitHub Pages multi-app deployment notes
 
+## Primary Domain References (banding standards)
+
+- [docs/resources/MAPSManual25.pdf](docs/resources/MAPSManual25.pdf) — MAPS Manual 2025 Protocol (IBP, ~100 pp.). **Authoritative** for all field definitions, code scales, and procedures. Code definitions on printed pp. 45–66. Long — use targeted page reads.
+- [docs/resources/MAPS-Materials-MAPS-Banding-Codes-Summary-2026.pdf](docs/resources/MAPS-Materials-MAPS-Banding-Codes-Summary-2026.pdf) — MAPS Banding Codes 2026 (2-page cheat sheet). Quick lookup for all numeric scales + WRP. Aligns with 2025 manual; small gaps: Disposition F/R and Feather Pull X/C not listed.
+- [docs/resources/bbl-bird-status-codes.md](docs/resources/bbl-bird-status-codes.md) — BBL Bander Portal status codes (https://www.pwrc.usgs.gov/BBL/Bander_Portal/login/birdstatus.php). Explains the single-digit + two-digit structure behind the three-digit MAPS codes (300, 301, 318 …). Use when a status code isn't in the MAPS cheat sheet or manual.
+- [docs/resources/research-banding-codes-reconciliation.md](docs/resources/research-banding-codes-reconciliation.md) — Reconciliation: 2026 cheat sheet vs 2025 manual vs app code tables. Lists all discrepancies + suggested fixes.
+
 ## Stack
 
 - React 19 + TypeScript + Vite 7

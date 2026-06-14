@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phases 24–25 shipped (Field Small Fixes + Bulk Data Import incl. lost/destroyed-band records, field 0.25.8 / shared 0.2.4; detail in [plan.v7](archives/plan.v7.md)). **Phase 25 wrap-up** = the open Hallie confirmations only (agency-export `S covs`/`G covs`, Alula, status values — see below). **Next phase: 26 — Long-term Architecture Review** (review [research-long-term-architecture.md](resources/research-long-term-architecture.md), produce a decision doc + roadmap), then Phase 27 Net Hours, Phase 28 Smart Band Entry. Also open (unscheduled): code-table reconciliation vs the 2025 MAPS manual ([research-banding-codes-2023-vs-2025.md](resources/research-banding-codes-2023-vs-2025.md)). _Update this line whenever the active phase changes._
+**Now:** Phases 24–25 shipped (Field Small Fixes + Bulk Data Import incl. lost/destroyed-band records, field 0.25.8 / shared 0.2.4; detail in [plan.v7](archives/plan.v7.md)). **Phase 25 wrap-up** = the open Hallie confirmations only (agency-export `S covs`/`G covs`, Alula, status values — see below). **Next phase: 26 — Long-term Architecture Review** (review [research-long-term-architecture.md](resources/research-long-term-architecture.md), produce a decision doc + roadmap), then Phase 27 Net Hours, Phase 28 Smart Band Entry. Also open (unscheduled): code-table reconciliation vs the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)). _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -54,7 +54,7 @@ Phases 24 and 25 shipped (detail archived in [plan.v7](archives/plan.v7.md)). Wh
 - **Alula in agency export:** the **master sheet has no `Alula` column** (verified), so the agency format historically excludes it; our export omits it too (Alula is app-data + app-CSV only). Ask whether she expects to start submitting `Alula` to the agency soon (evolve the format) or keep it app-only.
 - **`Status` column:** does her **full** master sheet use status values outside our table (`300, 301, 318, 319, 333, 334, 380, 500, 700, ---`) so we can extend `BIRD_STATUS_CODES`?
 
-_Separate research, not yet scheduled:_ reconcile our code tables against the 2025 MAPS manual ([research-banding-codes-2023-vs-2025.md](resources/research-banding-codes-2023-vs-2025.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
+_Separate research, not yet scheduled:_ reconcile our code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
 
 ---
 

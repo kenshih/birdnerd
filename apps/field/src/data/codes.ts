@@ -67,19 +67,17 @@ export function bandFateLabel(code: string | undefined): string | undefined {
 }
 
 
-// Bird Status codes (from Hallie's doc)
 export const BIRD_STATUS_CODES = [
-  { code: '300', label: '300 — Normal, banded, released' },
-  { code: '301', label: '301 — Color-banded' },
-  { code: '318', label: '318 — Blood sample taken' },
-  { code: '319', label: '319 — Color-banded + blood sample' },
-  { code: '333', label: '333 — Recaptured, no blood' },
-  { code: '334', label: '334 — Recaptured + blood sample' },
-  { code: '380', label: '380 — Released unbanded' },
-  { code: '500', label: '500 — Injured, released' },
-  { code: '700', label: '700 — Unbanded observation' },
-  { code: '---', label: '--- — Mortality' },
-  { code: 'OT', label: 'Other (add note)' },
+  { code: '300', label: '300 — healthy, released w/metal band' },
+  { code: '301', label: '301 — healthy, released w/metal band and color band' },
+  { code: '318', label: '318 — healthy, released w/metal band, and blood sampled' },
+  { code: '319', label: '319 — healthy, released w/metal band with color band, and blood sampled' },
+  // { code: '333', label: '333 — Recaptured, no blood' },
+  // { code: '334', label: '334 — Recaptured + blood sample' },
+  // { code: '380', label: '380 — Released unbanded' },
+  { code: '500', label: '500 — injured, stressed, deformed, or sick bird released w/metal band' },
+  { code: '700', label: '700 — rehabilitated bird released with metal band' },
+  { code: '---', label: '--- — banding mortality' },
 ]
 
 // Disposition codes (from Hallie's doc)
