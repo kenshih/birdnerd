@@ -356,7 +356,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Capture Status" warning={warnings.bbpCode}>
               <select {...register('bbpCode')} style={inputStyle}>
                 <option value="">—</option>
-                {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {CAPTURE_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="WRP">
@@ -434,13 +434,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Skull" warning={warnings.skull}>
               <select {...register('skull')} style={inputStyle}>
                 <option value="">—</option>
-                {SKULL_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {SKULL_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="CP" warning={warnings.cp}>
               <select {...register('cp')} style={inputStyle}>
                 <option value="">—</option>
-                {CP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {CP_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -448,13 +448,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="BP" warning={warnings.bp}>
               <select {...register('bp')} style={inputStyle}>
                 <option value="">—</option>
-                {BP_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {BP_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="Fat">
               <select {...register('fat')} style={inputStyle}>
                 <option value="">—</option>
-                {FAT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {FAT_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -462,13 +462,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Body Molt">
               <select {...register('bodyMolt')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="FF Molt">
               <select {...register('ffMolt')} style={inputStyle}>
                 <option value="">—</option>
-                {FF_MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {FF_MOLT_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -476,13 +476,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="FF Wear">
               <select {...register('ffWear')} style={inputStyle}>
                 <option value="">—</option>
-                {FF_WEAR_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {FF_WEAR_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="Juv Body Plumage">
               <select {...register('juvBodyPlumage')} style={inputStyle}>
                 <option value="">—</option>
-                {JUV_BODY_PLUMAGE_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {JUV_BODY_PLUMAGE_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>

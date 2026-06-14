@@ -100,7 +100,7 @@ export default function RowDraftEditor({
                       <datalist id={`ocr-options-${key}`}>
                         {options.map((option) => (
                           <option key={option.code} value={option.code}>
-                            {option.label}
+                            {option.code} — {option.label}
                           </option>
                         ))}
                       </datalist>

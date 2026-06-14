@@ -1,5 +1,9 @@
 export interface CodeOption {
   code: string
+  /**
+   * Description only — do NOT repeat the code here (e.g. 'Trace', not '1 — Trace').
+   * Views that want to show the code prepend it at render time, e.g. `{code} — {label}`.
+   */
   label: string
 }
 
@@ -116,91 +120,91 @@ export const WRP_CODES: CodeOption[] = [
 ]
 
 export const CAPTURE_STATUS_CODES: CodeOption[] = [
-  { code: '1', label: '1 — New band' },
-  { code: 'U', label: 'U — Unbanded' },
-  { code: 'R', label: 'R — Recapture (same station)' },
-  { code: 'F', label: 'F — Foreign recapture' },
-  { code: '4', label: '4 — Band changed' },
-  { code: '5', label: '5 — Band removed' },
-  { code: '6', label: '6 — Recapture (band added)' },
-  { code: '8', label: '8 — Band lost' },
+  { code: '1', label: 'New band' },
+  { code: 'U', label: 'Unbanded' },
+  { code: 'R', label: 'Recapture (same station)' },
+  { code: 'F', label: 'Foreign recapture' },
+  { code: '4', label: 'Band changed' },
+  { code: '5', label: 'Band removed' },
+  { code: '6', label: 'Recapture (band added)' },
+  { code: '8', label: 'Band lost' },
   // Band-fate markers — the MAPS IBP capture-code letters for a band removed from
   // inventory without a bird encounter. These are recorded as their own rows on the
   // Banding Sheet (no bird data) and count as neither new bands nor recaptures.
   // We deliberately key these to the IBP letters, NOT the BBL numerics 4/8, because
   // 4/8 already mean recapture in this app. See docs/apps/field/research-destroyed-bands.md.
-  { code: 'D', label: 'D — Band destroyed' },
-  { code: 'L', label: 'L — Band lost' },
-  { code: 'X', label: 'X — Other' },
+  { code: 'D', label: 'Band destroyed' },
+  { code: 'L', label: 'Band lost' },
+  { code: 'X', label: 'Other' },
 ]
 
 export const SKULL_CODES: CodeOption[] = [
-  { code: '0', label: '0 — No skull visible' },
-  { code: '1', label: '1 — Partial pneumatization' },
-  { code: '2', label: '2 — ~25% complete' },
-  { code: '3', label: '3 — ~50% complete' },
-  { code: '4', label: '4 — ~75% complete' },
-  { code: '5', label: '5 — ~90% complete' },
-  { code: '6', label: '6 — Fully complete' },
-  { code: '8', label: '8 — Invisible' },
+  { code: '0', label: 'No skull visible' },
+  { code: '1', label: 'Partial pneumatization' },
+  { code: '2', label: '~25% complete' },
+  { code: '3', label: '~50% complete' },
+  { code: '4', label: '~75% complete' },
+  { code: '5', label: '~90% complete' },
+  { code: '6', label: 'Fully complete' },
+  { code: '8', label: 'Invisible' },
 ]
 
 export const FAT_CODES: CodeOption[] = [
-  { code: '0', label: '0 — None' },
-  { code: '1', label: '1 — Trace' },
-  { code: '2', label: '2 — Light' },
-  { code: '3', label: '3 — Half' },
-  { code: '4', label: '4 — Filled' },
-  { code: '5', label: '5 — Bulging' },
-  { code: '6', label: '6 — Greatly Bulging' },
-  { code: '7', label: '7 — Very Excessive' },
+  { code: '0', label: 'None' },
+  { code: '1', label: 'Trace' },
+  { code: '2', label: 'Light' },
+  { code: '3', label: 'Half' },
+  { code: '4', label: 'Filled' },
+  { code: '5', label: 'Bulging' },
+  { code: '6', label: 'Greatly Bulging' },
+  { code: '7', label: 'Very Excessive' },
 ]
 
 export const CP_CODES: CodeOption[] = [
-  { code: '0', label: '0 — None' },
-  { code: '1', label: '1 — Small' },
-  { code: '2', label: '2 — Medium' },
-  { code: '3', label: '3 — Large' },
+  { code: '0', label: 'None' },
+  { code: '1', label: 'Small' },
+  { code: '2', label: 'Medium' },
+  { code: '3', label: 'Large' },
 ]
 
 export const BP_CODES: CodeOption[] = [
-  { code: '0', label: '0 — None' },
-  { code: '1', label: '1 — Smooth' },
-  { code: '2', label: '2 — Vascularized' },
-  { code: '3', label: '3 — Heavy Vascularized' },
-  { code: '4', label: '4 — Wrinkled' },
-  { code: '5', label: '5 — Feathered' },
+  { code: '0', label: 'None' },
+  { code: '1', label: 'Smooth' },
+  { code: '2', label: 'Vascularized' },
+  { code: '3', label: 'Heavy Vascularized' },
+  { code: '4', label: 'Wrinkled' },
+  { code: '5', label: 'Feathered' },
 ]
 
 export const MOLT_CODES: CodeOption[] = [
-  { code: '0', label: '0 — No molt' },
-  { code: '1', label: '1 — Light molt' },
-  { code: '2', label: '2 — Medium molt' },
-  { code: '3', label: '3 — Heavy molt' },
-  { code: '4', label: '4 — Very heavy molt' },
+  { code: '0', label: 'No molt' },
+  { code: '1', label: 'Light molt' },
+  { code: '2', label: 'Medium molt' },
+  { code: '3', label: 'Heavy molt' },
+  { code: '4', label: 'Very heavy molt' },
 ]
 
 export const FF_MOLT_CODES: CodeOption[] = [
-  { code: 'N', label: 'N — None' },
-  { code: 'S', label: 'S — Symmetrical' },
-  { code: 'A', label: 'A — Asymmetrical' },
-  { code: 'J', label: 'J — Juv growth' },
+  { code: 'N', label: 'None' },
+  { code: 'S', label: 'Symmetrical' },
+  { code: 'A', label: 'Asymmetrical' },
+  { code: 'J', label: 'Juv growth' },
 ]
 
 export const FF_WEAR_CODES: CodeOption[] = [
-  { code: '0', label: '0 — None' },
-  { code: '1', label: '1 — Slight' },
-  { code: '2', label: '2 — Light' },
-  { code: '3', label: '3 — Moderate' },
-  { code: '4', label: '4 — Heavy' },
-  { code: '5', label: '5 — Excessive' },
+  { code: '0', label: 'None' },
+  { code: '1', label: 'Slight' },
+  { code: '2', label: 'Light' },
+  { code: '3', label: 'Moderate' },
+  { code: '4', label: 'Heavy' },
+  { code: '5', label: 'Excessive' },
 ]
 
 export const JUV_BODY_PLUMAGE_CODES: CodeOption[] = [
-  { code: '0', label: '0 — None' },
-  { code: '1', label: '1 — < 1/2' },
-  { code: '2', label: '2 — > 1/2' },
-  { code: '3', label: '3 — Heavy' },
+  { code: '0', label: 'None' },
+  { code: '1', label: '< 1/2' },
+  { code: '2', label: '> 1/2' },
+  { code: '3', label: 'Heavy' },
 ]
 
 // Status codes for the "Banding Status" field on the Banding Sheet, which records the outcome of a banding attempt. These are a mix of MAPS IBP capture-code letters and USGS BBL status codes, as documented in the MAPS Manual and USGS BBL website. See docs/apps/field/research-destroyed-bands.md for details.

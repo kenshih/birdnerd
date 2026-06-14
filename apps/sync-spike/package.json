@@ -10,7 +10,7 @@
     "lint": "eslint src --ext ts,tsx"
   },
   "dependencies": {
-    "@birdnerd/shared": "0.2.6",
+    "@birdnerd/shared": "0.2.7",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "y-webrtc": "^10.3.0",
