@@ -7,7 +7,7 @@ import { netCheckTimes } from '../utils/netCheckTimes'
 import {
   AGE_CODES, SEX_CODES, SKULL_CODES, FAT_CODES, MOLT_CODES,
   CAPTURE_STATUS_CODES, HOW_AGED_CODES, HOW_SEXED_CODES, WRP_CODES,
-  CP_CODES, BP_CODES, FF_WEAR_CODES, FF_MOLT_CODES, BIRD_STATUS_CODES, DISPOSITION_CODES,
+  CP_CODES, BP_CODES, FF_WEAR_CODES, FF_MOLT_CODES, BIRD_STATUS_CODES, BIRD_STATUS_CODE_VALUES, DISPOSITION_CODES,
   MOLT_LIMITS_CODES, JUV_BODY_PLUMAGE_CODES, PRESENT_CONDITION_CODES,
   isNewBanding,
 } from '../data/codes'
@@ -65,6 +65,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
   const [bandSelection, setBandSelection] = useState<BandSelection>({ kind: 'none' })
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([])
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [statusWriteIn, setStatusWriteIn] = useState(false)
 
   const handlePendingPhotosChange = useCallback((photos: PendingPhoto[]) => {
     setPendingPhotos(photos)
@@ -155,6 +156,8 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
   const age = watch('age')
   const skull = watch('skull')
   const status = watch('status')
+  // Write-in mode: explicitly toggled, or a loaded record whose status isn't a predefined code.
+  const isStatusWriteIn = statusWriteIn || (!!status && !BIRD_STATUS_CODE_VALUES.has(status))
   const disposition = watch('disposition')
   const bloodSample = watch('bloodSample')
   const notes = watch('notes')
@@ -617,10 +620,32 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
           </Row>
           <Row>
             <Field label="Status" warning={warnings.status}>
-              <select {...register('status')} style={inputStyle}>
-                <option value="">—</option>
+              <select
+                value={isStatusWriteIn ? '__writein__' : (status ?? '')}
+                onChange={e => {
+                  const v = e.target.value
+                  if (v === '__writein__') {
+                    setStatusWriteIn(true)
+                    setValue('status', '', { shouldDirty: true })
+                  } else {
+                    setStatusWriteIn(false)
+                    setValue('status', v, { shouldDirty: true })
+                  }
+                }}
+                style={inputStyle}
+              >
+                <option value="">(empty)</option>
                 {BIRD_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                <option value="__writein__">Other (write-in)…</option>
               </select>
+              {/* Always registered so `status` is in the form value; shown only in write-in mode. */}
+              <input
+                {...register('status')}
+                type="text"
+                placeholder="Enter status code"
+                aria-label="Write-in status code"
+                style={{ ...inputStyle, marginTop: '0.25rem', display: isStatusWriteIn ? 'block' : 'none' }}
+              />
             </Field>
             <Field label="Disposition" warning={warnings.disposition}>
               <select {...register('disposition')} style={inputStyle}>

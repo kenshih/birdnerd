@@ -113,34 +113,18 @@ export function validateRecord(
     warnings.notes = 'Note required when How Aged/Sexed = Other'
   }
 
-  // Status 500 → require disposition + note
-  if (values.status === '500') {
-    if (!values.disposition) {
-      warnings.disposition = 'Disposition required for Status 500'
-    }
-    if (!values.notes?.trim()) {
-      warnings.notes = warnings.notes
-        ? warnings.notes + '; also required for Status 500'
-        : 'Note required for Status 500'
-    }
+  // Status 500 → also require disposition (the notes rule below covers the note)
+  if (values.status === '500' && !values.disposition) {
+    warnings.disposition = 'Disposition required for Status 500'
   }
 
-  // Mortality (Status "---") → require note
-  if (values.status === '---') {
-    if (!values.notes?.trim()) {
-      warnings.notes = warnings.notes
-        ? warnings.notes + '; also required for Mortality'
-        : 'Note required for Mortality'
-    }
-  }
-
-  // Status OT → require note
-  if (values.status === 'OT') {
-    if (!values.notes?.trim()) {
-      warnings.notes = warnings.notes
-        ? warnings.notes + '; also required for Status=Other'
-        : 'Note required for Status=Other'
-    }
+  // Remarks (notes) required for any status other than blank or 300 —
+  // covers 318/319/500/700, mortality (---), and any write-in code.
+  if (values.status && values.status !== '300' && !values.notes?.trim()) {
+    const label = values.status === '---' ? 'Mortality' : `Status ${values.status}`
+    warnings.notes = warnings.notes
+      ? warnings.notes + `; also required for ${label}`
+      : `Note required for ${label}`
   }
 
   // Blood Sample checked → status should be 318, 319, or 334

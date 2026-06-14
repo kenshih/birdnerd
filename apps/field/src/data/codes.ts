@@ -72,13 +72,13 @@ export const BIRD_STATUS_CODES = [
   { code: '301', label: '301 — healthy, released w/metal band and color band' },
   { code: '318', label: '318 — healthy, released w/metal band, and blood sampled' },
   { code: '319', label: '319 — healthy, released w/metal band with color band, and blood sampled' },
-  // { code: '333', label: '333 — Recaptured, no blood' },
-  // { code: '334', label: '334 — Recaptured + blood sample' },
-  // { code: '380', label: '380 — Released unbanded' },
   { code: '500', label: '500 — injured, stressed, deformed, or sick bird released w/metal band' },
   { code: '700', label: '700 — rehabilitated bird released with metal band' },
   { code: '---', label: '--- — banding mortality' },
 ]
+
+/** Set of the predefined status codes — used to detect a write-in (custom) value. */
+export const BIRD_STATUS_CODE_VALUES = new Set(BIRD_STATUS_CODES.map(c => c.code))
 
 // Disposition codes (from Hallie's doc)
 export const DISPOSITION_CODES = [

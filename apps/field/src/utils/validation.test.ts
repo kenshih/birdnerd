@@ -119,15 +119,36 @@ describe('Mortality (Status ---)', () => {
   })
 })
 
-// ─── Status OT → require note ───────────────────────────────────────
+// ─── Remarks required for any status other than blank or 300 ────────
 
-describe('Status OT', () => {
-  it('warns on notes when empty', () => {
-    expect(v({ status: 'OT' }).notes).toMatch(/Status=Other/)
+describe('Remarks required for non-300 status', () => {
+  it('no warning for status 300', () => {
+    expect(v({ status: '300' }).notes).toBeUndefined()
   })
 
-  it('no warning when notes filled', () => {
-    expect(v({ status: 'OT', notes: 'special case' }).notes).toBeUndefined()
+  it('no warning for blank status', () => {
+    expect(v({ status: '' }).notes).toBeUndefined()
+    expect(v({}).notes).toBeUndefined()
+  })
+
+  it('warns for 318 without notes', () => {
+    expect(v({ status: '318' }).notes).toMatch(/Status 318/)
+  })
+
+  it('warns for 319 without notes', () => {
+    expect(v({ status: '319' }).notes).toMatch(/Status 319/)
+  })
+
+  it('warns for 700 without notes', () => {
+    expect(v({ status: '700' }).notes).toMatch(/Status 700/)
+  })
+
+  it('warns for a write-in code without notes', () => {
+    expect(v({ status: '385' }).notes).toMatch(/Status 385/)
+  })
+
+  it('no warning for a write-in code when notes filled', () => {
+    expect(v({ status: '385', notes: 'color band + laparotomy + blood' }).notes).toBeUndefined()
   })
 })
 
