@@ -375,7 +375,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 <Field label="Present Condition">
                   <select {...register('presentCondition')} style={inputStyle}>
                     <option value="">—</option>
-                    {PRESENT_CONDITION_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                    {PRESENT_CONDITION_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
                   </select>
                 </Field>
                 <Field label="Replaced Band #">
@@ -494,13 +494,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="P Covs">
               <select {...register('moltLimitsPCovs')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="G Covs">
               <select {...register('moltLimitsSCovs')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -508,7 +508,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Alula">
               <select {...register('moltLimitsAlula')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -516,13 +516,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="PP">
               <select {...register('moltLimitsPP')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="SS">
               <select {...register('moltLimitsSS')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -530,13 +530,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Tert">
               <select {...register('moltLimitsTert')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="Rec">
               <select {...register('moltLimitsRec')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -544,13 +544,13 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Body Plum">
               <select {...register('moltLimitsBodyPlum')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
             <Field label="Non-Feather">
               <select {...register('moltLimitsNonFeather')} style={inputStyle}>
                 <option value="">—</option>
-                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {MOLT_LIMITS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>
@@ -635,7 +635,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
                 style={inputStyle}
               >
                 <option value="">(empty)</option>
-                {BIRD_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {BIRD_STATUS_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
                 <option value="__writein__">Other (write-in)…</option>
               </select>
               {/* Always registered so `status` is in the form value; shown only in write-in mode. */}
@@ -650,7 +650,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
             <Field label="Disposition" warning={warnings.disposition}>
               <select {...register('disposition')} style={inputStyle}>
                 <option value="">—</option>
-                {DISPOSITION_CODES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                {DISPOSITION_CODES.map(c => <option key={c.code} value={c.code}>{c.code} — {c.label}</option>)}
               </select>
             </Field>
           </Row>

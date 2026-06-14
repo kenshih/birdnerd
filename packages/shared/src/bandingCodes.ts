@@ -202,3 +202,59 @@ export const JUV_BODY_PLUMAGE_CODES: CodeOption[] = [
   { code: '2', label: '2 — > 1/2' },
   { code: '3', label: '3 — Heavy' },
 ]
+
+// Status codes for the "Banding Status" field on the Banding Sheet, which records the outcome of a banding attempt. These are a mix of MAPS IBP capture-code letters and USGS BBL status codes, as documented in the MAPS Manual and USGS BBL website. See docs/apps/field/research-destroyed-bands.md for details.
+// - USGS BBL Status and Information Codes ([website](https://www.pwrc.usgs.gov/BBL/Bander_Portal/login/birdstatus.php))
+// - [MAPS Banding Codes Summary 2026](https://github.com/kenshih/birdnerd/blob/a48305487337241bffb3585393e20cd866d3ed0b/docs/resources/MAPS-Materials-MAPS-Banding-Codes-Summary-2026.pdf)
+// - [gh issue #1](https://github.com/kenshih/birdnerd/issues/1)
+// Labels carry only the description; the code prefix (e.g. "300 — ") is added by the view.
+export const BIRD_STATUS_CODES: CodeOption[] = [
+  { code: '300', label: 'healthy, released w/metal band' },
+  { code: '301', label: 'healthy, released w/metal band and color band' },
+  { code: '318', label: 'healthy, released w/metal band, and blood sampled' },
+  { code: '319', label: 'healthy, released w/metal band with color band, and blood sampled' },
+  { code: '500', label: 'injured, stressed, deformed, or sick bird released w/metal band' },
+  { code: '700', label: 'rehabilitated bird released with metal band' },
+  { code: '---', label: 'banding mortality' },
+]
+
+/** Set of the predefined status codes — used to detect a write-in (custom) value. */
+export const BIRD_STATUS_CODE_VALUES = new Set(BIRD_STATUS_CODES.map(c => c.code))
+
+// Disposition codes (from Hallie's doc)
+export const DISPOSITION_CODES: CodeOption[] = [
+  { code: 'M', label: 'Mortality' },
+  { code: 'O', label: 'Old/heal?TBA injury' },
+  { code: 'I', label: 'Illness/Disease' },
+  { code: 'S', label: 'Stress/?TBA' },
+  { code: 'E', label: 'Eye Injury' },
+  { code: 'T', label: 'Tongue Injury' },
+  { code: 'W', label: 'Wing Injury' },
+  { code: 'B', label: 'Body Injury' },
+  { code: 'L', label: 'Leg Injury' },
+  { code: 'P', label: 'Predation' },
+  { code: 'D', label: 'Dead' },
+  { code: 'X', label: 'Ectoparasite' },
+]
+
+// Molt Limits & Plumage codes
+export const MOLT_LIMITS_CODES: CodeOption[] = [
+  { code: 'J', label: 'Juvenal' },
+  { code: 'L', label: 'Limit' },
+  { code: 'F', label: 'Formative' },
+  { code: 'B', label: 'Basic' },
+  { code: 'R', label: 'Retained' },
+  { code: 'M', label: 'Molt' },
+  { code: 'A', label: 'Alternate' },
+  { code: 'N', label: 'Non-juvenal' },
+  { code: 'X', label: 'Mixed Formative & Alternate' },
+  { code: 'U', label: 'Unknown' },
+]
+
+// Present Condition (recapture)
+export const PRESENT_CONDITION_CODES: CodeOption[] = [
+  { code: 'H', label: 'Healthy' },
+  { code: 'I', label: 'Injured' },
+  { code: 'S', label: 'Sick/Stressed' },
+  { code: 'D', label: 'Dead' },
+]

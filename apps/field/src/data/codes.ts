@@ -1,8 +1,11 @@
 import {
   AGE_CODES,
   BP_CODES,
+  BIRD_STATUS_CODES,
+  BIRD_STATUS_CODE_VALUES,
   CAPTURE_STATUS_CODES,
   CP_CODES,
+  DISPOSITION_CODES,
   FAT_CODES,
   FF_MOLT_CODES,
   FF_WEAR_CODES,
@@ -10,6 +13,8 @@ import {
   HOW_SEXED_CODES,
   JUV_BODY_PLUMAGE_CODES,
   MOLT_CODES,
+  MOLT_LIMITS_CODES,
+  PRESENT_CONDITION_CODES,
   SEX_CODES,
   SKULL_CODES,
   WRP_CODES,
@@ -18,8 +23,11 @@ import {
 export {
   AGE_CODES,
   BP_CODES,
+  BIRD_STATUS_CODES,
+  BIRD_STATUS_CODE_VALUES,
   CAPTURE_STATUS_CODES,
   CP_CODES,
+  DISPOSITION_CODES,
   FAT_CODES,
   FF_MOLT_CODES,
   FF_WEAR_CODES,
@@ -27,6 +35,8 @@ export {
   HOW_SEXED_CODES,
   JUV_BODY_PLUMAGE_CODES,
   MOLT_CODES,
+  MOLT_LIMITS_CODES,
+  PRESENT_CONDITION_CODES,
   SEX_CODES,
   SKULL_CODES,
   WRP_CODES,
@@ -65,59 +75,6 @@ export function isBandFate(code: string | undefined): boolean {
 export function bandFateLabel(code: string | undefined): string | undefined {
   return code ? BAND_FATE_LABELS[code] : undefined
 }
-
-
-export const BIRD_STATUS_CODES = [
-  { code: '300', label: '300 — healthy, released w/metal band' },
-  { code: '301', label: '301 — healthy, released w/metal band and color band' },
-  { code: '318', label: '318 — healthy, released w/metal band, and blood sampled' },
-  { code: '319', label: '319 — healthy, released w/metal band with color band, and blood sampled' },
-  { code: '500', label: '500 — injured, stressed, deformed, or sick bird released w/metal band' },
-  { code: '700', label: '700 — rehabilitated bird released with metal band' },
-  { code: '---', label: '--- — banding mortality' },
-]
-
-/** Set of the predefined status codes — used to detect a write-in (custom) value. */
-export const BIRD_STATUS_CODE_VALUES = new Set(BIRD_STATUS_CODES.map(c => c.code))
-
-// Disposition codes (from Hallie's doc)
-export const DISPOSITION_CODES = [
-  { code: 'M', label: 'M — Mortality' },
-  { code: 'O', label: 'O — Old/heal?TBA injury' },
-  { code: 'I', label: 'I — Illness/Disease' },
-  { code: 'S', label: 'S — Stress/?TBA' },
-  { code: 'E', label: 'E — Eye Injury' },
-  { code: 'T', label: 'T — Tongue Injury' },
-  { code: 'W', label: 'W — Wing Injury' },
-  { code: 'B', label: 'B — Body Injury' },
-  { code: 'L', label: 'L — Leg Injury' },
-  { code: 'P', label: 'P — Predation' },
-  { code: 'D', label: 'D — Dead' },
-  { code: 'X', label: 'X — Ectoparasite' },
-]
-
-// Molt Limits & Plumage codes
-export const MOLT_LIMITS_CODES = [
-  { code: 'J', label: 'J — Juvenal' },
-  { code: 'L', label: 'L — Limit' },
-  { code: 'F', label: 'F — Formative' },
-  { code: 'B', label: 'B — Basic' },
-  { code: 'R', label: 'R — Retained' },
-  { code: 'M', label: 'M — Molt' },
-  { code: 'A', label: 'A — Alternate' },
-  { code: 'N', label: 'N — Non-juvenal' },
-  { code: 'X', label: 'X — Mixed Formative & Alternate' },
-  { code: 'U', label: 'U — Unknown' },
-]
-
-
-// Present Condition (recapture)
-export const PRESENT_CONDITION_CODES = [
-  { code: 'H', label: 'H — Healthy' },
-  { code: 'I', label: 'I — Injured' },
-  { code: 'S', label: 'S — Sick/Stressed' },
-  { code: 'D', label: 'D — Dead' },
-]
 
 // BBL Band Size codes
 export const BAND_SIZE_CODES = [
