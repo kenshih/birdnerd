@@ -7,6 +7,12 @@ type TestState =
   | { status: 'success'; message: string }
   | { status: 'error'; message: string }
 
+type TestTableRow = {
+  id: string
+  created_at: string
+  readable_text: string | null
+}
+
 function maskSecret(secret: string) {
   if (!secret) return 'Missing'
   if (secret.length <= 12) return 'Configured'
@@ -17,12 +23,13 @@ export default function App() {
   const settings = useMemo(() => getSupabaseSettings(), [])
   const [testState, setTestState] = useState<TestState>({
     status: 'idle',
-    message: 'Ready to test the Supabase client.',
+    message: 'Ready to load rows from test_table.',
   })
+  const [rows, setRows] = useState<TestTableRow[]>([])
 
   const isConfigured = Boolean(settings.url && settings.anonKey)
 
-  async function testConnection() {
+  async function loadRows() {
     if (!isConfigured) {
       setTestState({
         status: 'error',
@@ -31,24 +38,32 @@ export default function App() {
       return
     }
 
-    setTestState({ status: 'checking', message: 'Checking Supabase auth endpoint...' })
+    setTestState({ status: 'checking', message: 'Loading first 5 rows from test_table...' })
 
     try {
       const supabase = createBrowserSupabaseClient(settings)
-      const { data, error } = await supabase.auth.getSession()
+      const { data, error } = await supabase
+        .from('test_table')
+        .select('id, created_at, readable_text')
+        .order('created_at', { ascending: false })
+        .limit(5)
 
       if (error) throw error
 
+      const nextRows = data ?? []
+      setRows(nextRows)
       setTestState({
         status: 'success',
-        message: data.session
-          ? `Connected. Signed in as ${data.session.user.email ?? data.session.user.id}.`
-          : 'Connected. No active login session yet.',
+        message:
+          nextRows.length === 1
+            ? 'Loaded 1 row from test_table.'
+            : `Loaded ${nextRows.length} rows from test_table.`,
       })
     } catch (error) {
+      setRows([])
       setTestState({
         status: 'error',
-        message: error instanceof Error ? error.message : 'Supabase connection failed.',
+        message: error instanceof Error ? error.message : 'Could not load test_table rows.',
       })
     }
   }
@@ -65,7 +80,7 @@ export default function App() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Supabase Connection</h2>
+          <h2>Supabase Table Test</h2>
           <span className={isConfigured ? 'pill ok' : 'pill warn'}>
             {isConfigured ? 'Configured' : 'Needs env'}
           </span>
@@ -77,18 +92,47 @@ export default function App() {
             <dd>{settings.url || 'Missing VITE_SUPABASE_URL'}</dd>
           </div>
           <div>
-            <dt>Anon key</dt>
+            <dt>Publishable key</dt>
             <dd>{maskSecret(settings.anonKey)}</dd>
           </div>
         </dl>
 
-        <button type="button" onClick={testConnection} disabled={testState.status === 'checking'}>
-          {testState.status === 'checking' ? 'Testing...' : 'Test connection'}
+        <button type="button" onClick={loadRows} disabled={testState.status === 'checking'}>
+          {testState.status === 'checking' ? 'Loading...' : 'Load first 5 rows'}
         </button>
 
         <p className={`status ${testState.status}`} role="status">
           {testState.message}
         </p>
+
+        <div className="table-wrap" aria-live="polite">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Created</th>
+                <th>Text</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.length > 0 ? (
+                rows.map((row) => (
+                  <tr key={row.id}>
+                    <td>{row.id}</td>
+                    <td>{new Date(row.created_at).toLocaleString()}</td>
+                    <td>{row.readable_text || <span className="muted">Empty</span>}</td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="empty-row">
+                    No rows loaded yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="notes">

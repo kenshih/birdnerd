@@ -142,6 +142,50 @@ dd {
   border-color: #b3261e;
 }
 
+.table-wrap {
+  margin-top: 1rem;
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e5dfd3;
+  padding: 0.65rem 0.5rem;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #5d695c;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+td {
+  overflow-wrap: anywhere;
+}
+
+td:first-child {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.8rem;
+}
+
+.empty-row,
+.muted {
+  color: #6d7569;
+}
+
+.empty-row {
+  text-align: center;
+}
+
 .notes {
   margin-top: 1rem;
 }

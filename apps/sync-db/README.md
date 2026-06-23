@@ -19,4 +19,12 @@ Then run:
 npm run dev:sync-db
 ```
 
-Open the printed local URL and use **Test connection** to confirm the browser client can reach Supabase.
+Open the printed local URL and use **Load first 5 rows** to confirm the browser client can read from `test_table`.
+
+The app expects `test_table` to expose these fields:
+
+```sql
+id uuid
+created_at timestamptz
+readable_text varchar
+```
