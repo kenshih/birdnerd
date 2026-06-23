@@ -22,6 +22,10 @@ function maskSecret(secret: string) {
   return `${secret.slice(0, 6)}...${secret.slice(-4)}`
 }
 
+function isValidEmail(value: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
 export default function App() {
   const settings = useMemo(() => getSupabaseSettings(), [])
   const isConfigured = Boolean(settings.url && settings.anonKey)
@@ -41,6 +45,7 @@ export default function App() {
     message: 'Ready to load rows from test_table.',
   })
   const [rows, setRows] = useState<TestTableRow[]>([])
+  const canSubmitEmail = isConfigured && isValidEmail(email)
 
   useEffect(() => {
     if (!supabase) {
@@ -140,6 +145,29 @@ export default function App() {
     setAuthMessage('Password updated. You are signed in.')
   }
 
+  async function changeSignedInPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!supabase) {
+      setAuthMessage('Add Supabase env vars, then restart the dev server.')
+      return
+    }
+
+    setAuthLoading(true)
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    setAuthLoading(false)
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+
+    setNewPassword('')
+    setAuthMessage('Password updated.')
+  }
+
   async function signInWithPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -223,6 +251,13 @@ export default function App() {
         <span className="version">v{__APP_VERSION__}</span>
       </header>
 
+      <section className="notice">
+        <p>
+          Basic sync database test for checking Supabase login, password setup, and reading sample rows.
+          This is a temporary testing surface, not the field app.
+        </p>
+      </section>
+
       <section className="panel">
         <div className="panel-heading">
           <h2>Supabase Auth</h2>
@@ -263,14 +298,36 @@ export default function App() {
             </div>
           </form>
         ) : session ? (
-          <div className="auth-box">
-            <div>
-              <p className="label">Signed in as</p>
-              <p className="user-email">{session.user.email ?? session.user.id}</p>
+          <div className="auth-forms">
+            <div className="auth-box">
+              <div>
+                <p className="label">Signed in as</p>
+                <p className="user-email">{session.user.email ?? session.user.id}</p>
+              </div>
+              <button type="button" className="secondary-button" onClick={signOut} disabled={authLoading}>
+                Sign out
+              </button>
             </div>
-            <button type="button" className="secondary-button" onClick={signOut} disabled={authLoading}>
-              Sign out
-            </button>
+
+            <form className="auth-form" onSubmit={changeSignedInPassword}>
+              <label htmlFor="change-password">Change password</label>
+              <div className="input-row">
+                <input
+                  id="change-password"
+                  name="change-password"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  minLength={6}
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  placeholder="New password"
+                />
+                <button type="submit" disabled={authLoading || !isConfigured}>
+                  {authLoading ? 'Saving...' : 'Update'}
+                </button>
+              </div>
+            </form>
           </div>
         ) : authMode === 'reset-request' ? (
           <div className="auth-forms">
@@ -287,7 +344,7 @@ export default function App() {
                   onChange={(event) => setEmail(event.target.value)}
                   placeholder="you@example.com"
                 />
-                <button type="submit" disabled={authLoading || !isConfigured}>
+                <button type="submit" disabled={authLoading || !canSubmitEmail}>
                   {authLoading ? 'Sending...' : 'Send reset'}
                 </button>
               </div>
@@ -330,7 +387,7 @@ export default function App() {
             </form>
 
             <form className="auth-form compact-form" onSubmit={sendMagicLink}>
-              <button type="submit" className="secondary-button" disabled={authLoading || !isConfigured || !email}>
+              <button type="submit" className="secondary-button" disabled={authLoading || !canSubmitEmail}>
                 Send magic link
               </button>
             </form>

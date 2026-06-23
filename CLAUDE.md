@@ -81,5 +81,6 @@ npm test                  # run vitest
 
 - Ask questions one by one, update plan docs iteratively
 - Start simple, layer features incrementally
+- When starting a dev/preview server for testing, stop any server process you started before ending the turn unless the user explicitly asks to leave it running. If left running, mention the URL and that it is still running.
 - Keep `plan.md` forward-looking and `CHANGELOG.md` focused on shipped changes
 - Archive completed plan versions in `docs/archives/`

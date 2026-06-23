@@ -81,6 +81,7 @@ h2 {
 }
 
 .panel,
+.notice,
 .notes {
   border: 1px solid #d9d4c8;
   border-radius: 8px;
@@ -90,6 +91,18 @@ h2 {
 
 .panel + .panel {
   margin-top: 1rem;
+}
+
+.notice {
+  margin-bottom: 1rem;
+  border-color: #c8d9cc;
+  background: #f7fff8;
+}
+
+.notice p {
+  margin: 0;
+  color: #354535;
+  line-height: 1.45;
 }
 
 .panel-heading {
