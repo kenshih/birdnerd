@@ -35,13 +35,18 @@ jobs:
 
       - run: npm run build
       - run: npm run build:ocr
+      - run: npm run build:sync-db
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
       - name: Assemble Pages artifact
         run: |
           rm -rf site
-          mkdir -p site/ocr
+          mkdir -p site/ocr site/sync-db
           cp -R apps/field/dist/. site/
           cp -R apps/ocr/dist/. site/ocr/
+          cp -R apps/sync-db/dist/. site/sync-db/
 
       - uses: actions/upload-pages-artifact@v5
         with:

@@ -44,6 +44,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallbackDenylist: [
           /^\/birdnerd\/ocr(?:\/|$)/,
+          /^\/birdnerd\/sync-db(?:\/|$)/,
         ],
       },
     }),

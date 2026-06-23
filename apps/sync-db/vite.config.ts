@@ -7,4 +7,5 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(version),
   },
   plugins: [react()],
+  base: '/birdnerd/sync-db/',
 })

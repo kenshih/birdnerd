@@ -22,7 +22,7 @@
     "build:ocr": "npm --workspace @birdnerd/ocr run build",
     "build:sync-db": "npm --workspace @birdnerd/sync-db run build",
     "build:sync": "npm --workspace @birdnerd/sync-spike run build",
-    "build:combined": "npm run build && npm run build:ocr && rm -rf .combined-site && mkdir -p .combined-site/birdnerd/ocr && cp -R apps/field/dist/. .combined-site/birdnerd/ && cp -R apps/ocr/dist/. .combined-site/birdnerd/ocr/",
+    "build:combined": "npm run build && npm run build:ocr && npm run build:sync-db && rm -rf .combined-site && mkdir -p .combined-site/birdnerd/ocr .combined-site/birdnerd/sync-db && cp -R apps/field/dist/. .combined-site/birdnerd/ && cp -R apps/ocr/dist/. .combined-site/birdnerd/ocr/ && cp -R apps/sync-db/dist/. .combined-site/birdnerd/sync-db/",
     "preview": "npm --workspace @birdnerd/field run preview",
     "preview:host": "npm --workspace @birdnerd/field run preview -- --host",
     "preview:ocr": "npm --workspace @birdnerd/ocr run preview",
