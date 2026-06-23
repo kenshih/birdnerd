@@ -26,6 +26,17 @@ button:disabled {
   opacity: 0.7;
 }
 
+input {
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid #cfc8ba;
+  border-radius: 8px;
+  padding: 0.7rem 0.75rem;
+  background: white;
+  color: inherit;
+  font: inherit;
+}
+
 #root {
   min-height: 100vh;
 }
@@ -77,6 +88,10 @@ h2 {
   padding: 1rem;
 }
 
+.panel + .panel {
+  margin-top: 1rem;
+}
+
 .panel-heading {
   display: flex;
   align-items: center;
@@ -126,6 +141,70 @@ dd {
   overflow-wrap: anywhere;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
   font-size: 0.92rem;
+}
+
+.auth-box,
+.input-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.auth-box {
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #e5dfd3;
+  border-radius: 8px;
+  padding: 0.85rem;
+}
+
+.auth-forms {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.auth-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.compact-form {
+  justify-items: start;
+}
+
+.auth-form label,
+.label {
+  color: #5d695c;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.input-row input {
+  flex: 1;
+}
+
+.user-email {
+  margin: 0.15rem 0 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
+}
+
+.label {
+  margin: 0;
+}
+
+.secondary-button {
+  background: #4d5b4d;
+}
+
+.text-button {
+  min-height: auto;
+  justify-self: start;
+  padding: 0;
+  background: transparent;
+  color: #146c43;
+  font-weight: 800;
 }
 
 .status {
@@ -208,5 +287,13 @@ pre {
   .panel,
   .notes {
     padding: 1.25rem;
+  }
+}
+
+@media (max-width: 560px) {
+  .auth-box,
+  .input-row {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

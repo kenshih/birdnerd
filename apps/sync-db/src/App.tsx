@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import type { Session } from '@supabase/supabase-js'
 import { createBrowserSupabaseClient, getSupabaseSettings } from './supabaseClient'
 
 type TestState =
@@ -13,6 +14,8 @@ type TestTableRow = {
   readable_text: string | null
 }
 
+type AuthMode = 'sign-in' | 'reset-request' | 'set-password'
+
 function maskSecret(secret: string) {
   if (!secret) return 'Missing'
   if (secret.length <= 12) return 'Configured'
@@ -21,16 +24,159 @@ function maskSecret(secret: string) {
 
 export default function App() {
   const settings = useMemo(() => getSupabaseSettings(), [])
+  const isConfigured = Boolean(settings.url && settings.anonKey)
+  const supabase = useMemo(
+    () => (isConfigured ? createBrowserSupabaseClient(settings) : null),
+    [isConfigured, settings]
+  )
+  const [session, setSession] = useState<Session | null>(null)
+  const [authLoading, setAuthLoading] = useState(true)
+  const [authMode, setAuthMode] = useState<AuthMode>('sign-in')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [authMessage, setAuthMessage] = useState('Checking login session...')
   const [testState, setTestState] = useState<TestState>({
     status: 'idle',
     message: 'Ready to load rows from test_table.',
   })
   const [rows, setRows] = useState<TestTableRow[]>([])
 
-  const isConfigured = Boolean(settings.url && settings.anonKey)
+  useEffect(() => {
+    if (!supabase) {
+      setAuthLoading(false)
+      setAuthMessage('Supabase env vars are not configured.')
+      return
+    }
+
+    let isMounted = true
+
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (!isMounted) return
+
+      setSession(data.session)
+      setAuthLoading(false)
+      setAuthMessage(error?.message ?? (data.session ? 'Signed in.' : 'Not signed in.'))
+    })
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setSession(nextSession)
+      setAuthLoading(false)
+      if (event === 'PASSWORD_RECOVERY') {
+        setAuthMode('set-password')
+        setAuthMessage('Enter a new password to finish recovery.')
+        return
+      }
+
+      setAuthMessage(nextSession ? 'Signed in.' : 'Not signed in.')
+    })
+
+    return () => {
+      isMounted = false
+      subscription.unsubscribe()
+    }
+  }, [supabase])
+
+  async function sendMagicLink(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!supabase) {
+      setAuthMessage('Add Supabase env vars, then restart the dev server.')
+      return
+    }
+
+    setAuthLoading(true)
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: {
+        emailRedirectTo: window.location.origin,
+      },
+    })
+
+    setAuthLoading(false)
+    setAuthMessage(error ? error.message : 'Check your email for the login link.')
+  }
+
+  async function sendPasswordReset(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!supabase) {
+      setAuthMessage('Add Supabase env vars, then restart the dev server.')
+      return
+    }
+
+    setAuthLoading(true)
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    })
+
+    setAuthLoading(false)
+    setAuthMessage(error ? error.message : 'Check your email for the password reset link.')
+  }
+
+  async function updatePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!supabase) {
+      setAuthMessage('Add Supabase env vars, then restart the dev server.')
+      return
+    }
+
+    setAuthLoading(true)
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    setAuthLoading(false)
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+
+    setNewPassword('')
+    setAuthMode('sign-in')
+    setAuthMessage('Password updated. You are signed in.')
+  }
+
+  async function signInWithPassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!supabase) {
+      setAuthMessage('Add Supabase env vars, then restart the dev server.')
+      return
+    }
+
+    setAuthLoading(true)
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    setAuthLoading(false)
+    if (error) {
+      setAuthMessage(error.message)
+      return
+    }
+
+    setPassword('')
+    setAuthMessage('Signed in.')
+  }
+
+  async function signOut() {
+    if (!supabase) return
+
+    setAuthLoading(true)
+    const { error } = await supabase.auth.signOut()
+    setAuthLoading(false)
+    setAuthMessage(error ? error.message : 'Signed out.')
+    setRows([])
+    setAuthMode('sign-in')
+  }
 
   async function loadRows() {
-    if (!isConfigured) {
+    if (!supabase) {
       setTestState({
         status: 'error',
         message: 'Add VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY, then restart the dev server.',
@@ -41,7 +187,6 @@ export default function App() {
     setTestState({ status: 'checking', message: 'Loading first 5 rows from test_table...' })
 
     try {
-      const supabase = createBrowserSupabaseClient(settings)
       const { data, error } = await supabase
         .from('test_table')
         .select('id, created_at, readable_text')
@@ -80,7 +225,7 @@ export default function App() {
 
       <section className="panel">
         <div className="panel-heading">
-          <h2>Supabase Table Test</h2>
+          <h2>Supabase Auth</h2>
           <span className={isConfigured ? 'pill ok' : 'pill warn'}>
             {isConfigured ? 'Configured' : 'Needs env'}
           </span>
@@ -96,6 +241,118 @@ export default function App() {
             <dd>{maskSecret(settings.anonKey)}</dd>
           </div>
         </dl>
+
+        {authMode === 'set-password' ? (
+          <form className="auth-form" onSubmit={updatePassword}>
+            <label htmlFor="new-password">New password</label>
+            <div className="input-row">
+              <input
+                id="new-password"
+                name="new-password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={6}
+                value={newPassword}
+                onChange={(event) => setNewPassword(event.target.value)}
+                placeholder="New password"
+              />
+              <button type="submit" disabled={authLoading || !isConfigured}>
+                {authLoading ? 'Saving...' : 'Set password'}
+              </button>
+            </div>
+          </form>
+        ) : session ? (
+          <div className="auth-box">
+            <div>
+              <p className="label">Signed in as</p>
+              <p className="user-email">{session.user.email ?? session.user.id}</p>
+            </div>
+            <button type="button" className="secondary-button" onClick={signOut} disabled={authLoading}>
+              Sign out
+            </button>
+          </div>
+        ) : authMode === 'reset-request' ? (
+          <div className="auth-forms">
+            <form className="auth-form" onSubmit={sendPasswordReset}>
+              <label htmlFor="reset-email">Email</label>
+              <div className="input-row">
+                <input
+                  id="reset-email"
+                  name="reset-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="you@example.com"
+                />
+                <button type="submit" disabled={authLoading || !isConfigured}>
+                  {authLoading ? 'Sending...' : 'Send reset'}
+                </button>
+              </div>
+            </form>
+
+            <button type="button" className="text-button" onClick={() => setAuthMode('sign-in')}>
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <div className="auth-forms">
+            <form className="auth-form" onSubmit={signInWithPassword}>
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+              />
+              <label htmlFor="password">Password</label>
+              <div className="input-row">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="Password"
+                />
+                <button type="submit" disabled={authLoading || !isConfigured}>
+                  {authLoading ? 'Signing in...' : 'Sign in'}
+                </button>
+              </div>
+            </form>
+
+            <form className="auth-form compact-form" onSubmit={sendMagicLink}>
+              <button type="submit" className="secondary-button" disabled={authLoading || !isConfigured || !email}>
+                Send magic link
+              </button>
+            </form>
+
+            <button type="button" className="text-button" onClick={() => setAuthMode('reset-request')}>
+              Reset password
+            </button>
+          </div>
+        )}
+
+        <p className="status idle" role="status">
+          {authMessage}
+        </p>
+      </section>
+
+      <section className="panel">
+        <div className="panel-heading">
+          <h2>Supabase Table Test</h2>
+          <span className={session ? 'pill ok' : 'pill warn'}>
+            {session ? 'Authenticated' : 'Anonymous'}
+          </span>
+        </div>
 
         <button type="button" onClick={loadRows} disabled={testState.status === 'checking'}>
           {testState.status === 'checking' ? 'Loading...' : 'Load first 5 rows'}
