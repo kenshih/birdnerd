@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Changed
+
+- Field 0.25.13 — **Capture Time now constrained to net-check slots.** Replaced free-form `<input type="time">` + secondary dropdown with a single `<select>` of `netCheckTimes` values. "Now" button snaps to the nearest net-check time instead of inserting an arbitrary `HH:mm`.
+
 ### Added
 
 - Shared 0.2.5 — **Domain lexicon.** `packages/shared/src/lexicon.ts` exports `LexiconEntry` (type), `LexiconCategory` (union), and `LEXICON` (38 entries). Covers feather tracts (P Covs, S Covs/G Covs, Alula, PP, SS, Tert, Rec), molt concepts (WRP, molt limits, body molt, FF/TF molt, FF wear, juv body plumage), age/sex (HY–ATY, Local), condition (skull, BP, CP, fat, feather pull), capture codes, protocol (MAPS, IBP, BBL, MAPS period), morphometrics, and band terminology. Pure data — no logic, no UI wiring. TypeScript now; YAML migration is a future portability step. Directly resolves the S covs/G covs terminology question: the `Secondary Coverts` entry documents that "S covs" and "G covs" are synonyms in banding usage (both = greater secondary coverts).

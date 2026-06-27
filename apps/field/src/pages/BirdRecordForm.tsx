@@ -194,10 +194,24 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
   }
 
   function fillNow(field: 'captureTime' | 'releaseTime') {
-    const now = new Date()
-    const hh = now.getHours().toString().padStart(2, '0')
-    const mm = now.getMinutes().toString().padStart(2, '0')
-    setValue(field, `${hh}:${mm}`)
+    if (field === 'captureTime') {
+      const now = new Date()
+      const nowMin = now.getHours() * 60 + now.getMinutes()
+      const times = netCheckTimes(session.openTime, session.closeTime)
+      let closest = times[0]
+      let closestDiff = Infinity
+      for (const t of times) {
+        const [h, m] = t.split(':').map(Number)
+        const diff = Math.abs(h * 60 + m - nowMin)
+        if (diff < closestDiff) { closestDiff = diff; closest = t }
+      }
+      if (closest) setValue(field, closest)
+    } else {
+      const now = new Date()
+      const hh = now.getHours().toString().padStart(2, '0')
+      const mm = now.getMinutes().toString().padStart(2, '0')
+      setValue(field, `${hh}:${mm}`)
+    }
   }
 
   async function doSave(data: FormValues, bandSel: BandSelection) {
@@ -661,23 +675,15 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
           <Row>
             <Field label="Capture Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <input {...register('captureTime')} type="time" style={{ ...inputStyle, flex: 1 }} />
-                {!readOnly && <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>}
-                {!readOnly && <button type="button" onClick={() => setValue('captureTime', '')} style={nowBtnStyle}>✕</button>}
-              </div>
-              {!readOnly && (
-                <select
-                  value=""
-                  onChange={e => { if (e.target.value) setValue('captureTime', e.target.value, { shouldDirty: true }) }}
-                  style={{ ...inputStyle, marginTop: '0.25rem' }}
-                  aria-label="Quick net-check time"
-                >
-                  <option value="">Net-check time…</option>
+                <select {...register('captureTime')} style={{ ...inputStyle, flex: 1 }}>
+                  <option value="">—</option>
                   {netCheckTimes(session.openTime, session.closeTime).map(t => (
                     <option key={t} value={t}>{t}</option>
                   ))}
                 </select>
-              )}
+                {!readOnly && <button type="button" onClick={() => fillNow('captureTime')} style={nowBtnStyle}>Now</button>}
+                {!readOnly && <button type="button" onClick={() => setValue('captureTime', '')} style={nowBtnStyle}>✕</button>}
+              </div>
             </Field>
             <Field label="Release Time">
               <div style={{ display: 'flex', gap: '0.25rem' }}>
