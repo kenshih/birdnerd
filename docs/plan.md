@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** Phases 24–25 shipped (Field Small Fixes + Bulk Data Import incl. lost/destroyed-band records, field 0.25.8 / shared 0.2.4; detail in [plan.v7](archives/plan.v7.md)). **Phase 25 wrap-up** = the open Hallie confirmations only (agency-export `S covs`/`G covs`, Alula, status values — see below). **Next phase: 26 — Long-term Architecture Review** (review [research-long-term-architecture.md](resources/research-long-term-architecture.md), produce a decision doc + roadmap), then Phase 27 Net Hours, Phase 28 Smart Band Entry. Also open (unscheduled): code-table reconciliation vs the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)). _Update this line whenever the active phase changes._
+**Now:** **Phase 26 — Long-term Architecture Review**: review [research-long-term-architecture.md](resources/research-long-term-architecture.md), produce a decision doc + roadmap. Phase 25 is complete (Bulk Data Import incl. lost/destroyed-band records; detail in [plan.v7](archives/plan.v7.md)). Next: Phase 27 Net Reconciliation, then Phase 28 Net Hours and Phase 29 Smart Band Entry. _Update this line whenever the active phase changes._
 
 See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -8,7 +8,7 @@ See also: [apps/field/product-specifications.md](apps/field/product-specificatio
 
 ## Completed
 
-Phases 1–21 complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, and [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14. Field phases **24–25** are complete — full detail in [plan.v7 (archived)](archives/plan.v7.md).
+Phases 1–21 and 24–25 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
 
 Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
@@ -40,24 +40,11 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 | 20 | Band History View — encounter timeline, foreign band entities, Band Inventory enhancements |
 | 21 | Monorepo Migration — npm workspaces, OCR PWA scaffold, shared types package, docs restructure |
 | 24 | Field Small Fixes (0.24.x) — code tables, Alula tract (bundle v5), form reorg, band inventory, read-only views, Playwright smoke harness + CI gate ([plan.v7](archives/plan.v7.md)) |
-| 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer + lost/destroyed-band records ([plan.v7](archives/plan.v7.md)) |
+| 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer, lost/destroyed-band records, and final code/export decisions ([plan.v7](archives/plan.v7.md)) |
 
 ---
 
-> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (26–28) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
-
-## Phase 25 wrap-up — Hallie confirmations (open)
-
-Phases 24 and 25 shipped (detail archived in [plan.v7](archives/plan.v7.md)). What's left from the Phase 25 conversation — confirm with Hallie, then implement the relevant fix:
-
-- **Molt-limits `S covs` vs `G covs`:** ✅ Confirmed with Hallie — "S covs" and "G covs" (greater coverts) are synonyms in banding usage; both refer to the greater secondary coverts. The Phase 24 UI relabel to "G Covs" is correct and intentional. No data-key or export-header change needed; `moltLimitsSCovs` and the export column "S covs" match the master sheet and remain unchanged.
-- **Alula in agency export:** the **master sheet has no `Alula` column** (verified), so the agency format historically excludes it; our export omits it too (Alula is app-data + app-CSV only). Ask whether she expects to start submitting `Alula` to the agency soon (evolve the format) or keep it app-only.
-- **`Status` column:** ✅ Resolved via [gh issue #1](https://github.com/kenshih/birdnerd/issues/1). Hallie gave the authoritative short list, so `BIRD_STATUS_CODES` is now `300 / 301 / 318 / 319 / 500 / 700 / ---` (her wording) and the speculative `333 / 334 / 380` are commented out. Master-sheet analysis ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) confirmed only `300 / 318 / 700` + blank actually appear in her data. Rather than chase the full code universe, the Status field now offers an **"Other (write-in)"** option for any code not in the list, and validation **requires remarks (notes) for any status other than blank or `300`** (covers 318/319/500/700, mortality `---`, and write-ins). Empty option relabeled `(empty)` to signal an intentional blank (the default, correct for band-fate/unbanded rows).
-- Manual: **login sync-db supabase spike 0.25.12** ✅ deployed. needed routing update in field app.
-
-_Separate research, not yet scheduled:_ reconcile our code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
-
----
+> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (26–29) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
 
 ## Phase 26 — Long-term Architecture Review (design phase)
 
@@ -77,7 +64,13 @@ Open question for Ken: what's the real near-term trigger — a second station/us
 
 ---
 
-## Phase 27 — Net Hours (Field 0.27.0)
+## Phase 27 — Net Reconciliation, cleanup (Field 0.27.0)
+
+Goal: reconcile our code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
+
+---
+
+## Phase 28 — Net Hours (Field 0.28.0)
 
 Goal: Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog / net-hours groundwork.
 
@@ -88,7 +81,7 @@ Goal: Per-net effort tracking and total net-hours at session close. Extends the 
 
 ---
 
-## Phase 28 — Smart Band Entry (Field 0.28.0)
+## Phase 29 — Smart Band Entry (Field 0.29.0)
 
 Goal: Speed up band record entry and help catch missing or mis-deployed bands during banding.
 
@@ -99,7 +92,7 @@ Goal: Speed up band record entry and help catch missing or mis-deployed bands du
 
 ---
 
-## Phase 22 — Bandsheet OCR
+## Backlog: Bandsheet OCR
 
 Goal: Build a row-by-row transcription assistant for one supported BirdNerd bandsheet layout, with OCR layered in incrementally. **Completed sub-phases (0.2.0–0.4.1) are archived in [plan.v6](archives/plan.v6.md); only unfinished work remains below.**
 
@@ -140,7 +133,7 @@ Assumptions for Phase 22:
 
 ---
 
-## Phase 23 — P2P Sync Spike
+## Backlog: P2P Sync Spike
 
 Goal: Prove that 2–5 known devices can sync banding records without a central data server, using CRDT-based sync and cryptographic device identity with in-person enrollment. Runs as a parallel track to Phase 22 OCR work.
 
@@ -170,8 +163,6 @@ Assumptions for Phase 23:
 - Evaluate merge correctness, offline behavior, and pairing UX on real devices
 - Compare P2P model against Supabase/centralized on complexity, cost, auditability
 - Document findings and decide next direction for sync in the field app
-
----
 
 ## Backlog (unordered — to be phased later)
 

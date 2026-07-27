@@ -1,6 +1,6 @@
 # BirdNerd — Plan archive v7 (Phases 24–25)
 
-Archived from `docs/plan.md` on 2026-06-12 once both phases shipped. Forward-looking plan
+Archived from `docs/plan.md` on 2026-07-27 once both phases shipped and the Phase 25 follow-up decisions were closed or recorded. Forward-looking plan
 continues in [docs/plan.md](../plan.md). Shipped-change detail also lives in
 [CHANGELOG.md](../../CHANGELOG.md).
 
@@ -73,7 +73,8 @@ Build steps (✅ shipped at field 0.25.0):
 
 **Follow-up — Lost/destroyed-band records ✅ (shipped field 0.25.8 / shared 0.2.4):** Band-event rows (`BAND DESTROYED`/`LOST`) used to create a band only and vanish from the session. MAPS models a band fate as a Banding-Sheet row marked with capture code `L`/`D` (Manual p.38/41) — so we emit a `BirdRecord` with `bbpCode = D/L` (from `Code IBP`, NOT the BBL `4/8` which mean recapture), added `D`/`L` to `CAPTURE_STATUS_CODES`, made `isNewBanding`/`isRecapture` omit them, and round-trip export back to `BAND LOST`/`DESTROYED` + `Code IBP D/L` + `Code BBL 8/4`. Station-less band-event rows keep rejecting. Full findings + checked-off checklist: [research-destroyed-bands.md](../apps/field/research-destroyed-bands.md).
 
-**Remaining Hallie confirmations (carried forward to plan.md Phase 25 wrap-up):**
-- **Molt-limits `S covs` vs `G covs`** — different feather tracts; confirm whether the Phase 24 relabel was intended or a mistake.
-- **Alula in agency export** — master sheet has no `Alula` column; confirm whether to evolve the export format or keep Alula app-only.
-- **`Status` column** — confirm whether the full master sheet uses status values outside our table so we can extend `BIRD_STATUS_CODES`.
+**Phase 25 wrap-up:**
+- ✅ **Molt-limits `S covs` vs `G covs`:** Hallie confirmed the labels are synonyms in banding usage; both mean greater secondary coverts. The Phase 24 display relabel to `G Covs` is correct. Keep the stored key `moltLimitsSCovs` and the master-sheet/export header `S covs` unchanged.
+- **Alula in agency export:** the master sheet has no `Alula` column, so the agency export continues to omit it; Alula remains app-data + app-CSV only. Whether the agency format should evolve is tracked in [GitHub issue #4](https://github.com/kenshih/birdnerd/issues/4) for later confirmation.
+- ✅ **`Status` column:** Hallie supplied the authoritative short list: `300 / 301 / 318 / 319 / 500 / 700 / ---`. The speculative `333 / 334 / 380` are commented out. The app supports an **Other (write-in)** status and requires remarks for every nonblank status except `300`; this covers nonstandard values without expanding the curated list prematurely. Master-sheet analysis confirmed only `300 / 318 / 700` plus blanks occur in Hallie's data.
+- ✅ **Sync-db routing:** the login sync-db Supabase spike deployed in field `0.25.12`, including the required field-app routing update.
