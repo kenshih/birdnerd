@@ -320,6 +320,9 @@ Seed data ships as a JSON file (`apps/field/public/data/seed.json`) in the same 
 
 ### Local Storage (IndexedDB)
 
+**Current implementation:** Mutable entity stores in IndexedDB remain the
+running app architecture until the Phase 27–30 collaboration sequence lands.
+
 - All entities cached locally in IndexedDB
 - Supports offline operation in field
 - `created` and `updated` timestamps enable conflict resolution
@@ -347,12 +350,35 @@ Assumptions: ~50 birds/session, 2 sessions/week, 30 weeks/year, ~1–2 KB per re
 
 For a single user or small team at one station, IndexedDB + JSON data bundles is a viable long-term strategy.
 
-### Cloud Sync (Future)
+### Approved Collaboration Architecture (Phase 26)
 
-- Supabase PostgreSQL backend
-- Sync from IndexedDB → Supabase when online
-- Conflict resolution: Last-write-wins or user-resolved (TBD)
-- Row-level security by Organization (multi-tenant)
+The target architecture is defined in
+[ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
+It replaces mutable authoritative entities with a local-first event model:
+
+- Typed immutable Domain Events are durable truth; clients rebuild local
+  query/UI projections by replaying them.
+- Event contracts are YAML-authored, restricted JSON Schema 2020-12 in
+  top-level `schemas/`; JSON is the first transport. Event types version
+  independently.
+- Events and workspace-owned entities use locally generated UUIDv7 IDs.
+- Concurrent field amendments use deterministic field-level last-write-wins
+  with a hybrid logical clock and event-ID tie-breaker. Physical-band conflicts
+  are surfaced, not silently overwritten.
+- Commands enforce structural and authorization rules; scientific validation
+  remains soft warnings recorded with the event/projection.
+- Supabase Auth provides Google OAuth. Workspace Membership, rather than an
+  external identity-provider claim, controls authorization.
+- Supabase is initially an event-admission and exchange provider. It verifies
+  membership and an event's envelope before append; it does not own business
+  projections. `@birdnerd/sync-state` keeps this provider behind an adapter
+  seam for future P2P.
+- Event Bundles replace the former mutable JSON bundle. Restore rebuilds a
+  local replica and then synchronizes; history merge/adoption is deferred.
+
+The approved rollout is Phases 27–30 in [docs/plan.md](../../plan.md). The
+first pilot covers two Stations and two to four members, including parallel
+work at one Station and offline convergence.
 
 ### Data Validation Datasets (future)
 
@@ -393,63 +419,30 @@ Tables provided by domain experts for validation:
 - Per-session CSV export available in Session View (export banding records for a single session)
 - Standalone CSV import/export buttons were removed from Data Manager in Phase 15a (replaced by agency-specific export formats)
 
-### JSON Data Bundle (Phase 9)
+### Event Bundle (target; replaces Phase 9 JSON Data Bundle)
 
-A single JSON file that contains all managed reference and operational data, providing portable backup/restore before Postgres arrives.
+The current `DataBundle`/`BUNDLE_VERSION` implementation is a mutable-state
+snapshot and remains only until the collaboration architecture replaces it.
 
-**Included entities (growing with each phase):**
-- Locations, Nets (Phase 9)
-- People, Banders (Phase 9)
-- Sessions, BandingRecords (Phase 9)
-- Bands (added in Phase 13)
-- Future entities added as they are built
+An Event Bundle is a JSON container with a small outer format version, a
+Workspace manifest, and Domain Events carrying their own type and schema
+version. It is not a global domain-schema version. Code tables and species
+remain static app resources; photo blobs remain outside the Event Bundle until
+their transfer design is explicitly added.
 
-**Not included:** Code tables and species list (static app resources, not user data).
+**Backup and restore:**
 
-**Schema definition:** `apps/field/src/data/bundle-schema.ts` — TypeScript interface + version constant. This is the single source of truth for the bundle format.
+- Export contains a Workspace Event Log. A projection snapshot may accompany
+  it as a non-authoritative startup cache.
+- V1 restore is recovery-only: replace/rebuild the local replica, protect any
+  unsynced local events, authenticate, then catch up through normal sync.
+- Event-ID deduplication makes restoring an older bundle before sync safe.
+- Explicit merge/adoption of two histories is not part of v1.
 
-**Versioning convention:**
-- `version` is an integer, starting at `1`
-- Increment when entity fields are added, removed, or renamed
-- **Forward compatibility:** New fields are always optional — older bundles (lower version) can always be imported without error
-- **Backward compatibility:** The importer checks `version` and applies field mappings/defaults for older formats (e.g., if v2 adds a field, importing a v1 bundle fills that field with `undefined`)
-- **Breaking changes** (field renames, type changes) require a version bump and explicit migration logic in the importer
-- The current `BUNDLE_VERSION` constant in bundle-schema.ts is the authoritative version number
-
-**Format:**
-
-```json
-{
-  "version": 1,
-  "exportedAt": "2026-03-21T...",
-  "locations": [...],
-  "nets": [...],
-  "people": [...],
-  "banders": [...],
-  "sessions": [...],
-  "records": [...]
-}
-```
-
-**Use cases:**
-- **Backup/Restore:** Export all data before schema migrations or device changes
-- **Seed data replacement:** The app's seed.ts config will be replaced by a bundled JSON file in this format, making seed data swappable at runtime rather than build time
-- **Pre-Postgres persistence:** With a single user, export JSON as the portable data store between sessions/devices
-- **Data migration:** Import into Postgres when cloud sync arrives (Phase 15)
-
-**Export behavior:**
-- Always full export — all entities included
-- File named `birdnerd-backup-YYYY-MM-DD.json` (future: include org code when multi-tenancy arrives)
-
-**Import behavior:**
-- Replace mode only: wipe all existing data, load from bundle. User must confirm before proceeding.
-- Validate `version` field before importing — reject bundles with version > `BUNDLE_VERSION` (from a newer app)
-- Apply field mappings for bundles with version < `BUNDLE_VERSION` (from an older app)
-- Preserve existing CSV import/export for banding records (simpler workflow for session-level data exchange)
-
-**Seed data:**
-- On first launch (empty IndexedDB), the app loads a bundled JSON seed file in the same format (`apps/field/public/data/seed.json`)
-- This replaces the hardcoded `apps/field/src/data/seed.ts` config — seed data becomes a runtime asset, not a build-time constant
+**Seed and hydration:** The clean collaboration release recreates test and
+initial-hydration data as normal provisioning/events, not as mutable seed
+rows. The restricted Provisioner creates the first Workspace and Admin through
+the same event/admission/projection path.
 
 ### Future: BBL & Legacy Data
 

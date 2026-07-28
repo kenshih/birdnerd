@@ -1,5 +1,10 @@
 # BirdNerd Entities
 
+> **Current-state diagram:** This document describes the mutable IndexedDB
+> model currently implemented. The accepted Phase 26 target replaces ChangeLog
+> as a write path with a Workspace-scoped Event Log and rebuildable projections;
+> see [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
+
 > **Note:** The diagrams below are easier to read in light mode (not dark mode).
 
 ## Color Coding Conventions

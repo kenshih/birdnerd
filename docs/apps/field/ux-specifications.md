@@ -546,7 +546,7 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-The Data Manager page has two sections: **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Data Backup** (full JSON bundle import/export).
+The Data Manager page has two sections: **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Data Backup**. The current screen uses a full mutable JSON bundle; Phase 26 replaces that with an Event Bundle recovery workflow (rebuild local replica, then sync), while preserving agency CSV exports.
 
 ```
 ┌──────────────────────────────────────┐

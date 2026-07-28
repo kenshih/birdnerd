@@ -26,7 +26,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Band Inventory** — Add, track, and manage band stock.
 
-**Data Manager** — Browse records, export session data (CSV, BBL, IBP), generate session summaries, view band history. JSON data bundle for full backup/restore of all managed data (locations, nets, people, banders, sessions, records).
+**Data Manager** — Browse records, export session data (CSV, BBL, IBP), generate session summaries, view band history. The current mutable JSON backup/restore will be replaced by Workspace Event Bundles under the accepted collaboration architecture.
 
 ---
 
@@ -52,7 +52,15 @@ For the ER diagram, complete field definitions, and entity relationships, see [t
 
 **Immutable (White):** ChangeLog (append-only audit trail of all entity changes).
 
-### 4.2 Key Product Concepts
+### 4.2 Collaboration Evolution (approved, not yet implemented)
+
+Phase 26 replaces the standalone ChangeLog and mutable authoritative entities
+with a Workspace-scoped Event Log plus rebuildable projections. User Accounts
+authenticate through Google OAuth but BirdNerd Workspace Membership supplies
+authorization; operational roles remain separate. See
+[ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
+
+### 4.3 Key Product Concepts
 
 **Band Inventory & Status:** Each band from BBL has a lifecycle: `available` → `deployed` (assigned to bird) → recaptured, replaced, destroyed, lost, or retired. The app tracks current status and deployment date.
 
@@ -64,7 +72,7 @@ For the ER diagram, complete field definitions, and entity relationships, see [t
 
 **Validation Datasets (Future):** We will provide species-specific ranges for morphometrics (wing, tail, tarsus, etc.) and code consistency rules to flag unusual combinations (e.g., HY adult molt codes, season/sex mismatches).
 
-### 4.3 Database Conventions
+### 4.4 Database Conventions
 
 1. **Primary Key:** All entities use `id` (string) as primary key.
 2. **Audit Timestamps:** Operational and reference entities have `created` (insertion time) and `updated` (modification time). This supports change tracking and conflict resolution for offline sync.

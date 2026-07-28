@@ -37,7 +37,7 @@ apps/
     public/     — field app static assets + seed data
   ocr/          — OCR PWA workspace
 packages/
-  shared/       — future shared domain package
+  shared/       — shared domain package
 docs/           — specs, plan, entities, archives
 nogit/          — Hallie's source docs (not committed)
 ```
@@ -84,3 +84,13 @@ npm test                  # run vitest
 - When starting a dev/preview server for testing, stop any server process you started before ending the turn unless the user explicitly asks to leave it running. If left running, mention the URL and that it is still running.
 - Keep `plan.md` forward-looking and `CHANGELOG.md` focused on shipped changes
 - Archive completed plan versions in `docs/archives/`
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Multi-context domain documentation uses a root `CONTEXT-MAP.md`. See `docs/agents/domain.md`.

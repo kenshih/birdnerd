@@ -1,5 +1,11 @@
 # Science PWA Architecture Notes
 
+> **Status:** These exploratory notes were resolved in Phase 26. The accepted
+> decisions and implementation sequence are in
+> [ADR 0016](../adr/0016-event-sourced-collaboration-architecture.md);
+> diagrams are in
+> [ADR 0016 diagrams](../adr/0016-event-sourced-collaboration-architecture-diagrams.md).
+
 ## Vision
 
 Build a local-first science application that:

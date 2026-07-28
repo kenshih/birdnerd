@@ -1,14 +1,14 @@
 # BirdNerd — Plan
 
-**Now:** **Phase 26 — Long-term Architecture Review**: review [research-long-term-architecture.md](resources/research-long-term-architecture.md), produce a decision doc + roadmap. Phase 25 is complete (Bulk Data Import incl. lost/destroyed-band records; detail in [plan.v7](archives/plan.v7.md)). Next: Phase 27 Net Reconciliation, then Phase 28 Net Hours and Phase 29 Smart Band Entry. _Update this line whenever the active phase changes._
+**Now:** **Phase 27 — Google OAuth & Identity Linkage**: begin the accepted collaboration architecture sequence in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Phase 26 is complete (design decision + roadmap). Next: Phase 28 Workspace vertical slice, Phase 29 local event core, then Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
 
-See also: [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
+See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
 ---
 
 ## Completed
 
-Phases 1–21 and 24–25 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
+Phases 1–21 and 24–26 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
 
 Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
@@ -41,54 +41,47 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 | 21 | Monorepo Migration — npm workspaces, OCR PWA scaffold, shared types package, docs restructure |
 | 24 | Field Small Fixes (0.24.x) — code tables, Alula tract (bundle v5), form reorg, band inventory, read-only views, Playwright smoke harness + CI gate ([plan.v7](archives/plan.v7.md)) |
 | 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer, lost/destroyed-band records, and final code/export decisions ([plan.v7](archives/plan.v7.md)) |
+| 26 | Long-term Architecture Review — accepted local-first collaboration architecture, ADRs, diagrams, and reordered roadmap ([ADR 0016](adr/0016-event-sourced-collaboration-architecture.md)) |
 
 ---
 
-> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (26–29) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
+> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (27–33) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
 
-## Phase 26 — Long-term Architecture Review (design phase)
+## Phase 26 — Long-term Architecture Review ✅
 
-Goal: review the long-term architecture vision in [research-long-term-architecture.md](resources/research-long-term-architecture.md) against BirdNerd's current shape, and turn it into a concrete, sequenced action list. This is a **planning/design phase** — produce decisions + a roadmap, not a big-bang rewrite.
+Completed design phase. The real trigger is present: two Stations and two to four members need concurrent, offline-capable collaboration. [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md) is the consolidated decision; its [diagram companion](adr/0016-event-sourced-collaboration-architecture-diagrams.md) visualizes it; [docs/adr/](adr/) records the durable decisions.
 
-The vision (Ken's notes): a local-first science PWA where **immutable domain events** are the durable source of truth, **relational projection tables** serve the UI/queries, writes go through a **command → validate → event → projection** pipeline, schema is versioned **per event type** (not one global app-schema version), **workspaces** scope multi-station collaboration, and a **sync-adapter abstraction** keeps the domain model ignorant of the sync mechanism (Supabase + PowerSync/RxDB first, P2P later). Core principle: event log = durable truth, tables = rebuildable projections, sync providers = replaceable infra.
-
-Review tasks:
-- **Gap analysis** — contrast the vision with today: mutable IndexedDB entities via `idb`, single `BUNDLE_VERSION` + migration, FK-linked relational-ish stores, the Phase 23 Yjs sync spike. Name what already aligns (local-first, client IDs, soft deletes in places) vs what doesn't (mutable records, global schema version, no event log/command layer).
-- **Reconcile with existing backlog** — this vision overlaps and should absorb/supersede several Backlog items: **Schema Migration Framework**, **Cloud Sync & Auth** (Supabase/multi-tenant/workspaces), **UUIDv7 ID migration**, and the **Sync spike** (Phase 23) decision gate. Decide which of those become steps here.
-- **Decide adoption order & scope** — what's worth doing *now* on a single-station offline app (e.g. UUIDv7 IDs, soft-delete + version/`workspace_id`/`station_id` columns, a command layer in front of writes) vs deferred until multi-station/cloud is real (full event sourcing, projection rebuilds, Supabase + PowerSync, P2P). Flag the riskiest/most-irreversible decisions.
-- **Output** — a short ADR-style decision doc (likely under `docs/resources/` or `docs/repo/`) + concrete follow-up phases/tickets, and prune/merge the overlapping Backlog entries.
-
-Open question for Ken: what's the real near-term trigger — a second station/user, a specific reproducibility/audit need, or just future-proofing? That sets how much of this to pull forward vs leave as a documented target.
-
-**Also in Phase 26:** Seed `packages/shared/src/lexicon.ts` — ✅ done (shared 0.2.5). Canonical `LexiconEntry[]` for ~38 banding terms (feather tracts, molt, age/sex, condition, capture codes, protocol, morphometrics, band). TypeScript now; YAML migration is a future portability step. Exported from `@birdnerd/shared`. Future layers: developer reference, info hovers, 1-sheet handout, i18n, ontology.
+Also completed: `packages/shared/src/lexicon.ts` (shared 0.2.5), the canonical `LexiconEntry[]` for ~38 banding terms. TypeScript now; YAML migration remains a future portability step.
 
 ---
 
-## Phase 27 — Net Reconciliation, cleanup (Field 0.27.0)
+## Phase 27 — Google OAuth & Identity Linkage (Field 0.27.0)
 
-Goal: reconcile our code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
+Prove Google-only OAuth through Supabase Auth and map the external identity to a BirdNerd User Account. Define pending Workspace Membership activation by exact pre-authorized Google email. Do not yet create Workspaces through the Field PWA.
 
----
+## Phase 28 — Workspace Vertical Slice (Field 0.28.0)
 
-## Phase 28 — Net Hours (Field 0.28.0)
+Scaffold `schemas/`, `@birdnerd/events`, `@birdnerd/banding`, and `@birdnerd/sync-state` sufficiently to prove an end-to-end `workspace.created` plus initial Admin Membership flow. A restricted Provisioner, not the Field PWA, creates this first Workspace through the ordinary event/admission/projection path. Placeholder implementations are acceptable outside the slice.
 
-Goal: Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog / net-hours groundwork.
+## Phase 29 — Local Event Core (Field 0.29.0)
 
-- Open/close time per net
-- Calculate total NET HOURS (each net = 1 net-hour for every hour run)
-- Note field for nets opened or closed in a non-standard fashion
-- Surface the net-hours total when closing the session
+Complete portable YAML/JSON-Schema Event Contracts, UUIDv7, generated TypeScript bindings with CI drift protection, `@birdnerd/events`, `@birdnerd/banding`, and a clean local event/projection store. Recreate all test and initial-hydration data to the new standards; do not migrate legacy local data.
 
----
+## Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0)
 
-## Phase 29 — Smart Band Entry (Field 0.29.0)
+Complete Supabase Event Admission, `@birdnerd/sync-state`, the Supabase event-exchange adapter, Event Bundle recovery, offline behavior, and the two-Station/two-to-four-member pilot described in the Phase 26 decision.
 
-Goal: Speed up band record entry and help catch missing or mis-deployed bands during banding.
+## Phase 31 — Net Reconciliation, cleanup (Field 0.31.0)
 
-- Enter species → suggested band size(s) pop up on screen
-- Select a band size → auto-populate the next band in that series from inventory
-- Designed to help track missing bands / errors while deploying bands
-- Ties together species band-size data, Band Inventory, and band-series sequencing
+Reconcile code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
+
+## Phase 32 — Net Hours (Field 0.32.0)
+
+Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog/net-hours groundwork.
+
+## Phase 33 — Smart Band Entry (Field 0.33.0)
+
+Speed up band record entry and help catch missing or mis-deployed bands through species-size suggestions and inventory-series sequencing.
 
 ---
 
@@ -133,9 +126,9 @@ Assumptions for Phase 22:
 
 ---
 
-## Backlog: P2P Sync Spike
+## Backlog: P2P Sync Spike (superseded as an integration path)
 
-Goal: Prove that 2–5 known devices can sync banding records without a central data server, using CRDT-based sync and cryptographic device identity with in-person enrollment. Runs as a parallel track to Phase 22 OCR work.
+The standalone spike remains historical research. Phase 26 selects Supabase event exchange first behind `@birdnerd/sync-state`; a P2P adapter, event signatures, and device identity are deferred until they are a concrete need. See [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md).
 
 Assumptions for Phase 23:
 - `apps/sync-spike` is a standalone PWA, isolated from the field app
@@ -212,16 +205,7 @@ Assumptions for Phase 23:
 - Scientific name / definition lookup
 - Lighter "in-the-field" utility mode
 
-**Schema Migration Framework**
-- Numbered migration runner for IndexedDB
-- Retroactively capture schema changes as migrations
-- Write each migration with a corresponding Postgres migration (for Supabase cutover)
-
-**Cloud Sync & Auth**
-- Multi-tenant data model: Organization as top-level, User entity, row-level security
-- Supabase integration: Postgres backend, Auth, IndexedDB ↔ Supabase sync
-- Consider when: multiple stations sharing data, multiple concurrent users, or data exceeds ~100K records
-- **ID migration:** Replace current numeric/short IDs with time-sortable UUIDs (UUIDv7) to support multi-org without collisions. UUIDv7 is timestamp-prefixed so IDs sort chronologically (unlike random UUIDv4), which keeps IndexedDB range queries and Postgres index performance sane. Enables shared data store OR sharded-per-org with safe merges. Valuable even without cloud sync — unique IDs allow assembling data across MAPS orgs later. Likely implementation: `uuid` npm package (`v7()` method), one-time IndexedDB migration to remap existing IDs + FK references.
+**Collaboration architecture** — absorbed into Phases 27–30: Google OAuth, Workspace Membership, UUIDv7, portable Event Contracts, event/projection stores, Supabase Event Admission/exchange, and the multi-device pilot. The clean release recreates test/hydration data rather than migrating existing local IDs.
 
 **External Data Integration**
 - NOAA weather API: auto-populate session weather fields from station coordinates + date/time (similar approach to openhamclock). Reduces manual entry, improves data consistency.
