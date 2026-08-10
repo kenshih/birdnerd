@@ -59,6 +59,8 @@ Also completed: `packages/shared/src/lexicon.ts` (shared 0.2.5), the canonical `
 
 Prove Google-only OAuth through Supabase Auth and map the external identity to a BirdNerd User Account. Define pending Workspace Membership activation by exact pre-authorized Google email. Do not yet create Workspaces through the Field PWA.
 
+Google Cloud prerequisites are recorded in [google-oauth-setup.md](apps/field/google-oauth-setup.md); Supabase provider configuration and the Field implementation remain outstanding.
+
 ## Phase 28 — Workspace Vertical Slice (Field 0.28.0)
 
 Scaffold `schemas/`, `@birdnerd/events`, `@birdnerd/banding`, and `@birdnerd/sync-state` sufficiently to prove an end-to-end `workspace.created` plus initial Admin Membership flow. A restricted Provisioner, not the Field PWA, creates this first Workspace through the ordinary event/admission/projection path. Placeholder implementations are acceptable outside the slice.
