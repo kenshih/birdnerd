@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import AuthStatus from '../components/AuthStatus'
 
 type NavMode = 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'feedback' | 'about'
 
@@ -70,6 +71,8 @@ export default function HomeScreen({ onNavigate }: Props) {
           </React.Fragment>
         ))}
       </div>
+
+      <AuthStatus />
 
       {!installed && (
         <div style={styles.installBox}>

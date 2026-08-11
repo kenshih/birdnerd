@@ -36,8 +36,8 @@ it or put it in a browser-visible `VITE_*` variable.
 3. Paste the Google OAuth client ID and client secret from project `bird1`.
 4. Open **Authentication → URL Configuration** and set:
    - **Site URL:** `https://kenshih.github.io/birdnerd/`
-   - **Additional Redirect URLs:**
-     - `http://localhost:5173/`
+  - **Additional Redirect URLs:**
+    - `http://localhost:5173/birdnerd/`
      - `https://kenshih.github.io/birdnerd/`
 
 The client secret stays in Supabase and the password manager only. It must not
