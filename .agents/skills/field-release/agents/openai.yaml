@@ -1,0 +1,4 @@
+interface:
+  display_name: "Field Release"
+  short_description: "Version and release the BirdNerd Field app safely"
+  default_prompt: "Use $field-release to prepare and verify the next BirdNerd Field release."
