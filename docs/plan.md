@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** **Phase 27 — Google OAuth & Identity Linkage**: begin the accepted collaboration architecture sequence in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Phase 26 is complete (design decision + roadmap). Next: Phase 28 Workspace vertical slice, Phase 29 local event core, then Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
+**Now:** **Phase 28 — Workspace Vertical Slice**: continue the accepted collaboration architecture sequence in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Phase 27 is complete (Google OAuth sign-in test surface). Next: Phase 29 local event core, then Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
 
 See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -8,7 +8,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ## Completed
 
-Phases 1–21 and 24–26 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
+Phases 1–21 and 24–27 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
 
 Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
@@ -55,11 +55,11 @@ Also completed: `packages/shared/src/lexicon.ts` (shared 0.2.5), the canonical `
 
 ---
 
-## Phase 27 — Google OAuth & Identity Linkage (Field 0.27.0)
+## Phase 27 — Google OAuth & Identity Linkage (Field 0.27.0) ✅
 
 Prove Google-only OAuth through Supabase Auth and map the external identity to a BirdNerd User Account. Define pending Workspace Membership activation by exact pre-authorized Google email. Do not yet create Workspaces through the Field PWA.
 
-Google Cloud prerequisites are recorded in [google-oauth-setup.md](apps/field/google-oauth-setup.md); Supabase provider configuration and the Field implementation remain outstanding.
+Completed: Google-only Supabase Auth is configured and Field 0.27.0 provides a sign-in test surface with session restore and sign-out. [google-oauth-setup.md](apps/field/google-oauth-setup.md) records the required non-secret configuration.
 
 ## Phase 28 — Workspace Vertical Slice (Field 0.28.0)
 

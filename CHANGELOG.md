@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Field 0.27.0 — **Google OAuth sign-in test surface.** The Field home screen can now start a Google-only Supabase Auth sign-in, restore the browser session after return, display the signed-in email, and sign out. It uses the local `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` configuration; no Workspace provisioning or data synchronization is included.
+
 ### Changed
 
 - Field 0.25.13 — **Capture Time now constrained to net-check slots.** Replaced free-form `<input type="time">` + secondary dropdown with a single `<select>` of `netCheckTimes` values. "Now" button snaps to the nearest net-check time instead of inserting an arbitrary `HH:mm`.
