@@ -1,3 +1,15 @@
+/**
+ * Field authentication seam.
+ *
+ * UI callers may depend only on the types and `AuthModule` interface in this
+ * file. Keep Supabase, Google, browser callback, and build-configuration
+ * details inside an adapter such as `supabaseGoogleAuth.ts`; keep BirdNerd User
+ * Account and Workspace Membership authorization in separate modules.
+ *
+ * Maintain adapter unit tests for identity mapping, sign-in redirect, session
+ * changes, errors, and callback cleanup. Maintain `AuthStatus` component tests
+ * with an in-memory AuthModule fake for each UI state and user action.
+ */
 export type ExternalIdentity = {
   provider: string
   subject: string
