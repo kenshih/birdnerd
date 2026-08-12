@@ -52,13 +52,21 @@ For the ER diagram, complete field definitions, and entity relationships, see [t
 
 **Immutable (White):** ChangeLog (append-only audit trail of all entity changes).
 
-### 4.2 Collaboration Evolution (approved, not yet implemented)
+### 4.2 Collaboration Evolution (Phase 28 vertical slice)
 
 Phase 26 replaces the standalone ChangeLog and mutable authoritative entities
 with a Workspace-scoped Event Log plus rebuildable projections. User Accounts
 authenticate through Google OAuth but BirdNerd Workspace Membership supplies
 authorization; operational roles remain separate. See
 [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
+
+Field 0.28.0 introduces the first closed-pilot access boundary: a signed-in
+identity must resolve to an active Workspace Membership before any operational
+screen is shown. A matching pending Membership activates idempotently in the
+local event-slice tests. The deployed PWA intentionally begins with no
+provisioned Event Log until Phases 29–30 add local persistence and Supabase
+event exchange; a successful Google sign-in can therefore correctly end at the
+no-access screen during this interim release.
 
 ### 4.3 Key Product Concepts
 

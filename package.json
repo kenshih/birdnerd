@@ -4,8 +4,12 @@
   "workspaces": [
     "apps/field",
     "apps/ocr",
+    "apps/provisioner",
     "apps/sync-db",
     "apps/sync-spike",
+    "packages/banding",
+    "packages/events",
+    "packages/sync-state",
     "packages/shared"
   ],
   "scripts": {
@@ -18,6 +22,9 @@
     "dev:sync-db:host": "npm --workspace @birdnerd/sync-db run dev -- --host",
     "dev:sync": "npm --workspace @birdnerd/sync-spike run dev",
     "dev:sync:host": "npm --workspace @birdnerd/sync-spike run dev -- --host",
+    "build:collaboration": "npm --workspace @birdnerd/events run build && npm --workspace @birdnerd/banding run build && npm --workspace @birdnerd/sync-state run build && npm --workspace @birdnerd/provisioner run build",
+    "test:collaboration": "npm run build:collaboration && npm --workspace @birdnerd/events run test && npm --workspace @birdnerd/banding run test && npm --workspace @birdnerd/sync-state run test && npm --workspace @birdnerd/provisioner run test",
+    "provision": "npm run build:collaboration && npm --workspace @birdnerd/provisioner run provision --",
     "build": "npm --workspace @birdnerd/field run build",
     "build:ocr": "npm --workspace @birdnerd/ocr run build",
     "build:sync-db": "npm --workspace @birdnerd/sync-db run build",

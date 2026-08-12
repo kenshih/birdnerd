@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-**Now:** **Phase 28 — Workspace Vertical Slice**: continue the accepted collaboration architecture sequence in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Phase 27 is complete (Google OAuth sign-in test surface). Next: Phase 29 local event core, then Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
+**Now:** **Phase 29 — Local Event Core**: complete the portable Event Contracts, generated TypeScript bindings, and clean durable local event/projection store selected in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Phase 28 is complete (local Workspace provisioning and access vertical slice). Next: Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
 
 See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
 
@@ -10,7 +10,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ## Completed
 
-Phases 1–21 and 24–27 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
+Phases 1–21 and 24–28 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
 
 Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
@@ -44,6 +44,8 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 | 24 | Field Small Fixes (0.24.x) — code tables, Alula tract (bundle v5), form reorg, band inventory, read-only views, Playwright smoke harness + CI gate ([plan.v7](archives/plan.v7.md)) |
 | 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer, lost/destroyed-band records, and final code/export decisions ([plan.v7](archives/plan.v7.md)) |
 | 26 | Long-term Architecture Review — accepted local-first collaboration architecture, ADRs, diagrams, and reordered roadmap ([ADR 0016](adr/0016-event-sourced-collaboration-architecture.md)) |
+| 27 | Google OAuth Sign-in Surface (0.27.x) — provider-neutral Auth seam, Google session restoration, and callback cleanup |
+| 28 | Workspace Vertical Slice (0.28.0) — local Provisioner event flow, pending Membership activation, and Field access gate |
 
 ---
 
@@ -63,9 +65,18 @@ Prove Google-only OAuth through Supabase Auth and establish a provider-neutral e
 
 Completed: Google-only Supabase Auth is configured and Field 0.27.3 provides a sign-in test surface with session restore, credential-fragment cleanup, and sign-out. Field UI depends on a provider-neutral `AuthModule`, while the Supabase/Google adapter owns provider-specific details and test fakes cross the same seam. The GitHub Pages Field build receives the required publishable Supabase configuration. [google-oauth-setup.md](apps/field/google-oauth-setup.md) records the required non-secret configuration.
 
-## Phase 28 — Workspace Vertical Slice (Field 0.28.0)
+## Phase 28 — Workspace Vertical Slice (Field 0.28.0) ✅
 
-Scaffold `schemas/`, `@birdnerd/events`, `@birdnerd/banding`, and `@birdnerd/sync-state` sufficiently to prove an end-to-end `workspace.created` plus initial Admin Membership flow. A restricted Provisioner, not the Field PWA, creates this first Workspace through the ordinary event/admission/projection path. Include the first identity-linkage and access-resolution vertical slice: a signed-in Google identity resolves to either active Workspace access or the no-access screen; a matching pre-authorized pending Membership activates idempotently. The UX contract lives in [ux-specifications.md § 0](apps/field/ux-specifications.md#0-authentication--access). Placeholder implementations are acceptable outside the slice.
+Completed: scaffolded the draft `schemas/`, `@birdnerd/events`,
+`@birdnerd/banding`, and `@birdnerd/sync-state` vertical slice; UUIDv7-backed
+`workspace.created`, pending Membership, identity-linkage, and idempotent
+activation events pass through local admission before projection. The separate
+local-only TypeScript Provisioner CLI emits the initial Workspace and pending
+Admin/Contributor Memberships to draft JSON Event Logs, never database rows or
+projections. Field 0.28.0 now gates operational UI on Workspace access and
+shows the full sign-in/checking/no-access/active UX. The local JSON hand-off,
+handwritten bindings, and in-memory store are explicitly temporary until the
+Phase 29 event core and Phase 30 Supabase exchange.
 
 ## Phase 29 — Local Event Core (Field 0.29.0)
 

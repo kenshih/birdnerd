@@ -1,0 +1,16 @@
+{
+  "name": "@birdnerd/provisioner",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@birdnerd/banding": "0.1.0",
+    "@birdnerd/events": "0.1.0",
+    "@birdnerd/sync-state": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "vitest run src",
+    "provision": "node dist/index.js"
+  }
+}

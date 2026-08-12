@@ -15,6 +15,8 @@ import AboutPage from './pages/AboutPage'
 import UpdateBanner from './components/UpdateBanner'
 import ErrorBoundary from './components/ErrorBoundary'
 import { createFieldAuthModule } from './auth/fieldAuth'
+import WorkspaceAccessGate from './components/WorkspaceAccessGate'
+import { createFieldWorkspaceAccessModule } from './access/fieldWorkspaceAccess'
 
 type AppView =
   | { mode: 'home' }
@@ -33,6 +35,7 @@ type AppView =
 export default function App() {
   const [view, setView] = useState<AppView>({ mode: 'home' })
   const auth = useMemo(() => createFieldAuthModule(), [])
+  const workspaceAccess = useMemo(() => createFieldWorkspaceAccessModule(), [])
   const goHome = () => setView({ mode: 'home' })
 
   const {
@@ -116,12 +119,14 @@ export default function App() {
     window.location.href = 'mailto:ks.birdnerd@pm.me?subject=BirdNerd%20Feedback'
     setView({ mode: 'home' })
   } else {
-    page = <HomeScreen auth={auth} onNavigate={(mode) => setView({ mode } as AppView)} />
+    page = <HomeScreen onNavigate={(mode) => setView({ mode } as AppView)} />
   }
 
   return (
     <ErrorBoundary>
-      {page}
+      <WorkspaceAccessGate auth={auth} workspaceAccess={workspaceAccess}>
+        {page}
+      </WorkspaceAccessGate>
       {needRefresh && <UpdateBanner onUpdate={() => updateServiceWorker(true)} />}
     </ErrorBoundary>
   )

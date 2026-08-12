@@ -22,7 +22,7 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'npm run dev',
+    command: 'VITE_E2E_ACCESS=true npm run dev',
     url: 'http://localhost:5173/birdnerd/',
     reuseExistingServer: !process.env.CI,
     timeout: 60_000,
