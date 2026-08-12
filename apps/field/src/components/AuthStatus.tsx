@@ -2,6 +2,17 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { isSupabaseConfigured, supabase } from '../auth/supabaseClient'
 
+function clearOAuthCallbackFragment() {
+  const callback = new URLSearchParams(window.location.hash.slice(1))
+  if (!callback.has('access_token') || !callback.has('refresh_token')) return
+
+  window.history.replaceState(
+    window.history.state,
+    document.title,
+    `${window.location.pathname}${window.location.search}`,
+  )
+}
+
 export default function AuthStatus() {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -21,6 +32,7 @@ export default function AuthStatus() {
       setSession(data.session)
       setIsLoading(false)
       setMessage(error?.message ?? (data.session ? 'Signed in with Google.' : 'Not signed in.'))
+      if (data.session) clearOAuthCallbackFragment()
     })
 
     const {
@@ -30,6 +42,7 @@ export default function AuthStatus() {
       setSession(nextSession)
       setIsLoading(false)
       setMessage(nextSession ? 'Signed in with Google.' : 'Not signed in.')
+      if (nextSession) clearOAuthCallbackFragment()
     })
 
     return () => {

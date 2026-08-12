@@ -43,6 +43,10 @@ it or put it in a browser-visible `VITE_*` variable.
 The client secret stays in Supabase and the password manager only. It must not
 be added to a committed `.env` file or a browser-visible `VITE_*` variable.
 
+After a successful client-only OAuth callback, Supabase returns the temporary
+session tokens in the URL fragment. Field 0.27.2 persists the session, then
+removes that fragment from the browser URL.
+
 Follow Supabase's current [Login with Google setup instructions](https://supabase.com/docs/guides/auth/social-login/auth-google) for the Dashboard flow. Its displayed callback URL and provider requirements take precedence if they change.
 
 ## Later Phase 27 release guardrails

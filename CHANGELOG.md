@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 
+- Field 0.27.2 — **OAuth callback credential cleanup.** After Supabase persists a successful Google session, the Field app removes the access-token and refresh-token fragment from the browser URL without changing the app route.
 - Field 0.27.1 — **Google OAuth configuration in the deployed app.** The GitHub Pages Field build now receives the existing `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` GitHub Actions variables, so the deployed app can initialize Supabase Auth instead of reporting that Google sign-in is unavailable.
 
 ### Changed
