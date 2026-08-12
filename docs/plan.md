@@ -57,15 +57,15 @@ Also completed: `packages/shared/src/lexicon.ts` (shared 0.2.5), the canonical `
 
 ---
 
-## Phase 27 — Google OAuth & Identity Linkage (Field 0.27.0) ✅
+## Phase 27 — Google OAuth Sign-in Surface (Field 0.27.0) ✅
 
-Prove Google-only OAuth through Supabase Auth and map the external identity to a BirdNerd User Account. Define pending Workspace Membership activation by exact pre-authorized Google email. Do not yet create Workspaces through the Field PWA.
+Prove Google-only OAuth through Supabase Auth and establish a provider-neutral external identity seam. Do not yet create Workspaces through the Field PWA.
 
 Completed: Google-only Supabase Auth is configured and Field 0.27.3 provides a sign-in test surface with session restore, credential-fragment cleanup, and sign-out. Field UI depends on a provider-neutral `AuthModule`, while the Supabase/Google adapter owns provider-specific details and test fakes cross the same seam. The GitHub Pages Field build receives the required publishable Supabase configuration. [google-oauth-setup.md](apps/field/google-oauth-setup.md) records the required non-secret configuration.
 
 ## Phase 28 — Workspace Vertical Slice (Field 0.28.0)
 
-Scaffold `schemas/`, `@birdnerd/events`, `@birdnerd/banding`, and `@birdnerd/sync-state` sufficiently to prove an end-to-end `workspace.created` plus initial Admin Membership flow. A restricted Provisioner, not the Field PWA, creates this first Workspace through the ordinary event/admission/projection path. Placeholder implementations are acceptable outside the slice.
+Scaffold `schemas/`, `@birdnerd/events`, `@birdnerd/banding`, and `@birdnerd/sync-state` sufficiently to prove an end-to-end `workspace.created` plus initial Admin Membership flow. A restricted Provisioner, not the Field PWA, creates this first Workspace through the ordinary event/admission/projection path. Include the first identity-linkage and access-resolution vertical slice: a signed-in Google identity resolves to either active Workspace access or the no-access screen; a matching pre-authorized pending Membership activates idempotently. The UX contract lives in [ux-specifications.md § 0](apps/field/ux-specifications.md#0-authentication--access). Placeholder implementations are acceptable outside the slice.
 
 ## Phase 29 — Local Event Core (Field 0.29.0)
 

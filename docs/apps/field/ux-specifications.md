@@ -4,6 +4,36 @@ Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
 
 ---
 
+## 0. Authentication & Access
+
+Google sign-in establishes an external identity; it does not by itself grant
+access to BirdNerd. After a successful sign-in, Field resolves that identity
+to a BirdNerd User Account and active Workspace Membership before showing any
+workspace data or operational UI. This is a closed pilot: there is no
+self-service account creation or Workspace joining. An Admin or restricted
+Provisioner must pre-authorize the person's exact Google email address.
+
+| Result after Google login | What Field shows | Available actions |
+| --- | --- | --- |
+| Not signed in | Google sign-in screen | Continue with Google |
+| Resolving access | “Checking access…” screen | Wait; no workspace content is visible |
+| No BirdNerd account or eligible Membership | “You don’t have access to BirdNerd yet” screen, including the signed-in email | Sign out or use another Google account |
+| Pending Membership with matching pre-authorized email | Activation/linking progress, then the Workspace | Wait; activation is automatic and idempotent |
+| Active Workspace Membership | Normal Field UI for the selected Workspace | Use capabilities permitted by the Membership role |
+
+The access-denied screen must not create an account automatically, display
+workspace data, or offer an in-app request/join flow. Its purpose is to make a
+successful Google login understandable without implying BirdNerd access.
+
+Roles are converted into UI capabilities at the Workspace boundary. A
+Contributor sees the operational Field screens; an Admin also sees
+workspace/member-management screens. Hiding a page or button is UX only:
+server-side Event Admission independently verifies active Membership before it
+accepts an event. See [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md)
+for the authorization model.
+
+---
+
 ## 1. Home Screen (Navigation Hub)
 
 **Purpose:** Central entry point. All major workflows start here.

@@ -3,6 +3,10 @@ import type { AuthModule, AuthState } from '../auth/authModule'
 
 type Props = { auth: AuthModule }
 
+/**
+ * Authentication-only test surface. The post-login access outcomes and their
+ * UX are specified in docs/apps/field/ux-specifications.md (§ 0).
+ */
 export default function AuthStatus({ auth }: Props) {
   const [state, setState] = useState<AuthState>({ kind: 'checking' })
 
