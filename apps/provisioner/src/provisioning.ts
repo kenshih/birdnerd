@@ -6,12 +6,12 @@
  */
 
 import { admitWorkspaceEvent } from '@birdnerd/banding'
-import { canonicalizeEmail, createDraftEvent, createUuidV7, type DomainEvent, type MembershipRole } from '@birdnerd/events'
+import { canonicalizeEmail, createDraftEvent, createUuidV7, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
 import { LocalEventLog } from '@birdnerd/sync-state'
 
 export type PendingMemberInput = {
   email: string
-  role: MembershipRole
+  role: WorkspaceMembershipRole
 }
 
 export type ProvisionWorkspaceInput = {
@@ -65,7 +65,7 @@ export function parsePendingMember(value: string): PendingMemberInput {
   const separator = value.lastIndexOf(':')
   if (separator <= 0) throw new Error('A pending member must use email:admin or email:contributor.')
   const email = canonicalizeEmail(value.slice(0, separator))
-  const role = value.slice(separator + 1) as MembershipRole
+  const role = value.slice(separator + 1) as WorkspaceMembershipRole
   if (role !== 'admin' && role !== 'contributor') throw new Error('Membership role must be admin or contributor.')
   return { email, role }
 }

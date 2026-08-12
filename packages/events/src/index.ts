@@ -7,7 +7,8 @@
 
 export type UuidV7 = string
 
-export type MembershipRole = 'admin' | 'contributor'
+/** The access role assigned through a Workspace Membership, never an operational role. */
+export type WorkspaceMembershipRole = 'admin' | 'contributor'
 
 export type ExternalIdentity = {
   provider: 'google'
@@ -28,7 +29,7 @@ export type WorkspaceCreatedPayload = {
 export type MembershipPreauthorizedPayload = {
   membership_id: UuidV7
   email: string
-  role: MembershipRole
+  role: WorkspaceMembershipRole
 }
 
 export type UserAccountLinkedPayload = {

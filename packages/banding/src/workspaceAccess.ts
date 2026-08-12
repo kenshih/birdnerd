@@ -11,7 +11,7 @@ import {
   createUuidV7,
   type DomainEvent,
   type ExternalIdentity,
-  type MembershipRole,
+  type WorkspaceMembershipRole,
 } from '@birdnerd/events'
 
 export type Workspace = {
@@ -19,23 +19,34 @@ export type Workspace = {
   name: string
 }
 
-export type Membership = {
+/** A person's BirdNerd access relationship to one Workspace. */
+export type WorkspaceMembership = {
   membership_id: string
   workspace_id: string
   email: string
-  role: MembershipRole
+  role: WorkspaceMembershipRole
   status: 'pending' | 'active'
   user_account_id?: string
 }
 
+/**
+ * BirdNerd's own account for an authenticated person. It links an external
+ * identity such as Google to BirdNerd access; it is neither the external
+ * identity itself nor the domain Person record that Phase 29 later connects.
+ */
 export type UserAccount = {
   user_account_id: string
   identity: ExternalIdentity
 }
 
+/**
+ * The rebuildable, in-memory current view made by replaying this slice's
+ * Workspace and access events. It is not a durable store or an authoritative
+ * server-side projection.
+ */
 export type WorkspaceProjection = {
   workspaces: ReadonlyMap<string, Workspace>
-  memberships: ReadonlyMap<string, Membership>
+  workspace_memberships: ReadonlyMap<string, WorkspaceMembership>
   user_accounts: ReadonlyMap<string, UserAccount>
 }
 
@@ -44,13 +55,18 @@ export type AdmissionDecision =
   | { accepted: false; reason: string }
 
 export type AccessResolution =
-  | { kind: 'active'; workspace: Workspace; membership: Membership; user_account: UserAccount }
-  | { kind: 'pending'; membership: Membership }
+  | { kind: 'active'; workspace: Workspace; workspace_membership: WorkspaceMembership; user_account: UserAccount }
+  | { kind: 'pending'; workspace_membership: WorkspaceMembership }
   | { kind: 'no-access' }
 
+/**
+ * Replay the limited Phase 28 event set into the current Workspace access
+ * view. The Event Log remains authoritative; callers may discard and rebuild
+ * this projection at any time.
+ */
 export function projectWorkspaceEvents(events: readonly DomainEvent[]): WorkspaceProjection {
   const workspaces = new Map<string, Workspace>()
-  const memberships = new Map<string, Membership>()
+  const workspaceMemberships = new Map<string, WorkspaceMembership>()
   const userAccounts = new Map<string, UserAccount>()
 
   for (const event of events) {
@@ -60,7 +76,7 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
         name: event.payload.name,
       })
     } else if (event.event_type === 'membership.preauthorized') {
-      memberships.set(event.payload.membership_id, {
+      workspaceMemberships.set(event.payload.membership_id, {
         membership_id: event.payload.membership_id,
         workspace_id: event.workspace_id,
         email: event.payload.email,
@@ -73,10 +89,10 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
         identity: event.payload.identity,
       })
     } else if (event.event_type === 'membership.activated') {
-      const membership = memberships.get(event.payload.membership_id)
-      if (membership) {
-        memberships.set(membership.membership_id, {
-          ...membership,
+      const workspaceMembership = workspaceMemberships.get(event.payload.membership_id)
+      if (workspaceMembership) {
+        workspaceMemberships.set(workspaceMembership.membership_id, {
+          ...workspaceMembership,
           status: 'active',
           user_account_id: event.payload.user_account_id,
         })
@@ -84,9 +100,14 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
     }
   }
 
-  return { workspaces, memberships, user_accounts: userAccounts }
+  return { workspaces, workspace_memberships: workspaceMemberships, user_accounts: userAccounts }
 }
 
+/**
+ * Apply the Phase 28 local admission rules before an event can enter the
+ * Event Log. This proves the ordinary admission boundary; authenticated
+ * Supabase Event Admission replaces these local rules in Phase 30.
+ */
 export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: readonly DomainEvent[]): AdmissionDecision {
   const projection = projectWorkspaceEvents(existingEvents)
   const existingById = existingEvents.find(event => event.event_id === candidate.event_id)
@@ -106,11 +127,11 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
 
   if (candidate.event_type === 'membership.preauthorized') {
     if (candidate.actor.kind !== 'restricted-provisioner') return deny('Only the restricted Provisioner can pre-authorize a Membership in Phase 28.')
-    if (projection.memberships.has(candidate.payload.membership_id)) return deny('Membership already exists.')
-    const matchingEmail = [...projection.memberships.values()].find(membership => (
-      membership.workspace_id === candidate.workspace_id && membership.email === candidate.payload.email
+    if (projection.workspace_memberships.has(candidate.payload.membership_id)) return deny('Workspace Membership already exists.')
+    const matchingEmail = [...projection.workspace_memberships.values()].find(workspaceMembership => (
+      workspaceMembership.workspace_id === candidate.workspace_id && workspaceMembership.email === candidate.payload.email
     ))
-    if (matchingEmail) return deny('A Membership is already pre-authorized for that email in this Workspace.')
+    if (matchingEmail) return deny('A Workspace Membership is already pre-authorized for that email in this Workspace.')
     return { accepted: true }
   }
 
@@ -124,34 +145,40 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
   }
 
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')
-  const membership = projection.memberships.get(candidate.payload.membership_id)
+  const workspaceMembership = projection.workspace_memberships.get(candidate.payload.membership_id)
   const account = projection.user_accounts.get(candidate.payload.user_account_id)
-  if (!membership || membership.workspace_id !== candidate.workspace_id) return deny('Membership does not exist in the target Workspace.')
-  if (!account || !sameIdentity(account.identity, candidate.actor.identity)) return deny('Membership activation must target the signed-in User Account.')
-  if (membership.email !== candidate.actor.identity.email) return deny('Membership email does not match the signed-in identity.')
-  if (membership.status === 'active' && membership.user_account_id !== account.user_account_id) return deny('Membership is already active for another User Account.')
+  if (!workspaceMembership || workspaceMembership.workspace_id !== candidate.workspace_id) return deny('Workspace Membership does not exist in the target Workspace.')
+  if (!account || !sameIdentity(account.identity, candidate.actor.identity)) return deny('Workspace Membership activation must target the signed-in User Account.')
+  if (workspaceMembership.email !== candidate.actor.identity.email) return deny('Workspace Membership email does not match the signed-in identity.')
+  if (workspaceMembership.status === 'active' && workspaceMembership.user_account_id !== account.user_account_id) return deny('Workspace Membership is already active for another User Account.')
   return { accepted: true }
 }
 
+/** Resolve an external identity to current Workspace access without changing the Event Log. */
 export function resolveWorkspaceAccess(events: readonly DomainEvent[], identity: ExternalIdentity): AccessResolution {
   const projection = projectWorkspaceEvents(events)
   const account = findUserAccountByIdentity(projection, identity)
   if (account) {
-    const membership = [...projection.memberships.values()].find(candidate => (
+    const workspaceMembership = [...projection.workspace_memberships.values()].find(candidate => (
       candidate.user_account_id === account.user_account_id && candidate.status === 'active'
     ))
-    if (membership) {
-      const workspace = projection.workspaces.get(membership.workspace_id)
-      if (workspace) return { kind: 'active', workspace, membership, user_account: account }
+    if (workspaceMembership) {
+      const workspace = projection.workspaces.get(workspaceMembership.workspace_id)
+      if (workspace) return { kind: 'active', workspace, workspace_membership: workspaceMembership, user_account: account }
     }
   }
 
-  const pendingMembership = [...projection.memberships.values()].find(candidate => (
+  const pendingMembership = [...projection.workspace_memberships.values()].find(candidate => (
     candidate.status === 'pending' && candidate.email === identity.email
   ))
-  return pendingMembership ? { kind: 'pending', membership: pendingMembership } : { kind: 'no-access' }
+  return pendingMembership ? { kind: 'pending', workspace_membership: pendingMembership } : { kind: 'no-access' }
 }
 
+/**
+ * Decide, but do not append, the events needed to link a pre-authorized Google
+ * identity and activate its pending Workspace Membership. Repeating this after
+ * activation returns no events, making the operation idempotent.
+ */
 export function decidePendingMembershipActivation(events: readonly DomainEvent[], identity: ExternalIdentity): DomainEvent[] {
   const canonicalIdentity = { ...identity, email: canonicalizeEmail(identity.email) }
   const resolution = resolveWorkspaceAccess(events, canonicalIdentity)
@@ -165,7 +192,7 @@ export function decidePendingMembershipActivation(events: readonly DomainEvent[]
     ? []
     : [createDraftEvent({
         event_type: 'user-account.linked',
-        workspace_id: resolution.membership.workspace_id,
+        workspace_id: resolution.workspace_membership.workspace_id,
         command_id: commandId,
         actor,
         payload: { user_account_id: userAccountId, identity: canonicalIdentity },
@@ -175,17 +202,17 @@ export function decidePendingMembershipActivation(events: readonly DomainEvent[]
     ...linkedAccountEvent,
     createDraftEvent({
       event_type: 'membership.activated',
-      workspace_id: resolution.membership.workspace_id,
+      workspace_id: resolution.workspace_membership.workspace_id,
       command_id: commandId,
       actor,
-      payload: { membership_id: resolution.membership.membership_id, user_account_id: userAccountId },
+      payload: { membership_id: resolution.workspace_membership.membership_id, user_account_id: userAccountId },
     }),
   ]
 }
 
-function findPendingMembershipByEmail(projection: WorkspaceProjection, workspaceId: string, email: string): Membership | undefined {
-  return [...projection.memberships.values()].find(membership => (
-    membership.workspace_id === workspaceId && membership.status === 'pending' && membership.email === email
+function findPendingMembershipByEmail(projection: WorkspaceProjection, workspaceId: string, email: string): WorkspaceMembership | undefined {
+  return [...projection.workspace_memberships.values()].find(workspaceMembership => (
+    workspaceMembership.workspace_id === workspaceId && workspaceMembership.status === 'pending' && workspaceMembership.email === email
   ))
 }
 

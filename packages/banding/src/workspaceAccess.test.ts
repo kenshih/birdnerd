@@ -33,7 +33,7 @@ describe('Phase 28 Workspace access', () => {
     expect(activation.map(event => event.event_type)).toEqual(['user-account.linked', 'membership.activated'])
     expect(resolveWorkspaceAccess(events, identity).kind).toBe('active')
     expect(decidePendingMembershipActivation(events, identity)).toEqual([])
-    expect(projectWorkspaceEvents(events).memberships.get(membershipId)?.status).toBe('active')
+    expect(projectWorkspaceEvents(events).workspace_memberships.get(membershipId)?.status).toBe('active')
   })
 
   it('denies self-service identity linkage without a pending Membership', () => {

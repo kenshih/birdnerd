@@ -19,7 +19,7 @@ describe('Provisioner vertical slice', () => {
     expect(log.appendAll(activation).map(result => result.kind)).toEqual(['accepted', 'accepted'])
     expect(resolveWorkspaceAccess(log.snapshot(), identity)).toMatchObject({
       kind: 'active',
-      membership: { role: 'admin', status: 'active', email: 'admin@example.com' },
+      workspace_membership: { role: 'admin', status: 'active', email: 'admin@example.com' },
       workspace: { name: 'Cedar Creek' },
     })
     expect(decidePendingMembershipActivation(log.snapshot(), identity)).toEqual([])

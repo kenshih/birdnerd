@@ -3,6 +3,11 @@
  * proves the admission boundary without a database or network transport.
  * Phase 29 replaces it with the durable local event/projection store; Phase 30
  * adds the Supabase provider adapter, cursors, retries, and receipts.
+ *
+ * The enduring responsibility of @birdnerd/sync-state is generic
+ * event-replication state: local logs, pending/rejected events, cursors,
+ * receipts, retries, and visible sync status. It knows Event Contracts but
+ * never banding rules, projections, or Field UI state.
  */
 
 import { assertDraftEvent, type DomainEvent } from '@birdnerd/events'

@@ -31,8 +31,8 @@ export function createDraftLocalWorkspaceAccess(initialEvents: readonly DomainEv
         access: {
           workspace_id: resolution.workspace.workspace_id,
           workspace_name: resolution.workspace.name,
-          membership_id: resolution.membership.membership_id,
-          role: resolution.membership.role,
+          membership_id: resolution.workspace_membership.membership_id,
+          role: resolution.workspace_membership.role,
           user_account_id: resolution.user_account.user_account_id,
         },
       }
