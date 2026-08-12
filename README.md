@@ -24,6 +24,15 @@ npm run dev:ocr
 
 The dev server starts at `http://localhost:5173`.
 
+If a previous Field development server is still using that port, inspect it and
+then stop it with the narrowly scoped command below. It refuses to signal a
+process not running from `apps/field`.
+
+```bash
+npm run kill:dev -- --dry-run
+npm run kill:dev
+```
+
 **To test on your iPhone (same WiFi network):**
 1. Run `npm run dev:host`
 2. Your terminal will show a network URL like `http://192.168.x.x:5173`

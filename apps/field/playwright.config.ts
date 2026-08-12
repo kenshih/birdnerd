@@ -22,9 +22,11 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'VITE_E2E_ACCESS=true npm run dev',
+    command: 'VITE_E2E_ACCESS=true npm run dev -- --strictPort',
     url: 'http://localhost:5173/birdnerd/',
-    reuseExistingServer: !process.env.CI,
+    // The access fixture is supplied only to this server; a normal `npm run dev`
+    // process must never be reused for these tests.
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 })

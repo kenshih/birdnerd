@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Repo — Add `npm run kill:dev`, a guarded command to stop only a Field
+  development server listening on port 5173. It supports `--dry-run` and
+  refuses to signal a process not running from `apps/field`.
+- Field — Make `npm run test:e2e` start only its fixture-enabled Vite server
+  and fail immediately when port 5173 is occupied, rather than timing out.
 - Field 0.28.0 — **Workspace vertical slice.** Add draft YAML Workspace Event
   Contracts and the `@birdnerd/events`, `@birdnerd/banding`, and
   `@birdnerd/sync-state` scaffolds; their local append-only log admits every
