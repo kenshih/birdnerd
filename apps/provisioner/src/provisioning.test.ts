@@ -11,12 +11,12 @@ describe('Provisioner vertical slice', () => {
       admin_email: 'Admin@Example.com',
       pending_members: [parsePendingMember('contributor@example.com:contributor')],
     })
-    const handoff = decodeDraftEventLog(encodeDraftEventLog(provisioned))
+    const handoff = decodeDraftEventLog(encodeDraftEventLog(provisioned)).reverse()
     const log = new LocalEventLog(handoff, admitWorkspaceEvent)
     const identity = { provider: 'google' as const, subject: 'google-admin', email: 'admin@example.com' }
 
     const activation = decidePendingMembershipActivation(log.snapshot(), identity)
-    expect(log.appendAll(activation).map(result => result.kind)).toEqual(['accepted', 'accepted'])
+    expect(log.appendAll(activation.reverse()).map(result => result.kind)).toEqual(['accepted', 'accepted'])
     expect(resolveWorkspaceAccess(log.snapshot(), identity)).toMatchObject({
       kind: 'active',
       workspace_membership: { role: 'admin', status: 'active', email: 'admin@example.com' },

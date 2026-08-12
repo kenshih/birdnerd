@@ -69,6 +69,8 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
   const workspaceMemberships = new Map<string, WorkspaceMembership>()
   const userAccounts = new Map<string, UserAccount>()
 
+  // Build the facts that can stand alone first, so their order in an Event Log
+  // does not decide whether a later activation can be projected.
   for (const event of events) {
     if (event.event_type === 'workspace.created') {
       workspaces.set(event.payload.workspace_id, {
@@ -88,16 +90,25 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
         user_account_id: event.payload.user_account_id,
         identity: event.payload.identity,
       })
-    } else if (event.event_type === 'membership.activated') {
-      const workspaceMembership = workspaceMemberships.get(event.payload.membership_id)
-      if (workspaceMembership) {
-        workspaceMemberships.set(workspaceMembership.membership_id, {
-          ...workspaceMembership,
-          status: 'active',
-          user_account_id: event.payload.user_account_id,
-        })
-      }
     }
+  }
+
+  // Activation depends on facts that may arrive before or after it. A second
+  // deterministic pass makes projection replay-order independent while still
+  // refusing to activate a Membership whose identity and email do not match.
+  for (const event of events) {
+    if (event.event_type !== 'membership.activated') continue
+    const workspaceMembership = workspaceMemberships.get(event.payload.membership_id)
+    const account = userAccounts.get(event.payload.user_account_id)
+    if (!workspaceMembership || !account || event.actor.kind !== 'external-identity') continue
+    if (!sameIdentity(account.identity, event.actor.identity)) continue
+    if (workspaceMembership.email !== event.actor.identity.email) continue
+    if (workspaceMembership.status === 'active' && workspaceMembership.user_account_id !== account.user_account_id) continue
+    workspaceMemberships.set(workspaceMembership.membership_id, {
+      ...workspaceMembership,
+      status: 'active',
+      user_account_id: account.user_account_id,
+    })
   }
 
   return { workspaces, workspace_memberships: workspaceMemberships, user_accounts: userAccounts }
@@ -105,8 +116,10 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
 
 /**
  * Apply the Phase 28 local admission rules before an event can enter the
- * Event Log. This proves the ordinary admission boundary; authenticated
- * Supabase Event Admission replaces these local rules in Phase 30.
+ * Event Log. Rules check structure, authority, and immutable-ID conflicts but
+ * deliberately do not require another event to have arrived first: command
+ * groups must remain independently appendable and replayable in any order.
+ * Authenticated Supabase Event Admission replaces these local rules in Phase 30.
  */
 export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: readonly DomainEvent[]): AdmissionDecision {
   const projection = projectWorkspaceEvents(existingEvents)
@@ -123,8 +136,6 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     return { accepted: true }
   }
 
-  if (!projection.workspaces.has(candidate.workspace_id)) return deny('Workspace does not exist.')
-
   if (candidate.event_type === 'membership.preauthorized') {
     if (candidate.actor.kind !== 'restricted-provisioner') return deny('Only the restricted Provisioner can pre-authorize a Membership in Phase 28.')
     if (projection.workspace_memberships.has(candidate.payload.membership_id)) return deny('Workspace Membership already exists.')
@@ -139,18 +150,10 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must link its User Account.')
     if (!sameIdentity(candidate.actor.identity, candidate.payload.identity)) return deny('A User Account link must be authored by the linked identity.')
     if (findUserAccountByIdentity(projection, candidate.payload.identity)) return deny('That external identity is already linked.')
-    const pendingMembership = findPendingMembershipByEmail(projection, candidate.workspace_id, candidate.payload.identity.email)
-    if (!pendingMembership) return deny('Only a pre-authorized identity may be linked.')
     return { accepted: true }
   }
 
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')
-  const workspaceMembership = projection.workspace_memberships.get(candidate.payload.membership_id)
-  const account = projection.user_accounts.get(candidate.payload.user_account_id)
-  if (!workspaceMembership || workspaceMembership.workspace_id !== candidate.workspace_id) return deny('Workspace Membership does not exist in the target Workspace.')
-  if (!account || !sameIdentity(account.identity, candidate.actor.identity)) return deny('Workspace Membership activation must target the signed-in User Account.')
-  if (workspaceMembership.email !== candidate.actor.identity.email) return deny('Workspace Membership email does not match the signed-in identity.')
-  if (workspaceMembership.status === 'active' && workspaceMembership.user_account_id !== account.user_account_id) return deny('Workspace Membership is already active for another User Account.')
   return { accepted: true }
 }
 
@@ -208,12 +211,6 @@ export function decidePendingMembershipActivation(events: readonly DomainEvent[]
       payload: { membership_id: resolution.workspace_membership.membership_id, user_account_id: userAccountId },
     }),
   ]
-}
-
-function findPendingMembershipByEmail(projection: WorkspaceProjection, workspaceId: string, email: string): WorkspaceMembership | undefined {
-  return [...projection.workspace_memberships.values()].find(workspaceMembership => (
-    workspaceMembership.workspace_id === workspaceId && workspaceMembership.status === 'pending' && workspaceMembership.email === email
-  ))
 }
 
 function findUserAccountByIdentity(projection: WorkspaceProjection, identity: ExternalIdentity): UserAccount | undefined {

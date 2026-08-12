@@ -1,8 +1,8 @@
 # BirdNerd — Plan
 
-**Now:** **Phase 29 — Local Event Core**: complete the portable Event Contracts, generated TypeScript bindings, and clean durable local event/projection store selected in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Phase 28 is complete (local Workspace provisioning and access vertical slice). Next: Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
+**Now:** **Phase 29 — Local Event Core**: complete the portable Event Contracts, generated TypeScript bindings, and clean durable local event/projection store selected in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Next: Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
 
-See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v6.md](archives/plan.v6.md) | [archives/plan.v5.md](archives/plan.v5.md)
+See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v8.md](archives/plan.v8.md) | [archives/plan.v7.md](archives/plan.v7.md)
 
 **Release workflow:** Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work. It reconciles the planned phase with the actual diff before committing.
 
@@ -10,7 +10,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ## Completed
 
-Phases 1–21 and 24–28 are complete. See [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14, and [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25.
+Phases 1–21 and 24–28 are complete. See [plan.v8 (archived)](archives/plan.v8.md) for phases 26–28, [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25, [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, and [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14.
 
 Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
 
@@ -43,40 +43,10 @@ Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0)
 | 21 | Monorepo Migration — npm workspaces, OCR PWA scaffold, shared types package, docs restructure |
 | 24 | Field Small Fixes (0.24.x) — code tables, Alula tract (bundle v5), form reorg, band inventory, read-only views, Playwright smoke harness + CI gate ([plan.v7](archives/plan.v7.md)) |
 | 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer, lost/destroyed-band records, and final code/export decisions ([plan.v7](archives/plan.v7.md)) |
-| 26 | Long-term Architecture Review — accepted local-first collaboration architecture, ADRs, diagrams, and reordered roadmap ([ADR 0016](adr/0016-event-sourced-collaboration-architecture.md)) |
-| 27 | Google OAuth Sign-in Surface (0.27.x) — provider-neutral Auth seam, Google session restoration, and callback cleanup |
-| 28 | Workspace Vertical Slice (0.28.0) — local Provisioner event flow, pending Membership activation, and Field access gate |
 
 ---
 
 > **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (27–33) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
-
-## Phase 26 — Long-term Architecture Review ✅
-
-Completed design phase. The real trigger is present: two Stations and two to four members need concurrent, offline-capable collaboration. [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md) is the consolidated decision; its [diagram companion](adr/0016-event-sourced-collaboration-architecture-diagrams.md) visualizes it; [docs/adr/](adr/) records the durable decisions.
-
-Also completed: `packages/shared/src/lexicon.ts` (shared 0.2.5), the canonical `LexiconEntry[]` for ~38 banding terms. TypeScript now; YAML migration remains a future portability step.
-
----
-
-## Phase 27 — Google OAuth Sign-in Surface (Field 0.27.0) ✅
-
-Prove Google-only OAuth through Supabase Auth and establish a provider-neutral external identity seam. Do not yet create Workspaces through the Field PWA.
-
-Completed: Google-only Supabase Auth is configured and Field 0.27.3 provides a sign-in test surface with session restore, credential-fragment cleanup, and sign-out. Field UI depends on a provider-neutral `AuthModule`, while the Supabase/Google adapter owns provider-specific details and test fakes cross the same seam. The GitHub Pages Field build receives the required publishable Supabase configuration. [google-oauth-setup.md](apps/field/google-oauth-setup.md) records the required non-secret configuration.
-
-## Phase 28 — Workspace Vertical Slice (Field 0.28.0) ✅
-
-Completed: scaffolded the draft `schemas/`, `@birdnerd/events`,
-`@birdnerd/banding`, and `@birdnerd/sync-state` vertical slice; UUIDv7-backed
-`workspace.created`, pending Membership, identity-linkage, and idempotent
-activation events pass through local admission before projection. The separate
-local-only TypeScript Provisioner CLI emits the initial Workspace and pending
-Admin/Contributor Memberships to draft JSON Event Logs, never database rows or
-projections. Field 0.28.0 now gates operational UI on Workspace access and
-shows the full sign-in/checking/no-access/active UX. The local JSON hand-off,
-handwritten bindings, and in-memory store are explicitly temporary until the
-Phase 29 event core and Phase 30 Supabase exchange.
 
 ## Phase 29 — Local Event Core (Field 0.29.0)
 

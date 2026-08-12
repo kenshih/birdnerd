@@ -15,6 +15,7 @@ properties:
   event_id:
     type: string
     format: uuid
+    description: Canonical UUIDv7 Domain Event identifier.
   event_type:
     type: string
   event_schema_version:
@@ -23,9 +24,11 @@ properties:
   workspace_id:
     type: string
     format: uuid
+    description: Canonical UUIDv7 Workspace identifier.
   command_id:
     type: string
     format: uuid
+    description: Canonical UUIDv7 Command Group identifier.
   occurred_at:
     type: string
     format: date-time

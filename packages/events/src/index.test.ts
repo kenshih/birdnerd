@@ -32,4 +32,17 @@ describe('@birdnerd/events Phase 28 draft contracts', () => {
       payload: { membership_id: '018f8c7b-0000-7000-8000-000000000004', email: 'Bander@example.com', role: 'admin' },
     })).toThrow('canonicalized')
   })
+
+  it('rejects an Event Log entry whose canonical ID is not a UUIDv7', () => {
+    expect(() => assertDraftEvent({
+      event_id: 'not-a-uuid',
+      event_type: 'workspace.created',
+      event_schema_version: 1,
+      workspace_id: '018f8c7b-0000-7000-8000-000000000002',
+      command_id: '018f8c7b-0000-7000-8000-000000000003',
+      occurred_at: new Date().toISOString(),
+      actor: { kind: 'restricted-provisioner', provisioner_id: 'local-admin' },
+      payload: { workspace_id: '018f8c7b-0000-7000-8000-000000000002', name: 'Cedar Creek' },
+    })).toThrow('event_id must be a canonical UUIDv7')
+  })
 })

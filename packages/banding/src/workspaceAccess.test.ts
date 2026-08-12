@@ -36,21 +36,33 @@ describe('Phase 28 Workspace access', () => {
     expect(projectWorkspaceEvents(events).workspace_memberships.get(membershipId)?.status).toBe('active')
   })
 
-  it('denies self-service identity linkage without a pending Membership', () => {
+  it('accepts independently appendable identity events without granting self-service access', () => {
+    const identity = { provider: 'google' as const, subject: 'not-invited', email: 'other@example.com' }
     const candidate = createDraftEvent({
       event_type: 'user-account.linked',
       workspace_id: workspaceId,
       command_id: '018f8c7b-0000-7000-8000-000000000004',
-      actor: { kind: 'external-identity', identity: { provider: 'google', subject: 'not-invited', email: 'other@example.com' } },
+      actor: { kind: 'external-identity', identity },
       payload: {
         user_account_id: '018f8c7b-0000-7000-8000-000000000005',
-        identity: { provider: 'google', subject: 'not-invited', email: 'other@example.com' },
+        identity,
       },
     })
 
-    expect(admitWorkspaceEvent(candidate, provisionedEvents())).toEqual({
-      accepted: false,
-      reason: 'Only a pre-authorized identity may be linked.',
+    expect(admitWorkspaceEvent(candidate, provisionedEvents())).toEqual({ accepted: true })
+    expect(resolveWorkspaceAccess([...provisionedEvents(), candidate], identity)).toEqual({ kind: 'no-access' })
+  })
+
+  it('replays provisioned and activation event groups in any arrival order', () => {
+    const identity = { provider: 'google' as const, subject: 'google-123', email: 'bander@example.com' }
+    const provisioned = provisionedEvents()
+    const activation = decidePendingMembershipActivation([...provisioned].reverse(), identity)
+    const events = [...provisioned, ...activation].reverse()
+
+    expect(resolveWorkspaceAccess(events, identity)).toMatchObject({
+      kind: 'active',
+      workspace: { name: 'Cedar Creek' },
+      workspace_membership: { status: 'active', role: 'admin' },
     })
   })
 })

@@ -7,6 +7,8 @@
 
 export type UuidV7 = string
 
+const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
 /** The access role assigned through a Workspace Membership, never an operational role. */
 export type WorkspaceMembershipRole = 'admin' | 'contributor'
 
@@ -96,6 +98,10 @@ export function createUuidV7(now = Date.now(), random: (bytes: Uint8Array) => Ui
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
 }
 
+export function isUuidV7(value: unknown): value is UuidV7 {
+  return typeof value === 'string' && UUID_V7_PATTERN.test(value)
+}
+
 export function canonicalizeEmail(email: string): string {
   const canonical = email.trim().toLowerCase()
   if (!canonical || !canonical.includes('@')) throw new Error('A valid email address is required.')
@@ -127,11 +133,11 @@ export function decodeDraftEventLog(serialized: string): DomainEvent[] {
 
 export function assertDraftEvent(value: unknown): asserts value is DomainEvent {
   if (!isRecord(value)) throw new Error('A Domain Event must be an object.')
-  assertString(value.event_id, 'event_id')
+  assertUuidV7(value.event_id, 'event_id')
   if (!isEventType(value.event_type)) throw new Error('Unsupported draft event type.')
   if (value.event_schema_version !== 1) throw new Error('Unsupported draft event schema version.')
-  assertString(value.workspace_id, 'workspace_id')
-  assertString(value.command_id, 'command_id')
+  assertUuidV7(value.workspace_id, 'workspace_id')
+  assertUuidV7(value.command_id, 'command_id')
   assertString(value.occurred_at, 'occurred_at')
   if (Number.isNaN(Date.parse(value.occurred_at))) throw new Error('occurred_at must be an ISO date-time.')
   assertActor(value.actor)
@@ -145,7 +151,7 @@ function assertActor(value: unknown): asserts value is EventActor {
     return
   }
   if (value.kind === 'user-account') {
-    assertString(value.user_account_id, 'actor.user_account_id')
+    assertUuidV7(value.user_account_id, 'actor.user_account_id')
     return
   }
   if (value.kind === 'external-identity') {
@@ -158,25 +164,25 @@ function assertActor(value: unknown): asserts value is EventActor {
 function assertPayload(eventType: EventType, value: unknown, workspaceId: string): void {
   if (!isRecord(value)) throw new Error('A Domain Event payload must be an object.')
   if (eventType === 'workspace.created') {
-    assertString(value.workspace_id, 'payload.workspace_id')
+    assertUuidV7(value.workspace_id, 'payload.workspace_id')
     assertString(value.name, 'payload.name')
     if (value.workspace_id !== workspaceId) throw new Error('workspace.created must target its payload workspace.')
     return
   }
   if (eventType === 'membership.preauthorized') {
-    assertString(value.membership_id, 'payload.membership_id')
+    assertUuidV7(value.membership_id, 'payload.membership_id')
     assertString(value.email, 'payload.email')
     if (value.email !== canonicalizeEmail(value.email)) throw new Error('Pre-authorized email must be canonicalized.')
     if (value.role !== 'admin' && value.role !== 'contributor') throw new Error('Unsupported Membership role.')
     return
   }
   if (eventType === 'user-account.linked') {
-    assertString(value.user_account_id, 'payload.user_account_id')
+    assertUuidV7(value.user_account_id, 'payload.user_account_id')
     assertIdentity(value.identity)
     return
   }
-  assertString(value.membership_id, 'payload.membership_id')
-  assertString(value.user_account_id, 'payload.user_account_id')
+  assertUuidV7(value.membership_id, 'payload.membership_id')
+  assertUuidV7(value.user_account_id, 'payload.user_account_id')
 }
 
 function assertIdentity(value: unknown): asserts value is ExternalIdentity {
@@ -197,4 +203,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function assertString(value: unknown, label: string): asserts value is string {
   if (typeof value !== 'string' || value.trim() === '') throw new Error(`${label} must be a non-empty string.`)
+}
+
+function assertUuidV7(value: unknown, label: string): asserts value is UuidV7 {
+  if (!isUuidV7(value)) throw new Error(`${label} must be a canonical UUIDv7.`)
 }
