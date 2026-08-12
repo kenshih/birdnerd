@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import type { Session, Location, Person, Band } from '@birdnerd/shared'
 import BandHistoryView from './components/BandHistoryView'
@@ -14,6 +14,7 @@ import BandInventory from './pages/BandInventory'
 import AboutPage from './pages/AboutPage'
 import UpdateBanner from './components/UpdateBanner'
 import ErrorBoundary from './components/ErrorBoundary'
+import { createFieldAuthModule } from './auth/fieldAuth'
 
 type AppView =
   | { mode: 'home' }
@@ -31,6 +32,7 @@ type AppView =
 
 export default function App() {
   const [view, setView] = useState<AppView>({ mode: 'home' })
+  const auth = useMemo(() => createFieldAuthModule(), [])
   const goHome = () => setView({ mode: 'home' })
 
   const {
@@ -114,7 +116,7 @@ export default function App() {
     window.location.href = 'mailto:ks.birdnerd@pm.me?subject=BirdNerd%20Feedback'
     setView({ mode: 'home' })
   } else {
-    page = <HomeScreen onNavigate={(mode) => setView({ mode } as AppView)} />
+    page = <HomeScreen auth={auth} onNavigate={(mode) => setView({ mode } as AppView)} />
   }
 
   return (

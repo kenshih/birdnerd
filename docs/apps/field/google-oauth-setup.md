@@ -1,7 +1,7 @@
 # Google OAuth setup
 
 **Status:** Google Cloud prerequisites and Supabase provider configuration are
-complete. Field 0.27.0 provides a Google OAuth sign-in test surface.
+complete. Field 0.27.3 provides a Google OAuth sign-in test surface.
 
 This note records the non-secret configuration for BirdNerd's Google-only login
 surface. The governing product decision is [ADR 0007](../../adr/0007-google-oauth-initial-login.md).

@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.27.3 — **Authentication seam and test coverage.** Field UI now depends on a provider-neutral `AuthModule`; the Supabase/Google adapter owns configuration, OAuth, session restoration, callback cleanup, and identity mapping. Added adapter unit tests and `AuthStatus` component tests with an in-memory fake; `jsdom` is now the pinned Field component-test environment.
 - Repo — Add the project-specific `$field-release` skill to ensure Field releases update the version, lockfile, changelog, phase tracker, and validation evidence before commit or push.
 - Field 0.27.0 — **Google OAuth sign-in test surface.** The Field home screen can now start a Google-only Supabase Auth sign-in, restore the browser session after return, display the signed-in email, and sign out. It uses the local `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` configuration; no Workspace provisioning or data synchronization is included.
 

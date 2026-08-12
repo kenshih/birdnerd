@@ -376,6 +376,20 @@ It replaces mutable authoritative entities with a local-first event model:
 - Event Bundles replace the former mutable JSON bundle. Restore rebuilds a
   local replica and then synchronizes; history merge/adoption is deferred.
 
+### Field Authentication Module (Field 0.27.3)
+
+Field UI depends on the provider-neutral `AuthModule` interface, which exposes
+current authentication state, state subscription, sign-in initiation, and
+sign-out. Its `ExternalIdentity` represents an external authenticated identity
+only; it is not a BirdNerd User Account and grants no Workspace authorization.
+
+`SupabaseGoogleAuth` is the current adapter. It owns Vite configuration,
+Supabase client construction, Google OAuth scopes and redirect construction,
+session restoration, and post-persistence OAuth-fragment cleanup. The
+unavailable-configuration adapter and in-memory test fake implement the same
+interface. Future identity linkage and Workspace Membership remain separate
+modules so the identity provider cannot become the authorization source.
+
 The approved rollout is Phases 27–30 in [docs/plan.md](../../plan.md). The
 first pilot covers two Stations and two to four members, including parallel
 work at one Station and offline convergence.

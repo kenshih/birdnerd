@@ -1,108 +1,58 @@
 import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/supabase-js'
-import { isSupabaseConfigured, supabase } from '../auth/supabaseClient'
+import type { AuthModule, AuthState } from '../auth/authModule'
 
-function clearOAuthCallbackFragment() {
-  const callback = new URLSearchParams(window.location.hash.slice(1))
-  if (!callback.has('access_token') || !callback.has('refresh_token')) return
+type Props = { auth: AuthModule }
 
-  window.history.replaceState(
-    window.history.state,
-    document.title,
-    `${window.location.pathname}${window.location.search}`,
-  )
-}
-
-export default function AuthStatus() {
-  const [session, setSession] = useState<Session | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [message, setMessage] = useState('Checking sign-in status…')
+export default function AuthStatus({ auth }: Props) {
+  const [state, setState] = useState<AuthState>({ kind: 'checking' })
 
   useEffect(() => {
-    if (!supabase) {
-      setIsLoading(false)
-      setMessage('Google sign-in is not configured on this device.')
-      return
-    }
-
     let isMounted = true
-
-    void supabase.auth.getSession().then(({ data, error }) => {
-      if (!isMounted) return
-      setSession(data.session)
-      setIsLoading(false)
-      setMessage(error?.message ?? (data.session ? 'Signed in with Google.' : 'Not signed in.'))
-      if (data.session) clearOAuthCallbackFragment()
+    const unsubscribe = auth.subscribe(nextState => {
+      if (isMounted) setState(nextState)
     })
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!isMounted) return
-      setSession(nextSession)
-      setIsLoading(false)
-      setMessage(nextSession ? 'Signed in with Google.' : 'Not signed in.')
-      if (nextSession) clearOAuthCallbackFragment()
+    void auth.getState().then(nextState => {
+      if (isMounted) setState(nextState)
     })
 
     return () => {
       isMounted = false
-      subscription.unsubscribe()
+      unsubscribe()
     }
-  }, [])
+  }, [auth])
 
-  async function signInWithGoogle() {
-    if (!supabase) return
-
-    setIsLoading(true)
-    setMessage('Opening Google sign-in…')
-    const redirectTo = new URL(import.meta.env.BASE_URL, window.location.origin).toString()
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        scopes: 'openid email profile',
-      },
-    })
-
-    if (error) {
-      setIsLoading(false)
-      setMessage(error.message)
-    }
-  }
-
-  async function signOut() {
-    if (!supabase) return
-
-    setIsLoading(true)
-    const { error } = await supabase.auth.signOut()
-    setIsLoading(false)
-    setMessage(error ? error.message : 'Signed out.')
-  }
-
-  const email = session?.user.email
+  const isSignedIn = state.kind === 'signed-in'
+  const canSignIn = state.kind === 'signed-out' || state.kind === 'error'
+  const message = state.kind === 'signed-in'
+    ? state.identity.email ?? state.identity.displayName ?? 'Signed in.'
+    : state.kind === 'checking'
+      ? 'Checking sign-in status…'
+      : state.kind === 'signed-out'
+        ? 'Not signed in.'
+        : state.message
 
   return (
     <section style={styles.panel} aria-label="Google sign-in">
       <div style={styles.heading}>
         <span style={styles.label}>Google sign-in</span>
-        <span style={session ? styles.signedIn : styles.signedOut}>
-          {session ? 'Signed in' : 'Test mode'}
+        <span style={isSignedIn ? styles.signedIn : styles.signedOut}>
+          {isSignedIn ? 'Signed in' : 'Test mode'}
         </span>
       </div>
-      <p style={styles.message}>{email ?? message}</p>
-      {session ? (
-        <button style={styles.secondaryButton} type="button" onClick={() => void signOut()} disabled={isLoading}>
+      <p style={styles.message}>{message}</p>
+      {isSignedIn ? (
+        <button style={styles.secondaryButton} type="button" onClick={() => void auth.signOut()}>
           Sign out
         </button>
       ) : (
         <button
-          style={isSupabaseConfigured ? styles.primaryButton : styles.disabledButton}
+          style={canSignIn ? styles.primaryButton : styles.disabledButton}
           type="button"
-          onClick={() => void signInWithGoogle()}
-          disabled={!isSupabaseConfigured || isLoading}
+          onClick={() => void auth.beginSignIn()}
+          disabled={!canSignIn}
         >
-          {isLoading ? 'Checking…' : 'Continue with Google'}
+          {state.kind === 'checking' ? 'Checking…' : 'Continue with Google'}
         </button>
       )}
       <p style={styles.note}>This verifies authentication only. Workspace access and identity linkage follow.</p>
@@ -111,15 +61,7 @@ export default function AuthStatus() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  panel: {
-    width: '100%',
-    maxWidth: '400px',
-    background: 'rgba(255,255,255,0.12)',
-    border: '1px solid rgba(255,255,255,0.2)',
-    borderRadius: '10px',
-    padding: '1rem',
-    backdropFilter: 'blur(4px)',
-  },
+  panel: { width: '100%', maxWidth: '400px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', padding: '1rem', backdropFilter: 'blur(4px)' },
   heading: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' },
   label: { fontSize: '0.9rem', fontWeight: 600 },
   signedIn: { background: '#d8f3dc', color: '#1b4332', borderRadius: '999px', padding: '0.2rem 0.5rem', fontSize: '0.72rem', fontWeight: 700 },

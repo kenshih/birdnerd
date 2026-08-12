@@ -61,7 +61,7 @@ Also completed: `packages/shared/src/lexicon.ts` (shared 0.2.5), the canonical `
 
 Prove Google-only OAuth through Supabase Auth and map the external identity to a BirdNerd User Account. Define pending Workspace Membership activation by exact pre-authorized Google email. Do not yet create Workspaces through the Field PWA.
 
-Completed: Google-only Supabase Auth is configured and Field 0.27.2 provides a sign-in test surface with session restore, credential-fragment cleanup, and sign-out. The GitHub Pages Field build receives the required publishable Supabase configuration. [google-oauth-setup.md](apps/field/google-oauth-setup.md) records the required non-secret configuration.
+Completed: Google-only Supabase Auth is configured and Field 0.27.3 provides a sign-in test surface with session restore, credential-fragment cleanup, and sign-out. Field UI depends on a provider-neutral `AuthModule`, while the Supabase/Google adapter owns provider-specific details and test fakes cross the same seam. The GitHub Pages Field build receives the required publishable Supabase configuration. [google-oauth-setup.md](apps/field/google-oauth-setup.md) records the required non-secret configuration.
 
 ## Phase 28 — Workspace Vertical Slice (Field 0.28.0)
 
