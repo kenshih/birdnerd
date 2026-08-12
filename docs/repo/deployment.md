@@ -14,6 +14,14 @@ GitHub Actions builds both apps, then assembles one combined Pages artifact:
 - field `dist` copied to site root under `birdnerd/`
 - OCR `dist` copied under `birdnerd/ocr/`
 
+## Supabase Auth configuration
+
+The Field and Sync DB build steps receive `VITE_SUPABASE_URL` and
+`VITE_SUPABASE_PUBLISHABLE_KEY` from GitHub Actions variables. Vite embeds
+these values at build time, so an absent variable produces a deployed app with
+no Supabase configuration. These are publishable browser values; never place a
+Supabase secret or `service_role` key in a `VITE_*` variable.
+
 ## PWA Constraint
 
 Because both PWAs share the same GitHub Pages site, the field app's service worker scope overlaps the OCR subtree.

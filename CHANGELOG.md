@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Repo — Add the project-specific `$field-release` skill to ensure Field releases update the version, lockfile, changelog, phase tracker, and validation evidence before commit or push.
 - Field 0.27.0 — **Google OAuth sign-in test surface.** The Field home screen can now start a Google-only Supabase Auth sign-in, restore the browser session after return, display the signed-in email, and sign out. It uses the local `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` configuration; no Workspace provisioning or data synchronization is included.
 
+### Fixed
+
+- Field 0.27.1 — **Google OAuth configuration in the deployed app.** The GitHub Pages Field build now receives the existing `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` GitHub Actions variables, so the deployed app can initialize Supabase Auth instead of reporting that Google sign-in is unavailable.
+
 ### Changed
 
 - Field 0.25.13 — **Capture Time now constrained to net-check slots.** Replaced free-form `<input type="time">` + secondary dropdown with a single `<select>` of `netCheckTimes` values. "Now" button snaps to the nearest net-check time instead of inserting an arbitrary `HH:mm`.
