@@ -4,6 +4,8 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 **Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
+**Phase delivery:** In Codex, start a phase with `Use $phase-delivery to deliver Phase <number> as a review-ready PR.` It carries the work through implementation, proportionate testing, manual verification, documentation, and independent review; merge and phase completion still require human approval.
+
 ---
 
 ## Completed & archived
@@ -25,6 +27,8 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 ### Phase 29 — Local Event Core (Field 0.29.0) — **Current**
 
 Complete portable YAML/JSON-Schema Event Contracts, UUIDv7, generated TypeScript bindings with CI drift protection, `@birdnerd/events`, `@birdnerd/banding`, and a clean local event/projection store. Recreate all test and initial-hydration data to the new standards; do not migrate legacy local data.
+
+- Add a GitHub Actions pull-request CI workflow that runs lint and every CI-compatible test suite (including the Field unit and collaboration-package tests); keep Playwright E2E local until it is intentionally made CI-ready. This is a maintenance task and does not require its own Field release/version bump.
 
 ### Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0)
 
