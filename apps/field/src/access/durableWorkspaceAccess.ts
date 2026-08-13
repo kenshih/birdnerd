@@ -1,4 +1,4 @@
-/** Durable Field adapter for Workspace access, backed by the local Event Log. */
+/** Local fixture Adapter used by deterministic tests; production claims access through Supabase. */
 import { decidePendingMembershipActivation, resolveWorkspaceAccess } from '@birdnerd/banding'
 import type { ExternalIdentity } from '../auth/authModule'
 import type { WorkspaceAccessModule, WorkspaceAccessResult } from './workspaceAccessModule'
@@ -6,7 +6,7 @@ import { toEventIdentity, toWorkspaceAccessResult } from './workspaceAccessMappi
 import { WorkspaceEventStore } from './workspaceEventStore'
 
 /**
- * Resolve BirdNerd authorization from durable local Events. Pending-membership
+ * Resolve fixture authorization from durable local Events. Pending-membership
  * activation is persisted before the active result is returned, so reopening
  * Field cannot repeat a successful activation as a new event group.
  */

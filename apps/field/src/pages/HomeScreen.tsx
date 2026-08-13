@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-type NavMode = 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'feedback' | 'about'
+type NavMode = 'pilot' | 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'diagnostics' | 'feedback' | 'about'
 
 interface Props {
   onNavigate: (mode: NavMode) => void
@@ -15,12 +15,14 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   // Field activities
+  { mode: 'pilot', label: 'Collaboration Pilot', description: 'Offline-first shared Sessions and Banding Records', enabled: true },
   { mode: 'sessions', label: 'Session Data', description: 'Create sessions and record bird encounters', enabled: true },
   { mode: 'export', label: 'Data Manager', description: 'Browse records, export CSV, backup & restore', enabled: true },
   // Back office
   { mode: 'band-inventory', label: 'Band Inventory', description: 'Add, track, and manage band stock', enabled: true },
   { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
   { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
+  ...(import.meta.env.DEV ? [{ mode: 'diagnostics' as const, label: 'Event Pipeline', description: 'Developer replica and sync evidence', enabled: true }] : []),
   // Meta
   { mode: 'feedback', label: 'Report Bugs / Feedback', description: 'Send us an email', enabled: true },
   { mode: 'about', label: 'About BirdNerd', description: '', enabled: true },
@@ -57,8 +59,8 @@ export default function HomeScreen({ onNavigate }: Props) {
       <div style={styles.actions}>
         {NAV_ITEMS.map((item, i) => (
           <React.Fragment key={i}>
-            {i === 2 && <div style={styles.divider} />}
-            {i === 5 && <div style={styles.divider} />}
+            {i === 3 && <div style={styles.divider} />}
+            {i === (import.meta.env.DEV ? 7 : 6) && <div style={styles.divider} />}
             <button
               style={item.enabled ? styles.navBtn : styles.navBtnDisabled}
               onClick={() => item.enabled && onNavigate(item.mode)}

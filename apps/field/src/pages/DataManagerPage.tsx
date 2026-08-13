@@ -1,13 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
 import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
 import { getSessions, getRecordsBySession, getLocations, getBands, getPeople, getBanders } from '../db'
-import { exportDataBundle, downloadBundle, validateBundle, importDataBundle } from '../utils/dataBundle'
 import { exportIBP, exportBBL, exportBBLRecap } from '../utils/agencyExport'
 import { parseMasterSheet, buildImportPlan, rejectsToCsv, type ImportPlan } from '../utils/masterSheetImport'
 import { applyImportPlan, type ImportSummary } from '../utils/applyMasterImport'
-import type { DataBundle } from '../data/bundle-schema'
 import PageHeader from '../components/PageHeader'
 import BirdRecordForm from './BirdRecordForm'
+import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
+import { getFieldCollaboration } from '../sync/fieldCollaboration'
+import { createWorkspaceEventBundle, downloadWorkspaceEventBundle, parseWorkspaceEventBundle } from '../utils/eventBundle'
 
 interface Props {
   onHome: () => void
@@ -16,6 +17,8 @@ interface Props {
 type AgencyFormat = 'ibp' | 'bbl' | 'bbl-recap'
 
 export default function ExportPage({ onHome }: Props) {
+  const access = useWorkspaceAccess()
+  const { store, sync } = getFieldCollaboration()
   const [sessions, setSessions] = useState<Session[]>([])
   const [locations, setLocations] = useState<Location[]>([])
   const [bands, setBands] = useState<Band[]>([])
@@ -27,7 +30,7 @@ export default function ExportPage({ onHome }: Props) {
   const [agencyFormat, setAgencyFormat] = useState<AgencyFormat>('ibp')
   const [agencyScope, setAgencyScope] = useState<Set<string>>(new Set(['all']))
   const [viewRecord, setViewRecord] = useState<BirdRecord | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const eventBundleFileRef = useRef<HTMLInputElement>(null)
   const masterFileRef = useRef<HTMLInputElement>(null)
   const [importPlan, setImportPlan] = useState<ImportPlan | null>(null)
   const [importPreview, setImportPreview] = useState<ImportSummary | null>(null)
@@ -121,8 +124,9 @@ export default function ExportPage({ onHome }: Props) {
   }
 
   async function handleExportBackup() {
-    const bundle = await exportDataBundle()
-    downloadBundle(bundle)
+    const bundle = await createWorkspaceEventBundle(access.workspace_id, await store.exportWorkspaceEvents(access.workspace_id))
+    downloadWorkspaceEventBundle(bundle)
+    setImportStatus(`Exported ${bundle.events.length} immutable Workspace Events.`)
   }
 
   async function handleImportBackup(e: React.ChangeEvent<HTMLInputElement>) {
@@ -132,57 +136,17 @@ export default function ExportPage({ onHome }: Props) {
 
     try {
       const text = await file.text()
-      const data = JSON.parse(text)
-      const error = validateBundle(data)
-      if (error) {
-        setImportStatus(error)
-        return
-      }
-
-      const bundle = data as DataBundle
-      const sblCount = bundle.sessionBanderLogs?.length ?? 0
-      const snlCount = bundle.sessionNetLogs?.length ?? 0
-      const bandCount = bundle.bands?.length ?? 0
-      const photoCount = bundle.photos?.length ?? 0
-      const count = bundle.locations.length + bundle.nets.length + bundle.people.length +
-        bundle.banders.length + bundle.sessions.length + sblCount + snlCount +
-        bandCount + bundle.records.length + photoCount
-
-      const ok = confirm(
-        `This will replace ALL existing data with the backup contents:\n\n` +
-        `${bundle.locations.length} locations, ${bundle.nets.length} nets\n` +
-        `${bundle.people.length} people, ${bundle.banders.length} banders\n` +
-        `${bundle.sessions.length} sessions, ${bundle.records.length} records\n` +
-        `${bandCount} bands, ${photoCount} photos\n` +
-        `(${count} total items)\n\n` +
-        `This cannot be undone. Continue?`
-      )
+      const bundle = await parseWorkspaceEventBundle(text)
+      if (bundle.manifest.workspace_id !== access.workspace_id) throw new Error('This Bundle belongs to another Workspace or you no longer have active access to it.')
+      const pending = (await store.diagnostics(access.workspace_id)).queue.filter(item => item.status === 'pending').length
+      const ok = confirm(`Restore ${bundle.events.length} immutable Events for ${access.workspace_name}?\n\n${pending} unsynced local Event${pending === 1 ? '' : 's'} will be protected and returned to the outbound queue. The local replica will be replaced and rebuilt, then normal authenticated sync will catch up.`)
       if (!ok) return
 
-      await importDataBundle(bundle)
-      setImportStatus(`Imported ${count} items successfully.`)
-      await loadData()
-    } catch {
-      setImportStatus('Failed to read file. Make sure it is a valid JSON backup.')
-    }
-  }
-
-  async function handleLoadExample() {
-    const ok = confirm(
-      'This will replace ALL existing data with example data (seed + sample session).\n\nContinue?'
-    )
-    if (!ok) return
-    try {
-      const resp = await fetch(import.meta.env.BASE_URL + 'data/example-data.json')
-      if (!resp.ok) { setImportStatus('Could not load example data file.'); return }
-      const data = await resp.json()
-      const error = validateBundle(data)
-      if (error) { setImportStatus(error); return }
-      await importDataBundle(data)
-      setImportStatus('Example data loaded successfully.')
-      await loadData()
-    } catch {
-      setImportStatus('Failed to load example data.')
+      const result = await store.restoreWorkspace(access.workspace_id, bundle.events)
+      void sync?.synchronize()
+      setImportStatus(`Restored ${bundle.events.length} Events and protected ${result.protected_pending} unsynced local Event${result.protected_pending === 1 ? '' : 's'}. Sync catch-up started.`)
+    } catch (cause) {
+      setImportStatus(cause instanceof Error ? cause.message : 'Failed to validate the Workspace Event Bundle.')
     }
   }
 
@@ -456,24 +420,24 @@ export default function ExportPage({ onHome }: Props) {
             )}
           </div>
 
-          {/* Data Backup section */}
+          {/* Workspace Event Bundle section */}
           <div style={styles.divider} />
 
           <div style={styles.section}>
-            <h3 style={styles.sectionTitle}>Data Backup</h3>
+            <h3 style={styles.sectionTitle}>Workspace Event Bundle</h3>
             <p style={styles.desc}>
-              Full backup of all managed data: locations, nets, people, banders, sessions, and banding records.
+              Export the immutable Workspace Event Log or perform a recovery-only restore. Restore validates the entire Bundle and Workspace before changing IndexedDB, protects unsynced Events, rebuilds projections, and catches up through authenticated sync.
             </p>
 
             <div style={styles.buttonStack}>
               <button onClick={handleExportBackup} style={styles.primaryBtn}>
-                ↓ Export Backup (JSON)
+                ↓ Export Event Bundle
               </button>
-              <button onClick={() => fileInputRef.current?.click()} style={styles.secondaryBtn}>
-                ↑ Import Backup (JSON)
+              <button onClick={() => eventBundleFileRef.current?.click()} style={styles.secondaryBtn}>
+                ↑ Restore Event Bundle
               </button>
               <input
-                ref={fileInputRef}
+                ref={eventBundleFileRef}
                 type="file"
                 accept=".json"
                 onChange={handleImportBackup}
@@ -482,18 +446,12 @@ export default function ExportPage({ onHome }: Props) {
             </div>
 
             <p style={styles.warning}>
-              Import replaces all existing data. Export a backup first.
+              Recovery replaces and rebuilds this Workspace replica. History merge/adoption and photos are not included.
             </p>
 
             {importStatus && (
               <p style={styles.importStatus}>{importStatus}</p>
             )}
-
-            {/* TODO: Remove this button once Hallie has real data */}
-            <div style={styles.divider} />
-            <button onClick={handleLoadExample} style={styles.secondaryBtn}>
-              Load Example Data
-            </button>
           </div>
         </>
       )}

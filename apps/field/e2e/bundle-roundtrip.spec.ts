@@ -1,45 +1,58 @@
-import { test, expect } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { openNewRecordForm, fillRichRecord, assertRichRecord, richRecord } from './helpers'
+import { gotoHome } from './helpers'
 
 /**
- * Data round-trip #2: the JSON backup (Data Manager) — the safety net for
- * Hallie's whole dataset. A rich record must survive Export Backup → Import
- * with no field lost, across bundle schema v5. Catches schema/migration
- * regressions (the silent-data-loss class) in the serialize/deserialize path.
+ * Recovery round-trip: export an immutable Workspace Event Bundle, add more
+ * offline work, and restore the older Bundle without discarding that pending
+ * local Event. This is the Phase 30 replacement for mutable database snapshots.
  */
-test('rich record survives a JSON backup export → import round-trip', async ({ page }) => {
-  page.on('dialog', d => d.accept()) // import "replace all data" confirm
+test('Workspace Event Bundle restore protects unsynced local Events', async ({ page }) => {
+  page.on('dialog', dialog => dialog.accept())
 
-  await openNewRecordForm(page)
-  await fillRichRecord(page)
-  await page.getByRole('button', { name: /Save Record/i }).first().click()
-  await expect(page.getByRole('button', { name: /^View$/ }).first()).toBeVisible() // saved + listed
+  await gotoHome(page)
+  await page.getByText('Collaboration Pilot').click()
+  await page.getByLabel('Location').fill('North Station')
+  await page.getByRole('button', { name: 'Create Session' }).click()
+  await page.getByText('North Station').click()
+  await page.getByLabel('Physical band').fill('1234-56789')
+  await page.getByLabel('Species code').fill('SOSP')
+  await page.getByRole('button', { name: 'Create Record' }).click()
+  await expect(page.getByRole('button', { name: /SOSP 1234-56789/ })).toBeVisible()
 
   await page.goto('/birdnerd/')
   await page.getByText('Data Manager').first().click()
 
-  // Export Backup → capture the downloaded JSON
   const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: /Export Backup/i }).click()
+  await page.getByRole('button', { name: 'Export Event Bundle' }).click()
   const file = await (await downloadPromise).path()
+  if (!file) throw new Error('Playwright did not retain the downloaded Event Bundle.')
   const bundle = JSON.parse(readFileSync(file, 'utf8'))
 
-  // export fidelity: bundle v5, one record, every coded field serialized
-  expect(bundle.version).toBe(5)
-  expect(bundle.records).toHaveLength(1)
-  const rec = bundle.records[0]
-  for (const [name, value] of Object.entries(richRecord.selects)) {
-    expect(rec[name], `bundle record.${name}`).toBe(value)
-  }
-  expect(rec.moltLimitsAlula).toBe('F') // the field that regressed in commit 2
-  expect(rec.notes).toBe(richRecord.notes)
-  expect(rec.featherPull).toBe(true)
+  expect(bundle.format).toBe('birdnerd-workspace-event-bundle')
+  expect(bundle.format_version).toBe(1)
+  expect(bundle.manifest.event_count).toBe(6)
+  expect(bundle.events.slice(-2).map((event: { event_type: string }) => event.event_type)).toEqual([
+    'session.created',
+    'banding-record.created',
+  ])
 
-  // import fidelity: re-import the file, then read the record back through the UI
+  await page.goto('/birdnerd/')
+  await page.getByText('Collaboration Pilot').click()
+  await page.getByText('North Station').click()
+  await page.getByLabel('Physical band').fill('9876-54321')
+  await page.getByLabel('Species code').fill('WIWA')
+  await page.getByRole('button', { name: 'Create Record' }).click()
+  await expect(page.getByRole('button', { name: /WIWA 9876-54321/ })).toBeVisible()
+
+  await page.goto('/birdnerd/')
+  await page.getByText('Data Manager').first().click()
   await page.setInputFiles('input[accept=".json"]', file)
-  await expect(page.getByText(/Imported .* items successfully/i)).toBeVisible()
-  await page.getByRole('button', { name: /—.*F/ }).first().click() // Browse Records row
-  await expect(page.getByRole('heading', { name: /View Record/i })).toBeVisible()
-  await assertRichRecord(page)
+  await expect(page.getByText(/Restored 6 Events and protected 7 unsynced local Events/)).toBeVisible()
+
+  await page.goto('/birdnerd/')
+  await page.getByText('Collaboration Pilot').click()
+  await page.getByText('North Station').click()
+  await expect(page.getByRole('button', { name: /SOSP 1234-56789/ })).toBeVisible()
+  await expect(page.getByRole('button', { name: /WIWA 9876-54321/ })).toBeVisible()
 })

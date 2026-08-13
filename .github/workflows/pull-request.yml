@@ -25,7 +25,5 @@ jobs:
       - run: npm run test:collaboration
       - run: npm run build
       - run: npm run build:ocr
-      - run: npm run build:sync-db
-
       # Playwright remains a deliberate local-only suite until its browsers and
       # fixture server are made CI-ready.
