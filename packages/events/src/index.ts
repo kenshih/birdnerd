@@ -39,6 +39,12 @@ export type CreateEventInput<T extends EventType> = Omit<DomainEvent<T>, 'event_
 }
 
 const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+const LEGACY_EVENT_TYPES = new Set<EventType>([
+  'workspace.created',
+  'membership.preauthorized',
+  'user-account.linked',
+  'membership.activated',
+])
 
 function fillRandom(bytes: Uint8Array): Uint8Array {
   globalThis.crypto.getRandomValues(bytes as Uint8Array<ArrayBuffer>)
@@ -130,6 +136,9 @@ export function upcastEvent(value: unknown): DomainEvent {
   if (contractError) throw new Error(contractError)
   assertCanonicalValues(value)
   const legacy = value as LegacyDomainEvent
+  if (!LEGACY_EVENT_TYPES.has(legacy.event_type)) {
+    throw new Error(`${legacy.event_type} was introduced with Event envelope version 2 and cannot be decoded as v1.`)
+  }
   const event = {
     ...legacy,
     event_envelope_version: 2 as const,
@@ -137,6 +146,11 @@ export function upcastEvent(value: unknown): DomainEvent {
   }
   assertEvent(event)
   return event
+}
+
+/** Compare immutable Event JSON by value, independent of object property order. */
+export function sameEventContent(left: DomainEvent, right: DomainEvent): boolean {
+  return canonicalJson(left) === canonicalJson(right)
 }
 
 /**
@@ -237,6 +251,18 @@ function assertCanonicalValues(value: unknown, key?: string): void {
   if (isRecord(value)) {
     Object.entries(value).forEach(([childKey, childValue]) => assertCanonicalValues(childValue, childKey))
   }
+}
+
+function canonicalJson(value: unknown): string {
+  return JSON.stringify(sortJsonValue(value))
+}
+
+function sortJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(sortJsonValue)
+  if (!isRecord(value)) return value
+  return Object.fromEntries(
+    Object.keys(value).sort().map(key => [key, sortJsonValue(value[key])]),
+  )
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

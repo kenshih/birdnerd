@@ -79,3 +79,22 @@ and two to four exact-email Members:
 After Pages deploy, verify `/birdnerd/` and `/birdnerd/ocr/` work and
 `/birdnerd/sync-db/` is absent. The `sync-db` experiment may be used only
 locally against a different project.
+
+## Pilot evidence
+
+Status for PR review: **not run**. The hosted acceptance requires the reviewed
+PR to be merged/released, operator-only Supabase credentials, and two to four
+human Members on two real Stations; none are available to an implementation
+session. Do not mark Phase 30 complete until the run above is performed and the
+following evidence is replaced with observed values.
+
+| Evidence | Observed value |
+|---|---|
+| Field build/version and deployment | Pending |
+| Workspace/Provisioner audit command IDs | Pending |
+| Members and Station/device identifiers | Pending |
+| Online/offline convergence and HLC LWW | Pending |
+| Physical-band conflict visibility | Pending |
+| Event Bundle recovery with protected offline Event | Pending |
+| Supabase advisor result | Pending |
+| Failures/follow-ups | Pending |

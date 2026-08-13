@@ -25,7 +25,7 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
   const [speciesCode, setSpeciesCode] = useState('')
   const [editing, setEditing] = useState<PilotBandingRecord>()
 
-  const refresh = useCallback(async () => setProjection(projectPilotBanding(await store.snapshot())), [store])
+  const refresh = useCallback(async () => setProjection(projectPilotBanding(await store.snapshot(access.workspace_id))), [access.workspace_id, store])
   const synchronize = useCallback(async () => {
     if (!sync) return
     await sync.synchronize()
@@ -65,7 +65,7 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
     event.preventDefault()
     if (!selectedSession) return
     await perform(async () => {
-      const events = await store.snapshot()
+      const events = await store.snapshot(access.workspace_id)
       const hlc = await store.tickClock(access.workspace_id)
       const domainEvent = decideCreateBandingRecord(events, {
         workspace_id: access.workspace_id,
@@ -82,7 +82,7 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
     event.preventDefault()
     if (!editing) return
     await perform(async () => {
-      const events = await store.snapshot()
+      const events = await store.snapshot(access.workspace_id)
       const hlc = await store.tickClock(access.workspace_id)
       const domainEvent = decideAmendBandingRecord(events, {
         workspace_id: access.workspace_id,

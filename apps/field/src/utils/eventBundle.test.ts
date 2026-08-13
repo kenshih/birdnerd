@@ -48,9 +48,16 @@ describe('Workspace Event Bundle', () => {
     await expect(parseWorkspaceEventBundle(JSON.stringify(crossed))).rejects.toThrow('another Workspace')
   })
 
-  it('upcasts a valid v1 Event before restore compatibility is accepted', async () => {
-    const { event_envelope_version: _version, hlc: _hlc, ...legacy } = event
-    const currentBundle = await createWorkspaceEventBundle(workspaceId, [event])
+  it('upcasts a historical v1 Event and rejects v1 pilot Events', async () => {
+    const historical = createEvent({
+      event_type: 'workspace.created',
+      workspace_id: workspaceId,
+      command_id: '018f8c7b-0000-7000-8000-000000000002',
+      actor: { kind: 'restricted-provisioner', provisioner_id: 'test' },
+      payload: { workspace_id: workspaceId, name: 'Cedar Creek' },
+    })
+    const { event_envelope_version: _version, hlc: _hlc, ...legacy } = historical
+    const currentBundle = await createWorkspaceEventBundle(workspaceId, [historical])
     const legacyBundle = {
       ...currentBundle,
       manifest: {
@@ -62,6 +69,18 @@ describe('Workspace Event Bundle', () => {
     const parsed = await parseWorkspaceEventBundle(JSON.stringify(legacyBundle))
     expect(parsed.events[0].event_envelope_version).toBe(2)
     expect(parsed.events[0].hlc.logical).toBe(0)
+
+    const { event_envelope_version: _pilotVersion, hlc: _pilotHlc, ...legacyPilot } = event
+    const legacyPilotBundle = {
+      ...currentBundle,
+      manifest: {
+        ...currentBundle.manifest,
+        event_ids: [legacyPilot.event_id],
+        content_sha256: await digest(JSON.stringify([legacyPilot])),
+      },
+      events: [legacyPilot],
+    }
+    await expect(parseWorkspaceEventBundle(JSON.stringify(legacyPilotBundle))).rejects.toThrow('introduced with Event envelope version 2')
   })
 })
 

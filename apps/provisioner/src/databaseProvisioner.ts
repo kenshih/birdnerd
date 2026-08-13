@@ -1,5 +1,6 @@
 import type { QueryResult } from 'pg'
-import { canonicalizeEmail, isUuidV7, upcastEvent, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
+import { isUuidV7, upcastEvent, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
+import { normalizeProvisioningMembers } from './provisioning.js'
 
 export type ProvisioningMember = { email: string; role: WorkspaceMembershipRole }
 
@@ -25,22 +26,13 @@ export async function bootstrapWorkspace(
 ): Promise<BootstrapReceipt> {
   const workspaceName = input.workspace_name.trim()
   if (!workspaceName) throw new Error('A Workspace name is required.')
-  const members = normalizeMembers(input.members)
+  const members = normalizeProvisioningMembers(input.members)
   if (!members.some(member => member.role === 'admin')) throw new Error('At least one Admin is required.')
   const result = await database.query(
     'select birdnerd_private.bootstrap_workspace($1, $2::jsonb, $3) as receipt',
     [workspaceName, JSON.stringify(members), input.provisioner_id ?? 'phase-30-operator'],
   )
   return assertReceipt(result.rows[0]?.receipt)
-}
-
-function normalizeMembers(members: readonly ProvisioningMember[]): ProvisioningMember[] {
-  const seen = new Set<string>()
-  return members.map(member => ({ ...member, email: canonicalizeEmail(member.email) })).map(member => {
-    if (seen.has(member.email)) throw new Error(`A pending Membership already exists for ${member.email}.`)
-    seen.add(member.email)
-    return member
-  })
 }
 
 function assertReceipt(value: unknown): BootstrapReceipt {

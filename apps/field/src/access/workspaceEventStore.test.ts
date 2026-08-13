@@ -48,7 +48,10 @@ describe('WorkspaceEventStore replica exchange', () => {
 
     await reopened.commit({ receipts: [{ kind: 'rejected', event_id: local.event_id, reason: 'not admitted', permanent: true }], pulled: [], cursor: 0 })
     expect(await reopened.snapshot()).not.toContainEqual(local)
-    expect((await reopened.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'rejected', last_error: 'not admitted' })
+    const diagnostics = await reopened.diagnostics(workspaceId)
+    expect(diagnostics.queue[0]).toMatchObject({ status: 'rejected', last_error: 'not admitted' })
+    expect(diagnostics.commands.flatMap(command => command.events)).toContainEqual(local)
+    expect(diagnostics.receipts[0]?.receipt).toMatchObject({ kind: 'rejected', event_id: local.event_id })
   })
 
   it('protects unsynced local Events across recovery replacement', async () => {
@@ -76,6 +79,21 @@ describe('WorkspaceEventStore replica exchange', () => {
 
     await expect(store.restoreWorkspace(workspaceId, [conflicting])).rejects.toThrow('conflicts')
     expect(await store.snapshot()).toContainEqual(pending)
+  })
+
+  it('scopes a replica snapshot to one Workspace', async () => {
+    const store = new WorkspaceEventStore()
+    const first = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
+    const second = createEvent({
+      ...sessionEvent('018f8c7b-0000-7000-8000-000000000005'),
+      workspace_id: '018f8c7b-0000-7000-8000-000000000007',
+    })
+    await store.appendAcceptedRemote([
+      { event: first, server_sequence: 1 },
+      { event: second, server_sequence: 2 },
+    ])
+
+    expect(await store.snapshot(workspaceId)).toEqual([first])
   })
 })
 

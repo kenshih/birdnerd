@@ -371,8 +371,9 @@ It replaces mutable authoritative entities with a local-first event model:
   wall clock advances, otherwise increments logical time; `observe` uses the
   maximum local, remote, and wall-clock physical time and increments the
   applicable winning logical value. Field persists its high-water mark and
-  reports counter overflow rather than wrapping it. Immutable v1 Events decode
-  through a deterministic v2 upcast using the validated, finite non-negative
+  reports counter overflow rather than wrapping it. Immutable v1 Events from
+  the historical Workspace/access catalog decode through a deterministic v2
+  upcast using the validated, finite non-negative
   Unix milliseconds of `occurred_at` and logical zero. The shared parser, not
   platform `Date`, retains/pads only the first three fractional-second digits,
   applies the numeric offset, and normalizes a permitted `:60` leap second as
@@ -504,9 +505,12 @@ Bundle recovery is delivered; it is not converted or imported by this core.
   Workspace/pending-Membership Events and returns an audit receipt.
 - IndexedDB schema version 2 separates `event_log`, `projection_cache`,
   `outbound_queue`, `sync_metadata`, and `receipts`. The provider-neutral Event
-  Pipeline diagnostics view reads those stores only in development builds.
+  Pipeline diagnostics view reads those stores only in development builds;
+  rejected Events remain grouped by `command_id` with their queue and receipt
+  evidence even though they are omitted from the effective projection.
 - Workspace Event Bundle v1 contains a manifest, integrity digest, and current
-  or upcast-compatible Events. Restore validates every Event and Workspace
+  or historically upcast-compatible Workspace/access Events. Pilot Session and
+  Banding Record Events require envelope v2. Restore validates every Event and Workspace
   before writing, preserves pending local Events, resets the pull cursor,
   rebuilds, and catches up through normal authenticated sync.
 

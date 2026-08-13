@@ -42,7 +42,7 @@ select is((select count(*)::integer from birdnerd_private.event_log), 4, 'two bo
 
 insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous)
 values
-  ('10000000-0000-4000-8000-000000000001', 'admin@example.com', '{"provider":"google"}', '{}', false, false),
+  ('10000000-0000-4000-8000-000000000001', 'account-email-differs@example.com', '{"provider":"google"}', '{}', false, false),
   ('10000000-0000-4000-8000-000000000002', 'uninvited@example.com', '{"provider":"google"}', '{}', false, false);
 
 insert into auth.identities (provider_id, user_id, identity_data, provider)
@@ -52,7 +52,7 @@ values
 
 set local role authenticated;
 set local "request.jwt.claim.sub" = '10000000-0000-4000-8000-000000000001';
-select is((select count(*)::integer from public.birdnerd_claim_initial_access()), 4, 'exact-email Google principal claims and receives four access Events');
+select is((select count(*)::integer from public.birdnerd_claim_initial_access()), 4, 'exact Google identity email claims and receives four access Events even when the Auth user email differs');
 reset role;
 
 update phase30_fixture fixture set user_account_id = membership.user_account_id

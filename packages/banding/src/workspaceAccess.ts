@@ -8,6 +8,7 @@ import {
   canonicalizeEmail,
   createEvent,
   createUuidV7,
+  sameEventContent,
   type DomainEvent,
   type ExternalIdentity,
   type UuidV7,
@@ -144,7 +145,7 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
   const projection = projectWorkspaceEvents(existingEvents)
   const existingById = existingEvents.find(event => event.event_id === candidate.event_id)
   if (existingById) {
-    return JSON.stringify(existingById) === JSON.stringify(candidate)
+    return sameEventContent(existingById, candidate)
       ? { accepted: true }
       : deny('Event ID already exists with different content.')
   }

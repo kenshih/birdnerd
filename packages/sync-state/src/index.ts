@@ -3,7 +3,7 @@
  * never banding decisions, projections, IndexedDB, Supabase, or Field UI.
  */
 
-import { assertEvent, type DomainEvent } from '@birdnerd/events'
+import { assertEvent, sameEventContent, type DomainEvent } from '@birdnerd/events'
 
 export type EventAdmission = (candidate: DomainEvent, existingEvents: readonly DomainEvent[]) =>
   | { accepted: true }
@@ -38,7 +38,7 @@ export class EventLog {
     assertEvent(event)
     const existing = this.events.find(candidate => candidate.event_id === event.event_id)
     if (existing) {
-      if (JSON.stringify(existing) === JSON.stringify(event)) return { kind: 'duplicate', event: existing }
+      if (sameEventContent(existing, event)) return { kind: 'duplicate', event: existing }
       return { kind: 'rejected', event, reason: 'Event ID conflicts with an existing immutable event.' }
     }
 
@@ -231,7 +231,7 @@ export class InMemoryEventExchange implements EventExchange {
     return events.map(event => {
       const existing = this.events.find(candidate => candidate.event.event_id === event.event_id)
       if (existing) {
-        return JSON.stringify(existing.event) === JSON.stringify(event)
+        return sameEventContent(existing.event, event)
           ? { kind: 'duplicate' as const, event_id: event.event_id, server_sequence: existing.server_sequence }
           : { kind: 'rejected' as const, event_id: event.event_id, reason: 'Event ID conflicts with immutable content.', permanent: true as const }
       }

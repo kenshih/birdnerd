@@ -360,10 +360,10 @@ declare
   physical_ms bigint;
 begin
   if caller_id is null then raise exception 'Authentication required.' using errcode = '42501'; end if;
-  select lower(btrim(email)) into caller_email from auth.users where id = caller_id;
-  select coalesce(identity_data ->> 'sub', provider_id) into google_subject
+  select lower(btrim(identity_data ->> 'email')), coalesce(identity_data ->> 'sub', provider_id)
+    into caller_email, google_subject
     from auth.identities where user_id = caller_id and provider = 'google' order by created_at limit 1;
-  if caller_email is null or google_subject is null then return; end if;
+  if nullif(caller_email, '') is null or nullif(google_subject, '') is null then return; end if;
 
   select * into membership from birdnerd_private.membership_index
     where auth_user_id = caller_id or (status = 'pending' and email = caller_email)

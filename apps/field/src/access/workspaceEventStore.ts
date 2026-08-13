@@ -9,7 +9,7 @@ import {
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
 } from '@birdnerd/banding'
-import { observeHlc, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock } from '@birdnerd/events'
+import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock } from '@birdnerd/events'
 import {
   EventLog,
   type AppendResult,
@@ -82,8 +82,9 @@ export class WorkspaceEventStore implements DurableReplica {
     this.activeWorkspaceId = workspaceId
   }
 
-  async snapshot(): Promise<readonly DomainEvent[]> {
-    return (await this.getLog()).snapshot()
+  async snapshot(workspaceId?: string): Promise<readonly DomainEvent[]> {
+    const events = (await this.getLog()).snapshot()
+    return workspaceId ? events.filter(event => event.workspace_id === workspaceId) : events
   }
 
   async appendAll(events: readonly DomainEvent[]): Promise<readonly AppendResult[]> {
@@ -106,7 +107,7 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const item of items) {
         const event = upcastEvent(item.event)
         const existing = byId.get(event.event_id)
-        if (existing && JSON.stringify(existing) !== JSON.stringify(event)) throw new Error('Remote Event ID conflicts with immutable local content.')
+        if (existing && !sameEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
         byId.set(event.event_id, event)
       }
       const events = [...byId.values()]
@@ -167,7 +168,7 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const item of result.pulled) {
         const event = upcastEvent(item.event)
         const existing = eventsById.get(event.event_id)
-        if (existing && JSON.stringify(existing) !== JSON.stringify(event)) throw new Error('Pulled Event conflicts with immutable local content.')
+        if (existing && !sameEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
         eventsById.set(event.event_id, event)
       }
       const rejectedIds = new Set([...queueById.values()].filter(item => item.status === 'rejected').map(item => item.event_id))
@@ -223,7 +224,7 @@ export class WorkspaceEventStore implements DurableReplica {
       const replacement = new Map(bundleEvents.map(event => [event.event_id, upcastEvent(event)]))
       for (const event of pending) {
         const bundled = replacement.get(event.event_id)
-        if (bundled && JSON.stringify(bundled) !== JSON.stringify(event)) throw new Error('Bundle Event conflicts with protected unsynced Event content.')
+        if (bundled && !sameEventContent(bundled, event)) throw new Error('Bundle Event conflicts with protected unsynced Event content.')
         replacement.set(event.event_id, event)
       }
       const events = [...replacement.values()]
@@ -243,13 +244,16 @@ export class WorkspaceEventStore implements DurableReplica {
 
   async diagnostics(workspaceId: string): Promise<EventPipelineDiagnostics> {
     const db = await getDatabase()
-    const events = await this.exportWorkspaceEvents(workspaceId)
+    const events = sortEvents((await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)).map(upcastEvent))
+    const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
+    const rejected = new Set(queue.filter(item => item.status === 'rejected').map(item => item.event_id))
+    const effectiveEvents = events.filter(event => !rejected.has(event.event_id))
     const commands = new Map<string, DomainEvent[]>()
     events.forEach(event => commands.set(event.command_id, [...(commands.get(event.command_id) ?? []), event]))
     return {
       commands: [...commands.entries()].map(([command_id, commandEvents]) => ({ command_id, events: commandEvents })),
-      projection: projectionCache(events),
-      queue: await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId),
+      projection: projectionCache(effectiveEvents),
+      queue,
       metadata: await db.get('sync_metadata', workspaceId),
       receipts: (await db.getAll('receipts')).filter(item => events.some(event => event.event_id === item.event_id)),
     }

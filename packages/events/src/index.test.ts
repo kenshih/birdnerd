@@ -9,13 +9,15 @@ import {
   encodeEventLog,
   observeHlc,
   parseRfc3339Milliseconds,
+  sameEventContent,
   tickHlc,
   upcastEvent,
+  type DomainEvent,
 } from './index.js'
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
 
-function workspaceCreatedEvent() {
+function workspaceCreatedEvent(): DomainEvent<'workspace.created'> {
   return createEvent({
     event_type: 'workspace.created',
     workspace_id: workspaceId,
@@ -48,6 +50,26 @@ describe('@birdnerd/events', () => {
     expect(upcastEvent(offset).hlc).toEqual({ physical_ms: 1_483_228_800_123, logical: 0 })
     expect(upcastEvent(leap).hlc).toEqual({ physical_ms: 1_483_228_800_250, logical: 0 })
     expect(parseRfc3339Milliseconds('2017-01-01T00:00:00.1Z')).toBe(1_483_228_800_100)
+  })
+
+  it('rejects a v1 envelope for Events introduced with the v2 pilot catalog', () => {
+    const current = createEvent({
+      event_type: 'session.created',
+      workspace_id: workspaceId,
+      command_id: '018f8c7b-0000-7000-8000-000000000002',
+      actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000004' },
+    })
+    const { event_envelope_version: _version, hlc: _hlc, ...legacy } = current
+
+    expect(() => upcastEvent(legacy)).toThrow('introduced with Event envelope version 2')
+  })
+
+  it('compares immutable Event content independently of object property order', () => {
+    const event = workspaceCreatedEvent()
+    const reordered = { ...event, payload: { name: event.payload.name, workspace_id: event.payload.workspace_id } }
+
+    expect(sameEventContent(event, reordered)).toBe(true)
   })
 
   it('ticks, observes, rejects overflow, and resolves equal HLC values by Event ID', () => {

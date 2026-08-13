@@ -23,8 +23,9 @@ drift. The generator accepts only object, array, scalar, `enum`, `const`,
 `pattern`, `format`, and `additionalProperties` in this catalog. Add a generator test before
 expanding that portable subset.
 
-`event-envelope.v1.yaml` remains the readable historical envelope;
-`event-envelope.v2.yaml` is current and adds the HLC tuple. Each other
+`event-envelope.v1.yaml` remains readable only for the historical
+Workspace/access Event catalog; pilot Session and Banding Record types require
+the v2 envelope. `event-envelope.v2.yaml` is current and adds the HLC tuple. Each other
 `*.v1.yaml` is one payload contract, identified by its title before the
 trailing ` v1` (for example, `workspace.created v1`). Event type and schema
 version remain independent compatibility boundaries; current draft contracts
