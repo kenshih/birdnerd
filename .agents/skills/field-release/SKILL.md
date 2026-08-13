@@ -10,7 +10,8 @@ that actually ships before changing version numbers or release trackers.
 
 ## Establish the release decision
 
-1. Read `AGENTS.md`, the current `docs/plan.md` entries, `CHANGELOG.md`, and
+1. Read `AGENTS.md`, [Roadmap Maintenance](../../../docs/repo/roadmap-maintenance.md),
+   the current `docs/plan.md` entries, `CHANGELOG.md`, and
    `apps/field/package.json`.
 2. Inspect `git status`, recent `git log`, and the working-tree diff. Do not
    overwrite unrelated user changes.
@@ -33,12 +34,9 @@ is created:
   user-visible behavior, version, or repo-structure changes.
 - Update the relevant product, technical, and UX specifications when the
   shipped behavior changes them.
-- Update `docs/plan.md` only when the user agrees the phase is complete:
-  mark it complete, update the `Now` line, and keep the completion description
-  truthful. Archive completed plan material when the existing plan structure
-  calls for it.
-- Update `MEMORY.md` `Current Phase` and `Completed Phases` if the file exists
-  and the phase has completed.
+- Update `docs/plan.md` only when the user agrees the phase is complete; follow
+  [Roadmap Maintenance](../../../docs/repo/roadmap-maintenance.md) for the
+  status, archive, and **Current**-marker steps.
 - Bump the bundle schema and add a migration only when bundled entity fields
   are added, removed, or renamed. Bump IndexedDB only for store/index changes.
 

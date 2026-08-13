@@ -2,6 +2,11 @@
 
 Completed sub-phases of **Phase 22 — Bandsheet OCR** and **Phase 23 — P2P Sync Spike**, archived out of the active [plan.md](../plan.md) once shipped. Goals/assumptions for each phase remain in the active plan alongside their unfinished sub-phases.
 
+> **Historical versioning note:** Field 0.23.0 was intentionally skipped.
+> When made, Field release minor versions track global phase numbers. Phase 23
+> was a Sync spike rather than a Field release; the next Field release was
+> 0.24.0.
+
 ---
 
 ## Phase 22 — Bandsheet OCR (completed sub-phases)

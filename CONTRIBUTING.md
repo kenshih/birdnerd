@@ -50,6 +50,8 @@ npm run dev:ocr      # start the OCR app dev server
 
 - `docs/plan.md` is forward-looking and tracks current/future work
 - `CHANGELOG.md` is backward-looking and records shipped changes
+- Follow [Roadmap Maintenance](docs/repo/roadmap-maintenance.md) when changing
+  phase status, archives, or the active roadmap
 - Update `CHANGELOG.md` when a change is user-visible, bumps an app/package version, or meaningfully changes repo/deployment structure
 - Group changelog entries under `Field`, `OCR`, `Shared`, or `Repo` as appropriate
 

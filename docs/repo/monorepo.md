@@ -16,6 +16,7 @@ This repository is organized as an npm workspaces monorepo.
 ## Documentation Scope
 
 - `docs/plan.md` is repo-level and tracks cross-app roadmap work
+- `docs/repo/roadmap-maintenance.md` owns the roadmap update and archive procedure
 - `docs/apps/field/` contains the current field app specs
 - OCR docs stay lightweight for now and can grow as the app matures
 - `docs/repo/` is for monorepo, deployment, and other shared infrastructure notes

@@ -1,70 +1,44 @@
 # BirdNerd — Plan
 
-**Now:** **Phase 29 — Local Event Core**: complete the portable Event Contracts, generated TypeScript bindings, and clean durable local event/projection store selected in [ADR 0016](adr/0016-event-sourced-collaboration-architecture.md). Next: Phase 30 Supabase sync pilot. _Update this line whenever the active phase changes._
-
 See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v8.md](archives/plan.v8.md) | [archives/plan.v7.md](archives/plan.v7.md)
 
-**Release workflow:** Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work. It reconciles the planned phase with the actual diff before committing.
+**Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
 ---
 
-## Completed
+## Completed & archived
 
-Phases 1–21 and 24–28 are complete. See [plan.v8 (archived)](archives/plan.v8.md) for phases 26–28, [plan.v7 (archived)](archives/plan.v7.md) for phases 24–25, [plan.v5 (archived)](archives/plan.v5.md) for phases 20–21, [plan.v4 (archived)](archives/plan.v4.md) for phases 15–18, and [plan.v3 (archived)](archives/plan.v3.md) for phases 1–14.
-
-Completed sub-phases of Phase 22 (OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0) and Phase 23 (Sync 0.1.0–0.2.0) are archived in [plan.v6 (archived)](archives/plan.v6.md). Their unfinished sub-phases remain below under Phase 22 and Phase 23.
-
-| Phase | Summary |
-|-------|---------|
-| 1 | MVP Data Capture — offline PWA, species autocomplete, sessions + records in IndexedDB |
-| 2 | Deploy & Polish — GitHub Pages, home screen, CSV export/import |
-| 3 | Full Species List — 1,219 BBL species with sci names |
-| 4 | Navigation Shell & Routing — 6-module home, placeholder pages |
-| 5 | Code Tables & New Fields — Hallie's curated codes, all banding form fields |
-| 6 | Location & Net Management — Location/Net CRUD, seed data |
-| 7 | People & Roles — Person/Bander CRUD, seed known banders |
-| 8 | Form UX Overhaul — section reorg, SearchableSelect, PageHeader |
-| 9 | JSON Data Bundle — portable backup/restore, bundle schema v1→v2 |
-| 10 | Session Form & Views — session CRUD, roster, cascade delete |
-| 11 | Weather & Effort Tracking — weather fields, net soft-delete, SessionNetLog, net-hours |
-| 12 | Validation (Soft Warnings) — 9 rules, inline warnings, never blocks save |
-| 13a | Band Inventory — Band entity, bulk add, BandSearchSelect, atomic save |
-| 13b | Recapture Fields — presentCondition, replacedBandNumber, auto-show on R |
-| 14 | Photo Capture — PhotoRecord, camera input, share/download, bundle v4 |
-| 14.5 | Cleanup & Fixes — sample data, PWA status bar, About page, plan v4 migration |
-| 15a | Agency Export (IBP) — 49-column MAPS master list CSV, code mappings, multi-select scope |
-| 15b | Agency Export (BBL) — 58-col new banding + 60-col recapture (R Upload) formats |
-| 15.5 | Bug Fixes & Refactors — 9 bug fixes, DRY capture codes, shared theme.ts (13 files) |
-| 16 | PWA & Deployment — prompt-based SW update banner, app version on About page |
-| 17 | Error Boundary — class component, fallback UI, console logging |
-| 18 | UI Components & Styles — Card/CardElevated components, card variant convention |
-| 19 | Species Validation — band size + morphometric range warnings, disposition requires notes |
-| 20 | Band History View — encounter timeline, foreign band entities, Band Inventory enhancements |
-| 21 | Monorepo Migration — npm workspaces, OCR PWA scaffold, shared types package, docs restructure |
-| 24 | Field Small Fixes (0.24.x) — code tables, Alula tract (bundle v5), form reorg, band inventory, read-only views, Playwright smoke harness + CI gate ([plan.v7](archives/plan.v7.md)) |
-| 25 | Bulk Data Import (0.25.x) — master-sheet CSV importer, lost/destroyed-band records, and final code/export decisions ([plan.v7](archives/plan.v7.md)) |
+| Status | Scope | Canonical detail |
+|--------|-------|------------------|
+| Complete | Phases 1–14 | [plan.v3](archives/plan.v3.md) |
+| Complete | Phases 15–18 | [plan.v4](archives/plan.v4.md) |
+| Complete | Phases 19–21 | [plan.v5](archives/plan.v5.md) |
+| Partially complete | Phase 22 — OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0 | [plan.v6](archives/plan.v6.md); unfinished OCR work remains below |
+| Partially complete / superseded | Phase 23 — Sync 0.1.0–0.2.0 | [plan.v6](archives/plan.v6.md); unfinished P2P work remains below as historical research |
+| Complete | Phases 24–25 | [plan.v7](archives/plan.v7.md) |
+| Complete | Phases 26–28 | [plan.v8](archives/plan.v8.md) |
 
 ---
 
-> **Field 0.23.0 is intentionally skipped.** Field minor version is kept aligned with the global phase number for readability; Phase 23 is the Sync spike, so the first new field release is 0.24.0. The field phases below (27–33) run ahead of the remaining OCR (0.4.2+) and Sync (0.3.0+) work.
+## Current roadmap
 
-## Phase 29 — Local Event Core (Field 0.29.0)
+### Phase 29 — Local Event Core (Field 0.29.0) — **Current**
 
 Complete portable YAML/JSON-Schema Event Contracts, UUIDv7, generated TypeScript bindings with CI drift protection, `@birdnerd/events`, `@birdnerd/banding`, and a clean local event/projection store. Recreate all test and initial-hydration data to the new standards; do not migrate legacy local data.
 
-## Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0)
+### Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0)
 
 Complete Supabase Event Admission, `@birdnerd/sync-state`, the Supabase event-exchange adapter, Event Bundle recovery, offline behavior, and the two-Station/two-to-four-member pilot described in the Phase 26 decision.
 
-## Phase 31 — Net Reconciliation, cleanup (Field 0.31.0)
+### Phase 31 — Net Reconciliation, cleanup (Field 0.31.0)
 
 Reconcile code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
 
-## Phase 32 — Net Hours (Field 0.32.0)
+### Phase 32 — Net Hours (Field 0.32.0)
 
 Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog/net-hours groundwork.
 
-## Phase 33 — Smart Band Entry (Field 0.33.0)
+### Phase 33 — Smart Band Entry (Field 0.33.0)
 
 Speed up band record entry and help catch missing or mis-deployed bands through species-size suggestions and inventory-series sequencing.
 

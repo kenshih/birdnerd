@@ -1,0 +1,90 @@
+# Roadmap Maintenance
+
+This guide maintains BirdNerd's versioned roadmap documents. It applies to all
+workspaces; use the project-specific `$field-release` skill for the additional
+Field release and versioning steps.
+
+## Document responsibilities
+
+| Document | Owns | Does not own |
+|----------|------|--------------|
+| [plan.md](../plan.md) | Current phase, upcoming phased work, and the unscheduled backlog | Full shipped-change history or detailed completed-phase scope |
+| [CHANGELOG.md](../../CHANGELOG.md) | Shipped, user-visible, versioned, or meaningful repo/deployment changes | Future work or an open-task list |
+| [plan archives](../archives/) | Detailed scope and outcomes for completed phases or completed sub-phases | The current roadmap |
+| App specs | The behavior and design that currently exist | Roadmap ordering or historical release notes |
+
+`docs/plan.md` is repo-level: identify the affected app or package when a
+phase is not repo-wide. Its **Current roadmap** is strictly ordered, has
+exactly one phase marked **Current**, and keeps completed work limited to a
+compact archive index.
+
+## Establish status from evidence
+
+Before declaring a phase or sub-phase complete, reconcile the tracker with:
+
+1. The working tree and relevant diff.
+2. Recent Git history.
+3. Relevant workspace `package.json` version(s) and lockfile state.
+4. `CHANGELOG.md` and the applicable specifications.
+
+Treat phase numbers and version numbers as evidence, not proof. If the planned
+outcome, shipped scope, or completion decision is unclear, flag the mismatch
+and ask before changing status. This is especially important when work was
+done outside the current session.
+
+## Update the active roadmap
+
+For normal planning changes:
+
+- Keep phases in **Current roadmap** in execution order. Mark exactly one
+  phase **Current**; it is the first phase in that section.
+- Add, re-scope, reorder, or retire future work in `plan.md` without putting
+  it in the changelog.
+- Put durable behavior decisions in the relevant product, technical, UX, or
+  architecture document, then link to them from the roadmap as needed.
+- Keep unscheduled ideas in the backlog. Do not create a completed-phase entry
+  for work that is merely planned or partially implemented.
+
+## Complete a phase or sub-phase
+
+Do this only after the user agrees the phase is complete and the evidence above
+supports the claim:
+
+1. Make the release, version, changelog, and specification updates required by
+   the changed scope. For Field releases, follow `$field-release`.
+2. Move detailed completed material out of the active plan into the next
+   `docs/archives/plan.vN.md` file, with the archive date, completed scope,
+   and links back to the active plan and changelog.
+3. Update `plan.md`: remove the completed detail, add or revise its compact
+   row in **Completed & archived**, and move the **Current** marker to the
+   next phase.
+4. For a partially completed long-running phase, archive only the completed
+   sub-phases and leave the unfinished work in its backlog. Label a superseded
+   path explicitly rather than implying it is complete.
+5. Review the diff for accurate links and wording; run the relevant validation
+   for the release or code change. A documentation-only maintenance change at
+   minimum needs `git diff --check`.
+
+## Archive conventions
+
+- Archive by coherent completion boundary, not necessarily one archive per
+  phase. The archive filename increments in order (`plan.vN.md`).
+- An archive is the canonical detailed record for its completed scope. Avoid
+  copying that detail back into the active plan.
+- Preserve unfinished phase goals and assumptions in `plan.md` when only some
+  sub-phases shipped.
+- Keep the active plan's archive index complete and even: every archived phase
+  range should have one visible status row and a link to its canonical archive.
+- Deferred or long-running work belongs in a separately labelled backlog.
+  Its phase number does not alter the execution order of **Current roadmap**.
+
+## Related references
+
+- [Agent instructions](../../AGENTS.md) — source-of-truth policy and working
+  conventions.
+- [Field release workflow](../../.agents/skills/field-release/SKILL.md) —
+  Field versioning, validation, and release metadata.
+- [Contribution guide](../../CONTRIBUTING.md) — concise contributor-facing
+  plan/changelog distinction.
+- [Monorepo documentation scope](monorepo.md) — ownership of repo-level and
+  app-level documentation.

@@ -44,11 +44,10 @@ nogit/          — Hallie's source docs (not committed)
 
 ## Source of Truth (which doc to trust when they disagree)
 
-- **`docs/plan.md`** — what's next and what's in progress (`**Now:**` line at top). Forward-looking only.
+- **`docs/plan.md`** — what's next and what's in progress (the phase marked **Current** in **Current roadmap**). Forward-looking only; maintain it using [roadmap-maintenance.md](docs/repo/roadmap-maintenance.md).
 - **`CHANGELOG.md`** — what shipped.
 - **`docs/apps/*/`* specs** — how things work (product/tech/ux/entities).
-- **`MEMORY.md`** (auto-memory) — stable project facts loaded each session; update its `Current Phase` + `Completed Phases` whenever a phase completes (see Conventions, version-bump step).
-- **Heads-up:** the progress trackers (`plan.md` `**Now:**` / ✅, `MEMORY.md` `Current Phase`) can lag actual state — Ken sometimes works off-session or skips the phase-end update. When a task is about what's next / versioning / roadmap, reconcile against `git log` + `package.json` first; flag mismatches rather than trusting the docs blindly.
+- **Heads-up:** `plan.md` phase-status markers (`**Current**` / completed archive rows) can lag actual state — Ken sometimes works off-session or skips the phase-end update. When a task is about what's next / versioning / roadmap, reconcile against `git log` + `package.json` first; flag mismatches rather than trusting the docs blindly.
 
 ## Conventions
 
@@ -60,7 +59,7 @@ nogit/          — Hallie's source docs (not committed)
 - **Code tables** live in `apps/field/src/data/codes.ts`. Species list in `apps/field/src/data/species.ts`.
 - **Pure validation functions** in `apps/field/src/utils/validation.ts` — no DB or React deps.
 - **Tests** via vitest + fake-indexeddb. Run: `npm test`
-- **On phase completion** (same moment as the version-bump step): mark the sub-phase ✅, archive it out of active `plan.md`, update the `**Now:**` line, and update `MEMORY.md` (`Current Phase` + `Completed Phases`). Keeps the always-loaded context from going stale.
+- **On phase completion** (same moment as the version-bump step): follow [roadmap-maintenance.md](docs/repo/roadmap-maintenance.md).
 
 ## Commands
 
@@ -82,8 +81,7 @@ npm test                  # run vitest
 - Ask questions one by one, update plan docs iteratively
 - Start simple, layer features incrementally
 - When starting a dev/preview server for testing, stop any server process you started before ending the turn unless the user explicitly asks to leave it running. If left running, mention the URL and that it is still running.
-- Keep `plan.md` forward-looking and `CHANGELOG.md` focused on shipped changes
-- Archive completed plan versions in `docs/archives/`
+- Maintain the roadmap, changelog, and plan archives using [roadmap-maintenance.md](docs/repo/roadmap-maintenance.md)
 
 ## Agent skills
 
