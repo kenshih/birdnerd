@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
+  changedBandingRecordFields,
   decideAmendBandingRecord,
   decideCreateBandingRecord,
   decideCreateSession,
@@ -88,12 +89,12 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
         workspace_id: access.workspace_id,
         actor: { kind: 'user-account', user_account_id: access.user_account_id },
         hlc,
-      }, editing.record_id, {
+      }, editing.record_id, changedBandingRecordFields(editing, {
         // Empty strings are deliberate field-level amendments that clear a
         // prior optional value; creation omits empty fields instead.
         band_number: bandNumber.trim(),
         species_code: speciesCode.trim(),
-      })
+      }))
       ensureAccepted(await store.appendAll([domainEvent]))
       setEditing(undefined)
       setBandNumber('')

@@ -39,7 +39,8 @@ Supabase Event Admission/exchange, and durable replication state.
 
 - `schemas/` — portable YAML-authored Event Contracts using a restricted JSON
   Schema subset. `npm run generate:event-bindings` writes the committed
-  TypeScript output; CI runs `npm run check:event-bindings` to prevent drift.
+  TypeScript output; CI runs `npm run check:event-bindings` to prevent both
+  generated-binding and Supabase SQL-validator drift.
 - `packages/events/` (`@birdnerd/events`) — generated TypeScript bindings and
   structural Contract validation plus UUIDv7, create/decode/validate/upcast
   behavior. It does not own projections or storage.

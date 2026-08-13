@@ -81,6 +81,46 @@ describe('WorkspaceEventStore replica exchange', () => {
     expect(await store.snapshot()).toContainEqual(pending)
   })
 
+  it('rejects a Bundle that conflicts with an already accepted Event before replacement', async () => {
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    const accepted = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
+    const conflicting = createEvent({
+      ...accepted,
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005' },
+    })
+    await store.appendAcceptedRemote([{ event: accepted, server_sequence: 1 }])
+
+    await expect(store.restoreWorkspace(workspaceId, [conflicting])).rejects.toThrow('conflicts')
+    expect(await store.snapshot()).toEqual([accepted])
+  })
+
+  it('commits mixed accepted and rejected receipts without requeueing either result', async () => {
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    const accepted = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
+    const rejected = sessionEvent('018f8c7b-0000-7000-8000-000000000005')
+    await store.appendAll([accepted, rejected])
+
+    await store.commit({
+      receipts: [
+        { kind: 'accepted', event_id: accepted.event_id, server_sequence: 5 },
+        { kind: 'rejected', event_id: rejected.event_id, reason: 'not admitted', permanent: true },
+      ],
+      pulled: [],
+      cursor: 4,
+    })
+
+    expect((await store.readSyncInput(100, Date.now()))?.pending_events).toEqual([])
+    expect(await store.snapshot()).toEqual(expect.arrayContaining([accepted]))
+    expect(await store.snapshot()).not.toContainEqual(rejected)
+    expect((await store.diagnostics(workspaceId)).queue).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_id: accepted.event_id, status: 'accepted' }),
+      expect.objectContaining({ event_id: rejected.event_id, status: 'rejected' }),
+    ]))
+  })
+
   it('scopes a replica snapshot to one Workspace', async () => {
     const store = new WorkspaceEventStore()
     const first = sessionEvent('018f8c7b-0000-7000-8000-000000000004')

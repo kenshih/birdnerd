@@ -76,12 +76,14 @@ present in production navigation.
 ┌─────────────────────────────────────┐
 │         BirdNerd                    │
 │                                     │
+│  [Collaboration Pilot]              │
 │  [Session Data]                     │
-│  [Data Manager]               │
+│  [Data Manager]                     │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
-│  [Project Locations]                │
-│  [People & Roles]                   │
 │  [Band Inventory]                   │
+│  [People]                           │
+│  [Project Locations]                │
+│  [Event Pipeline]  (development)    │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
 │  [About]                            │
@@ -90,12 +92,14 @@ present in production navigation.
 └─────────────────────────────────────┘
 ```
 
-Buttons are grouped with subtle dividers: **field activities** (Session Data, Data Manager), **back office** (Locations, People, Band Inventory), and **meta** (Feedback).
+Buttons are grouped with subtle dividers: **field activities** (Collaboration Pilot, Session Data, Data Manager), **back office and diagnostics** (Band Inventory, People, Locations, plus Event Pipeline in development builds), and **meta** (Feedback and About).
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
+| **Collaboration Pilot** | Create and synchronize shared Event-backed Sessions and Banding Records | Collaboration Pilot |
 | **Session Data** | Create/manage daily sessions, record bird encounters | Session List / Session Form |
 | **Data Manager** | Agency export, backup & restore | Data Manager (§7) |
+| **Event Pipeline** *(development only)* | Inspect local Events, projections, queue/cursor/retry state, receipts, and errors | Event Pipeline |
 | **Project Locations** | Register locations, manage nets | Location List / Location Form |
 | **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
 | **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |

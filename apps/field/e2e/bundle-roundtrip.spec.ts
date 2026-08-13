@@ -3,11 +3,12 @@ import { readFileSync } from 'node:fs'
 import { gotoHome } from './helpers'
 
 /**
- * Recovery round-trip: export an immutable Workspace Event Bundle, add more
- * offline work, and restore the older Bundle without discarding that pending
- * local Event. This is the Phase 30 replacement for mutable database snapshots.
+ * Recovery round-trip through the authenticated E2E access fixture and normal
+ * sync coordinator: export an immutable Workspace Event Bundle, sync later
+ * work to the deterministic server Adapter, then restore the older Bundle and
+ * prove authenticated catch-up pulls the later Event back into the replica.
  */
-test('Workspace Event Bundle restore protects unsynced local Events', async ({ page }) => {
+test('Workspace Event Bundle restore catches up accepted remote Events through normal sync', async ({ page }) => {
   page.on('dialog', dialog => dialog.accept())
 
   await gotoHome(page)
@@ -19,8 +20,10 @@ test('Workspace Event Bundle restore protects unsynced local Events', async ({ p
   await page.getByLabel('Species code').fill('SOSP')
   await page.getByRole('button', { name: 'Create Record' }).click()
   await expect(page.getByRole('button', { name: /SOSP 1234-56789/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Sync now' }).click()
+  await expect(page.getByText(/^Synced /)).toBeVisible()
 
-  await page.goto('/birdnerd/')
+  await page.getByRole('button', { name: 'Home' }).click()
   await page.getByText('Data Manager').first().click()
 
   const downloadPromise = page.waitForEvent('download')
@@ -37,22 +40,23 @@ test('Workspace Event Bundle restore protects unsynced local Events', async ({ p
     'banding-record.created',
   ])
 
-  await page.goto('/birdnerd/')
+  await page.getByRole('button', { name: 'Home' }).click()
   await page.getByText('Collaboration Pilot').click()
   await page.getByText('North Station').click()
   await page.getByLabel('Physical band').fill('9876-54321')
   await page.getByLabel('Species code').fill('WIWA')
   await page.getByRole('button', { name: 'Create Record' }).click()
   await expect(page.getByRole('button', { name: /WIWA 9876-54321/ })).toBeVisible()
+  await page.getByRole('button', { name: 'Sync now' }).click()
+  await expect(page.getByText(/^Synced /)).toBeVisible()
 
-  await page.goto('/birdnerd/')
+  await page.getByRole('button', { name: 'Home' }).click()
   await page.getByText('Data Manager').first().click()
   await page.setInputFiles('input[accept=".json"]', file)
-  await expect(page.getByText(/Restored 6 Events and protected 7 unsynced local Events/)).toBeVisible()
+  await expect(page.getByText(/Restored 6 Events and protected 0 unsynced local Events/)).toBeVisible()
 
-  await page.goto('/birdnerd/')
+  await page.getByRole('button', { name: 'Home' }).click()
   await page.getByText('Collaboration Pilot').click()
-  await page.getByText('North Station').click()
   await expect(page.getByRole('button', { name: /SOSP 1234-56789/ })).toBeVisible()
   await expect(page.getByRole('button', { name: /WIWA 9876-54321/ })).toBeVisible()
 })

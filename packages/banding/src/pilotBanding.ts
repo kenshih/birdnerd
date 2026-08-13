@@ -53,6 +53,22 @@ export type PilotProjection = {
   band_allocation_conflicts: readonly BandAllocationConflict[]
 }
 
+/**
+ * Select only fields that the editor actually changed. This keeps concurrent
+ * edits to different fields independent while preserving an empty string as
+ * an intentional clear of an optional value.
+ */
+export function changedBandingRecordFields(
+  current: BandingRecordFields,
+  proposed: BandingRecordFields,
+): BandingRecordFields {
+  const changed: BandingRecordFields = {}
+  for (const [field, nextValue] of Object.entries(proposed) as [keyof BandingRecordFields, string | undefined][]) {
+    if (nextValue !== undefined && nextValue !== (current[field] ?? '')) changed[field] = nextValue
+  }
+  return changed
+}
+
 type CommandContext = {
   workspace_id: UuidV7
   actor: PilotActor

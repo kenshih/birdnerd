@@ -1,3 +1,5 @@
+-- event-contract-sha256: f06f5e1657fd7019cad7b1e35a559735a186a0e04fb2cc7e5329ed26fc654fa2
+-- Verified by scripts/check-supabase-event-contract.mjs against schemas/workspace.
 create extension if not exists pgcrypto;
 
 create schema if not exists birdnerd_private;

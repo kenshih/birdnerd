@@ -26,8 +26,8 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 - **PWA:** vite-plugin-pwa (offline capability, installable, home screen icon)
 - **Forms:** React Hook Form + custom validation (`apps/field/src/utils/validation.ts`)
 - **Local Storage:** IndexedDB (via `idb` package)
-- **Database (future):** Supabase (PostgreSQL + Auth)
-- **API (future):** Generated from schema (OpenAPI or GraphQL TBD)
+- **Shared Event exchange:** Supabase (PostgreSQL + Auth + narrow RPCs)
+- **API:** Explicit Event claim/append/pull RPCs; broader OpenAPI or GraphQL remains future work
 - **Hosting:** GitHub Pages (static)
 
 ### Development Environment
@@ -474,8 +474,9 @@ Supabase exchange or field-data commands ahead of the roadmap:
 
 All new Field and bootstrap IDs use UUIDv7, and the test/initial-hydration
 bundles were recreated with UUIDv7 identifiers and internally valid references.
-The former mutable `DataBundle` remains only for legacy app data until Event
-Bundle recovery is delivered; it is not converted or imported by this core.
+The former mutable `DataBundle` remains only as legacy app migration/test code;
+collaboration recovery uses Workspace Event Bundles and never converts or
+imports that mutable format into the Event Log.
 
 ### Supabase Event Exchange and Pilot Replica (Field 0.30)
 
@@ -500,6 +501,9 @@ Bundle recovery is delivered; it is not converted or imported by this core.
   migration keeps the Event Log and Membership admission index in the
   non-exposed `birdnerd_private` schema, enables RLS defense in depth, denies
   browser table DML, and grants authenticated execution only on those RPCs.
+  `npm run check:event-bindings` also compares the SQL Event Type branches and
+  exact-key checks with the YAML Contracts and verifies a full Contract
+  fingerprint, so CI fails if the provider validator drifts.
 - The deploy-only Provisioner connects with a database login inheriting only
   `birdnerd_provisioner`. Its one private bootstrap function appends canonical
   Workspace/pending-Membership Events and returns an audit receipt.

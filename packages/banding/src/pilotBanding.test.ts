@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEvent } from '@birdnerd/events'
-import { decideAmendBandingRecord, decideCreateBandingRecord, decideCreateSession, projectPilotBanding } from './pilotBanding.js'
+import { changedBandingRecordFields, decideAmendBandingRecord, decideCreateBandingRecord, decideCreateSession, projectPilotBanding } from './pilotBanding.js'
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
 const userId = '018f8c7b-0000-7000-8000-000000000002'
@@ -32,6 +32,31 @@ describe('pilot banding commands and projection', () => {
 
     expect(projectPilotBanding([session, record, low, high]).banding_records.get(recordA)).toMatchObject({ species_code: 'WIWA', sex: 'M' })
     expect(projectPilotBanding([high, low, record, session]).banding_records.get(recordA)).toMatchObject({ species_code: 'WIWA', sex: 'M' })
+  })
+
+  it('emits only fields changed by an editor so concurrent edits do not clobber each other', () => {
+    const session = decideCreateSession(context(1000), { session_id: sessionId })
+    const record = decideCreateBandingRecord([session], context(1001), {
+      session_id: sessionId,
+      record_id: recordA,
+      band_number: '1111-11111',
+      species_code: 'SOSP',
+    })
+    const stationA = decideAmendBandingRecord([session, record], context(1002), recordA, changedBandingRecordFields(
+      { band_number: '1111-11111', species_code: 'SOSP' },
+      { band_number: '2222-22222', species_code: 'SOSP' },
+    ))
+    const stationB = decideAmendBandingRecord([session, record], context(1003), recordA, changedBandingRecordFields(
+      { band_number: '1111-11111', species_code: 'SOSP' },
+      { band_number: '1111-11111', species_code: 'WIWA' },
+    ))
+
+    expect(stationA.payload.fields).toEqual({ band_number: '2222-22222' })
+    expect(stationB.payload.fields).toEqual({ species_code: 'WIWA' })
+    expect(projectPilotBanding([session, record, stationB, stationA]).banding_records.get(recordA)).toMatchObject({
+      band_number: '2222-22222',
+      species_code: 'WIWA',
+    })
   })
 
   it('retains both allocation facts and exposes a physical-band conflict', () => {

@@ -222,9 +222,11 @@ export class WorkspaceEventStore implements DurableReplica {
       const pendingIds = new Set(queue.filter(item => item.status === 'pending').map(item => item.event_id))
       const pending = currentEvents.filter(event => pendingIds.has(event.event_id))
       const replacement = new Map(bundleEvents.map(event => [event.event_id, upcastEvent(event)]))
-      for (const event of pending) {
+      for (const event of currentEvents) {
         const bundled = replacement.get(event.event_id)
-        if (bundled && !sameEventContent(bundled, event)) throw new Error('Bundle Event conflicts with protected unsynced Event content.')
+        if (bundled && !sameEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+      }
+      for (const event of pending) {
         replacement.set(event.event_id, event)
       }
       const events = [...replacement.values()]

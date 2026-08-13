@@ -109,6 +109,82 @@ describe('SyncCoordinator', () => {
     await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'idle', last_synced_at: 10_000 })
     expect(scheduled).toEqual([0])
   })
+
+  it('commits mixed acceptance and permanent rejection receipts in one durable batch', async () => {
+    const accepted = makeEvent('018f8c7b-0000-7000-8000-000000000010')
+    const rejected = makeEvent('018f8c7b-0000-7000-8000-000000000011')
+    const commits: SyncCommit[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return { workspace_id: accepted.workspace_id, cursor: 0, pending_events: [accepted, rejected], has_more_pending: false, failure_count: 0 }
+      },
+      async commit(result) { commits.push(result) },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    const receipts = [
+      { kind: 'accepted', event_id: accepted.event_id, server_sequence: 1 },
+      { kind: 'rejected', event_id: rejected.event_id, reason: 'not admitted', permanent: true },
+    ] as const
+    exchange.push = async () => receipts
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 10_000 })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'attention', rejected: 1, last_synced_at: 10_000 })
+    expect(commits).toEqual([{ receipts, pulled: [], cursor: 0 }])
+  })
+
+  it('re-pulls a page after an interrupted durable commit instead of skipping its cursor', async () => {
+    const remote = makeEvent('018f8c7b-0000-7000-8000-000000000011')
+    const exchange = new InMemoryEventExchange([remote])
+    const pull = vi.spyOn(exchange, 'pull')
+    let cursor = 0
+    let failureCount = 0
+    let retryAt: number | undefined
+    let lastFailure: string | undefined
+    let interruptCommit = true
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: remote.workspace_id,
+          cursor,
+          pending_events: [],
+          has_more_pending: false,
+          failure_count: failureCount,
+          retry_at: retryAt,
+          last_failure: lastFailure,
+        }
+      },
+      async commit(result) {
+        if (interruptCommit) {
+          interruptCommit = false
+          throw new Error('simulated crash before transaction commit')
+        }
+        cursor = result.cursor
+        failureCount = 0
+        retryAt = undefined
+        lastFailure = undefined
+      },
+      async recordFailure(message, nextRetryAt) {
+        failureCount += 1
+        retryAt = nextRetryAt
+        lastFailure = message
+      },
+    }
+
+    const beforeRestart = createSyncCoordinator(replica, exchange, { now: () => 10_000, retry_base_ms: 500, schedule: () => {} })
+    await expect(beforeRestart.synchronize()).resolves.toEqual({
+      kind: 'offline',
+      message: 'simulated crash before transaction commit',
+      retry_at: 10_500,
+    })
+    expect(cursor).toBe(0)
+
+    const afterRestart = createSyncCoordinator(replica, exchange, { now: () => 10_500, retry_base_ms: 500, schedule: () => {} })
+    await expect(afterRestart.synchronize()).resolves.toEqual({ kind: 'idle', last_synced_at: 10_500 })
+    expect(cursor).toBe(1)
+    expect(pull).toHaveBeenNthCalledWith(1, remote.workspace_id, 0, 100)
+    expect(pull).toHaveBeenNthCalledWith(2, remote.workspace_id, 0, 100)
+  })
 })
 
 function makeEvent(eventId = '018f8c7b-0000-7000-8000-000000000010') {

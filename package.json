@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "generate:event-bindings": "node scripts/generate-event-bindings.mjs",
-    "check:event-bindings": "node scripts/generate-event-bindings.mjs --check",
+    "check:event-bindings": "node scripts/generate-event-bindings.mjs --check && node scripts/check-supabase-event-contract.mjs",
     "vers": "npm pkg get name version --workspaces --include-workspace-root=false | jq -r 'to_entries[] | [.value.name, .value.version] | @tsv' | column -t",
     "dev": "npm --workspace @birdnerd/field run dev",
     "dev:host": "npm --workspace @birdnerd/field run dev -- --host",
