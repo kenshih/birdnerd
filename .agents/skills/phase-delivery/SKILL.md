@@ -44,12 +44,12 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
 For an expected long local run, mention the host-awake preflight in the first
 status update. On a Mac, connect power and either turn on **System Settings →
 Battery → Options → Prevent automatic sleeping on power adapter when the
-display is off**, or run `caffeinate -i` in a separate Terminal for the
-duration and stop it with Ctrl-C when the work ends. The latter prevents idle
-system sleep while letting the display turn off. Do not close the lid or choose
-Sleep manually. Do not start an indefinite keep-awake process without explicit
-user approval; it consumes power. Commit/push durable checkpoints so an
-interrupted local session can resume safely.
+display is off**, or run `caffeinate -i -t 14400` (**4 hours**) in a separate
+Terminal. This default prevents idle system sleep while letting the display
+turn off, then exits automatically after 4 hours; stop it earlier with Ctrl-C.
+Do not close the lid or choose Sleep manually. Ask before starting a longer or
+indefinite keep-awake process; it consumes power. Commit/push durable
+checkpoints so an interrupted local session can resume safely.
 
 ## 2. Implement in reviewable increments
 
