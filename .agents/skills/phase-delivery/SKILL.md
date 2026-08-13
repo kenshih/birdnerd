@@ -22,12 +22,17 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
    branching. Preserve unrelated working-tree changes: do not stage them or
    represent them in the PR. If their relationship to the requested work cannot
    be established safely, stop and ask.
-3. State a concise implementation contract in the PR draft or working notes:
+3. Apply `$delivery-contract` before implementation when the phase or feature
+   adds or materially changes a Module, Seam, Adapter, persistent-data
+   contract, authorization rule, synchronization/protocol, external provider,
+   or cross-package behavior. Its `## Delivery contract` section in the GitHub
+   Issue is the canonical working contract. For a small, well-specified local
+   change, state a concise implementation contract in the PR draft instead:
    user outcomes, non-goals, changed public interfaces/data, risks, and the
-   test layers needed. Use the issue for requested scope, but follow the
-   documented source-of-truth hierarchy: `plan.md` for current roadmap scope,
-   specs for behavior, and `CHANGELOG.md` for shipped history. Surface a
-   mismatch before implementing it; update a spec when behavior changes it.
+   test layers needed. Follow the documented source-of-truth hierarchy:
+   `plan.md` for current roadmap scope, specs for behavior, and `CHANGELOG.md`
+   for shipped history. Surface a mismatch before implementing it; update a
+   spec when behavior changes it.
 4. Make reversible, low-risk decisions autonomously and record material ones
    in the PR. Stop only for a genuinely blocking ambiguity, an unsafe or
    irreversible data/security decision, missing credentials or authority, or a
@@ -36,8 +41,9 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
    any Field version, release, Field changelog, or Field phase-completion
    operation. For repo-only changes, follow the normal `CHANGELOG.md` policy
    without inventing an unrelated Field release. Use `$supabase` for any
-   Supabase work and `$code-review` for the two-axis independent review
-   described below. Honor each skill's approval gates.
+   Supabase work, `$codebase-design` when the delivery-contract design gate
+   applies, and `$code-review` for the two-axis independent review described
+   below. Honor each skill's approval gates.
 
 ### Keep long local work alive
 

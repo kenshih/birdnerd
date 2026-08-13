@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Repo — Add the project-local `$delivery-contract` skill. It establishes a
+  decision-ready contract in the relevant GitHub Issue before a complex phase
+  begins, invokes `$codebase-design` when a Module/Interface/Seam/Adapter
+  changes, and hands a ready contract to `$phase-delivery`.
 - Field 0.29.0 — **Local Event Core.** Replace the handwritten Workspace event
   slice with YAML/JSON-Schema-derived Event Contract bindings, structural
   validation, UUIDv7 generation, JSON codecs, and an explicit upcast boundary.

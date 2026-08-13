@@ -1,0 +1,4 @@
+interface:
+  display_name: "Delivery Contract"
+  short_description: "Scope complex deliveries before implementation"
+  default_prompt: "Use $delivery-contract to establish the delivery contract for Phase 30."
