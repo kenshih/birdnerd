@@ -635,6 +635,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
           <Row>
             <Field label="Status" warning={warnings.status}>
               <select
+                aria-label="Status"
                 value={isStatusWriteIn ? '__writein__' : (status ?? '')}
                 onChange={e => {
                   const v = e.target.value

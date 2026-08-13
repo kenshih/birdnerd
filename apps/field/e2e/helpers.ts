@@ -102,10 +102,10 @@ export const richRecord = {
     moltLimitsPCovs: 'F', moltLimitsSCovs: 'B', moltLimitsAlula: 'F',
     moltLimitsPP: 'R', moltLimitsSS: 'M', moltLimitsTert: 'L',
     moltLimitsRec: 'N', moltLimitsBodyPlum: 'J', moltLimitsNonFeather: 'U',
-    status: '300', disposition: 'X',
+    status: '300', disposition: 'X', captureTime: '07:30',
   } as Record<string, string>,
   inputs: {
-    captureTime: '07:30', releaseTime: '08:00',
+    releaseTime: '08:00',
     wing: '67', tail: '55', tarsus: '22.5', exposedCulmen: '11.2', bodyMass: '18.3',
   } as Record<string, string>,
   notes: 'round-trip fixture',
@@ -115,7 +115,7 @@ export const richRecord = {
 /** Fill the open New Bird Record form with the rich fixture. */
 export async function fillRichRecord(page: Page) {
   for (const [name, value] of Object.entries(richRecord.selects)) {
-    await page.locator(`select[name="${name}"]`).selectOption(value)
+    await recordSelect(page, name).selectOption(value)
   }
   for (const [name, value] of Object.entries(richRecord.inputs)) {
     await page.locator(`input[name="${name}"]`).fill(value)
@@ -129,7 +129,7 @@ export async function fillRichRecord(page: Page) {
 /** Assert the rich fixture's values are present (works on an editable or disabled form). */
 export async function assertRichRecord(page: Page) {
   for (const [name, value] of Object.entries(richRecord.selects)) {
-    await expect(page.locator(`select[name="${name}"]`)).toHaveValue(value)
+    await expect(recordSelect(page, name)).toHaveValue(value)
   }
   for (const [name, value] of Object.entries(richRecord.inputs)) {
     await expect(page.locator(`input[name="${name}"]`)).toHaveValue(value)
@@ -138,4 +138,10 @@ export async function assertRichRecord(page: Page) {
   for (const name of richRecord.checkboxes) {
     await expect(page.locator(`input[name="${name}"]`)).toBeChecked()
   }
+}
+
+function recordSelect(page: Page, name: string) {
+  return name === 'status'
+    ? page.getByRole('combobox', { name: 'Status' })
+    : page.locator(`select[name="${name}"]`)
 }
