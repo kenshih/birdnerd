@@ -22,8 +22,14 @@ Skip it for a small, well-specified local change with no material Interface or d
 
 1. Read `AGENTS.md`, the roadmap entry, the relevant issue and its comments, current working tree, recent history, and applicable product, technical, UX, entity, domain, and architecture documentation.
 2. Resolve the delivery's GitHub Issue under `docs/agents/issue-tracker.md`. If it does not exist, create it before treating the contract as established.
+   For a roadmap phase, add or refresh a compact `Delivery contract: #<issue>`
+   link in that phase's `docs/plan.md` entry. The roadmap remains the scope and
+   sequencing source; the Issue owns the working contract, so do not copy the
+   contract into the roadmap.
 3. Reconcile discrepancies instead of silently choosing one source. `docs/plan.md` owns current scope, ADRs own accepted architecture decisions, specifications own behavior, and `CHANGELOG.md` owns shipped history.
 4. When the delivery touches a documented provider, apply its project skill. In particular, use `$supabase` for Supabase design or implementation work.
+5. Identify the delivery's real **manual expectations**: account or dashboard configuration, credential custody, trusted-operator steps, approval gates, migration deployment, and pilot or release participation. Distinguish prerequisites, operator duties, and manual acceptance scenarios; omit generic checklists and say `None known` when no human action is required.
+6. Prompt for manual prerequisites that cannot be established from the repository, connected systems, or durable documentation. Ask one narrow, actionable question when the delivery depends on a user-held credential, account setting, approval, named pilot participant, or other external action. Record the answer in the Issue; do not mark the delivery ready while a required prerequisite remains unconfirmed. Do not ask the user to reconfirm a documented fact or to perform a routine future step that does not affect delivery shape.
 
 ## 3. Design the changed surface
 
@@ -57,6 +63,11 @@ Create or update a `## Delivery contract` section in the Issue. Keep it concise 
 - Settled: ADR/spec link — decision
 - Open: question, options, and consequence of delaying it
 
+### Manual expectations
+- Confirmed: account, credential, dashboard, or operator prerequisites established from evidence or user response
+- Needs user confirmation: prerequisite, why it blocks readiness, and the one action or decision required
+- During pilot or release: human actions and observable result
+
 ### Risks and acceptance evidence
 - Risk — mitigation / test layer
 - Manual or pilot scenario — observable success condition
@@ -72,4 +83,4 @@ Do not ask merely because the contract is incomplete: resolve factual gaps from 
 
 ## 6. Hand off cleanly
 
-Report the Issue URL, the contract's unresolved decisions, and whether the delivery is ready for `$phase-delivery`. Do not create a branch, implement, open a PR, merge, deploy, or mark a phase complete. `$phase-delivery` carries a ready contract through delivery and reproduces the final design and verification evidence in the PR.
+Report the Issue URL, the contract's unresolved decisions, the manual expectations (including any confirmation still required, or `None known`), and whether the delivery is ready for `$phase-delivery`. Do not create a branch, implement, open a PR, merge, deploy, or mark a phase complete. `$phase-delivery` carries a ready contract through delivery and reproduces the final design and verification evidence in the PR.

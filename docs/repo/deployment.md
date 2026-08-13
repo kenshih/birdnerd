@@ -9,18 +9,23 @@ BirdNerd deploys to a single GitHub Pages site with multiple app subpaths.
 
 ## Build Assembly
 
-GitHub Actions builds both apps, then assembles one combined Pages artifact:
+GitHub Actions builds both published apps, then assembles one combined Pages
+artifact:
 
 - field `dist` copied to site root under `birdnerd/`
 - OCR `dist` copied under `birdnerd/ocr/`
 
 ## Supabase Auth configuration
 
-The Field and Sync DB build steps receive `VITE_SUPABASE_URL` and
+The Field build receives `VITE_SUPABASE_URL` and
 `VITE_SUPABASE_PUBLISHABLE_KEY` from GitHub Actions variables. Vite embeds
 these values at build time, so an absent variable produces a deployed app with
 no Supabase configuration. These are publishable browser values; never place a
 Supabase secret or `service_role` key in a `VITE_*` variable.
+
+`apps/sync-db` remains an isolated local experiment. It is intentionally not
+built or published at `/birdnerd/sync-db/`; do not point it at the Field pilot
+Supabase project.
 
 ## PWA Constraint
 

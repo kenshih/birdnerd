@@ -363,18 +363,57 @@ It replaces mutable authoritative entities with a local-first event model:
   independently.
 - Events and workspace-owned entities use locally generated UUIDv7 IDs.
 - Concurrent field amendments use deterministic field-level last-write-wins
-  with a hybrid logical clock and event-ID tie-breaker. Physical-band conflicts
-  are surfaced, not silently overwritten.
+  with envelope v2 HLC `{ physical_ms, logical }` and an event-ID tie-breaker.
+  Both values are non-negative safe integers. The pure Event module owns
+  `tick`, `observe`, and comparison: `tick` advances physical time when the
+  wall clock advances, otherwise increments logical time; `observe` uses the
+  maximum local, remote, and wall-clock physical time and increments the
+  applicable winning logical value. Field persists its high-water mark and
+  reports counter overflow rather than wrapping it. Immutable v1 Events decode
+  through a deterministic v2 upcast using the validated, finite non-negative
+  Unix milliseconds of `occurred_at` and logical zero. The shared parser, not
+  platform `Date`, retains/pads only the first three fractional-second digits,
+  applies the numeric offset, and normalizes a permitted `:60` leap second as
+  `:59` plus one second (for example, `2016-12-31T23:59:60.250Z` becomes
+  `2017-01-01T00:00:00.250Z`). New pilot Events are v2. Physical-band
+  conflicts are surfaced, not silently overwritten.
+- Phase 30 adds the smallest operational Event slice capable of the
+  collaboration pilot: Session creation plus Banding Record creation and field
+  amendment. Its physical-band assignment is deliberately retained as two
+  visible facts when concurrent Events collide, rather than silently choosing
+  one allocation.
 - Commands enforce structural and authorization rules; scientific validation
   remains soft warnings recorded with the event/projection.
 - Supabase Auth provides Google OAuth. Workspace Membership, rather than an
   external identity-provider claim, controls authorization.
+- A deploy-only trusted operator bootstraps the first Workspace and pending
+  Workspace Memberships through canonical Events. It does not create Supabase
+  Auth users. A later Google session calls a server-side initial-access claim
+  that derives its principal, exact-email-matches the pending Membership, and
+  atomically links/activates the User Account before ordinary exchange. The
+  migration deployer and Provisioner runtime login are separate; the latter
+  can execute only one non-exposed bootstrap function and has no raw Event Log
+  or Membership DML. Its credential stays in the trusted deployment
+  environment, never in a Field device or browser bundle.
 - Supabase is initially an event-admission and exchange provider. It verifies
-  membership and an event's envelope before append; it does not own business
-  projections. `@birdnerd/sync-state` keeps this provider behind an adapter
-  seam for future P2P.
-- Event Bundles replace the former mutable JSON bundle. Restore rebuilds a
-  local replica and then synchronizes; history merge/adoption is deferred.
+  the server-derived actor, active Membership, event identity/content, and
+  envelope before append; it does not own business projections. Browser code
+  receives only the initial-access claim, append-receipt, and server-sequenced
+  pull interfaces—never DML grants on Event Log or Membership tables.
+  `@birdnerd/sync-state` keeps this provider behind an adapter seam for future
+  P2P.
+- Shared Supabase tables, functions, explicit grants, and RLS policies are
+  versioned together as reviewed Supabase CLI SQL migrations in the repository.
+  The Event Log has unique `event_id` and indexed `(workspace_id,
+  server_sequence)` pulls; the derived Membership index supports authorization
+  lookups. `SECURITY DEFINER` functions use a fixed safe search path, revoke
+  `PUBLIC` execution, and grant only their intended role. Terraform is not the
+  schema-management mechanism for this phase.
+- Event Bundles replace the former mutable JSON bundle. Restore validates its
+  format, Event/upcast compatibility, and single manifest Workspace before any
+  IndexedDB write; it requires an active Membership for that Workspace, then
+  protects unsynced Events, replaces/rebuilds the replica, and synchronizes.
+  History merge/adoption is deferred.
 
 ### Field Authentication Module (Field 0.27.3)
 
@@ -404,10 +443,11 @@ Supabase exchange or field-data commands ahead of the roadmap:
   `membership.activated`. `npm run generate:event-bindings` writes committed
   TypeScript bindings/structural validation for `@birdnerd/events`, while
   `npm run check:event-bindings` detects drift in local and pull-request CI.
-  The package owns UUIDv7 creation, JSON codec validation, and the upcast
-  boundary; it does not own reducers or storage.
-- `@birdnerd/banding` owns pure Workspace admission, activation decisions, and
-  deterministic Workspace-access projection. Its projection snapshot is a
+  The package owns UUIDv7 creation, JSON codec validation, HLC clock behavior,
+  and the v1-to-v2 upcast boundary; it does not own reducers or storage.
+- `@birdnerd/banding` owns pure Workspace admission and activation decisions
+  plus deterministic Workspace-access projection. Supabase owns the
+  authoritative initial-access transaction; its projection snapshot is a
   cache-only representation of the Event Log, never an authoritative model.
   `@birdnerd/sync-state` owns generic immutable append/idempotency behavior;
   it does not import Field, IndexedDB, or domain reducers.
@@ -417,13 +457,17 @@ Supabase exchange or field-data commands ahead of the roadmap:
   hydration loads Events and regenerates the cache. It is intentionally a new
   store, so the legacy `birdnerd` mutable database is neither migrated nor
   altered. A failed event-store write resets the in-memory log before retry.
-- The separate `@birdnerd/provisioner` TypeScript CLI still emits canonical
-  Event Log JSON through ordinary admission only. That file remains a local
-  hand-off—not an Event Bundle or Field-device provisioning mechanism.
+- The separate `@birdnerd/provisioner` TypeScript CLI remains the local
+  hand-off until Phase 30. The Phase 30 deploy-only operator instead calls the
+  least-privilege bootstrap function; it emits canonical Events through the
+  same admission invariant and returns an audit receipt. Neither is an Event
+  Bundle or Field-device provisioning mechanism.
 - `WorkspaceAccessGate` continues to require BirdNerd-owned access after
-  provider-neutral sign-in. Matching pending Membership activation is persisted
-  before an active result is returned. The current PWA starts with an empty
-  Event Log unless a local harness supplied accepted bootstrap Events.
+  provider-neutral sign-in. Phase 30 replaces client-local pending-Membership
+  activation with the server-side initial-access claim; Field stores the
+  returned accepted Events and permits no ordinary pull or push until the
+  active result is durable. The current PWA starts with an empty Event Log
+  unless a local harness supplied accepted bootstrap Events.
 
 All new Field and bootstrap IDs use UUIDv7, and the test/initial-hydration
 bundles were recreated with UUIDv7 identifiers and internally valid references.

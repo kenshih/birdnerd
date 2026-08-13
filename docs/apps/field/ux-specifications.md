@@ -29,8 +29,15 @@ successful Google login understandable without implying BirdNerd access.
 pending Membership activates automatically, idempotently, and durably in the
 local Event Log. A fresh deployed Field app still has no provisioned bootstrap
 Events, so it correctly shows no access after a real Google login until the
-separate Provisioner/Supabase hand-off exists. This remains intentionally not
-an in-app provisioning or join path.
+separate Provisioner/Supabase hand-off exists.
+
+**Phase 30 behavior:** Field replaces local activation with one authenticated
+server-side initial-access claim. The claim derives the Google principal from
+the session, atomically links/activates only a matching pending Membership, and
+returns the canonical Events before normal Field screens or ordinary sync are
+available. The progress screen remains until that result is durable; a failed
+or ineligible claim shows the existing no-access screen. This remains neither
+an in-app provisioning path nor a join request.
 
 Roles are converted into UI capabilities at the Workspace boundary. A
 Contributor sees the operational Field screens; an Admin also sees
@@ -583,7 +590,7 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-The Data Manager page has two sections: **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Data Backup**. The current screen uses a full mutable JSON bundle; Phase 26 replaces that with an Event Bundle recovery workflow (rebuild local replica, then sync), while preserving agency CSV exports.
+The Data Manager page has two sections: **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Data Backup**. The current screen uses a full mutable JSON bundle; Phase 30 replaces that with an Event Bundle recovery workflow while preserving agency CSV exports. It validates the bundle and its Workspace before touching local data, requires active access to that Workspace, protects unsynced Events, then replaces/rebuilds and syncs.
 
 ```
 ┌──────────────────────────────────────┐
@@ -606,23 +613,22 @@ The Data Manager page has two sections: **Agency Export** (IBP/BBL format export
 │                                      │
 │  [ ↓ Export 47 records ]             │
 │                                      │
-│  ── Data Backup ──────────────────── │
+│  ── Workspace Event Bundle ───────── │
 │                                      │
-│  Full backup of all managed data:    │
-│  locations, nets, people, banders,   │
-│  sessions, and banding records.      │
+│  Immutable Workspace Event Log       │
+│  + optional rebuildable cache         │
 │                                      │
-│  [ ↓ Export Backup (JSON) ]          │
-│  [ ↑ Import Backup (JSON) ]         │
+│  [ ↓ Export Event Bundle ]           │
+│  [ ↑ Restore Event Bundle ]          │
 │                                      │
-│  ⚠ Import replaces all data.        │
-│  Export a backup first.              │
+│  ⚠ Validate Workspace; protect       │
+│    unsynced Events before replace.    │
 └──────────────────────────────────────┘
 ```
 
 ### 7.1 Data Manager Layout
 
-The Data Manager page shows a summary count (sessions, records) and two sections: Agency Export and Data Backup. There is no record browsing or filtering — record-level views are accessed through Session View.
+The Data Manager page shows a summary count (sessions, records) and two sections: Agency Export and Workspace Event Bundle. Restore exposes its validation, access, and unsynced-Event protection result before the destructive confirmation. There is no record browsing or filtering — record-level views are accessed through Session View.
 
 See § 7.0 wireframe above for the full layout.
 

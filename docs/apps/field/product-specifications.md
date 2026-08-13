@@ -61,13 +61,23 @@ authorization; operational roles remain separate. See
 [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
 
 Field 0.29.0 retains that access boundary and persists its clean,
-Workspace-scoped Event Log separately from the legacy mutable database. A
-matching pending Membership activates idempotently and durably before the
-operational screens show. Projection caches are rebuilt from Event Log entries
-on startup; no legacy local data is read, migrated, or deleted. The Provisioner
-remains a local-only JSON hand-off, not a deployed-device provisioning flow;
-authenticated Supabase exchange and field-data Event commands are Phase 30 and
-later work.
+Workspace-scoped Event Log separately from the legacy mutable database.
+Projection caches are rebuilt from Event Log entries on startup; no legacy
+local data is read, migrated, or deleted. The Provisioner remains a local-only
+JSON hand-off, not a deployed-device provisioning flow; Phase 30 replaces
+client-local activation with a server-side initial-access claim. The server
+derives the signed-in Google principal, exact-email-matches a pending
+Membership, and atomically links/activates it before Field shows operational
+content or can exchange ordinary Events.
+
+Phase 30 also adds a deploy-only trusted operator flow that emits the first
+Workspace and pending Workspace Membership Events without creating Supabase
+Auth users or placing privileged credentials on Field devices. The operational
+pilot uses a separate Event-projection workflow—not a dual write to legacy
+mutable forms—with Session creation, Banding Record creation and amendment,
+HLC-based field-level last-write-wins, visible physical-band conflicts, sync
+status, and recovery-only Workspace Event Bundles. Further field-data commands
+remain later work.
 
 ### 4.3 Key Product Concepts
 
