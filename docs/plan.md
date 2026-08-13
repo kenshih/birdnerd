@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v8.md](archives/plan.v8.md) | [archives/plan.v7.md](archives/plan.v7.md)
+See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v9.md](archives/plan.v9.md) | [archives/plan.v8.md](archives/plan.v8.md)
 
 **Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
@@ -19,18 +19,13 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 | Partially complete / superseded | Phase 23 — Sync 0.1.0–0.2.0 | [plan.v6](archives/plan.v6.md); unfinished P2P work remains below as historical research |
 | Complete | Phases 24–25 | [plan.v7](archives/plan.v7.md) |
 | Complete | Phases 26–28 | [plan.v8](archives/plan.v8.md) |
+| Complete | Phase 29 — Field 0.29.0 | [plan.v9](archives/plan.v9.md) |
 
 ---
 
 ## Current roadmap
 
-### Phase 29 — Local Event Core (Field 0.29.0) — **Current**
-
-Complete portable YAML/JSON-Schema Event Contracts, UUIDv7, generated TypeScript bindings with CI drift protection, `@birdnerd/events`, `@birdnerd/banding`, and a clean local event/projection store. Recreate all test and initial-hydration data to the new standards; do not migrate legacy local data.
-
-- Add a GitHub Actions pull-request CI workflow that runs lint and every CI-compatible test suite (including the Field unit and collaboration-package tests); keep Playwright E2E local until it is intentionally made CI-ready. This is a maintenance task and does not require its own Field release/version bump.
-
-### Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0)
+### Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0) — **Current**
 
 Complete Supabase Event Admission, `@birdnerd/sync-state`, the Supabase event-exchange adapter, Event Bundle recovery, offline behavior, and the two-Station/two-to-four-member pilot described in the Phase 26 decision.
 
