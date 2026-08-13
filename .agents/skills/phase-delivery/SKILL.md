@@ -33,9 +33,23 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
    irreversible data/security decision, missing credentials or authority, or a
    conflict with an existing user change.
 5. Use applicable project skills. In particular, use `$field-release` before
-   any Field version, release, changelog, or phase-completion operation;
-   `$supabase` for any Supabase work; and `$code-review` for the two-axis
-   independent review described below. Honor each skill's approval gates.
+   any Field version, release, Field changelog, or Field phase-completion
+   operation. For repo-only changes, follow the normal `CHANGELOG.md` policy
+   without inventing an unrelated Field release. Use `$supabase` for any
+   Supabase work and `$code-review` for the two-axis independent review
+   described below. Honor each skill's approval gates.
+
+### Keep long local work alive
+
+For an expected long local run, mention the host-awake preflight in the first
+status update. On a Mac, connect power and either turn on **System Settings →
+Battery → Options → Prevent automatic sleeping on power adapter when the
+display is off**, or run `caffeinate -i` in a separate Terminal for the
+duration and stop it with Ctrl-C when the work ends. The latter prevents idle
+system sleep while letting the display turn off. Do not close the lid or choose
+Sleep manually. Do not start an indefinite keep-awake process without explicit
+user approval; it consumes power. Commit/push durable checkpoints so an
+interrupted local session can resume safely.
 
 ## 2. Implement in reviewable increments
 
