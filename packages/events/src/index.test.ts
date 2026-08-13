@@ -1,5 +1,17 @@
 import { describe, expect, it } from 'vitest'
-import { assertEvent, canonicalizeEmail, createEvent, createUuidV7, decodeEventLog, encodeEventLog, upcastEvent } from './index.js'
+import {
+  assertEvent,
+  canonicalizeEmail,
+  compareEventOrder,
+  createEvent,
+  createUuidV7,
+  decodeEventLog,
+  encodeEventLog,
+  observeHlc,
+  parseRfc3339Milliseconds,
+  tickHlc,
+  upcastEvent,
+} from './index.js'
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
 
@@ -27,6 +39,29 @@ describe('@birdnerd/events', () => {
     expect(canonicalizeEmail('  Bander@Example.com ')).toBe('bander@example.com')
   })
 
+  it('upcasts immutable v1 events with deterministic RFC 3339 milliseconds', () => {
+    const current = workspaceCreatedEvent()
+    const { event_envelope_version: _version, hlc: _hlc, ...legacy } = current
+    const offset = { ...legacy, occurred_at: '2017-01-01T01:30:00.123456+01:30' }
+    const leap = { ...legacy, occurred_at: '2016-12-31T23:59:60.250Z' }
+
+    expect(upcastEvent(offset).hlc).toEqual({ physical_ms: 1_483_228_800_123, logical: 0 })
+    expect(upcastEvent(leap).hlc).toEqual({ physical_ms: 1_483_228_800_250, logical: 0 })
+    expect(parseRfc3339Milliseconds('2017-01-01T00:00:00.1Z')).toBe(1_483_228_800_100)
+  })
+
+  it('ticks, observes, rejects overflow, and resolves equal HLC values by Event ID', () => {
+    expect(tickHlc({ physical_ms: 100, logical: 2 }, 99)).toEqual({ physical_ms: 100, logical: 3 })
+    expect(tickHlc({ physical_ms: 100, logical: 2 }, 101)).toEqual({ physical_ms: 101, logical: 0 })
+    expect(observeHlc({ physical_ms: 100, logical: 2 }, { physical_ms: 100, logical: 5 }, 90)).toEqual({ physical_ms: 100, logical: 6 })
+    expect(observeHlc({ physical_ms: 100, logical: 2 }, { physical_ms: 110, logical: 3 }, 105)).toEqual({ physical_ms: 110, logical: 4 })
+    expect(() => tickHlc({ physical_ms: 100, logical: Number.MAX_SAFE_INTEGER }, 99)).toThrow('overflow')
+    expect(compareEventOrder(
+      { hlc: { physical_ms: 100, logical: 1 }, event_id: '018f8c7b-0000-7000-8000-000000000001' },
+      { hlc: { physical_ms: 100, logical: 1 }, event_id: '018f8c7b-0000-7000-8000-000000000002' },
+    )).toBeLessThan(0)
+  })
+
   it('rejects payload fields outside the YAML Event Contract', () => {
     const event = { ...workspaceCreatedEvent(), payload: { workspace_id: workspaceId, name: 'Cedar Creek', extra: true } }
 
@@ -35,12 +70,8 @@ describe('@birdnerd/events', () => {
 
   it('rejects noncanonical email and UUIDv7 values after structural validation', () => {
     expect(() => assertEvent({
-      event_id: '018f8c7b-0000-7000-8000-000000000001',
+      ...workspaceCreatedEvent(),
       event_type: 'membership.preauthorized',
-      event_schema_version: 1,
-      workspace_id: workspaceId,
-      command_id: '018f8c7b-0000-7000-8000-000000000002',
-      occurred_at: new Date().toISOString(),
       actor: { kind: 'restricted-provisioner', provisioner_id: 'local-admin' },
       payload: { membership_id: '018f8c7b-0000-7000-8000-000000000003', email: 'Bander@example.com', role: 'admin' },
     })).toThrow('canonicalized')

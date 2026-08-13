@@ -137,7 +137,8 @@ export function snapshotWorkspaceProjection(projection: WorkspaceProjection): Wo
  * Event Log. Rules check structure, authority, and immutable-ID conflicts but
  * deliberately do not require another event to have arrived first: command
  * groups must remain independently appendable and replayable in any order.
- * Authenticated Supabase Event Admission replaces these local rules in Phase 30.
+ * Authenticated Supabase Event Admission independently enforces the shared
+ * authorization boundary during exchange.
  */
 export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: readonly DomainEvent[]): AdmissionDecision {
   const projection = projectWorkspaceEvents(existingEvents)
@@ -169,6 +170,17 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     if (!sameIdentity(candidate.actor.identity, candidate.payload.identity)) return deny('A User Account link must be authored by the linked identity.')
     if (findUserAccountByIdentity(projection, candidate.payload.identity)) return deny('That external identity is already linked.')
     return { accepted: true }
+  }
+
+  if (candidate.event_type === 'session.created' || candidate.event_type === 'banding-record.created' || candidate.event_type === 'banding-record.fields-amended') {
+    if (candidate.actor.kind !== 'user-account') return deny('An active Workspace Member must author operational Events.')
+    const actorUserAccountId = candidate.actor.user_account_id
+    const activeMembership = [...projection.workspace_memberships.values()].find(workspaceMembership => (
+      workspaceMembership.workspace_id === candidate.workspace_id
+      && workspaceMembership.status === 'active'
+      && workspaceMembership.user_account_id === actorUserAccountId
+    ))
+    return activeMembership ? { accepted: true } : deny('The Event actor is not an active Member of the target Workspace.')
   }
 
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')

@@ -14,9 +14,10 @@ export {
   type EventActor,
   type EventPayloadByType,
   type EventType,
+  type LegacyDomainEvent,
 } from './generated/eventBindings.js'
 
-import type { DomainEvent, EventActor, EventPayloadByType, EventType } from './generated/eventBindings.js'
+import type { DomainEvent, EventActor, EventPayloadByType, EventType, LegacyDomainEvent } from './generated/eventBindings.js'
 
 /** A canonical lower-case UUIDv7 string used by every Workspace-owned identifier. */
 export type UuidV7 = string
@@ -27,10 +28,14 @@ export type ExternalIdentity = Extract<EventActor, { kind: 'external-identity' }
 /** Authorization role assigned by a Workspace Membership, separate from banding roles. */
 export type WorkspaceMembershipRole = EventPayloadByType['membership.preauthorized']['role']
 
+/** Hybrid Logical Clock carried by every current Event envelope. */
+export type HybridLogicalClock = DomainEvent['hlc']
+
 /** Input for an event create command. IDs and time default locally; schema version is contract-owned. */
-export type CreateEventInput<T extends EventType> = Omit<DomainEvent<T>, 'event_id' | 'event_schema_version' | 'occurred_at'> & {
+export type CreateEventInput<T extends EventType> = Omit<DomainEvent<T>, 'event_id' | 'event_schema_version' | 'event_envelope_version' | 'occurred_at' | 'hlc'> & {
   event_id?: UuidV7
   occurred_at?: string
+  hlc?: HybridLogicalClock
 }
 
 const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
@@ -71,20 +76,24 @@ export function canonicalizeEmail(email: string): string {
 
 /** Create and validate a current Event Contract version. */
 export function createEvent<T extends EventType>(input: CreateEventInput<T>): DomainEvent<T> {
+  const occurredAt = input.occurred_at ?? new Date().toISOString()
   const event = {
     ...input,
     event_id: input.event_id ?? createUuidV7(),
     event_schema_version: 1,
-    occurred_at: input.occurred_at ?? new Date().toISOString(),
+    event_envelope_version: 2,
+    occurred_at: occurredAt,
+    hlc: input.hlc ?? { physical_ms: parseRfc3339Milliseconds(occurredAt), logical: 0 },
   } as DomainEvent<T>
   assertEvent(event)
   return event
 }
 
-/** Validate a current event envelope, its selected payload contract, and canonical invariants. */
+/** Validate a current v2 event envelope, selected payload contract, and canonical invariants. */
 export function assertEvent(value: unknown): asserts value is DomainEvent {
   const contractError = validateGeneratedEvent(value)
   if (contractError) throw new Error(contractError)
+  if (!isRecord(value) || value.event_envelope_version !== 2) throw new Error('A current Event must use envelope version 2.')
   assertCanonicalValues(value)
 
   const event = value as DomainEvent
@@ -112,8 +121,103 @@ export function encodeEventLog(events: readonly DomainEvent[]): string {
  * reason about old payload shapes.
  */
 export function upcastEvent(value: unknown): DomainEvent {
-  assertEvent(value)
-  return value
+  if (isRecord(value) && value.event_envelope_version === 2) {
+    assertEvent(value)
+    return value
+  }
+
+  const contractError = validateGeneratedEvent(value)
+  if (contractError) throw new Error(contractError)
+  assertCanonicalValues(value)
+  const legacy = value as LegacyDomainEvent
+  const event = {
+    ...legacy,
+    event_envelope_version: 2 as const,
+    hlc: { physical_ms: parseRfc3339Milliseconds(legacy.occurred_at), logical: 0 },
+  }
+  assertEvent(event)
+  return event
+}
+
+/**
+ * Convert validated RFC 3339 text to Unix milliseconds without delegating
+ * protocol parsing to `Date.parse`. Fractional precision is truncated/padded
+ * to milliseconds and `:60` is normalized as `:59` plus one second.
+ */
+export function parseRfc3339Milliseconds(value: string): number {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?([Zz]|([+-])(\d{2}):(\d{2}))$/.exec(value)
+  if (!match) throw new Error('occurred_at must be an RFC 3339 date-time.')
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText, fraction = '', zone, sign, offsetHourText, offsetMinuteText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const hour = Number(hourText)
+  const minute = Number(minuteText)
+  const second = Number(secondText)
+  const daysInMonth = month === 2
+    ? (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28)
+    : [4, 6, 9, 11].includes(month) ? 30 : 31
+  const offsetHour = zone.toLowerCase() === 'z' ? 0 : Number(offsetHourText)
+  const offsetMinute = zone.toLowerCase() === 'z' ? 0 : Number(offsetMinuteText)
+  if (month < 1 || month > 12 || day < 1 || day > daysInMonth || hour > 23 || minute > 59 || second > 60 || offsetHour > 23 || offsetMinute > 59) {
+    throw new Error('occurred_at must be an RFC 3339 date-time.')
+  }
+
+  const milliseconds = Number(fraction.slice(0, 3).padEnd(3, '0'))
+  const normalizedSecond = Math.min(second, 59)
+  const date = new Date(0)
+  date.setUTCFullYear(year, month - 1, day)
+  date.setUTCHours(hour, minute, normalizedSecond, milliseconds)
+  const offset = (offsetHour * 60 + offsetMinute) * 60_000 * (sign === '-' ? -1 : 1)
+  const result = date.getTime() - offset + (second === 60 ? 1_000 : 0)
+  if (!Number.isSafeInteger(result) || result < 0) throw new Error('occurred_at must map to non-negative safe Unix milliseconds.')
+  return result
+}
+
+/** Advance a local HLC for a new write, including wall-clock regression. */
+export function tickHlc(local: HybridLogicalClock | undefined, now = Date.now()): HybridLogicalClock {
+  assertClockValue({ physical_ms: now, logical: 0 })
+  if (!local) return { physical_ms: now, logical: 0 }
+  assertClockValue(local)
+  return now > local.physical_ms
+    ? { physical_ms: now, logical: 0 }
+    : { physical_ms: local.physical_ms, logical: incrementLogical(local.logical) }
+}
+
+/** Observe a remote HLC and advance beyond every causally visible clock. */
+export function observeHlc(local: HybridLogicalClock, remote: HybridLogicalClock, now = Date.now()): HybridLogicalClock {
+  assertClockValue(local)
+  assertClockValue(remote)
+  assertClockValue({ physical_ms: now, logical: 0 })
+  const physicalMs = Math.max(local.physical_ms, remote.physical_ms, now)
+  if (now > local.physical_ms && now > remote.physical_ms) return { physical_ms: now, logical: 0 }
+  if (local.physical_ms === physicalMs && remote.physical_ms === physicalMs) {
+    return { physical_ms: physicalMs, logical: incrementLogical(Math.max(local.logical, remote.logical)) }
+  }
+  return local.physical_ms === physicalMs
+    ? { physical_ms: physicalMs, logical: incrementLogical(local.logical) }
+    : { physical_ms: physicalMs, logical: incrementLogical(remote.logical) }
+}
+
+/** Compare HLC tuples, then immutable Event IDs for deterministic LWW. */
+export function compareEventOrder(
+  left: Pick<DomainEvent, 'hlc' | 'event_id'>,
+  right: Pick<DomainEvent, 'hlc' | 'event_id'>,
+): number {
+  return left.hlc.physical_ms - right.hlc.physical_ms
+    || left.hlc.logical - right.hlc.logical
+    || left.event_id.localeCompare(right.event_id)
+}
+
+function assertClockValue(clock: HybridLogicalClock): void {
+  if (!Number.isSafeInteger(clock.physical_ms) || clock.physical_ms < 0 || !Number.isSafeInteger(clock.logical) || clock.logical < 0) {
+    throw new Error('HLC values must be non-negative safe integers.')
+  }
+}
+
+function incrementLogical(logical: number): number {
+  if (logical === Number.MAX_SAFE_INTEGER) throw new Error('HLC logical counter overflow.')
+  return logical + 1
 }
 
 function assertCanonicalValues(value: unknown, key?: string): void {

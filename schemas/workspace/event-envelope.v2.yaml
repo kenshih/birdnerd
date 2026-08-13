@@ -1,0 +1,96 @@
+# BirdNerd's current Domain Event envelope. Payload contracts retain their own
+# independent schema versions while envelope compatibility advances here.
+$schema: https://json-schema.org/draft/2020-12/schema
+title: BirdNerd Domain Event envelope v2
+type: object
+required:
+  - event_id
+  - event_type
+  - event_schema_version
+  - event_envelope_version
+  - workspace_id
+  - command_id
+  - occurred_at
+  - hlc
+  - actor
+  - payload
+properties:
+  event_id:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  event_type:
+    type: string
+  event_schema_version:
+    type: integer
+    const: 1
+  event_envelope_version:
+    type: integer
+    const: 2
+  workspace_id:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  command_id:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  occurred_at:
+    type: string
+    format: date-time
+  hlc:
+    type: object
+    required: [physical_ms, logical]
+    properties:
+      physical_ms:
+        type: integer
+        minimum: 0
+        maximum: 9007199254740991
+      logical:
+        type: integer
+        minimum: 0
+        maximum: 9007199254740991
+    additionalProperties: false
+  actor:
+    oneOf:
+      - type: object
+        required: [kind, provisioner_id]
+        properties:
+          kind:
+            const: restricted-provisioner
+          provisioner_id:
+            type: string
+            minLength: 1
+        additionalProperties: false
+      - type: object
+        required: [kind, identity]
+        properties:
+          kind:
+            const: external-identity
+          identity:
+            type: object
+            required: [provider, subject, email]
+            properties:
+              provider:
+                const: google
+              subject:
+                type: string
+                minLength: 1
+              email:
+                type: string
+                format: email
+            additionalProperties: false
+        additionalProperties: false
+      - type: object
+        required: [kind, user_account_id]
+        properties:
+          kind:
+            const: user-account
+          user_account_id:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+        additionalProperties: false
+  payload:
+    type: object
+additionalProperties: false
