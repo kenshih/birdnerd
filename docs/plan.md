@@ -34,6 +34,8 @@ Complete portable YAML/JSON-Schema Event Contracts, UUIDv7, generated TypeScript
 
 Complete Supabase Event Admission, `@birdnerd/sync-state`, the Supabase event-exchange adapter, Event Bundle recovery, offline behavior, and the two-Station/two-to-four-member pilot described in the Phase 26 decision.
 
+- **Patch task — developer Event-pipeline visibility:** add or document a developer-only troubleshooting view of the complete Event path: local Event Log entries grouped by `command_id`, derived projection/cache, outbound queue and retry/cursor state, server admission/acknowledgement/rejection, and sync errors. Keep it out of the production user workflow; establish a deliberate observability seam that later adapters can feed rather than coupling diagnostics to one storage or transport implementation.
+
 ### Phase 31 — Net Reconciliation, cleanup (Field 0.31.0)
 
 Reconcile code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
