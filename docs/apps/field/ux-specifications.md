@@ -46,6 +46,25 @@ server-side Event Admission independently verifies active Membership before it
 accepts an event. See [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md)
 for the authorization model.
 
+### 0.1 Collaboration Pilot
+
+After active access, **Collaboration Pilot** opens the Phase 30 operational
+Event workflow. It shows Workspace name and non-blocking sync state, then lets a
+Member create a partial Session, select it, create partial Banding Records, and
+amend a record. Every save completes locally before sync begins, so an offline
+status never disables these actions. A repeated physical band appears in a
+yellow conflict panel that explicitly says both facts remain for Admin
+correction. The legacy Session screen remains separate and is not dual-written.
+
+The status states are: Ready to sync, Syncing, last-synced time, Offline with
+locally retained changes, and Events needing attention after permanent server
+rejection. **Sync now** remains available without blocking data entry.
+
+In development builds only, Home includes **Event Pipeline**. It groups local
+Events by `command_id` and shows the rebuildable projection, outbound
+queue/retry/cursor state, server receipts/rejections, and sync errors. It is not
+present in production navigation.
+
 ---
 
 ## 1. Home Screen (Navigation Hub)
@@ -590,7 +609,7 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-The Data Manager page has two sections: **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Data Backup**. The current screen uses a full mutable JSON bundle; Phase 30 replaces that with an Event Bundle recovery workflow while preserving agency CSV exports. It validates the bundle and its Workspace before touching local data, requires active access to that Workspace, protects unsynced Events, then replaces/rebuilds and syncs.
+The Data Manager page includes **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Workspace Event Bundle** recovery. The Event Bundle workflow preserves agency CSV exports. It validates the container integrity, every Event, and its Workspace before touching local data, requires active access to that Workspace, protects unsynced Events, then replaces/rebuilds and syncs.
 
 ```
 ┌──────────────────────────────────────┐

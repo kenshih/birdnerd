@@ -24,7 +24,8 @@ no Supabase configuration. These are publishable browser values; never place a
 Supabase secret or `service_role` key in a `VITE_*` variable.
 
 `apps/sync-db` remains an isolated local experiment. It is intentionally not
-built or published at `/birdnerd/sync-db/`; do not point it at the Field pilot
+included by `build:combined`, CI production builds, or Pages, and is not
+published at `/birdnerd/sync-db/`; do not point it at the Field pilot
 Supabase project.
 
 ## PWA Constraint

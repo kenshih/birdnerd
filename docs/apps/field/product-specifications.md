@@ -52,7 +52,7 @@ For the ER diagram, complete field definitions, and entity relationships, see [t
 
 **Immutable (White):** ChangeLog (append-only audit trail of all entity changes).
 
-### 4.2 Collaboration Evolution (Phase 29 local Event Core)
+### 4.2 Collaboration Pilot (Phase 30)
 
 Phase 26 replaces the standalone ChangeLog and mutable authoritative entities
 with a Workspace-scoped Event Log plus rebuildable projections. User Accounts
@@ -70,14 +70,15 @@ derives the signed-in Google principal, exact-email-matches a pending
 Membership, and atomically links/activates it before Field shows operational
 content or can exchange ordinary Events.
 
-Phase 30 also adds a deploy-only trusted operator flow that emits the first
+Field 0.30 adds a deploy-only trusted operator flow that emits the first
 Workspace and pending Workspace Membership Events without creating Supabase
 Auth users or placing privileged credentials on Field devices. The operational
 pilot uses a separate Event-projection workflow—not a dual write to legacy
 mutable forms—with Session creation, Banding Record creation and amendment,
 HLC-based field-level last-write-wins, visible physical-band conflicts, sync
-status, and recovery-only Workspace Event Bundles. Further field-data commands
-remain later work.
+status, and recovery-only Workspace Event Bundles. The operational slice lives
+in a clearly labelled Collaboration Pilot workflow and does not dual-write the
+legacy mutable forms. Further field-data commands remain later work.
 
 ### 4.3 Key Product Concepts
 
