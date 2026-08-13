@@ -54,7 +54,35 @@ Keep credentials, `.env.local`, and provider secrets out of commits.
    transparent corrective follow-up commit. Do not rewrite shared history
    unless the user explicitly requests it.
 
+## Make the handoff state explicit
+
+Start every final report with one bold, plain-language status line. Do not use
+"complete" by itself when the implementation is done but a user decision is
+still required. Use the state that matches the evidence:
+
+- **Handoff state: prepared locally — awaiting your instruction to commit or
+  push.** The changes and validation are ready, but no shared Git state changed.
+- **Handoff state: review-ready PR — awaiting merge.** The delivery work is
+  complete; the user may merge the PR themselves or ask the agent to merge it
+  when authorized. It is not a deployed release or a completed roadmap phase.
+- **Handoff state: merged — doing release/roadmap bookkeeping now.** For a
+  Field phase, an unqualified user statement such as "I merged" authorizes the
+  remaining in-repository release and roadmap-completion bookkeeping. Say this
+  status line, then proceed without asking again. If the user adds a qualifier
+  (for example, "I merged, but…"), follow that direction instead. Do not infer
+  authority to deploy, tag, or perform an unrelated external action.
+- **Handoff state: complete.** Use only after every action the user requested
+  for this release has actually occurred.
+- **Handoff state: blocked — awaiting <specific decision or authority>.**
+  Name the exact thing the user needs to decide or provide.
+
+When a next action is optional, say so explicitly: for example, "You can
+review and merge now. If you say 'I merged,' I will do the remaining
+release/roadmap bookkeeping." Keep implementation completion separate from
+merge, deployment, and roadmap-completion authority.
+
 ## Required final report
 
-Report the Field version, validation results, phase-tracker state, commit and
-push status (if any), and any intentionally deferred phase outcomes.
+Report the explicit handoff state first, then the Field version, validation
+results, phase-tracker state, commit and push status (if any), and any
+intentionally deferred phase outcomes.

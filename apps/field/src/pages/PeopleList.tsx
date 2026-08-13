@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Person, Bander, BanderRole } from '@birdnerd/shared'
 import { getPeople, savePerson, deletePerson, getBanders, saveBander } from '../db'
 import PageHeader from '../components/PageHeader'
@@ -11,10 +12,6 @@ interface Props {
 }
 
 const ROLES: BanderRole[] = ['Master Bander', 'Sub-permittee', 'Bander', 'Trainee']
-
-function generateId(): string {
-  return `person-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
 
 export default function PeopleList({ onSelectPerson, onHome }: Props) {
   const [people, setPeople] = useState<Person[]>([])
@@ -47,7 +44,7 @@ export default function PeopleList({ onSelectPerson, onHome }: Props) {
     if (!form.name.trim() || !form.initials.trim()) return
     const now = new Date().toISOString()
     const person: Person = {
-      id: generateId(),
+      id: createUuidV7(),
       name: form.name.trim(),
       initials: form.initials.trim().toUpperCase(),
       active: true,
@@ -58,7 +55,7 @@ export default function PeopleList({ onSelectPerson, onHome }: Props) {
 
     if (form.makeBander) {
       const bander: Bander = {
-        id: `bander-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        id: createUuidV7(),
         personId: person.id,
         role: form.role,
         createdAt: now,

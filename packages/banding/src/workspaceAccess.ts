@@ -1,32 +1,32 @@
 /**
- * TEMPORARY Phase 28 vertical-slice projector and admission rules. The
- * complete Event Contract catalog, generated bindings, and durable local
- * projection store are Phase 29 work. Keep this limited to Workspace access;
- * do not add operational banding rules here until the full event core exists.
+ * Workspace-access commands, admission, and projection reducer. These pure
+ * rules depend only on portable Event Contracts so a Field IndexedDB cache can
+ * be discarded and rebuilt without turning storage or UI into domain logic.
  */
 
 import {
   canonicalizeEmail,
-  createDraftEvent,
+  createEvent,
   createUuidV7,
   type DomainEvent,
   type ExternalIdentity,
+  type UuidV7,
   type WorkspaceMembershipRole,
 } from '@birdnerd/events'
 
 export type Workspace = {
-  workspace_id: string
+  workspace_id: UuidV7
   name: string
 }
 
 /** A person's BirdNerd access relationship to one Workspace. */
 export type WorkspaceMembership = {
-  membership_id: string
-  workspace_id: string
+  membership_id: UuidV7
+  workspace_id: UuidV7
   email: string
   role: WorkspaceMembershipRole
   status: 'pending' | 'active'
-  user_account_id?: string
+  user_account_id?: UuidV7
 }
 
 /**
@@ -35,19 +35,26 @@ export type WorkspaceMembership = {
  * identity itself nor the domain Person record that Phase 29 later connects.
  */
 export type UserAccount = {
-  user_account_id: string
+  user_account_id: UuidV7
   identity: ExternalIdentity
 }
 
 /**
- * The rebuildable, in-memory current view made by replaying this slice's
- * Workspace and access events. It is not a durable store or an authoritative
- * server-side projection.
+ * The rebuildable current view made by replaying Workspace and access Events.
+ * It is never a durable source of truth or authoritative server-side state.
  */
 export type WorkspaceProjection = {
-  workspaces: ReadonlyMap<string, Workspace>
-  workspace_memberships: ReadonlyMap<string, WorkspaceMembership>
-  user_accounts: ReadonlyMap<string, UserAccount>
+  workspaces: ReadonlyMap<UuidV7, Workspace>
+  workspace_memberships: ReadonlyMap<UuidV7, WorkspaceMembership>
+  user_accounts: ReadonlyMap<UuidV7, UserAccount>
+}
+
+/** JSON-safe cache shape for a WorkspaceProjection. It is always rebuildable from the Event Log. */
+export type WorkspaceProjectionSnapshot = {
+  projection_version: 1
+  workspaces: Workspace[]
+  workspace_memberships: WorkspaceMembership[]
+  user_accounts: UserAccount[]
 }
 
 export type AdmissionDecision =
@@ -60,14 +67,14 @@ export type AccessResolution =
   | { kind: 'no-access' }
 
 /**
- * Replay the limited Phase 28 event set into the current Workspace access
+ * Replay the current Workspace-access event set into the current Workspace access
  * view. The Event Log remains authoritative; callers may discard and rebuild
  * this projection at any time.
  */
 export function projectWorkspaceEvents(events: readonly DomainEvent[]): WorkspaceProjection {
-  const workspaces = new Map<string, Workspace>()
-  const workspaceMemberships = new Map<string, WorkspaceMembership>()
-  const userAccounts = new Map<string, UserAccount>()
+  const workspaces = new Map<UuidV7, Workspace>()
+  const workspaceMemberships = new Map<UuidV7, WorkspaceMembership>()
+  const userAccounts = new Map<UuidV7, UserAccount>()
 
   // Build the facts that can stand alone first, so their order in an Event Log
   // does not decide whether a later activation can be projected.
@@ -101,6 +108,7 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
     const workspaceMembership = workspaceMemberships.get(event.payload.membership_id)
     const account = userAccounts.get(event.payload.user_account_id)
     if (!workspaceMembership || !account || event.actor.kind !== 'external-identity') continue
+    if (event.workspace_id !== workspaceMembership.workspace_id) continue
     if (!sameIdentity(account.identity, event.actor.identity)) continue
     if (workspaceMembership.email !== event.actor.identity.email) continue
     if (workspaceMembership.status === 'active' && workspaceMembership.user_account_id !== account.user_account_id) continue
@@ -114,8 +122,18 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
   return { workspaces, workspace_memberships: workspaceMemberships, user_accounts: userAccounts }
 }
 
+/** Convert a derived projection to a JSON-safe cache; callers must not treat it as authoritative. */
+export function snapshotWorkspaceProjection(projection: WorkspaceProjection): WorkspaceProjectionSnapshot {
+  return {
+    projection_version: 1,
+    workspaces: [...projection.workspaces.values()],
+    workspace_memberships: [...projection.workspace_memberships.values()],
+    user_accounts: [...projection.user_accounts.values()],
+  }
+}
+
 /**
- * Apply the Phase 28 local admission rules before an event can enter the
+ * Apply the local admission rules before an event can enter the
  * Event Log. Rules check structure, authority, and immutable-ID conflicts but
  * deliberately do not require another event to have arrived first: command
  * groups must remain independently appendable and replayable in any order.
@@ -137,7 +155,7 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
   }
 
   if (candidate.event_type === 'membership.preauthorized') {
-    if (candidate.actor.kind !== 'restricted-provisioner') return deny('Only the restricted Provisioner can pre-authorize a Membership in Phase 28.')
+    if (candidate.actor.kind !== 'restricted-provisioner') return deny('Only the restricted Provisioner can pre-authorize a Membership locally.')
     if (projection.workspace_memberships.has(candidate.payload.membership_id)) return deny('Workspace Membership already exists.')
     const matchingEmail = [...projection.workspace_memberships.values()].find(workspaceMembership => (
       workspaceMembership.workspace_id === candidate.workspace_id && workspaceMembership.email === candidate.payload.email
@@ -154,6 +172,10 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
   }
 
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')
+  const workspaceMembership = projection.workspace_memberships.get(candidate.payload.membership_id)
+  if (workspaceMembership && candidate.workspace_id !== workspaceMembership.workspace_id) {
+    return deny('A Membership activation must target the Membership Workspace.')
+  }
   return { accepted: true }
 }
 
@@ -193,7 +215,7 @@ export function decidePendingMembershipActivation(events: readonly DomainEvent[]
   const actor = { kind: 'external-identity' as const, identity: canonicalIdentity }
   const linkedAccountEvent = existingAccount
     ? []
-    : [createDraftEvent({
+    : [createEvent({
         event_type: 'user-account.linked',
         workspace_id: resolution.workspace_membership.workspace_id,
         command_id: commandId,
@@ -203,7 +225,7 @@ export function decidePendingMembershipActivation(events: readonly DomainEvent[]
 
   return [
     ...linkedAccountEvent,
-    createDraftEvent({
+    createEvent({
       event_type: 'membership.activated',
       workspace_id: resolution.workspace_membership.workspace_id,
       command_id: commandId,

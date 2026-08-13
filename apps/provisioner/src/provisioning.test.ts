@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { decodeDraftEventLog, encodeDraftEventLog } from '@birdnerd/events'
-import { LocalEventLog } from '@birdnerd/sync-state'
+import { decodeEventLog, encodeEventLog } from '@birdnerd/events'
+import { EventLog } from '@birdnerd/sync-state'
 import { admitWorkspaceEvent, decidePendingMembershipActivation, resolveWorkspaceAccess } from '@birdnerd/banding'
 import { parsePendingMember, provisionWorkspace } from './provisioning.js'
 
@@ -11,8 +11,8 @@ describe('Provisioner vertical slice', () => {
       admin_email: 'Admin@Example.com',
       pending_members: [parsePendingMember('contributor@example.com:contributor')],
     })
-    const handoff = decodeDraftEventLog(encodeDraftEventLog(provisioned)).reverse()
-    const log = new LocalEventLog(handoff, admitWorkspaceEvent)
+    const handoff = decodeEventLog(encodeEventLog(provisioned)).reverse()
+    const log = new EventLog(handoff, admitWorkspaceEvent)
     const identity = { provider: 'google' as const, subject: 'google-admin', email: 'admin@example.com' }
 
     const activation = decidePendingMembershipActivation(log.snapshot(), identity)

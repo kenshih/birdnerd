@@ -1,8 +1,7 @@
 # BirdNerd Event Contracts
 
 This directory is the portable source location for BirdNerd Event Contracts.
-Phase 28 introduces only the four draft Workspace-access contracts needed for
-the local provisioning vertical slice:
+Phase 29 defines the version-1 Workspace-access contract catalog:
 
 - `workspace.created`
 - `membership.preauthorized`
@@ -10,7 +9,16 @@ the local provisioning vertical slice:
 - `membership.activated`
 
 They use the intentionally restricted JSON Schema 2020-12 subset selected in
-ADR 0008. The TypeScript implementation in `@birdnerd/events` is handwritten
-for this slice; Phase 29 will generate types and validators from these files
-and add CI drift protection. Draft contracts may change destructively until the
-first shared-data release is locked.
+ADR 0008. `npm run generate:event-bindings` parses these YAML files and writes
+the committed TypeScript bindings and runtime validator used by
+`@birdnerd/events`; `npm run check:event-bindings` rejects generated-file
+drift. The generator accepts only object, array, scalar, `enum`, `const`,
+`oneOf`, `required`, `properties`, `items`, `minLength`, `pattern`, `format`,
+and `additionalProperties` in this catalog. Add a generator test before
+expanding that portable subset.
+
+`event-envelope.v1.yaml` describes fields shared by every event. Each other
+`*.v1.yaml` is one payload contract, identified by its title before the
+trailing ` v1` (for example, `workspace.created v1`). Event type and schema
+version remain independent compatibility boundaries; current draft contracts
+may change destructively only until the first shared-data release is frozen.

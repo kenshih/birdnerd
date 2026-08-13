@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import { labelStyle, inputStyle, nowBtnStyle, btnStyle } from '../styles/theme'
 import { Card } from '../components/Card'
 import type { BirdRecord, Session, SessionNetLog, Net, Location, Bander, Person, Protocol, Band } from '@birdnerd/shared'
@@ -203,7 +204,7 @@ export default function SessionView({ session, onBack, onHome, onSessionDeleted,
         onAdd={async (netId) => {
           const now = new Date().toISOString()
           await saveSessionNetLog({
-            id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+            id: createUuidV7(),
             sessionId: session.id,
             netId,
             openTime: session.openTime,

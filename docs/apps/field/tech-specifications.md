@@ -394,33 +394,41 @@ The approved rollout is Phases 27–30 in [docs/plan.md](../../plan.md). The
 first pilot covers two Stations and two to four members, including parallel
 work at one Station and offline convergence.
 
-### Workspace Vertical Slice (Field 0.28.0)
+### Local Event Core (Field 0.29.0)
 
-Phase 28 creates the smallest executable collaboration path without moving
-Supabase Event Admission or the durable local store ahead of the roadmap:
+Phase 29 makes the Workspace-access vertical slice durable without advancing
+Supabase exchange or field-data commands ahead of the roadmap:
 
-- `schemas/workspace/` contains four draft YAML contracts:
+- `schemas/workspace/` is the portable YAML/JSON-Schema source of truth for
   `workspace.created`, `membership.preauthorized`, `user-account.linked`, and
-  `membership.activated`. `@birdnerd/events` provides handwritten draft
-  UUIDv7/event codec support until Phase 29 generates the bindings.
-- `@birdnerd/banding` projects Workspace, pending/active Membership, and User
-  Account linkage state and decides the limited bootstrap admission rules.
-  `@birdnerd/sync-state` supplies only an in-memory append-only Event Log; all
-  initial and new events pass through admission before projection.
-- The separate `@birdnerd/provisioner` TypeScript CLI creates a Workspace and
-  pending Admin/Contributor Memberships, emitting only canonical events to a
-  local JSON Event Log. It does not write projections, IndexedDB, or Supabase
-  rows. Its JSON output is a local test/harness hand-off, not an Event Bundle
-  and not a Field-device provisioning mechanism.
-- `WorkspaceAccessGate` wraps all Field operational UI. It first obtains the
-  provider-neutral external identity, then resolves BirdNerd access. It shows
-  the sign-in, checking, no-access, and active outcomes in the UX contract;
-  matching pending Membership activation is idempotent. The deployed adapter
-  starts with an empty Event Log until Phases 29–30 supply persistence and sync.
+  `membership.activated`. `npm run generate:event-bindings` writes committed
+  TypeScript bindings/structural validation for `@birdnerd/events`, while
+  `npm run check:event-bindings` detects drift in local and pull-request CI.
+  The package owns UUIDv7 creation, JSON codec validation, and the upcast
+  boundary; it does not own reducers or storage.
+- `@birdnerd/banding` owns pure Workspace admission, activation decisions, and
+  deterministic Workspace-access projection. Its projection snapshot is a
+  cache-only representation of the Event Log, never an authoritative model.
+  `@birdnerd/sync-state` owns generic immutable append/idempotency behavior;
+  it does not import Field, IndexedDB, or domain reducers.
+- Field owns `WorkspaceEventStore`, an IndexedDB database named
+  `birdnerd-event-core` with an append-only `event_log` and derived
+  `projection_cache`. Accepted events and their rebuilt cache commit together;
+  hydration loads Events and regenerates the cache. It is intentionally a new
+  store, so the legacy `birdnerd` mutable database is neither migrated nor
+  altered. A failed event-store write resets the in-memory log before retry.
+- The separate `@birdnerd/provisioner` TypeScript CLI still emits canonical
+  Event Log JSON through ordinary admission only. That file remains a local
+  hand-off—not an Event Bundle or Field-device provisioning mechanism.
+- `WorkspaceAccessGate` continues to require BirdNerd-owned access after
+  provider-neutral sign-in. Matching pending Membership activation is persisted
+  before an active result is returned. The current PWA starts with an empty
+  Event Log unless a local harness supplied accepted bootstrap Events.
 
-Temporary Phase 28 files identify themselves in their leading comments. The
-draft event contracts, in-memory Event Log, JSON hand-off, and production
-empty-log wiring must be replaced or removed as Phase 29/30 completes them.
+All new Field and bootstrap IDs use UUIDv7, and the test/initial-hydration
+bundles were recreated with UUIDv7 identifiers and internally valid references.
+The former mutable `DataBundle` remains only for legacy app data until Event
+Bundle recovery is delivered; it is not converted or imported by this core.
 
 ### Data Validation Datasets (future)
 
@@ -481,10 +489,12 @@ their transfer design is explicitly added.
 - Event-ID deduplication makes restoring an older bundle before sync safe.
 - Explicit merge/adoption of two histories is not part of v1.
 
-**Seed and hydration:** The clean collaboration release recreates test and
-initial-hydration data as normal provisioning/events, not as mutable seed
-rows. The restricted Provisioner creates the first Workspace and Admin through
-the same event/admission/projection path.
+**Seed and hydration:** Phase 29 recreates the legacy app's test and
+initial-hydration fixtures with UUIDv7 identifiers and valid internal
+references, but leaves their mutable `DataBundle` rows in place until
+field-data Event Contracts and commands exist. The restricted Provisioner
+creates the first Workspace and Admin through the event/admission/projection
+path.
 
 ### Future: BBL & Legacy Data
 

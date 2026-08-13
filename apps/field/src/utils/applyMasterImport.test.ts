@@ -28,6 +28,14 @@ const cap = (over: Record<string, string> = {}): Record<string, string> => ({
 
 const now = new Date().toISOString()
 
+const fixtureIds = {
+  existingLocation: '018f8c7b-0000-7000-8000-000000000061',
+  halliePerson: '018f8c7b-0000-7000-8000-000000000062',
+  hallieBander: '018f8c7b-0000-7000-8000-000000000063',
+  joannaPerson: '018f8c7b-0000-7000-8000-000000000064',
+  joannaBander: '018f8c7b-0000-7000-8000-000000000065',
+} as const
+
 beforeEach(async () => {
   resetDB()
   indexedDB.deleteDatabase('birdnerd')
@@ -52,13 +60,13 @@ describe('applyImportPlan — fresh import', () => {
 
   it('reuses an existing location instead of creating a stub', async () => {
     await saveLocation({
-      id: 'loc-existing', banderLocationId: 'GCFS', bblLocationId: null, name: 'Galindo',
+      id: fixtureIds.existingLocation, banderLocationId: 'GCFS', bblLocationId: null, name: 'Galindo',
       latitude: 0, longitude: 0, country: 'USA', stateProvince: 'CA', remarks: '', createdAt: now, updatedAt: now,
     })
     const summary = await applyImportPlan(buildImportPlan(sheet([cap()])))
     expect(summary.locationsCreated).toEqual([])
     const sess = await getSessions()
-    expect(sess[0]!.locationId).toBe('loc-existing')
+    expect(sess[0]!.locationId).toBe(fixtureIds.existingLocation)
   })
 })
 
@@ -97,8 +105,8 @@ describe('applyImportPlan — dry run', () => {
 
 describe('applyImportPlan — bander linking', () => {
   it('links known banders, sets masterBander, and auto-creates unknown helpers', async () => {
-    await savePerson({ id: 'p-hd', name: 'Hallie Daly', initials: 'HD', active: true, createdAt: now, updatedAt: now })
-    await saveBander({ id: 'b-hd', personId: 'p-hd', role: 'Master Bander', createdAt: now, updatedAt: now })
+    await savePerson({ id: fixtureIds.halliePerson, name: 'Hallie Daly', initials: 'HD', active: true, createdAt: now, updatedAt: now })
+    await saveBander({ id: fixtureIds.hallieBander, personId: fixtureIds.halliePerson, role: 'Master Bander', createdAt: now, updatedAt: now })
 
     const plan = buildImportPlan(sheet([
       cap({ Bander: 'HD', 'Band Number': '142263301' }),
@@ -110,7 +118,7 @@ describe('applyImportPlan — bander linking', () => {
     expect(summary.peopleCreated).toEqual(['AF'])
 
     const sess = await getSessions()
-    expect(sess[0]!.masterBanderId).toBe('b-hd')
+    expect(sess[0]!.masterBanderId).toBe(fixtureIds.hallieBander)
     const logs = await getAllSessionBanderLogs()
     expect(logs).toHaveLength(2)
 
@@ -121,15 +129,15 @@ describe('applyImportPlan — bander linking', () => {
   })
 
   it('aliases JV → JVD to link an existing person instead of creating a duplicate', async () => {
-    await savePerson({ id: 'p-jvd', name: 'Joanna van Dyk', initials: 'JVD', active: true, createdAt: now, updatedAt: now })
-    await saveBander({ id: 'b-jvd', personId: 'p-jvd', role: 'Sub-permittee', createdAt: now, updatedAt: now })
+    await savePerson({ id: fixtureIds.joannaPerson, name: 'Joanna van Dyk', initials: 'JVD', active: true, createdAt: now, updatedAt: now })
+    await saveBander({ id: fixtureIds.joannaBander, personId: fixtureIds.joannaPerson, role: 'Sub-permittee', createdAt: now, updatedAt: now })
 
     const summary = await applyImportPlan(buildImportPlan(sheet([cap({ Bander: 'JV' })])))
 
     expect(summary.peopleCreated).toEqual([])         // no new person — aliased to JVD
     expect(summary.banderLogsCreated).toBe(1)
     const logs = await getAllSessionBanderLogs()
-    expect(logs[0]!.banderId).toBe('b-jvd')
+    expect(logs[0]!.banderId).toBe(fixtureIds.joannaBander)
     expect((await getPeople())).toHaveLength(1)
   })
 })

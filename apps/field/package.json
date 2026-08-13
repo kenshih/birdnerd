@@ -1,7 +1,7 @@
 {
   "name": "@birdnerd/field",
   "private": true,
-  "version": "0.28.0",
+  "version": "0.29.0",
   "type": "module",
   "scripts": {
     "prebuild": "npm --prefix ../.. run build:collaboration",
@@ -15,10 +15,10 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
-    "@birdnerd/banding": "0.1.0",
-    "@birdnerd/events": "0.1.0",
+    "@birdnerd/banding": "0.2.0",
+    "@birdnerd/events": "0.2.0",
     "@birdnerd/shared": "0.2.7",
-    "@birdnerd/sync-state": "0.1.0",
+    "@birdnerd/sync-state": "0.2.0",
     "@supabase/supabase-js": "^2.108.2",
     "idb": "^8.0.3",
     "react": "^19.2.5",

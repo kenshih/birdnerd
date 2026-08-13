@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { readFile } from 'node:fs/promises'
+import { isUuidV7 } from '@birdnerd/events'
 import { BUNDLE_VERSION } from '../data/bundle-schema'
 import type { DataBundle } from '../data/bundle-schema'
 import { validateBundle, exportDataBundle, importDataBundle } from './dataBundle'
@@ -9,6 +11,19 @@ import type { Location, Net, Person, Bander, Session, SessionBanderLog, BirdReco
 vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }))
 
 const now = new Date().toISOString()
+
+const fixtureIds = {
+  location: '018f8c7b-0000-7000-8000-000000000011',
+  net: '018f8c7b-0000-7000-8000-000000000012',
+  person: '018f8c7b-0000-7000-8000-000000000013',
+  bander: '018f8c7b-0000-7000-8000-000000000014',
+  session: '018f8c7b-0000-7000-8000-000000000015',
+  sessionBanderLog: '018f8c7b-0000-7000-8000-000000000016',
+  record: '018f8c7b-0000-7000-8000-000000000017',
+  otherLocation: '018f8c7b-0000-7000-8000-000000000018',
+  band: '018f8c7b-0000-7000-8000-000000000019',
+  legacySession: '018f8c7b-0000-7000-8000-000000000020',
+} as const
 
 function makeBundle(overrides: Partial<DataBundle> = {}): DataBundle {
   return {
@@ -29,40 +44,82 @@ function makeBundle(overrides: Partial<DataBundle> = {}): DataBundle {
 }
 
 const sampleLocation: Location = {
-  id: 'loc-1', banderLocationId: 'TEST', bblLocationId: null,
+  id: fixtureIds.location, banderLocationId: 'TEST', bblLocationId: null,
   name: 'Test Station', latitude: 37.0, longitude: -122.0,
   country: 'US', stateProvince: 'CA', remarks: '',
   createdAt: now, updatedAt: now,
 }
 
 const sampleNet: Net = {
-  id: 'net-1', locationId: 'loc-1', label: '1', active: true,
+  id: fixtureIds.net, locationId: fixtureIds.location, label: '1', active: true,
   createdAt: now, updatedAt: now,
 }
 
 const samplePerson: Person = {
-  id: 'person-1', name: 'Test Bander', initials: 'TB', active: true,
+  id: fixtureIds.person, name: 'Test Bander', initials: 'TB', active: true,
   createdAt: now, updatedAt: now,
 }
 
 const sampleBander: Bander = {
-  id: 'bander-1', personId: 'person-1', role: 'Bander',
+  id: fixtureIds.bander, personId: fixtureIds.person, role: 'Bander',
   createdAt: now, updatedAt: now,
 }
 
 const sampleSession: Session = {
-  id: 'sess-1', locationId: 'loc-1', date: '2026-03-21', createdAt: now, updatedAt: now,
+  id: fixtureIds.session, locationId: fixtureIds.location, date: '2026-03-21', createdAt: now, updatedAt: now,
 }
 
 const sampleSessionBanderLog: SessionBanderLog = {
-  id: 'sbl-1', sessionId: 'sess-1', banderId: 'bander-1', createdAt: now, updatedAt: now,
+  id: fixtureIds.sessionBanderLog, sessionId: fixtureIds.session, banderId: fixtureIds.bander, createdAt: now, updatedAt: now,
 }
 
 const sampleRecord: BirdRecord = {
-  id: 'rec-1', sessionId: 'sess-1', bandNumber: '1234-56789',
+  id: fixtureIds.record, sessionId: fixtureIds.session, bandNumber: '1234-56789',
   speciesCode: 'SOSP', age: 'AHY', sex: 'M',
   createdAt: now, updatedAt: now,
 }
+
+const INITIAL_HYDRATION_FILES = [
+  new URL('../../public/data/seed.json', import.meta.url),
+  new URL('../../public/data/example-data.json', import.meta.url),
+  new URL('../../examples/birdnerd-full-sample.json', import.meta.url),
+]
+
+type InitialBundle = DataBundle & { photos?: Array<{ id: string; bandingRecordId: string }> }
+
+function entityIds(bundle: InitialBundle): string[] {
+  return [
+    ...bundle.locations, ...bundle.nets, ...bundle.people, ...bundle.banders,
+    ...bundle.sessions, ...(bundle.sessionBanderLogs ?? []), ...(bundle.sessionNetLogs ?? []),
+    ...(bundle.bands ?? []), ...bundle.records, ...(bundle.photos ?? []),
+  ].map(entity => entity.id)
+}
+
+function referencedIds(bundle: InitialBundle): string[] {
+  return [
+    ...bundle.nets.map(entity => entity.locationId),
+    ...bundle.banders.map(entity => entity.personId),
+    ...bundle.sessions.flatMap(entity => [entity.locationId, entity.masterBanderId]),
+    ...(bundle.sessionBanderLogs ?? []).flatMap(entity => [entity.sessionId, entity.banderId]),
+    ...(bundle.sessionNetLogs ?? []).flatMap(entity => [entity.sessionId, entity.netId]),
+    ...(bundle.records ?? []).flatMap(entity => [entity.sessionId, entity.bandId]),
+    ...(bundle.photos ?? []).map(entity => entity.bandingRecordId),
+  ].filter((value): value is string => Boolean(value))
+}
+
+describe('initial hydration bundles', () => {
+  it('use UUIDv7 entity IDs and retain only internal UUIDv7 references', async () => {
+    for (const file of INITIAL_HYDRATION_FILES) {
+      const bundle = JSON.parse(await readFile(file, 'utf8')) as InitialBundle
+      const ids = new Set(entityIds(bundle))
+
+      expect(bundle.version).toBe(BUNDLE_VERSION)
+      expect([...ids]).toHaveLength(entityIds(bundle).length)
+      expect([...ids].every(isUuidV7)).toBe(true)
+      expect(referencedIds(bundle).every(id => ids.has(id) && isUuidV7(id))).toBe(true)
+    }
+  })
+})
 
 // ─── Validation (pure function, no IndexedDB) ────────────────────────
 
@@ -167,7 +224,7 @@ describe('export/import round-trip', () => {
     const db = await getDB()
     const locs = await db.getAll('locations')
     expect(locs).toHaveLength(1)
-    expect(locs[0].id).toBe('loc-1')
+    expect(locs[0].id).toBe(fixtureIds.location)
     expect(locs[0].name).toBe('Test Station')
 
     const nets = await db.getAll('nets')
@@ -184,11 +241,11 @@ describe('export/import round-trip', () => {
 
     const sessions = await db.getAll('sessions')
     expect(sessions).toHaveLength(1)
-    expect(sessions[0].locationId).toBe('loc-1')
+    expect(sessions[0].locationId).toBe(fixtureIds.location)
 
     const sbls = await db.getAll('sessionBanderLogs')
     expect(sbls).toHaveLength(1)
-    expect(sbls[0].banderId).toBe('bander-1')
+    expect(sbls[0].banderId).toBe(fixtureIds.bander)
 
     const records = await db.getAll('records')
     expect(records).toHaveLength(1)
@@ -203,7 +260,7 @@ describe('export/import round-trip', () => {
     // Import a bundle with different data
     const otherLocation: Location = {
       ...sampleLocation,
-      id: 'loc-other',
+      id: fixtureIds.otherLocation,
       banderLocationId: 'OTHR',
       name: 'Other Station',
     }
@@ -214,7 +271,7 @@ describe('export/import round-trip', () => {
     const db = await getDB()
     const locs = await db.getAll('locations')
     expect(locs).toHaveLength(1)
-    expect(locs[0].id).toBe('loc-other')
+    expect(locs[0].id).toBe(fixtureIds.otherLocation)
 
     // People should be wiped too (bundle had empty people array)
     const people = await db.getAll('people')
@@ -237,7 +294,7 @@ describe('export/import round-trip', () => {
   it('round-trips bands', async () => {
     const { saveBand } = await import('../db')
     await saveBand({
-      id: 'band-1', bandNumber: '1154-81501', status: 'available',
+      id: fixtureIds.band, bandNumber: '1154-81501', status: 'available',
       bandSize: '1B', bandType: 'Standard', createdAt: now, updatedAt: now,
     })
 
@@ -278,7 +335,7 @@ describe('export/import round-trip', () => {
   })
 
   it('migrates v1 bundle (station → locationId)', async () => {
-    // Create a v1-style bundle with station field on session
+    // Create a v1-style bundle with a UUIDv7 ID and station field on session.
     const v1Bundle = {
       version: 1,
       exportedAt: now,
@@ -286,7 +343,7 @@ describe('export/import round-trip', () => {
       nets: [],
       people: [],
       banders: [],
-      sessions: [{ id: 'sess-v1', station: 'TEST', date: '2026-01-01', createdAt: now }],
+      sessions: [{ id: fixtureIds.legacySession, station: 'TEST', date: '2026-01-01', createdAt: now }],
       records: [],
     }
 
@@ -296,7 +353,7 @@ describe('export/import round-trip', () => {
     const db = await getDB()
     const sessions = await db.getAll('sessions')
     expect(sessions).toHaveLength(1)
-    expect(sessions[0].locationId).toBe('loc-1') // mapped from station=TEST → location with banderLocationId=TEST
+    expect(sessions[0].locationId).toBe(fixtureIds.location) // mapped from station=TEST → location with banderLocationId=TEST
     expect((sessions[0] as unknown as Record<string, unknown>).station).toBeUndefined()
     expect(sessions[0].updatedAt).toBeTruthy()
 

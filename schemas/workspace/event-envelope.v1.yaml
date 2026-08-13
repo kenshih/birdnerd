@@ -1,4 +1,5 @@
-# TEMPORARY Phase 28 draft: Phase 29 will make this a generated contract input.
+# BirdNerd's version-1 Domain Event envelope. Payload schemas in this directory
+# are selected by `event_type` and share this envelope.
 $schema: https://json-schema.org/draft/2020-12/schema
 title: BirdNerd Domain Event envelope
 type: object
@@ -15,6 +16,7 @@ properties:
   event_id:
     type: string
     format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
     description: Canonical UUIDv7 Domain Event identifier.
   event_type:
     type: string
@@ -24,16 +26,56 @@ properties:
   workspace_id:
     type: string
     format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
     description: Canonical UUIDv7 Workspace identifier.
   command_id:
     type: string
     format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
     description: Canonical UUIDv7 Command Group identifier.
   occurred_at:
     type: string
     format: date-time
   actor:
-    type: object
+    oneOf:
+      - type: object
+        required: [kind, provisioner_id]
+        properties:
+          kind:
+            const: restricted-provisioner
+          provisioner_id:
+            type: string
+            minLength: 1
+        additionalProperties: false
+      - type: object
+        required: [kind, identity]
+        properties:
+          kind:
+            const: external-identity
+          identity:
+            type: object
+            required: [provider, subject, email]
+            properties:
+              provider:
+                const: google
+              subject:
+                type: string
+                minLength: 1
+              email:
+                type: string
+                format: email
+            additionalProperties: false
+        additionalProperties: false
+      - type: object
+        required: [kind, user_account_id]
+        properties:
+          kind:
+            const: user-account
+          user_account_id:
+            type: string
+            format: uuid
+            pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+        additionalProperties: false
   payload:
     type: object
 additionalProperties: false

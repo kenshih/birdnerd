@@ -1,16 +1,10 @@
 /**
- * TEMPORARY Phase 28 local event-log hand-off. This in-memory append-only log
- * proves the admission boundary without a database or network transport.
- * Phase 29 replaces it with the durable local event/projection store; Phase 30
- * adds the Supabase provider adapter, cursors, retries, and receipts.
- *
- * The enduring responsibility of @birdnerd/sync-state is generic
- * event-replication state: local logs, pending/rejected events, cursors,
- * receipts, retries, and visible sync status. It knows Event Contracts but
- * never banding rules, projections, or Field UI state.
+ * Generic append-only Event Log state. It knows portable Event Contracts but
+ * never banding decisions, projections, IndexedDB, or Field UI. The Field app
+ * supplies its durable storage adapter; provider exchange remains Phase 30.
  */
 
-import { assertDraftEvent, type DomainEvent } from '@birdnerd/events'
+import { assertEvent, type DomainEvent } from '@birdnerd/events'
 
 export type EventAdmission = (candidate: DomainEvent, existingEvents: readonly DomainEvent[]) =>
   | { accepted: true }
@@ -21,7 +15,12 @@ export type AppendResult =
   | { kind: 'duplicate'; event: DomainEvent }
   | { kind: 'rejected'; event: DomainEvent; reason: string }
 
-export class LocalEventLog {
+/**
+ * In-memory command-side view of an append-only Event Log. A caller persists
+ * accepted results before exposing a rebuilt projection; retries of identical
+ * immutable events remain duplicates rather than second writes.
+ */
+export class EventLog {
   private readonly events: DomainEvent[]
 
   constructor(initialEvents: readonly DomainEvent[] = [], private readonly admit: EventAdmission) {
@@ -37,7 +36,7 @@ export class LocalEventLog {
   }
 
   append(event: DomainEvent): AppendResult {
-    assertDraftEvent(event)
+    assertEvent(event)
     const existing = this.events.find(candidate => candidate.event_id === event.event_id)
     if (existing) {
       if (JSON.stringify(existing) === JSON.stringify(event)) return { kind: 'duplicate', event: existing }

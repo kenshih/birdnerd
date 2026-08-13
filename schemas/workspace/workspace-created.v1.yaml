@@ -1,4 +1,4 @@
-# TEMPORARY Phase 28 draft: Phase 29 will generate bindings from this contract.
+# Payload contract for `workspace.created` v1.
 $schema: https://json-schema.org/draft/2020-12/schema
 title: workspace.created v1
 type: object
@@ -7,6 +7,7 @@ properties:
   workspace_id:
     type: string
     format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
   name:
     type: string
     minLength: 1

@@ -2,27 +2,39 @@ import { describe, it, expect } from 'vitest'
 import { generateIBPRows, generateBBLRows, generateBBLRecapRows } from './agencyExport'
 import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
 
+const fixtureIds = {
+  session: '018f8c7b-0000-7000-8000-000000000031',
+  location: '018f8c7b-0000-7000-8000-000000000032',
+  band: '018f8c7b-0000-7000-8000-000000000033',
+  person: '018f8c7b-0000-7000-8000-000000000034',
+  bander: '018f8c7b-0000-7000-8000-000000000035',
+} as const
+
+function recordId(sequence: number): string {
+  return `018f8c7b-0000-7000-8000-${sequence.toString(16).padStart(12, '0')}`
+}
+
 const session: Session = {
-  id: 'sess-1', locationId: 'loc-1', date: '2026-04-19',
+  id: fixtureIds.session, locationId: fixtureIds.location, date: '2026-04-19',
   createdAt: '', updatedAt: '',
 }
 const location: Location = {
-  id: 'loc-1', banderLocationId: 'GCFS', bblLocationId: null,
+  id: fixtureIds.location, banderLocationId: 'GCFS', bblLocationId: null,
   name: 'Galindo Creek', latitude: 37.9, longitude: -122.1,
   country: 'US', stateProvince: 'CA', remarks: '',
   createdAt: '', updatedAt: '',
 }
 const band: Band = {
-  id: 'band-1', bandNumber: '1422-63301', status: 'deployed',
+  id: fixtureIds.band, bandNumber: '1422-63301', status: 'deployed',
   bandSize: '2', bandType: 'Standard',
   createdAt: '', updatedAt: '',
 }
 const person: Person = {
-  id: 'pers-1', name: 'Tatyana Soto-Bartzi', initials: 'TS',
+  id: fixtureIds.person, name: 'Tatyana Soto-Bartzi', initials: 'TS',
   active: true, createdAt: '', updatedAt: '',
 }
 const bander: Bander = {
-  id: 'bdr-1', personId: 'pers-1', role: 'Sub-permittee',
+  id: fixtureIds.bander, personId: fixtureIds.person, role: 'Sub-permittee',
   createdAt: '', updatedAt: '',
 }
 
@@ -39,7 +51,7 @@ const ctx = {
 // one but not the other) — the failure mode the parallel-array design invites.
 describe('header/row column counts stay in lockstep', () => {
   const rec: BirdRecord = {
-    id: 'g1', sessionId: 'sess-1', bbpCode: '1',
+    id: recordId(36), sessionId: fixtureIds.session, bbpCode: '1',
     bandNumber: '1422-63301', speciesCode: 'CALT',
     createdAt: '', updatedAt: '',
   }
@@ -67,8 +79,8 @@ describe('IBP Export — generateIBPRows', () => {
 
   it('maps a full new banding record to IBP row', () => {
     const rec: BirdRecord = {
-      id: 'r1', sessionId: 'sess-1',
-      bandId: 'band-1', bandNumber: '1422-63301',
+      id: recordId(37), sessionId: fixtureIds.session,
+      bandId: fixtureIds.band, bandNumber: '1422-63301',
       speciesCode: 'CALT', age: '5', sex: 'M',
       howAged: 'CL', howAged2: 'PL', howSexed: 'CL',
       bbpCode: '1', wrp: 'DCB',
@@ -81,7 +93,7 @@ describe('IBP Export — generateIBPRows', () => {
       wing: 88, bodyMass: 49.3,
       status: '300',
       date: '2026-04-19', captureTime: '07:10',
-      station: 'GCFS', net: 'T4', bander: 'bdr-1',
+      station: 'GCFS', net: 'T4', bander: fixtureIds.bander,
       featherPull: false, bloodSample: false, notes: '',
       createdAt: '', updatedAt: '',
     }
@@ -162,7 +174,7 @@ describe('IBP Export — generateIBPRows', () => {
 
   it('handles empty/missing fields gracefully', () => {
     const rec: BirdRecord = {
-      id: 'r2', sessionId: 'sess-1',
+      id: recordId(38), sessionId: fixtureIds.session,
       bbpCode: 'U', bandNumber: 'UNBANDED',
       createdAt: '', updatedAt: '',
     }
@@ -180,7 +192,7 @@ describe('IBP Export — generateIBPRows', () => {
 
   it('resolves location from session FK', () => {
     const rec: BirdRecord = {
-      id: 'r3', sessionId: 'sess-1',
+      id: recordId(39), sessionId: fixtureIds.session,
       bbpCode: '1',
       createdAt: '', updatedAt: '',
     }
@@ -191,7 +203,7 @@ describe('IBP Export — generateIBPRows', () => {
 
   it('handles body molt Y for values 1-4', () => {
     const rec: BirdRecord = {
-      id: 'r4', sessionId: 'sess-1',
+      id: recordId(40), sessionId: fixtureIds.session,
       bodyMolt: '3', ffMolt: 'A',
       createdAt: '', updatedAt: '',
     }
@@ -204,7 +216,7 @@ describe('IBP Export — generateIBPRows', () => {
 
   it('maps featherPull/bloodSample booleans to Y/N', () => {
     const rec: BirdRecord = {
-      id: 'r5', sessionId: 'sess-1',
+      id: recordId(41), sessionId: fixtureIds.session,
       featherPull: true, bloodSample: true,
       createdAt: '', updatedAt: '',
     }
@@ -219,7 +231,7 @@ describe('IBP Export — generateIBPRows', () => {
     ['L', 'BAND LOST', '8'],
   ])('reconstructs a band-fate row from bbpCode %s (inverse of import)', (code, speciesName, bblCode) => {
     const rec: BirdRecord = {
-      id: 'rf1', sessionId: 'sess-1', bbpCode: code,
+      id: recordId(42), sessionId: fixtureIds.session, bbpCode: code,
       bandNumber: '1154-81501', speciesCode: undefined,
       createdAt: '', updatedAt: '',
     }
@@ -234,7 +246,7 @@ describe('IBP Export — generateIBPRows', () => {
 describe('band-fate rows are excluded from BBL new + recapture exports', () => {
   it.each(['D', 'L'])('bbpCode %s appears in neither upload', code => {
     const rec: BirdRecord = {
-      id: 'rf2', sessionId: 'sess-1', bbpCode: code,
+      id: recordId(43), sessionId: fixtureIds.session, bbpCode: code,
       bandNumber: '1154-81501',
       createdAt: '', updatedAt: '',
     }
@@ -256,22 +268,22 @@ describe('BBL Upload — generateBBLRows', () => {
 
   it('only includes new bandings (bbpCode 1 and N)', () => {
     const newRec: BirdRecord = {
-      id: 'r10', sessionId: 'sess-1', bbpCode: '1',
+      id: recordId(44), sessionId: fixtureIds.session, bbpCode: '1',
       bandNumber: '1422-63301', speciesCode: 'SOSP',
       createdAt: '', updatedAt: '',
     }
     const newRecN: BirdRecord = {
-      id: 'r10b', sessionId: 'sess-1', bbpCode: 'N',
+      id: recordId(45), sessionId: fixtureIds.session, bbpCode: 'N',
       bandNumber: '1422-63303', speciesCode: 'CALT',
       createdAt: '', updatedAt: '',
     }
     const recapRec: BirdRecord = {
-      id: 'r11', sessionId: 'sess-1', bbpCode: 'R',
+      id: recordId(46), sessionId: fixtureIds.session, bbpCode: 'R',
       bandNumber: '1422-63302', speciesCode: 'WIWA',
       createdAt: '', updatedAt: '',
     }
     const unbanded: BirdRecord = {
-      id: 'r12', sessionId: 'sess-1', bbpCode: 'U',
+      id: recordId(47), sessionId: fixtureIds.session, bbpCode: 'U',
       createdAt: '', updatedAt: '',
     }
     const { rows } = generateBBLRows([newRec, newRecN, recapRec, unbanded], ctx)
@@ -282,15 +294,15 @@ describe('BBL Upload — generateBBLRows', () => {
 
   it('maps a new banding record to BBL row', () => {
     const rec: BirdRecord = {
-      id: 'r13', sessionId: 'sess-1',
-      bandId: 'band-1', bandNumber: '1422-63301',
+      id: recordId(48), sessionId: fixtureIds.session,
+      bandId: fixtureIds.band, bandNumber: '1422-63301',
       speciesCode: 'CALT', bbpCode: '1',
       age: '5', howAged: 'CL', sex: 'M', howSexed: 'CL',
       status: '300', skull: '6', cp: '1', bp: '0', fat: '1',
       bodyMolt: '3', ffMolt: 'A', wrp: 'DCB',
       wing: 88, bodyMass: 49.3,
       date: '2026-04-19', captureTime: '07:10',
-      bander: 'bdr-1', featherPull: true, bloodSample: false,
+      bander: fixtureIds.bander, featherPull: true, bloodSample: false,
       notes: 'test note',
       createdAt: '', updatedAt: '',
     }
@@ -341,22 +353,22 @@ describe('BBL Recapture Upload — generateBBLRecapRows', () => {
 
   it('only includes recaptures (bbpCode R, F, 4, etc.)', () => {
     const newRec: BirdRecord = {
-      id: 'r20', sessionId: 'sess-1', bbpCode: '1',
+      id: recordId(49), sessionId: fixtureIds.session, bbpCode: '1',
       createdAt: '', updatedAt: '',
     }
     const recapR: BirdRecord = {
-      id: 'r21', sessionId: 'sess-1', bbpCode: 'R',
+      id: recordId(50), sessionId: fixtureIds.session, bbpCode: 'R',
       bandNumber: '1422-63301', speciesCode: 'WIWA',
       presentCondition: 'H',
       createdAt: '', updatedAt: '',
     }
     const recapF: BirdRecord = {
-      id: 'r22', sessionId: 'sess-1', bbpCode: 'F',
+      id: recordId(51), sessionId: fixtureIds.session, bbpCode: 'F',
       bandNumber: '9999-00001', speciesCode: 'SOSP',
       createdAt: '', updatedAt: '',
     }
     const recap4: BirdRecord = {
-      id: 'r23', sessionId: 'sess-1', bbpCode: '4',
+      id: recordId(52), sessionId: fixtureIds.session, bbpCode: '4',
       bandNumber: '1422-63302',
       replacedBandNumber: '1422-63300',
       createdAt: '', updatedAt: '',

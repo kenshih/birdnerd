@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { PhotoRecord } from '@birdnerd/shared'
 import { getPhotosByRecord, savePhoto, deletePhoto } from '../db'
 import { generatePhotoFilename, getFileExtension } from '../utils/photoFilename'
@@ -20,10 +21,6 @@ interface Props {
   onPendingPhotosChange?: (pending: PendingPhoto[]) => void
   /** Hide add/delete affordances; show existing photos only. */
   readOnly?: boolean
-}
-
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export default function PhotoSection({ recordId, date, station, speciesCode, bandNumber, recordSequence, onPendingPhotosChange, readOnly = false }: Props) {
@@ -67,7 +64,7 @@ export default function PhotoSection({ recordId, date, station, speciesCode, ban
     if (recordId) {
       const now = new Date().toISOString()
       await savePhoto({
-        id: generateId(),
+        id: createUuidV7(),
         bandingRecordId: recordId,
         bodyPart,
         fileName,

@@ -180,6 +180,19 @@ Leave the PR in a review-ready state. In the final report, give both:
 - a technical explanation of the design, interfaces, test evidence, reviewer
   findings/responses, PR URL, and anything still requiring human approval.
 
+Start with this exact kind of status line, adapted only for the actual state:
+**Handoff state: review-ready PR — awaiting merge.** Explain that
+implementation delivery is complete, but the roadmap phase is not complete and
+no deployment has occurred. State the next decision in one sentence: for
+example, "You can review and merge PR #123 yourself, or ask me to merge it if
+authorized. If you say 'I merged,' I will do the Field release and
+roadmap-completion bookkeeping." An unqualified user statement that they
+merged is the explicit approval to perform that bookkeeping; do it promptly,
+starting with "Handoff state: merged — doing release/roadmap bookkeeping now."
+If their merge message includes a qualifier, follow it instead. Never make the
+user infer whether a final report means "work finished," "waiting for review,"
+or "fully released."
+
 Do not merge, deploy, or mark the roadmap phase complete. For a Field phase,
 wait for explicit approval before applying the release/roadmap-completion
 decision required by `$field-release` and Roadmap Maintenance.

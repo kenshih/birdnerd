@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Location, Net } from '@birdnerd/shared'
 import { getNetsByLocation, saveNet, saveLocation } from '../db'
 import PageHeader from '../components/PageHeader'
@@ -10,10 +11,6 @@ interface Props {
   onBack: () => void
   onLocationUpdated: () => void
   onHome: () => void
-}
-
-function generateId(): string {
-  return `net-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export default function LocationDetail({ location, onBack, onLocationUpdated, onHome }: Props) {
@@ -52,7 +49,7 @@ export default function LocationDetail({ location, onBack, onLocationUpdated, on
     if (!newLabel.trim()) return
     const now = new Date().toISOString()
     const net: Net = {
-      id: generateId(),
+      id: createUuidV7(),
       locationId: location.id,
       label: newLabel.trim(),
       active: true,

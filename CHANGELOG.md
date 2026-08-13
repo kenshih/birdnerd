@@ -8,6 +8,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.29.0 — **Local Event Core.** Replace the handwritten Workspace event
+  slice with YAML/JSON-Schema-derived Event Contract bindings, structural
+  validation, UUIDv7 generation, JSON codecs, and an explicit upcast boundary.
+  Field now persists a clean, separate Workspace Event Log plus rebuildable
+  Workspace-access projection cache in IndexedDB; matching pending Memberships
+  activate durably before Field shows access. All new Field entity IDs and
+  bundled seed/example IDs are UUIDv7; legacy mutable local data is neither
+  migrated nor deleted. `@birdnerd/events`, `@birdnerd/banding`,
+  `@birdnerd/sync-state`, and the local Provisioner advance to 0.2.0. Supabase
+  exchange, Event Bundle recovery UI, operational entity events, and full
+  field-data command migration remain future Phase 29/30 work.
+- Repo — Add pull-request CI for generated-contract drift, lint, Field unit
+  tests, collaboration-package tests, and Field/OCR/sync-db production builds.
+  Playwright E2E remains intentionally local-only.
 - Repo — Add `npm run kill:dev`, a guarded command to stop only a Field
   development server listening on port 5173. It supports `--dry-run` and
   refuses to signal a process not running from `apps/field`.
