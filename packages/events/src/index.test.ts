@@ -57,5 +57,6 @@ describe('@birdnerd/events', () => {
     }
 
     expect(() => assertEvent({ ...workspaceCreatedEvent(), occurred_at: '2026-01-01T12:30:45.123+00:00' })).not.toThrow()
+    expect(() => assertEvent({ ...workspaceCreatedEvent(), occurred_at: '2016-12-31T23:59:60Z' })).not.toThrow()
   })
 })

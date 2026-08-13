@@ -173,7 +173,7 @@ function render({ envelope, payloadContracts, files }) {
 `  const hour = Number(hourText)\n` +
 `  const minute = Number(minuteText)\n` +
 `  const second = Number(secondText)\n` +
-`  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return false\n` +
+`  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 60) return false\n` +
 `  const offset = value.endsWith('Z') || value.endsWith('z') ? undefined : value.slice(-5).split(':').map(Number)\n` +
 `  if (offset && (offset[0] > 23 || offset[1] > 59)) return false\n` +
 `  const daysInMonth = month === 2\n` +

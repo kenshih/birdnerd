@@ -228,7 +228,7 @@ function isRfc3339DateTime(value: string): boolean {
   const hour = Number(hourText)
   const minute = Number(minuteText)
   const second = Number(secondText)
-  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return false
+  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 60) return false
   const offset = value.endsWith('Z') || value.endsWith('z') ? undefined : value.slice(-5).split(':').map(Number)
   if (offset && (offset[0] > 23 || offset[1] > 59)) return false
   const daysInMonth = month === 2
