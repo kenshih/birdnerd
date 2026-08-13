@@ -135,7 +135,7 @@ function render({ envelope, payloadContracts, files }) {
 `    if (typeof value !== 'string') return \`${'${path}'} must be a string.\`\n` +
 `    if (typeof schema.minLength === 'number' && value.length < schema.minLength) return \`${'${path}'} is shorter than the Contract minimum.\`\n` +
 `    if (typeof schema.pattern === 'string' && !(new RegExp(schema.pattern).test(value))) return \`${'${path}'} does not match the Contract pattern.\`\n` +
-`    if (schema.format === 'date-time' && Number.isNaN(Date.parse(value))) return \`${'${path}'} must be an ISO date-time.\`\n` +
+`    if (schema.format === 'date-time' && !isRfc3339DateTime(value)) return \`${'${path}'} must be an RFC 3339 date-time.\`\n` +
 `    if (schema.format === 'email' && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) return \`${'${path}'} must be an email address.\`\n` +
 `    return undefined\n` +
 `  }\n` +
@@ -162,6 +162,24 @@ function render({ envelope, payloadContracts, files }) {
 `    }\n` +
 `  }\n` +
 `  return undefined\n` +
+`}\n\n` +
+`function isRfc3339DateTime(value: string): boolean {\n` +
+`  const match = /^(\\d{4})-(\\d{2})-(\\d{2})[Tt](\\d{2}):(\\d{2}):(\\d{2})(?:\\.\\d+)?(?:[Zz]|[+-]\\d{2}:\\d{2})$/.exec(value)\n` +
+`  if (!match) return false\n` +
+`  const [, yearText, monthText, dayText, hourText, minuteText, secondText] = match\n` +
+`  const year = Number(yearText)\n` +
+`  const month = Number(monthText)\n` +
+`  const day = Number(dayText)\n` +
+`  const hour = Number(hourText)\n` +
+`  const minute = Number(minuteText)\n` +
+`  const second = Number(secondText)\n` +
+`  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return false\n` +
+`  const offset = value.endsWith('Z') || value.endsWith('z') ? undefined : value.slice(-5).split(':').map(Number)\n` +
+`  if (offset && (offset[0] > 23 || offset[1] > 59)) return false\n` +
+`  const daysInMonth = month === 2\n` +
+`    ? (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28)\n` +
+`    : [4, 6, 9, 11].includes(month) ? 30 : 31\n` +
+`  return day >= 1 && day <= daysInMonth\n` +
 `}\n\n` +
 `function isRecord(value: unknown): value is Record<string, unknown> {\n  return typeof value === 'object' && value !== null && !Array.isArray(value)\n}\n\n` +
 `function sameJson(left: unknown, right: unknown): boolean {\n  return JSON.stringify(left) === JSON.stringify(right)\n}\n`

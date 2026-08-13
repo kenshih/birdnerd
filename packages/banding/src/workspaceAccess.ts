@@ -67,7 +67,7 @@ export type AccessResolution =
   | { kind: 'no-access' }
 
 /**
- * Replay the limited Phase 28 event set into the current Workspace access
+ * Replay the current Workspace-access event set into the current Workspace access
  * view. The Event Log remains authoritative; callers may discard and rebuild
  * this projection at any time.
  */
@@ -108,6 +108,7 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
     const workspaceMembership = workspaceMemberships.get(event.payload.membership_id)
     const account = userAccounts.get(event.payload.user_account_id)
     if (!workspaceMembership || !account || event.actor.kind !== 'external-identity') continue
+    if (event.workspace_id !== workspaceMembership.workspace_id) continue
     if (!sameIdentity(account.identity, event.actor.identity)) continue
     if (workspaceMembership.email !== event.actor.identity.email) continue
     if (workspaceMembership.status === 'active' && workspaceMembership.user_account_id !== account.user_account_id) continue
@@ -132,7 +133,7 @@ export function snapshotWorkspaceProjection(projection: WorkspaceProjection): Wo
 }
 
 /**
- * Apply the Phase 28 local admission rules before an event can enter the
+ * Apply the local admission rules before an event can enter the
  * Event Log. Rules check structure, authority, and immutable-ID conflicts but
  * deliberately do not require another event to have arrived first: command
  * groups must remain independently appendable and replayable in any order.
@@ -154,7 +155,7 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
   }
 
   if (candidate.event_type === 'membership.preauthorized') {
-    if (candidate.actor.kind !== 'restricted-provisioner') return deny('Only the restricted Provisioner can pre-authorize a Membership in Phase 28.')
+    if (candidate.actor.kind !== 'restricted-provisioner') return deny('Only the restricted Provisioner can pre-authorize a Membership locally.')
     if (projection.workspace_memberships.has(candidate.payload.membership_id)) return deny('Workspace Membership already exists.')
     const matchingEmail = [...projection.workspace_memberships.values()].find(workspaceMembership => (
       workspaceMembership.workspace_id === candidate.workspace_id && workspaceMembership.email === candidate.payload.email
@@ -171,6 +172,10 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
   }
 
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')
+  const workspaceMembership = projection.workspace_memberships.get(candidate.payload.membership_id)
+  if (workspaceMembership && candidate.workspace_id !== workspaceMembership.workspace_id) {
+    return deny('A Membership activation must target the Membership Workspace.')
+  }
   return { accepted: true }
 }
 

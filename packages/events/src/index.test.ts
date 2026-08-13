@@ -50,4 +50,12 @@ describe('@birdnerd/events', () => {
       event_id: '00000000-0000-4000-8000-000000000001',
     })).toThrow('Contract pattern')
   })
+
+  it('requires a valid RFC 3339 date-time with an offset', () => {
+    for (const occurred_at of ['2026-01-01', '2026-01-01T12:30:45', '2026-02-30T00:00:00Z', '2026-01-01T12:30:45+24:00']) {
+      expect(() => assertEvent({ ...workspaceCreatedEvent(), occurred_at })).toThrow('RFC 3339 date-time')
+    }
+
+    expect(() => assertEvent({ ...workspaceCreatedEvent(), occurred_at: '2026-01-01T12:30:45.123+00:00' })).not.toThrow()
+  })
 })

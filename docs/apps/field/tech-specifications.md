@@ -489,10 +489,12 @@ their transfer design is explicitly added.
 - Event-ID deduplication makes restoring an older bundle before sync safe.
 - Explicit merge/adoption of two histories is not part of v1.
 
-**Seed and hydration:** The clean collaboration release recreates test and
-initial-hydration data as normal provisioning/events, not as mutable seed
-rows. The restricted Provisioner creates the first Workspace and Admin through
-the same event/admission/projection path.
+**Seed and hydration:** Phase 29 recreates the legacy app's test and
+initial-hydration fixtures with UUIDv7 identifiers and valid internal
+references, but leaves their mutable `DataBundle` rows in place until
+field-data Event Contracts and commands exist. The restricted Provisioner
+creates the first Workspace and Admin through the event/admission/projection
+path.
 
 ### Future: BBL & Legacy Data
 

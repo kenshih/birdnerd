@@ -189,7 +189,7 @@ function validateSchema(value: unknown, schema: unknown, path: string): string |
     if (typeof value !== 'string') return `${path} must be a string.`
     if (typeof schema.minLength === 'number' && value.length < schema.minLength) return `${path} is shorter than the Contract minimum.`
     if (typeof schema.pattern === 'string' && !(new RegExp(schema.pattern).test(value))) return `${path} does not match the Contract pattern.`
-    if (schema.format === 'date-time' && Number.isNaN(Date.parse(value))) return `${path} must be an ISO date-time.`
+    if (schema.format === 'date-time' && !isRfc3339DateTime(value)) return `${path} must be an RFC 3339 date-time.`
     if (schema.format === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return `${path} must be an email address.`
     return undefined
   }
@@ -216,6 +216,25 @@ function validateSchema(value: unknown, schema: unknown, path: string): string |
     }
   }
   return undefined
+}
+
+function isRfc3339DateTime(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:[Zz]|[+-]\d{2}:\d{2})$/.exec(value)
+  if (!match) return false
+  const [, yearText, monthText, dayText, hourText, minuteText, secondText] = match
+  const year = Number(yearText)
+  const month = Number(monthText)
+  const day = Number(dayText)
+  const hour = Number(hourText)
+  const minute = Number(minuteText)
+  const second = Number(secondText)
+  if (month < 1 || month > 12 || hour > 23 || minute > 59 || second > 59) return false
+  const offset = value.endsWith('Z') || value.endsWith('z') ? undefined : value.slice(-5).split(':').map(Number)
+  if (offset && (offset[0] > 23 || offset[1] > 59)) return false
+  const daysInMonth = month === 2
+    ? (year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : 28)
+    : [4, 6, 9, 11].includes(month) ? 30 : 31
+  return day >= 1 && day <= daysInMonth
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

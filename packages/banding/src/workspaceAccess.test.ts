@@ -4,6 +4,7 @@ import { admitWorkspaceEvent, decidePendingMembershipActivation, projectWorkspac
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
 const membershipId = '018f8c7b-0000-7000-8000-000000000002'
+const otherWorkspaceId = '018f8c7b-0000-7000-8000-000000000006'
 
 function provisionedEvents() {
   const created = createEvent({
@@ -23,7 +24,7 @@ function provisionedEvents() {
   return [created, preauthorized]
 }
 
-describe('Phase 28 Workspace access', () => {
+describe('Workspace access', () => {
   it('activates a matching pending Membership once and resolves active access', () => {
     const identity = { provider: 'google' as const, subject: 'google-123', email: 'bander@example.com' }
     const initial = provisionedEvents()
@@ -63,6 +64,21 @@ describe('Phase 28 Workspace access', () => {
       kind: 'active',
       workspace: { name: 'Cedar Creek' },
       workspace_membership: { status: 'active', role: 'admin' },
+    })
+  })
+
+  it('rejects and does not project a Membership activation in another Workspace', () => {
+    const identity = { provider: 'google' as const, subject: 'google-123', email: 'bander@example.com' }
+    const initial = provisionedEvents()
+    const [linkedAccount, activation] = decidePendingMembershipActivation(initial, identity)
+    const wrongWorkspaceActivation = { ...activation, workspace_id: otherWorkspaceId }
+
+    expect(admitWorkspaceEvent(wrongWorkspaceActivation, [...initial, linkedAccount])).toEqual({
+      accepted: false,
+      reason: 'A Membership activation must target the Membership Workspace.',
+    })
+    expect(resolveWorkspaceAccess([...initial, linkedAccount, wrongWorkspaceActivation], identity)).toMatchObject({
+      kind: 'pending', workspace_membership: { membership_id: membershipId },
     })
   })
 })

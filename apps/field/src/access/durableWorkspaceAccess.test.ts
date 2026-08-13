@@ -35,9 +35,11 @@ describe('durable Workspace access', () => {
     ])
 
     const identity = { provider: 'google' as const, subject: 'google-bander', email: 'bander@example.com' }
-    await expect(createDurableWorkspaceAccess(firstStore).resolve(identity)).resolves.toMatchObject({
-      kind: 'active', access: { workspace_name: 'Cedar Creek', role: 'admin' },
-    })
+    const access = createDurableWorkspaceAccess(firstStore)
+    await expect(Promise.all([access.resolve(identity), access.resolve(identity)])).resolves.toEqual([
+      expect.objectContaining({ kind: 'active', access: expect.objectContaining({ workspace_name: 'Cedar Creek', role: 'admin' }) }),
+      expect.objectContaining({ kind: 'active', access: expect.objectContaining({ workspace_name: 'Cedar Creek', role: 'admin' }) }),
+    ])
     expect(await firstStore.snapshot()).toHaveLength(4)
 
     resetWorkspaceEventStore()
