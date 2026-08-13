@@ -1,0 +1,4 @@
+interface:
+  display_name: "Phase Delivery"
+  short_description: "Autonomous, review-ready phase delivery"
+  default_prompt: "Use $phase-delivery to deliver the requested phase as a review-ready PR, then obtain and address an independent review."
