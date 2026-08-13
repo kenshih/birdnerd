@@ -8,6 +8,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Repo — Add `npm run kill:dev`, a guarded command to stop only a Field
+  development server listening on port 5173. It supports `--dry-run` and
+  refuses to signal a process not running from `apps/field`.
+- Field — Make `npm run test:e2e` start only its fixture-enabled Vite server
+  and fail immediately when port 5173 is occupied, rather than timing out.
+- Field 0.28.0 — **Workspace vertical slice.** Add draft YAML Workspace Event
+  Contracts and the `@birdnerd/events`, `@birdnerd/banding`, and
+  `@birdnerd/sync-state` scaffolds; their local append-only log admits every
+  event before projection. A separate TypeScript Provisioner CLI emits
+  `workspace.created` plus pending Admin/Contributor Membership events to a
+  local draft JSON Event Log, never projections or database rows. Field now
+  gates all operational UI on BirdNerd-owned Workspace access and shows
+  sign-in, checking, no-access, or active outcomes; matching pending
+  Memberships activate idempotently in the local slice. Durable local storage,
+  Field-device provisioning hand-off, Event Bundle generation, and Supabase
+  exchange are intentionally deferred to Phases 29–30.
 - Field 0.27.3 — **Authentication seam and test coverage.** Field UI now depends on a provider-neutral `AuthModule`; the Supabase/Google adapter owns configuration, OAuth, session restoration, callback cleanup, and identity mapping. Added adapter unit tests and `AuthStatus` component tests with an in-memory fake; `jsdom` is now the pinned Field component-test environment.
 - Repo — Add the project-specific `$field-release` skill to ensure Field releases update the version, lockfile, changelog, phase tracker, and validation evidence before commit or push.
 - Field 0.27.0 — **Google OAuth sign-in test surface.** The Field home screen can now start a Google-only Supabase Auth sign-in, restore the browser session after return, display the signed-in email, and sign out. It uses the local `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` configuration; no Workspace provisioning or data synchronization is included.

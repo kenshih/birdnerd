@@ -1,0 +1,13 @@
+# TEMPORARY Phase 28 draft: Phase 29 will generate bindings from this contract.
+$schema: https://json-schema.org/draft/2020-12/schema
+title: membership.activated v1
+type: object
+required: [membership_id, user_account_id]
+properties:
+  membership_id:
+    type: string
+    format: uuid
+  user_account_id:
+    type: string
+    format: uuid
+additionalProperties: false

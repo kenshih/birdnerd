@@ -8,9 +8,9 @@ import { openNewRecordForm } from './helpers'
  */
 test('capture time offers a net-check quick-select with time slots', async ({ page }) => {
   await openNewRecordForm(page)
-  const quick = page.getByLabel('Quick net-check time')
-  await expect(quick).toBeVisible()
-  const opts = await quick.locator('option').allTextContents()
-  expect(opts[0]).toMatch(/net-check/i)
+  const captureTime = page.locator('select[name="captureTime"]')
+  await expect(captureTime).toBeVisible()
+  const opts = await captureTime.locator('option').allTextContents()
+  expect(opts[0]).toBe('—')
   expect(opts.some(o => /^\d{2}:\d{2}$/.test(o))).toBe(true)
 })

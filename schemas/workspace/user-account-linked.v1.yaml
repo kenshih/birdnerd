@@ -1,0 +1,23 @@
+# TEMPORARY Phase 28 draft: Phase 29 will generate bindings from this contract.
+$schema: https://json-schema.org/draft/2020-12/schema
+title: user-account.linked v1
+type: object
+required: [user_account_id, identity]
+properties:
+  user_account_id:
+    type: string
+    format: uuid
+  identity:
+    type: object
+    required: [provider, subject, email]
+    properties:
+      provider:
+        const: google
+      subject:
+        type: string
+        minLength: 1
+      email:
+        type: string
+        format: email
+    additionalProperties: false
+additionalProperties: false

@@ -394,6 +394,34 @@ The approved rollout is Phases 27–30 in [docs/plan.md](../../plan.md). The
 first pilot covers two Stations and two to four members, including parallel
 work at one Station and offline convergence.
 
+### Workspace Vertical Slice (Field 0.28.0)
+
+Phase 28 creates the smallest executable collaboration path without moving
+Supabase Event Admission or the durable local store ahead of the roadmap:
+
+- `schemas/workspace/` contains four draft YAML contracts:
+  `workspace.created`, `membership.preauthorized`, `user-account.linked`, and
+  `membership.activated`. `@birdnerd/events` provides handwritten draft
+  UUIDv7/event codec support until Phase 29 generates the bindings.
+- `@birdnerd/banding` projects Workspace, pending/active Membership, and User
+  Account linkage state and decides the limited bootstrap admission rules.
+  `@birdnerd/sync-state` supplies only an in-memory append-only Event Log; all
+  initial and new events pass through admission before projection.
+- The separate `@birdnerd/provisioner` TypeScript CLI creates a Workspace and
+  pending Admin/Contributor Memberships, emitting only canonical events to a
+  local JSON Event Log. It does not write projections, IndexedDB, or Supabase
+  rows. Its JSON output is a local test/harness hand-off, not an Event Bundle
+  and not a Field-device provisioning mechanism.
+- `WorkspaceAccessGate` wraps all Field operational UI. It first obtains the
+  provider-neutral external identity, then resolves BirdNerd access. It shows
+  the sign-in, checking, no-access, and active outcomes in the UX contract;
+  matching pending Membership activation is idempotent. The deployed adapter
+  starts with an empty Event Log until Phases 29–30 supply persistence and sync.
+
+Temporary Phase 28 files identify themselves in their leading comments. The
+draft event contracts, in-memory Event Log, JSON hand-off, and production
+empty-log wiring must be replaced or removed as Phase 29/30 completes them.
+
 ### Data Validation Datasets (future)
 
 Tables provided by domain experts for validation:

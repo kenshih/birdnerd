@@ -1,0 +1,39 @@
+# TEMPORARY Phase 28 draft: Phase 29 will make this a generated contract input.
+$schema: https://json-schema.org/draft/2020-12/schema
+title: BirdNerd Domain Event envelope
+type: object
+required:
+  - event_id
+  - event_type
+  - event_schema_version
+  - workspace_id
+  - command_id
+  - occurred_at
+  - actor
+  - payload
+properties:
+  event_id:
+    type: string
+    format: uuid
+    description: Canonical UUIDv7 Domain Event identifier.
+  event_type:
+    type: string
+  event_schema_version:
+    type: integer
+    const: 1
+  workspace_id:
+    type: string
+    format: uuid
+    description: Canonical UUIDv7 Workspace identifier.
+  command_id:
+    type: string
+    format: uuid
+    description: Canonical UUIDv7 Command Group identifier.
+  occurred_at:
+    type: string
+    format: date-time
+  actor:
+    type: object
+  payload:
+    type: object
+additionalProperties: false

@@ -1,0 +1,13 @@
+# TEMPORARY Phase 28 draft: Phase 29 will generate bindings from this contract.
+$schema: https://json-schema.org/draft/2020-12/schema
+title: workspace.created v1
+type: object
+required: [workspace_id, name]
+properties:
+  workspace_id:
+    type: string
+    format: uuid
+  name:
+    type: string
+    minLength: 1
+additionalProperties: false

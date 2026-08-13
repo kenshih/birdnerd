@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import AuthStatus from '../components/AuthStatus'
-import type { AuthModule } from '../auth/authModule'
 
 type NavMode = 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'feedback' | 'about'
 
 interface Props {
   onNavigate: (mode: NavMode) => void
-  auth: AuthModule
 }
 
 interface NavItem {
@@ -39,7 +36,7 @@ function isIOS(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent)
 }
 
-export default function HomeScreen({ onNavigate, auth }: Props) {
+export default function HomeScreen({ onNavigate }: Props) {
   const [installed, setInstalled] = useState(false)
 
   useEffect(() => {
@@ -73,8 +70,6 @@ export default function HomeScreen({ onNavigate, auth }: Props) {
           </React.Fragment>
         ))}
       </div>
-
-      <AuthStatus auth={auth} />
 
       {!installed && (
         <div style={styles.installBox}>
