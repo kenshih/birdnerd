@@ -1,0 +1,31 @@
+name: Pull request checks
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm run check:event-bindings
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:collaboration
+      - run: npm run build
+      - run: npm run build:ocr
+      - run: npm run build:sync-db
+
+      # Playwright remains a deliberate local-only suite until its browsers and
+      # fixture server are made CI-ready.

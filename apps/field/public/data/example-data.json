@@ -1,9 +1,9 @@
 {
-  "version": 3,
+  "version": 5,
   "exportedAt": "2026-03-22T06:42:05.839Z",
   "locations": [
     {
-      "id": "loc-gcbs",
+      "id": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "banderLocationId": "GCFS",
       "bblLocationId": null,
       "name": "Galindo Creek",
@@ -16,7 +16,7 @@
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "loc-mcfs",
+      "id": "019d7efc-f400-7731-9bc2-b8302c3ebfe4",
       "banderLocationId": "MICA",
       "bblLocationId": null,
       "name": "Mitchell Canyon",
@@ -31,80 +31,80 @@
   ],
   "nets": [
     {
-      "id": "net-gcbs-1",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7b2a-894b-c78e00142636",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "1",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-10",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7100-b273-37469fb7d4c3",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "10",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-2",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-760b-974e-3a3e90757924",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "2",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-3",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7eb6-b01f-18061d3c044a",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "3",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-4",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7bbb-8a7b-18962b91c503",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "4",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-5",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7723-b9a3-99fbfd9ff379",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "5",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-6",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7f93-94b1-bd36fe33c490",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "6",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-7",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7d40-9b76-e85e6af3588d",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "7",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-8",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7cd5-80b3-01345c5e1b32",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "8",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "net-gcbs-9",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7c54-9b31-d88a0a948766",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "label": "9",
       "active": true,
       "createdAt": "2026-03-21T00:00:00.000Z",
@@ -113,7 +113,7 @@
   ],
   "people": [
     {
-      "id": "person-hd",
+      "id": "019d7efc-f400-7e1e-9165-4042bc98b95e",
       "name": "Hallie Daly",
       "initials": "HD",
       "active": true,
@@ -121,7 +121,7 @@
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "person-jvd",
+      "id": "019d7efc-f400-7de2-938e-0895bdf87276",
       "name": "Joanna van Dyk",
       "initials": "JVD",
       "active": true,
@@ -129,7 +129,7 @@
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "person-jw",
+      "id": "019d7efc-f400-7272-a3d3-aa5c0f962f81",
       "name": "Julie Woodruff",
       "initials": "JW",
       "active": true,
@@ -137,7 +137,7 @@
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "person-lc",
+      "id": "019d7efc-f400-757e-a328-5154da62d7c6",
       "name": "Lucas Corneliussen",
       "initials": "LC",
       "active": true,
@@ -145,7 +145,7 @@
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "person-ts",
+      "id": "019d7efc-f400-7a4f-be94-944ed5a11ff2",
       "name": "Tatyana Soto-Bartzi",
       "initials": "TS",
       "active": true,
@@ -155,36 +155,36 @@
   ],
   "banders": [
     {
-      "id": "bander-hd",
-      "personId": "person-hd",
+      "id": "019d7efc-f400-7344-8a29-bd8dd470df15",
+      "personId": "019d7efc-f400-7e1e-9165-4042bc98b95e",
       "role": "Master Bander",
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "bander-jvd",
-      "personId": "person-jvd",
+      "id": "019d7efc-f400-7bfd-9652-6d7b84a281d9",
+      "personId": "019d7efc-f400-7de2-938e-0895bdf87276",
       "role": "Sub-permittee",
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "bander-jw",
-      "personId": "person-jw",
+      "id": "019d7efc-f400-7245-9798-25309863888e",
+      "personId": "019d7efc-f400-7272-a3d3-aa5c0f962f81",
       "role": "Sub-permittee",
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "bander-lc",
-      "personId": "person-lc",
+      "id": "019d7efc-f400-7f2b-bee7-5b3ad22f04ec",
+      "personId": "019d7efc-f400-757e-a328-5154da62d7c6",
       "role": "Sub-permittee",
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
     },
     {
-      "id": "bander-ts",
-      "personId": "person-ts",
+      "id": "019d7efc-f400-79df-b09f-c0fc5bb98ab6",
+      "personId": "019d7efc-f400-7a4f-be94-944ed5a11ff2",
       "role": "Sub-permittee",
       "createdAt": "2026-03-21T00:00:00.000Z",
       "updatedAt": "2026-03-21T00:00:00.000Z"
@@ -192,12 +192,12 @@
   ],
   "sessions": [
     {
-      "id": "1774161695303-q58qk54",
-      "locationId": "loc-gcbs",
+      "id": "019d7efc-f400-7cb7-a957-c235d17750d4",
+      "locationId": "019d7efc-f400-7765-b1e4-c6647e50b3cc",
       "date": "2026-03-22",
       "protocol": "MAPS",
       "mapsPeriod": 1,
-      "masterBanderId": "bander-hd",
+      "masterBanderId": "019d7efc-f400-7344-8a29-bd8dd470df15",
       "openTime": "06:30",
       "closeTime": "12:00",
       "createdAt": "2026-03-22T06:41:35.303Z",
@@ -205,54 +205,321 @@
     }
   ],
   "sessionNetLogs": [
-    { "id": "snl-1", "sessionId": "1774161695303-q58qk54", "netId": "net-gcbs-1", "openTime": "06:30", "closeTime": "12:00", "remarks": "", "createdAt": "2026-03-22T06:41:35.303Z", "updatedAt": "2026-03-22T06:41:35.303Z" },
-    { "id": "snl-2", "sessionId": "1774161695303-q58qk54", "netId": "net-gcbs-2", "openTime": "06:30", "closeTime": "12:00", "remarks": "", "createdAt": "2026-03-22T06:41:35.303Z", "updatedAt": "2026-03-22T06:41:35.303Z" },
-    { "id": "snl-3", "sessionId": "1774161695303-q58qk54", "netId": "net-gcbs-3", "openTime": "06:30", "closeTime": "12:00", "remarks": "", "createdAt": "2026-03-22T06:41:35.303Z", "updatedAt": "2026-03-22T06:41:35.303Z" }
-  ],
-  "bands": [
-    { "id": "band-001", "bandNumber": "0921-00101", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-002", "bandNumber": "0921-00102", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-003", "bandNumber": "0921-00103", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-004", "bandNumber": "0921-00104", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-005", "bandNumber": "0921-00105", "status": "available", "bandSize": "0", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-006", "bandNumber": "0831-00201", "status": "available", "bandSize": "0A", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-007", "bandNumber": "0831-00202", "status": "available", "bandSize": "0A", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-008", "bandNumber": "0831-00203", "status": "available", "bandSize": "0A", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-009", "bandNumber": "0831-00204", "status": "available", "bandSize": "0A", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-010", "bandNumber": "0831-00205", "status": "available", "bandSize": "0A", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-011", "bandNumber": "1154-81501", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-012", "bandNumber": "1154-81502", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-013", "bandNumber": "1154-81503", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-014", "bandNumber": "1154-81504", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-015", "bandNumber": "1154-81505", "status": "available", "bandSize": "1", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-016", "bandNumber": "1261-12345", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-017", "bandNumber": "1261-12346", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-018", "bandNumber": "1261-12347", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-019", "bandNumber": "1261-12348", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-020", "bandNumber": "1261-12349", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-021", "bandNumber": "1261-12350", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-022", "bandNumber": "1261-12351", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-023", "bandNumber": "1261-12352", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-024", "bandNumber": "1261-12353", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-025", "bandNumber": "1261-12354", "status": "available", "bandSize": "1B", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-026", "bandNumber": "1371-40001", "status": "available", "bandSize": "2", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-027", "bandNumber": "1371-40002", "status": "available", "bandSize": "2", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-028", "bandNumber": "1371-40003", "status": "available", "bandSize": "2", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-029", "bandNumber": "1371-40004", "status": "available", "bandSize": "2", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" },
-    { "id": "band-030", "bandNumber": "1371-40005", "status": "available", "bandSize": "2", "bandType": "Standard", "createdAt": "2026-03-20T00:00:00.000Z", "updatedAt": "2026-03-20T00:00:00.000Z" }
-  ],
-  "sessionBanderLogs": [
     {
-      "id": "sbl-1",
-      "sessionId": "1774161695303-q58qk54",
-      "banderId": "bander-hd",
+      "id": "019d7efc-f400-7103-ba43-4022e5411c76",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
+      "netId": "019d7efc-f400-7b2a-894b-c78e00142636",
+      "openTime": "06:30",
+      "closeTime": "12:00",
+      "remarks": "",
       "createdAt": "2026-03-22T06:41:35.303Z",
       "updatedAt": "2026-03-22T06:41:35.303Z"
     },
     {
-      "id": "sbl-2",
-      "sessionId": "1774161695303-q58qk54",
-      "banderId": "bander-ts",
+      "id": "019d7efc-f400-71d6-8f20-e1e9e4a080bb",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
+      "netId": "019d7efc-f400-760b-974e-3a3e90757924",
+      "openTime": "06:30",
+      "closeTime": "12:00",
+      "remarks": "",
+      "createdAt": "2026-03-22T06:41:35.303Z",
+      "updatedAt": "2026-03-22T06:41:35.303Z"
+    },
+    {
+      "id": "019d7efc-f400-7b5c-bcf0-2827cc5156ab",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
+      "netId": "019d7efc-f400-7eb6-b01f-18061d3c044a",
+      "openTime": "06:30",
+      "closeTime": "12:00",
+      "remarks": "",
+      "createdAt": "2026-03-22T06:41:35.303Z",
+      "updatedAt": "2026-03-22T06:41:35.303Z"
+    }
+  ],
+  "bands": [
+    {
+      "id": "019d7efc-f400-78cd-a487-31b5bc5c7f63",
+      "bandNumber": "0921-00101",
+      "status": "available",
+      "bandSize": "0",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-750b-a46c-a352cd96c421",
+      "bandNumber": "0921-00102",
+      "status": "available",
+      "bandSize": "0",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7916-aef3-59f906ff4f51",
+      "bandNumber": "0921-00103",
+      "status": "available",
+      "bandSize": "0",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-71af-baf1-c92249ac7093",
+      "bandNumber": "0921-00104",
+      "status": "available",
+      "bandSize": "0",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-76ae-b15c-988508fa604d",
+      "bandNumber": "0921-00105",
+      "status": "available",
+      "bandSize": "0",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7898-90fa-c650ead32af8",
+      "bandNumber": "0831-00201",
+      "status": "available",
+      "bandSize": "0A",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-71d9-9a0a-3e4f1d9c97c0",
+      "bandNumber": "0831-00202",
+      "status": "available",
+      "bandSize": "0A",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7c25-aecf-2801ecb14ed8",
+      "bandNumber": "0831-00203",
+      "status": "available",
+      "bandSize": "0A",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7023-947e-399900fecbcd",
+      "bandNumber": "0831-00204",
+      "status": "available",
+      "bandSize": "0A",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7e6c-a038-f737282b7627",
+      "bandNumber": "0831-00205",
+      "status": "available",
+      "bandSize": "0A",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-72d5-b4ff-8d5d5bb9cb4b",
+      "bandNumber": "1154-81501",
+      "status": "available",
+      "bandSize": "1",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7075-ac70-230938674046",
+      "bandNumber": "1154-81502",
+      "status": "available",
+      "bandSize": "1",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7d48-bd3e-6626e3298218",
+      "bandNumber": "1154-81503",
+      "status": "available",
+      "bandSize": "1",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-709b-94fe-9efacbffe074",
+      "bandNumber": "1154-81504",
+      "status": "available",
+      "bandSize": "1",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7867-8720-6645f64085f4",
+      "bandNumber": "1154-81505",
+      "status": "available",
+      "bandSize": "1",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-799c-b1ab-5da7f411fb22",
+      "bandNumber": "1261-12345",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-714e-93f3-6eda50ff5bf1",
+      "bandNumber": "1261-12346",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7813-b777-59f616d35ad1",
+      "bandNumber": "1261-12347",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7410-a47f-356741c64cbb",
+      "bandNumber": "1261-12348",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7ca2-801c-dabf06742aa8",
+      "bandNumber": "1261-12349",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-77c6-a1d3-f87f9f2db89d",
+      "bandNumber": "1261-12350",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7aae-af2f-d96ea4efed1d",
+      "bandNumber": "1261-12351",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7e27-9da0-561f7992619c",
+      "bandNumber": "1261-12352",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7d33-8a9f-ea9dd4789daa",
+      "bandNumber": "1261-12353",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-799e-873b-865f29c365b4",
+      "bandNumber": "1261-12354",
+      "status": "available",
+      "bandSize": "1B",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7a10-94c5-d76a90663578",
+      "bandNumber": "1371-40001",
+      "status": "available",
+      "bandSize": "2",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7da1-a9a5-8c6d71d5e8a9",
+      "bandNumber": "1371-40002",
+      "status": "available",
+      "bandSize": "2",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7e26-b431-23fff0d9e98a",
+      "bandNumber": "1371-40003",
+      "status": "available",
+      "bandSize": "2",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-7c98-b7ba-f53a830eaaf8",
+      "bandNumber": "1371-40004",
+      "status": "available",
+      "bandSize": "2",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    },
+    {
+      "id": "019d7efc-f400-791a-bb40-1e9841a4cc36",
+      "bandNumber": "1371-40005",
+      "status": "available",
+      "bandSize": "2",
+      "bandType": "Standard",
+      "createdAt": "2026-03-20T00:00:00.000Z",
+      "updatedAt": "2026-03-20T00:00:00.000Z"
+    }
+  ],
+  "sessionBanderLogs": [
+    {
+      "id": "019d7efc-f400-76e0-92a5-fda0e290ddb7",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
+      "banderId": "019d7efc-f400-7344-8a29-bd8dd470df15",
+      "createdAt": "2026-03-22T06:41:35.303Z",
+      "updatedAt": "2026-03-22T06:41:35.303Z"
+    },
+    {
+      "id": "019d7efc-f400-7694-93dc-80777e11661b",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
+      "banderId": "019d7efc-f400-79df-b09f-c0fc5bb98ab6",
       "createdAt": "2026-03-22T06:41:35.303Z",
       "updatedAt": "2026-03-22T06:41:35.303Z"
     }
@@ -293,11 +560,11 @@
       "date": "2026-03-22",
       "station": "GCFS",
       "net": "3",
-      "bander": "bander-hd",
+      "bander": "019d7efc-f400-7344-8a29-bd8dd470df15",
       "featherPull": false,
       "bloodSample": false,
-      "id": "1774161713569-7uz62cz",
-      "sessionId": "1774161695303-q58qk54",
+      "id": "019d7efc-f400-7f59-a620-88d0cfcd782c",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
       "createdAt": "2026-03-22T06:41:53.569Z",
       "updatedAt": "2026-03-22T06:41:53.569Z"
     },
@@ -336,11 +603,11 @@
       "date": "2026-03-22",
       "station": "GCFS",
       "net": "1",
-      "bander": "bander-ts",
+      "bander": "019d7efc-f400-79df-b09f-c0fc5bb98ab6",
       "featherPull": true,
       "bloodSample": false,
-      "id": "1774161713576-y94cjb6",
-      "sessionId": "1774161695303-q58qk54",
+      "id": "019d7efc-f400-70d6-afa2-3712426dccb6",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
       "createdAt": "2026-03-22T06:41:53.569Z",
       "updatedAt": "2026-03-22T06:41:53.569Z"
     },
@@ -377,11 +644,11 @@
       "date": "2026-03-22",
       "station": "GCFS",
       "net": "2",
-      "bander": "bander-hd",
+      "bander": "019d7efc-f400-7344-8a29-bd8dd470df15",
       "featherPull": false,
       "bloodSample": false,
-      "id": "1774161713578-kaqai3a",
-      "sessionId": "1774161695303-q58qk54",
+      "id": "019d7efc-f400-70d4-abf0-a4263800772e",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
       "createdAt": "2026-03-22T06:41:53.569Z",
       "updatedAt": "2026-03-22T06:41:53.569Z"
     },
@@ -419,11 +686,11 @@
       "date": "2026-03-22",
       "station": "GCFS",
       "net": "3",
-      "bander": "bander-ts",
+      "bander": "019d7efc-f400-79df-b09f-c0fc5bb98ab6",
       "featherPull": true,
       "bloodSample": false,
-      "id": "1774161713579-66gjt20",
-      "sessionId": "1774161695303-q58qk54",
+      "id": "019d7efc-f400-7016-86e9-715ed0a49cf7",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
       "createdAt": "2026-03-22T06:41:53.569Z",
       "updatedAt": "2026-03-22T06:41:53.569Z"
     },
@@ -456,11 +723,11 @@
       "date": "2026-03-22",
       "station": "GCFS",
       "net": "1",
-      "bander": "bander-hd",
+      "bander": "019d7efc-f400-7344-8a29-bd8dd470df15",
       "featherPull": false,
       "bloodSample": false,
-      "id": "1774161713579-uyrwwfr",
-      "sessionId": "1774161695303-q58qk54",
+      "id": "019d7efc-f400-7ad4-9249-605f0008a0fa",
+      "sessionId": "019d7efc-f400-7cb7-a957-c235d17750d4",
       "createdAt": "2026-03-22T06:41:53.569Z",
       "updatedAt": "2026-03-22T06:41:53.569Z"
     }

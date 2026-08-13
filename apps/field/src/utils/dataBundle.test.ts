@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { readFile } from 'node:fs/promises'
+import { isUuidV7 } from '@birdnerd/events'
 import { BUNDLE_VERSION } from '../data/bundle-schema'
 import type { DataBundle } from '../data/bundle-schema'
 import { validateBundle, exportDataBundle, importDataBundle } from './dataBundle'
@@ -63,6 +65,48 @@ const sampleRecord: BirdRecord = {
   speciesCode: 'SOSP', age: 'AHY', sex: 'M',
   createdAt: now, updatedAt: now,
 }
+
+const INITIAL_HYDRATION_FILES = [
+  new URL('../../public/data/seed.json', import.meta.url),
+  new URL('../../public/data/example-data.json', import.meta.url),
+  new URL('../../examples/birdnerd-full-sample.json', import.meta.url),
+]
+
+type InitialBundle = DataBundle & { photos?: Array<{ id: string; bandingRecordId: string }> }
+
+function entityIds(bundle: InitialBundle): string[] {
+  return [
+    ...bundle.locations, ...bundle.nets, ...bundle.people, ...bundle.banders,
+    ...bundle.sessions, ...(bundle.sessionBanderLogs ?? []), ...(bundle.sessionNetLogs ?? []),
+    ...(bundle.bands ?? []), ...bundle.records, ...(bundle.photos ?? []),
+  ].map(entity => entity.id)
+}
+
+function referencedIds(bundle: InitialBundle): string[] {
+  return [
+    ...bundle.nets.map(entity => entity.locationId),
+    ...bundle.banders.map(entity => entity.personId),
+    ...bundle.sessions.flatMap(entity => [entity.locationId, entity.masterBanderId]),
+    ...(bundle.sessionBanderLogs ?? []).flatMap(entity => [entity.sessionId, entity.banderId]),
+    ...(bundle.sessionNetLogs ?? []).flatMap(entity => [entity.sessionId, entity.netId]),
+    ...(bundle.records ?? []).flatMap(entity => [entity.sessionId, entity.bandId]),
+    ...(bundle.photos ?? []).map(entity => entity.bandingRecordId),
+  ].filter((value): value is string => Boolean(value))
+}
+
+describe('initial hydration bundles', () => {
+  it('use UUIDv7 entity IDs and retain only internal UUIDv7 references', async () => {
+    for (const file of INITIAL_HYDRATION_FILES) {
+      const bundle = JSON.parse(await readFile(file, 'utf8')) as InitialBundle
+      const ids = new Set(entityIds(bundle))
+
+      expect(bundle.version).toBe(BUNDLE_VERSION)
+      expect([...ids]).toHaveLength(entityIds(bundle).length)
+      expect([...ids].every(isUuidV7)).toBe(true)
+      expect(referencedIds(bundle).every(id => ids.has(id) && isUuidV7(id))).toBe(true)
+    }
+  })
+})
 
 // ─── Validation (pure function, no IndexedDB) ────────────────────────
 

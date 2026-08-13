@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Band, BandType, Session } from '@birdnerd/shared'
 import { getBands, saveBands, getBandByNumber, getAllRecords } from '../db'
 import { BAND_SIZE_CODES, BAND_TYPE_CODES } from '../data/codes'
@@ -17,10 +18,6 @@ type View = 'overview' | 'list' | 'add' | 'history'
 
 /** Guard against accidental gigantic batches from a typo'd suffix range. */
 const MAX_BATCH = 2000
-
-function generateId(): string {
-  return `band-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
 
 export default function BandInventory({ onHome, onSelectSession }: Props) {
   const [bands, setBands] = useState<Band[]>([])
@@ -358,7 +355,7 @@ function AddBands({ onBack, onHome, onAdded }: { onBack: () => void; onHome: () 
     const newBands: Band[] = []
     for (let i = start; i <= end; i++) {
       newBands.push({
-        id: generateId(),
+        id: createUuidV7(),
         bandNumber: `${prefix}-${String(i).padStart(suffixLen, '0')}`,
         status: 'available',
         bandSize,

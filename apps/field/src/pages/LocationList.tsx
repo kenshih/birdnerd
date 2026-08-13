@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Location } from '@birdnerd/shared'
 import { getLocations, saveLocation, deleteLocation, getNetsByLocation } from '../db'
 import PageHeader from '../components/PageHeader'
@@ -8,10 +9,6 @@ import { Card } from '../components/Card'
 interface Props {
   onSelectLocation: (location: Location) => void
   onHome: () => void
-}
-
-function generateId(): string {
-  return `loc-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export default function LocationList({ onSelectLocation, onHome }: Props) {
@@ -43,7 +40,7 @@ export default function LocationList({ onSelectLocation, onHome }: Props) {
     if (!form.name.trim() || !form.banderLocationId.trim()) return
     const now = new Date().toISOString()
     const loc: Location = {
-      id: generateId(),
+      id: createUuidV7(),
       name: form.name.trim(),
       banderLocationId: form.banderLocationId.trim().toUpperCase(),
       bblLocationId: form.bblLocationId.trim() || null,

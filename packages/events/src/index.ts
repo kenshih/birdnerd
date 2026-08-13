@@ -1,86 +1,46 @@
 /**
- * TEMPORARY Phase 28 implementation. These draft TypeScript types and
- * validators bridge the local Workspace slice only. In Phase 29 they must be
- * generated from the YAML Event Contracts in /schemas, with CI drift checks;
- * do not extend this handwritten implementation for field-work events.
+ * Portable Domain Event API. Contract-derived types and structural validation
+ * are generated from `schemas/workspace`; this module adds UUIDv7 creation,
+ * canonical cross-contract invariants, JSON codecs, and the explicit v1
+ * upcast boundary. Projectors and domain decisions intentionally live outside
+ * this package.
  */
+import { validateGeneratedEvent } from './generated/eventBindings.js'
 
+export {
+  EVENT_TYPES,
+  validateGeneratedEvent,
+  type DomainEvent,
+  type EventActor,
+  type EventPayloadByType,
+  type EventType,
+} from './generated/eventBindings.js'
+
+import type { DomainEvent, EventActor, EventPayloadByType, EventType } from './generated/eventBindings.js'
+
+/** A canonical lower-case UUIDv7 string used by every Workspace-owned identifier. */
 export type UuidV7 = string
 
-const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+/** The only external identity accepted in the first collaboration release. */
+export type ExternalIdentity = Extract<EventActor, { kind: 'external-identity' }>['identity']
 
-/** The access role assigned through a Workspace Membership, never an operational role. */
-export type WorkspaceMembershipRole = 'admin' | 'contributor'
+/** Authorization role assigned by a Workspace Membership, separate from banding roles. */
+export type WorkspaceMembershipRole = EventPayloadByType['membership.preauthorized']['role']
 
-export type ExternalIdentity = {
-  provider: 'google'
-  subject: string
-  email: string
-}
-
-export type EventActor =
-  | { kind: 'restricted-provisioner'; provisioner_id: string }
-  | { kind: 'external-identity'; identity: ExternalIdentity }
-  | { kind: 'user-account'; user_account_id: UuidV7 }
-
-export type WorkspaceCreatedPayload = {
-  workspace_id: UuidV7
-  name: string
-}
-
-export type MembershipPreauthorizedPayload = {
-  membership_id: UuidV7
-  email: string
-  role: WorkspaceMembershipRole
-}
-
-export type UserAccountLinkedPayload = {
-  user_account_id: UuidV7
-  identity: ExternalIdentity
-}
-
-export type MembershipActivatedPayload = {
-  membership_id: UuidV7
-  user_account_id: UuidV7
-}
-
-export type EventPayloadByType = {
-  'workspace.created': WorkspaceCreatedPayload
-  'membership.preauthorized': MembershipPreauthorizedPayload
-  'user-account.linked': UserAccountLinkedPayload
-  'membership.activated': MembershipActivatedPayload
-}
-
-export type EventType = keyof EventPayloadByType
-
-export type DomainEvent<T extends EventType = EventType> = T extends EventType ? {
-  event_id: UuidV7
-  event_type: T
-  event_schema_version: 1
-  workspace_id: UuidV7
-  command_id: UuidV7
-  occurred_at: string
-  actor: EventActor
-  payload: EventPayloadByType[T]
-} : never
-
-export type DraftEventInput<T extends EventType> = Omit<DomainEvent<T>, 'event_id' | 'event_schema_version' | 'occurred_at'> & {
+/** Input for an event create command. IDs and time default locally; schema version is contract-owned. */
+export type CreateEventInput<T extends EventType> = Omit<DomainEvent<T>, 'event_id' | 'event_schema_version' | 'occurred_at'> & {
   event_id?: UuidV7
   occurred_at?: string
 }
 
-const EVENT_TYPES: readonly EventType[] = [
-  'workspace.created',
-  'membership.preauthorized',
-  'user-account.linked',
-  'membership.activated',
-]
+const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
 
 function fillRandom(bytes: Uint8Array): Uint8Array {
   globalThis.crypto.getRandomValues(bytes as Uint8Array<ArrayBuffer>)
   return bytes
 }
 
+/** Create a locally usable RFC 9562 UUIDv7 without a clock or network dependency. */
 export function createUuidV7(now = Date.now(), random: (bytes: Uint8Array) => Uint8Array = fillRandom): UuidV7 {
   if (!Number.isSafeInteger(now) || now < 0 || now >= 2 ** 48) {
     throw new Error('UUIDv7 timestamp must fit in 48 bits.')
@@ -102,109 +62,79 @@ export function isUuidV7(value: unknown): value is UuidV7 {
   return typeof value === 'string' && UUID_V7_PATTERN.test(value)
 }
 
+/** Normalize an identity email before it is placed in a canonical Domain Event. */
 export function canonicalizeEmail(email: string): string {
   const canonical = email.trim().toLowerCase()
   if (!canonical || !canonical.includes('@')) throw new Error('A valid email address is required.')
   return canonical
 }
 
-export function createDraftEvent<T extends EventType>(input: DraftEventInput<T>): DomainEvent<T> {
+/** Create and validate a current Event Contract version. */
+export function createEvent<T extends EventType>(input: CreateEventInput<T>): DomainEvent<T> {
   const event = {
     ...input,
     event_id: input.event_id ?? createUuidV7(),
     event_schema_version: 1,
     occurred_at: input.occurred_at ?? new Date().toISOString(),
   } as DomainEvent<T>
-  assertDraftEvent(event)
+  assertEvent(event)
   return event
 }
 
-export function encodeDraftEventLog(events: readonly DomainEvent[]): string {
-  events.forEach(assertDraftEvent)
+/** Validate a current event envelope, its selected payload contract, and canonical invariants. */
+export function assertEvent(value: unknown): asserts value is DomainEvent {
+  const contractError = validateGeneratedEvent(value)
+  if (contractError) throw new Error(contractError)
+  assertCanonicalValues(value)
+
+  const event = value as DomainEvent
+  if (event.event_type === 'workspace.created' && event.workspace_id !== event.payload.workspace_id) {
+    throw new Error('workspace.created must target its payload workspace.')
+  }
+}
+
+/** Decode a JSON Event Log and upcast every entry before making it available to a projector. */
+export function decodeEventLog(serialized: string): DomainEvent[] {
+  const decoded: unknown = JSON.parse(serialized)
+  if (!Array.isArray(decoded)) throw new Error('An Event Log must be a JSON array.')
+  return decoded.map(upcastEvent)
+}
+
+/** Serialize only Events that satisfy their current contract and canonical invariants. */
+export function encodeEventLog(events: readonly DomainEvent[]): string {
+  events.forEach(assertEvent)
   return `${JSON.stringify(events, null, 2)}\n`
 }
 
-export function decodeDraftEventLog(serialized: string): DomainEvent[] {
-  const decoded: unknown = JSON.parse(serialized)
-  if (!Array.isArray(decoded)) throw new Error('The draft event log must be a JSON array.')
-  decoded.forEach(assertDraftEvent)
-  return decoded
+/**
+ * Compatibility boundary for replay. V1 has no historical predecessor yet;
+ * later contract versions extend this function rather than making projectors
+ * reason about old payload shapes.
+ */
+export function upcastEvent(value: unknown): DomainEvent {
+  assertEvent(value)
+  return value
 }
 
-export function assertDraftEvent(value: unknown): asserts value is DomainEvent {
-  if (!isRecord(value)) throw new Error('A Domain Event must be an object.')
-  assertUuidV7(value.event_id, 'event_id')
-  if (!isEventType(value.event_type)) throw new Error('Unsupported draft event type.')
-  if (value.event_schema_version !== 1) throw new Error('Unsupported draft event schema version.')
-  assertUuidV7(value.workspace_id, 'workspace_id')
-  assertUuidV7(value.command_id, 'command_id')
-  assertString(value.occurred_at, 'occurred_at')
-  if (Number.isNaN(Date.parse(value.occurred_at))) throw new Error('occurred_at must be an ISO date-time.')
-  assertActor(value.actor)
-  assertPayload(value.event_type, value.payload, value.workspace_id)
-}
-
-function assertActor(value: unknown): asserts value is EventActor {
-  if (!isRecord(value) || typeof value.kind !== 'string') throw new Error('A Domain Event actor is required.')
-  if (value.kind === 'restricted-provisioner') {
-    assertString(value.provisioner_id, 'actor.provisioner_id')
+function assertCanonicalValues(value: unknown, key?: string): void {
+  if (typeof value === 'string') {
+    if (key?.endsWith('_id') && key !== 'provisioner_id' && !isUuidV7(value)) {
+      throw new Error(`${key} must be a canonical UUIDv7.`)
+    }
+    if (key === 'email' && value !== canonicalizeEmail(value)) {
+      throw new Error('Event email values must be canonicalized.')
+    }
     return
   }
-  if (value.kind === 'user-account') {
-    assertUuidV7(value.user_account_id, 'actor.user_account_id')
+  if (Array.isArray(value)) {
+    value.forEach(entry => assertCanonicalValues(entry))
     return
   }
-  if (value.kind === 'external-identity') {
-    assertIdentity(value.identity)
-    return
+  if (isRecord(value)) {
+    Object.entries(value).forEach(([childKey, childValue]) => assertCanonicalValues(childValue, childKey))
   }
-  throw new Error('Unsupported Domain Event actor.')
-}
-
-function assertPayload(eventType: EventType, value: unknown, workspaceId: string): void {
-  if (!isRecord(value)) throw new Error('A Domain Event payload must be an object.')
-  if (eventType === 'workspace.created') {
-    assertUuidV7(value.workspace_id, 'payload.workspace_id')
-    assertString(value.name, 'payload.name')
-    if (value.workspace_id !== workspaceId) throw new Error('workspace.created must target its payload workspace.')
-    return
-  }
-  if (eventType === 'membership.preauthorized') {
-    assertUuidV7(value.membership_id, 'payload.membership_id')
-    assertString(value.email, 'payload.email')
-    if (value.email !== canonicalizeEmail(value.email)) throw new Error('Pre-authorized email must be canonicalized.')
-    if (value.role !== 'admin' && value.role !== 'contributor') throw new Error('Unsupported Membership role.')
-    return
-  }
-  if (eventType === 'user-account.linked') {
-    assertUuidV7(value.user_account_id, 'payload.user_account_id')
-    assertIdentity(value.identity)
-    return
-  }
-  assertUuidV7(value.membership_id, 'payload.membership_id')
-  assertUuidV7(value.user_account_id, 'payload.user_account_id')
-}
-
-function assertIdentity(value: unknown): asserts value is ExternalIdentity {
-  if (!isRecord(value)) throw new Error('An external identity is required.')
-  if (value.provider !== 'google') throw new Error('Only the Google identity provider is supported.')
-  assertString(value.subject, 'identity.subject')
-  assertString(value.email, 'identity.email')
-  if (value.email !== canonicalizeEmail(value.email)) throw new Error('Identity email must be canonicalized.')
-}
-
-function isEventType(value: unknown): value is EventType {
-  return typeof value === 'string' && EVENT_TYPES.includes(value as EventType)
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
-}
-
-function assertString(value: unknown, label: string): asserts value is string {
-  if (typeof value !== 'string' || value.trim() === '') throw new Error(`${label} must be a non-empty string.`)
-}
-
-function assertUuidV7(value: unknown, label: string): asserts value is UuidV7 {
-  if (!isUuidV7(value)) throw new Error(`${label} must be a canonical UUIDv7.`)
 }

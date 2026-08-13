@@ -1,4 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
+import { createUuidV7 } from '@birdnerd/events'
 import type { BirdRecord, Session, SessionBanderLog, SessionNetLog, Location, Net, Person, Bander, Band, PhotoRecord } from '@birdnerd/shared'
 import { loadSeedData } from '../utils/dataBundle'
 
@@ -371,7 +372,7 @@ export async function replaceSessionBanderLogs(sessionId: string, banderIds: str
   const now = new Date().toISOString()
   for (const banderId of banderIds) {
     await tx.store.put({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      id: createUuidV7(),
       sessionId,
       banderId,
       createdAt: now,
@@ -414,7 +415,7 @@ export async function generateSessionNetLogs(
   const activeNets = allNets.filter(n => n.active !== false)
   const now = new Date().toISOString()
   const logs: SessionNetLog[] = activeNets.map(net => ({
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${net.id}`,
+    id: createUuidV7(),
     sessionId,
     netId: net.id,
     openTime,

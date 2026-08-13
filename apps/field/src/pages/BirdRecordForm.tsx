@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import { useForm } from 'react-hook-form'
 import type { BirdRecord, Session, Net, Location, Band } from '@birdnerd/shared'
 import { getPeople, getBanders, getActiveNetsByLocation, getLocation, getSessionNetLogs, getNetsByLocation, getBands, saveRecordWithBandUpdate, savePhoto } from '../db'
@@ -29,10 +30,6 @@ interface Props {
   readOnly?: boolean
 }
 
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
-}
-
 type FormValues = Omit<BirdRecord, 'id' | 'sessionId' | 'createdAt' | 'updatedAt'>
 
 const ALL_FIELDS: (keyof FormValues)[] = [
@@ -55,7 +52,7 @@ interface BanderOption {
 
 export default function BirdRecordForm({ session, record, recordSequence, onSaved, onCancel, onHome, onViewBandHistory, readOnly = false }: Props) {
   const { register, handleSubmit, setValue, watch, reset, getValues } = useForm<FormValues>()
-  const recordIdRef = useRef(record?.id ?? generateId())
+  const recordIdRef = useRef(record?.id ?? createUuidV7())
   const createdAtRef = useRef<string | undefined>(record?.createdAt)
   const [banderOptions, setBanderOptions] = useState<BanderOption[]>([])
   const [netOptions, setNetOptions] = useState<Net[]>([])
@@ -259,7 +256,7 @@ export default function BirdRecordForm({ session, record, recordSequence, onSave
 
     for (const pp of pendingPhotos) {
       await savePhoto({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        id: createUuidV7(),
         bandingRecordId: saved.id,
         bodyPart: pp.bodyPart,
         fileName: pp.fileName,

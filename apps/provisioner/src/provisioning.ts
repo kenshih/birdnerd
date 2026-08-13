@@ -1,13 +1,12 @@
 /**
- * TEMPORARY Phase 28 provision-file hand-off. The Provisioner itself may stay
- * TypeScript permanently, but its draft JSON output is not a production Event
- * Bundle and does not reach Field devices until the Phase 29/30 local-store and
- * sync work. It must continue to emit events only through admission.
+ * Local-only Workspace bootstrap command. It emits canonical Events and sends
+ * them through ordinary admission, but does not write Field storage or act as
+ * an Event Bundle or shared-service authority.
  */
 
 import { admitWorkspaceEvent } from '@birdnerd/banding'
-import { canonicalizeEmail, createDraftEvent, createUuidV7, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
-import { LocalEventLog } from '@birdnerd/sync-state'
+import { canonicalizeEmail, createEvent, createUuidV7, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
+import { EventLog } from '@birdnerd/sync-state'
 
 export type PendingMemberInput = {
   email: string
@@ -32,7 +31,7 @@ export function provisionWorkspace(input: ProvisionWorkspaceInput): readonly Dom
   const workspaceId = createUuidV7()
   const commandId = createUuidV7()
   const actor = { kind: 'restricted-provisioner' as const, provisioner_id: input.provisioner_id ?? 'local-admin' }
-  const events: DomainEvent[] = [createDraftEvent({
+  const events: DomainEvent[] = [createEvent({
     event_type: 'workspace.created',
     workspace_id: workspaceId,
     command_id: commandId,
@@ -41,7 +40,7 @@ export function provisionWorkspace(input: ProvisionWorkspaceInput): readonly Dom
   })]
 
   for (const member of members) {
-    events.push(createDraftEvent({
+    events.push(createEvent({
       event_type: 'membership.preauthorized',
       workspace_id: workspaceId,
       command_id: commandId,
@@ -54,7 +53,7 @@ export function provisionWorkspace(input: ProvisionWorkspaceInput): readonly Dom
     }))
   }
 
-  const log = new LocalEventLog([], admitWorkspaceEvent)
+  const log = new EventLog([], admitWorkspaceEvent)
   for (const result of log.appendAll(events)) {
     if (result.kind === 'rejected') throw new Error(`Provisioning event rejected: ${result.reason}`)
   }

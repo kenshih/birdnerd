@@ -1,12 +1,12 @@
 /**
- * TEMPORARY Phase 28 provision-file hand-off. This CLI writes only a local
- * draft Event Log JSON file, never database rows or projections. Phase 30 will
- * replace the hand-off with authenticated Supabase Event Admission and sync.
+ * Local-only provision-file hand-off. This CLI writes only canonical Event Log
+ * JSON, never database rows or projections. Phase 30 adds authenticated
+ * Supabase Event Admission and sync.
  */
 
 import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
-import { encodeDraftEventLog } from '@birdnerd/events'
+import { encodeEventLog } from '@birdnerd/events'
 import { parsePendingMember, provisionWorkspace, type PendingMemberInput } from './provisioning.js'
 
 type CliOptions = {
@@ -21,7 +21,7 @@ export async function runCli(args: readonly string[]): Promise<string> {
   const events = provisionWorkspace(options)
   const outputPath = resolve(options.output)
   await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, encodeDraftEventLog(events), 'utf8')
+  await writeFile(outputPath, encodeEventLog(events), 'utf8')
   return outputPath
 }
 
@@ -61,13 +61,13 @@ function helpText(): string {
     'Usage:',
     '  npm run provision -- --workspace-name "Cedar Creek" --admin-email admin@example.com [--member person@example.com:contributor] [--output ./events.json]',
     '',
-    'The Provisioner emits a draft canonical event log. It never writes projections or database rows.',
+    'The Provisioner emits a canonical Event Log. It never writes projections or database rows.',
   ].join('\n')
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   runCli(process.argv.slice(2))
-    .then(outputPath => console.log(`Provisioned draft Event Log: ${outputPath}`))
+    .then(outputPath => console.log(`Provisioned Event Log: ${outputPath}`))
     .catch(error => {
       console.error(error instanceof Error ? error.message : error)
       process.exitCode = 1

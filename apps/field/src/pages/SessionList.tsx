@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Session, Location, Bander, Person, Protocol } from '@birdnerd/shared'
 import { getSessions, saveSession, getLocations, getBanders, getPeople, deleteSession, getRecordsBySession, getSessionBanderLogs, replaceSessionBanderLogs, generateSessionNetLogs } from '../db'
 import { PROTOCOL_CODES } from '../data/codes'
@@ -20,10 +21,6 @@ const PRECIP_SUGGESTIONS = [
 interface Props {
   onSelectSession: (session: Session) => void
   onHome: () => void
-}
-
-function generateId(): string {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 function todayISO(): string {
@@ -122,7 +119,7 @@ export default function SessionList({ onSelectSession, onHome }: Props) {
   async function createSession() {
     const now = new Date().toISOString()
     const session: Session = {
-      id: generateId(),
+      id: createUuidV7(),
       locationId: formLocationId,
       date: formDate,
       protocol: formProtocol || undefined,

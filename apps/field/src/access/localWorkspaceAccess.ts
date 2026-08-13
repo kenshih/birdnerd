@@ -1,18 +1,13 @@
-/**
- * TEMPORARY Phase 28 local hand-off. This resolver uses only an in-memory
- * Event Log supplied by tests or a local harness, so the shipped PWA starts
- * with no Workspace access. Phase 29 replaces it with durable local storage;
- * Phase 30 hydrates it through authenticated sync from Supabase.
- */
+/** In-memory Workspace access adapter for focused tests and the Playwright fixture. */
 
 import { admitWorkspaceEvent, decidePendingMembershipActivation, resolveWorkspaceAccess } from '@birdnerd/banding'
 import type { DomainEvent, ExternalIdentity as EventExternalIdentity } from '@birdnerd/events'
-import { LocalEventLog } from '@birdnerd/sync-state'
+import { EventLog } from '@birdnerd/sync-state'
 import type { ExternalIdentity } from '../auth/authModule'
 import type { WorkspaceAccessModule, WorkspaceAccessResult } from './workspaceAccessModule'
 
-export function createDraftLocalWorkspaceAccess(initialEvents: readonly DomainEvent[] = []): WorkspaceAccessModule {
-  const log = new LocalEventLog(initialEvents, admitWorkspaceEvent)
+export function createInMemoryWorkspaceAccess(initialEvents: readonly DomainEvent[] = []): WorkspaceAccessModule {
+  const log = new EventLog(initialEvents, admitWorkspaceEvent)
 
   return {
     async resolve(identity: ExternalIdentity): Promise<WorkspaceAccessResult> {

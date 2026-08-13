@@ -1,9 +1,10 @@
 # BirdNerd Entities
 
-> **Current-state diagram:** This document describes the mutable IndexedDB
-> model currently implemented. The accepted Phase 26 target replaces ChangeLog
-> as a write path with a Workspace-scoped Event Log and rebuildable projections;
-> see [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
+> **Current-state diagram:** This document describes the legacy mutable
+> `birdnerd` IndexedDB model. Field 0.29.0 adds a separate, clean
+> Workspace-scoped Event Log and rebuildable Workspace-access projection cache;
+> it does not migrate this legacy model. The future field-data write path is
+> defined by [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
 
 > **Note:** The diagrams below are easier to read in light mode (not dark mode).
 

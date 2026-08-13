@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Person, Bander, BanderRole } from '@birdnerd/shared'
 import { savePerson, getBanderByPerson, saveBander, deleteBander } from '../db'
 import PageHeader from '../components/PageHeader'
@@ -48,7 +49,7 @@ export default function PersonDetail({ person, onBack, onPersonUpdated, onHome }
   async function handleAddBander(role: BanderRole) {
     const now = new Date().toISOString()
     const newBander: Bander = {
-      id: `bander-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+      id: createUuidV7(),
       personId: person.id,
       role,
       createdAt: now,

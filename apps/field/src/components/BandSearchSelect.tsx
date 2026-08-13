@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { createUuidV7 } from '@birdnerd/events'
 import type { Band, BandType } from '@birdnerd/shared'
 import { inputStyle, dropdownStyle as baseDropdownStyle, btnStyle } from '../styles/theme'
 import { BAND_SIZE_CODES } from '../data/codes'
@@ -18,10 +19,6 @@ interface Props {
   currentBandId?: string
   /** Called after a new foreign Band entity is created and selected, so the caller can auto-save the linked record */
   onForeignBandCreated?: (band: Band) => Promise<void>
-}
-
-function generateId(): string {
-  return `band-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export default function BandSearchSelect({ bands, value, onChange, currentBandId, onForeignBandCreated }: Props) {
@@ -89,7 +86,7 @@ export default function BandSearchSelect({ bands, value, onChange, currentBandId
     setCreating(true)
     const now = new Date().toISOString()
     const newBand: Band = {
-      id: generateId(),
+      id: createUuidV7(),
       bandNumber: search.trim(),
       status: 'foreign',
       bandSize: createSize,

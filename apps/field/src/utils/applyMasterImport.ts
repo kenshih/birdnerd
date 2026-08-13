@@ -1,4 +1,5 @@
 import type { BirdRecord, Session, Band, Location, SessionBanderLog, Person, Bander } from '@birdnerd/shared'
+import { createUuidV7 } from '@birdnerd/events'
 import { getDB } from '../db'
 import type { ImportPlan, ImportWarning } from './masterSheetImport'
 
@@ -34,9 +35,8 @@ export interface ImportSummary {
   rejectCount: number
 }
 
-let seq = 0
-function newId(prefix = ''): string {
-  return `${prefix}${Date.now()}-${Math.random().toString(36).slice(2, 9)}-${seq++}`
+function newId(): string {
+  return createUuidV7()
 }
 
 const digitsOf = (bn: string | undefined) => (bn ?? '').replace(/\D/g, '')
@@ -103,13 +103,13 @@ export async function applyImportPlan(
       const bid = banderIdByPersonId.get(existingPid)
       if (bid) return bid
       // Person exists without a Bander record — link one.
-      const banderId = newId('bdr-')
+      const banderId = newId()
       banderIdByPersonId.set(existingPid, banderId)
       newBanders.push({ id: banderId, personId: existingPid, role: 'Bander', createdAt: now, updatedAt: now })
       return banderId
     }
-    const personId = newId('per-')
-    const banderId = newId('bdr-')
+    const personId = newId()
+    const banderId = newId()
     personIdByInitials.set(initials, personId)
     banderIdByPersonId.set(personId, banderId)
     createdPeopleInitials.add(initials)
@@ -122,7 +122,7 @@ export async function applyImportPlan(
   const stationCodes = new Set(plan.sessions.map(s => s.stationCode))
   for (const code of stationCodes) {
     if (locationIdByCode.has(code)) continue
-    const id = newId('loc-')
+    const id = newId()
     locationIdByCode.set(code, id)
     summary.locationsCreated.push(code)
     newLocations.push({
@@ -143,7 +143,7 @@ export async function applyImportPlan(
       summary.sessionsSkipped++
       continue
     }
-    const id = newId('ses-')
+    const id = newId()
     sessionIdByKey.set(draft.key, id)
     summary.sessionsCreated++
 
@@ -158,7 +158,7 @@ export async function applyImportPlan(
       const banderId = resolveBanderId(initials)
       if (!banderId) continue
       summary.banderLogsCreated++
-      newBanderLogs.push({ id: newId('sbl-'), sessionId: id, banderId, createdAt: now, updatedAt: now })
+      newBanderLogs.push({ id: newId(), sessionId: id, banderId, createdAt: now, updatedAt: now })
     }
   }
   summary.peopleCreated = [...createdPeopleInitials].sort()
@@ -171,7 +171,7 @@ export async function applyImportPlan(
       summary.bandsSkipped++
       continue
     }
-    const id = newId('bnd-')
+    const id = newId()
     bandIdByDigits.set(draft.digits, id)
     summary.bandsCreated++
     newBands.push({
@@ -193,7 +193,7 @@ export async function applyImportPlan(
     summary.recordsCreated++
     newRecords.push({
       ...draft.fields,
-      id: newId('rec-'),
+      id: newId(),
       sessionId: sessionIdByKey.get(draft.sessionKey) ?? '',
       bandId: draft.bandDigits ? bandIdByDigits.get(draft.bandDigits) : undefined,
       createdAt: now, updatedAt: now,

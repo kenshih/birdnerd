@@ -13,6 +13,8 @@
     "packages/shared"
   ],
   "scripts": {
+    "generate:event-bindings": "node scripts/generate-event-bindings.mjs",
+    "check:event-bindings": "node scripts/generate-event-bindings.mjs --check",
     "vers": "npm pkg get name version --workspaces --include-workspace-root=false | jq -r 'to_entries[] | [.value.name, .value.version] | @tsv' | column -t",
     "dev": "npm --workspace @birdnerd/field run dev",
     "dev:host": "npm --workspace @birdnerd/field run dev -- --host",
@@ -23,7 +25,7 @@
     "dev:sync-db:host": "npm --workspace @birdnerd/sync-db run dev -- --host",
     "dev:sync": "npm --workspace @birdnerd/sync-spike run dev",
     "dev:sync:host": "npm --workspace @birdnerd/sync-spike run dev -- --host",
-    "build:collaboration": "npm --workspace @birdnerd/events run build && npm --workspace @birdnerd/banding run build && npm --workspace @birdnerd/sync-state run build && npm --workspace @birdnerd/provisioner run build",
+    "build:collaboration": "npm run check:event-bindings && npm --workspace @birdnerd/events run build && npm --workspace @birdnerd/banding run build && npm --workspace @birdnerd/sync-state run build && npm --workspace @birdnerd/provisioner run build",
     "test:collaboration": "npm run build:collaboration && npm --workspace @birdnerd/events run test && npm --workspace @birdnerd/banding run test && npm --workspace @birdnerd/sync-state run test && npm --workspace @birdnerd/provisioner run test",
     "provision": "npm run build:collaboration && npm --workspace @birdnerd/provisioner run provision --",
     "build": "npm --workspace @birdnerd/field run build",
@@ -41,5 +43,8 @@
     "lint": "npm --workspace @birdnerd/field run lint",
     "test": "npm --workspace @birdnerd/field run test",
     "test:e2e": "npm --workspace @birdnerd/field run test:e2e"
+  },
+  "devDependencies": {
+    "yaml": "^2.4.2"
   }
 }

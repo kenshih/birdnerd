@@ -25,12 +25,12 @@ The access-denied screen must not create an account automatically, display
 workspace data, or offer an in-app request/join flow. Its purpose is to make a
 successful Google login understandable without implying BirdNerd access.
 
-**Phase 28 scope:** The UI implements all of these outcomes, and the local
-event-slice tests prove automatic, idempotent activation of a matching pending
-Membership. The deployed PWA has no provisioned Event Log hand-off yet, so it
-will show the no-access outcome after a real Google login until Phases 29–30
-add local Event Log persistence and Supabase exchange. This is intentionally
-not an in-app provisioning or join path.
+**Phase 29 scope:** The UI implements all of these outcomes, and a matching
+pending Membership activates automatically, idempotently, and durably in the
+local Event Log. A fresh deployed Field app still has no provisioned bootstrap
+Events, so it correctly shows no access after a real Google login until the
+separate Provisioner/Supabase hand-off exists. This remains intentionally not
+an in-app provisioning or join path.
 
 Roles are converted into UI capabilities at the Workspace boundary. A
 Contributor sees the operational Field screens; an Admin also sees

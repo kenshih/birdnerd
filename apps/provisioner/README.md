@@ -15,14 +15,14 @@ npm run provision -- \
   --output ./birdnerd-provisioning-events.json
 ```
 
-Under the hood, it emits a draft UUIDv7 Event Log containing
+Under the hood, it emits a canonical UUIDv7 Event Log containing
 `workspace.created` and pending Workspace Membership events. Each event is
 admitted before the file is written; the CLI never writes a projection or
 database row.
 
-## Phase 28 limitation
+## Current limitation
 
 The output file is a local test/harness hand-off only. It is not a formal Event
-Bundle and cannot provision a deployed Field device. Phase 29 adds the durable
-local event store and generated contracts; Phase 30 adds authenticated
-Supabase admission and exchange.
+Bundle and cannot provision a deployed Field device. Field 0.29.0 now owns the
+durable local Event Log and generated Event Contracts; Phase 30 adds
+authenticated Supabase admission and exchange.
