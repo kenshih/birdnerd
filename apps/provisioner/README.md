@@ -1,28 +1,31 @@
 # BirdNerd Provisioner
 
-The Provisioner sets up a new BirdNerd Workspace for the closed pilot. An
-administrator runs it once to create the Workspace and record the exact Google
-email addresses that are allowed to use it, including the first Admin.
+The Provisioner is a deploy-only trusted-operator adapter for bootstrapping the
+closed collaboration pilot. It connects directly to Postgres using a distinct
+login that inherits only the non-login `birdnerd_provisioner` role. That role
+can execute `birdnerd_private.bootstrap_workspace` and has no raw Event Log or
+Membership DML privileges.
 
-It is a separate, local-only CLI, not part of the Field PWA. Field users cannot
-create Workspaces or grant themselves access.
+After the reviewed Supabase migration is applied, create a separate login in a
+trusted operator environment and grant it the role:
+
+```sql
+create role birdnerd_phase30_operator login password '<password-managed-outside-git>';
+grant birdnerd_provisioner to birdnerd_phase30_operator;
+```
+
+Run once for the pilot Workspace:
 
 ```bash
+export BIRDNERD_PROVISIONER_DATABASE_URL='postgresql://...'
 npm run provision -- \
   --workspace-name "Cedar Creek" \
   --admin-email admin@example.com \
-  --member contributor@example.com:contributor \
-  --output ./birdnerd-provisioning-events.json
+  --member person@example.com:contributor
 ```
 
-Under the hood, it emits a canonical UUIDv7 Event Log containing
-`workspace.created` and pending Workspace Membership events. Each event is
-admitted before the file is written; the CLI never writes a projection or
-database row.
-
-## Current limitation
-
-The output file is a local test/harness hand-off only. It is not a formal Event
-Bundle and cannot provision a deployed Field device. Field 0.29.0 now owns the
-durable local Event Log and generated Event Contracts; Phase 30 adds
-authenticated Supabase admission and exchange.
+The JSON output is the operator audit receipt: Workspace/command IDs, canonical
+bootstrap Events, and Member count. Preserve it with the pilot notes. Never put
+the database URL in a `VITE_*` variable, Field device, browser, repository, or
+GitHub Pages configuration. The Provisioner does not create Supabase Auth users;
+each exact-email Member activates on first Google sign-in.

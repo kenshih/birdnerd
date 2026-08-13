@@ -1,7 +1,7 @@
 /**
- * Local-only Workspace bootstrap command. It emits canonical Events and sends
- * them through ordinary admission, but does not write Field storage or act as
- * an Event Bundle or shared-service authority.
+ * Deterministic bootstrap preview used by package-level contract tests. The
+ * production CLI uses the restricted database Adapter in
+ * `databaseProvisioner.ts`; this helper never provisions a shared Workspace.
  */
 
 import { admitWorkspaceEvent } from '@birdnerd/banding'
