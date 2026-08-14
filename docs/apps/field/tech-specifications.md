@@ -26,8 +26,8 @@ See also: [product-specifications.md](product-specifications.md) | [entities.md]
 - **PWA:** vite-plugin-pwa (offline capability, installable, home screen icon)
 - **Forms:** React Hook Form + custom validation (`apps/field/src/utils/validation.ts`)
 - **Local Storage:** IndexedDB (via `idb` package)
-- **Database (future):** Supabase (PostgreSQL + Auth)
-- **API (future):** Generated from schema (OpenAPI or GraphQL TBD)
+- **Shared Event exchange:** Supabase (PostgreSQL + Auth + narrow RPCs)
+- **API:** Explicit Event claim/append/pull RPCs; broader OpenAPI or GraphQL remains future work
 - **Hosting:** GitHub Pages (static)
 
 ### Development Environment
@@ -320,8 +320,10 @@ Seed data ships as a JSON file (`apps/field/public/data/seed.json`) in the same 
 
 ### Local Storage (IndexedDB)
 
-**Current implementation:** Mutable entity stores in IndexedDB remain the
-running app architecture until the Phase 27–30 collaboration sequence lands.
+**Current implementation:** Field keeps the legacy mutable stores for existing
+screens while Phase 30's Collaboration Pilot uses the separate
+`birdnerd-event-core` replica. Pilot writes append immutable Events and project
+them locally before network exchange; no dual write occurs.
 
 - All entities cached locally in IndexedDB
 - Supports offline operation in field
@@ -369,8 +371,9 @@ It replaces mutable authoritative entities with a local-first event model:
   wall clock advances, otherwise increments logical time; `observe` uses the
   maximum local, remote, and wall-clock physical time and increments the
   applicable winning logical value. Field persists its high-water mark and
-  reports counter overflow rather than wrapping it. Immutable v1 Events decode
-  through a deterministic v2 upcast using the validated, finite non-negative
+  reports counter overflow rather than wrapping it. Immutable v1 Events from
+  the historical Workspace/access catalog decode through a deterministic v2
+  upcast using the validated, finite non-negative
   Unix milliseconds of `occurred_at` and logical zero. The shared parser, not
   platform `Date`, retains/pads only the first three fractional-second digits,
   applies the numeric offset, and normalizes a permitted `:60` leap second as
@@ -471,8 +474,49 @@ Supabase exchange or field-data commands ahead of the roadmap:
 
 All new Field and bootstrap IDs use UUIDv7, and the test/initial-hydration
 bundles were recreated with UUIDv7 identifiers and internally valid references.
-The former mutable `DataBundle` remains only for legacy app data until Event
-Bundle recovery is delivered; it is not converted or imported by this core.
+The former mutable `DataBundle` remains only as legacy app migration/test code;
+collaboration recovery uses Workspace Event Bundles and never converts or
+imports that mutable format into the Event Log.
+
+### Supabase Event Exchange and Pilot Replica (Field 0.30)
+
+- Event envelope v2 adds `event_envelope_version: 2` and HLC
+  `{ physical_ms, logical }`. `@birdnerd/events` owns tick, observe, ordering,
+  RFC 3339 millisecond conversion, and v1 upcast. New local writes persist the
+  HLC high-water before Event construction, so restarts and clock regression
+  cannot move the replica backward.
+- `@birdnerd/banding` owns `session.created`, `banding-record.created`, and
+  `banding-record.fields-amended` commands plus the deterministic projection.
+  Each field selects its winning Event by HLC then `event_id`; current physical
+  band allocations are grouped into visible conflicts without deleting either
+  fact.
+- `@birdnerd/sync-state` exposes one coordinator Interface: synchronize and
+  observe status. Its internal Event-exchange Seam handles initial access,
+  push receipts, and server-sequenced pull pages. Field's durable replica
+  Adapter atomically persists received Events, receipts, projection state,
+  HLC high-water, and cursor. Permanent rejections remain diagnostic evidence,
+  leave automatic retry, and are excluded from the effective projection.
+- Supabase's Adapter calls only `birdnerd_claim_initial_access`,
+  `birdnerd_append_events`, and `birdnerd_pull_events`. A versioned SQL
+  migration keeps the Event Log and Membership admission index in the
+  non-exposed `birdnerd_private` schema, enables RLS defense in depth, denies
+  browser table DML, and grants authenticated execution only on those RPCs.
+  `npm run check:event-bindings` also compares the SQL Event Type branches and
+  exact-key checks with the YAML Contracts and verifies a full Contract
+  fingerprint, so CI fails if the provider validator drifts.
+- The deploy-only Provisioner connects with a database login inheriting only
+  `birdnerd_provisioner`. Its one private bootstrap function appends canonical
+  Workspace/pending-Membership Events and returns an audit receipt.
+- IndexedDB schema version 2 separates `event_log`, `projection_cache`,
+  `outbound_queue`, `sync_metadata`, and `receipts`. The provider-neutral Event
+  Pipeline diagnostics view reads those stores only in development builds;
+  rejected Events remain grouped by `command_id` with their queue and receipt
+  evidence even though they are omitted from the effective projection.
+- Workspace Event Bundle v1 contains a manifest, integrity digest, and current
+  or historically upcast-compatible Workspace/access Events. Pilot Session and
+  Banding Record Events require envelope v2. Restore validates every Event and Workspace
+  before writing, preserves pending local Events, resets the pull cursor,
+  rebuilds, and catches up through normal authenticated sync.
 
 ### Data Validation Datasets (future)
 
@@ -486,7 +530,21 @@ Tables provided by domain experts for validation:
 
 ---
 
-## 5. API & Integration (Future)
+## 5. API & Integration
+
+### Phase 30 Supabase RPC Interface
+
+- `birdnerd_claim_initial_access()` derives the authenticated Google principal,
+  exact-email-claims a pending Membership atomically, and returns canonical
+  access Events in server sequence.
+- `birdnerd_append_events(events)` validates active Membership, target
+  Workspace, actor, envelope, schema, and immutable identity/content; it
+  returns accepted, duplicate, or permanent-rejection receipts.
+- `birdnerd_pull_events(workspace_id, after_server_sequence, page_size)` checks
+  active Membership and returns at most 100 Events in server sequence.
+
+Raw Event Log, Membership index, and receipt tables are not Data API surfaces.
+The publishable key is the only Supabase key embedded in Field.
 
 ### OpenAPI / GraphQL (Future)
 
@@ -513,10 +571,11 @@ Tables provided by domain experts for validation:
 - Per-session CSV export available in Session View (export banding records for a single session)
 - Standalone CSV import/export buttons were removed from Data Manager in Phase 15a (replaced by agency-specific export formats)
 
-### Event Bundle (target; replaces Phase 9 JSON Data Bundle)
+### Event Bundle (Field 0.30; replaces Phase 9 JSON Data Bundle for collaboration recovery)
 
-The current `DataBundle`/`BUNDLE_VERSION` implementation is a mutable-state
-snapshot and remains only until the collaboration architecture replaces it.
+The legacy `DataBundle`/`BUNDLE_VERSION` implementation remains internal to
+legacy mutable-data tests and utilities. Data Manager's collaboration recovery
+surface uses the Workspace Event Bundle.
 
 An Event Bundle is a JSON container with a small outer format version, a
 Workspace manifest, and Domain Events carrying their own type and schema
@@ -557,7 +616,7 @@ path.
 - **PWA update mechanism:** `registerType: 'prompt'` — new service worker waits for user action. `useRegisterSW()` hook detects updates; `UpdateBanner` component offers "Update now" (triggers `SKIP_WAITING` + reload) or "Later" (dismisses until next app open). App version from `package.json` injected at build time via Vite `define` and displayed on About page.
 - **Multi-app PWA constraint:** the field app is served from `/birdnerd/` and the OCR app from `/birdnerd/ocr/` under the same GitHub Pages site. The field app service worker scope overlaps the OCR subtree, so the field app's Workbox navigation fallback must denylist `/birdnerd/ocr/` to avoid serving the field app shell for OCR routes.
 
-### Future (Phase 15+)
+### Collaboration backend
 
 - Supabase project (includes Postgres, Auth, Storage)
 - Environment variables for API endpoints, auth keys
@@ -576,15 +635,14 @@ path.
 
 ## 8. Security & Privacy
 
-### Current Phase
+### Current collaboration pilot
 
-- Local-only data (no network transmission)
-- No authentication required
-
-### Future (Phase 15+)
-
-- Supabase Auth (email/password, Google OAuth)
-- Row-level security policies (by Organization)
+- Google OAuth through Supabase Auth; no email/password, magic-link, anonymous,
+  or self-service Workspace join flow
+- Workspace Membership authorization enforced independently by server RPCs
+- RLS and explicit grants on all Supabase data; no browser table DML
+- Publishable browser key only; Provisioner/deployer credentials remain in
+  separate trusted environments
 - HTTPS only
 - Data encryption in transit
 - PII considerations (Person, User records)

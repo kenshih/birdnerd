@@ -1,7 +1,7 @@
 /**
- * Local-only Workspace bootstrap command. It emits canonical Events and sends
- * them through ordinary admission, but does not write Field storage or act as
- * an Event Bundle or shared-service authority.
+ * Deterministic bootstrap preview used by package-level contract tests. The
+ * production CLI uses the restricted database Adapter in
+ * `databaseProvisioner.ts`; this helper never provisions a shared Workspace.
  */
 
 import { admitWorkspaceEvent } from '@birdnerd/banding'
@@ -24,7 +24,7 @@ export function provisionWorkspace(input: ProvisionWorkspaceInput): readonly Dom
   const workspaceName = input.workspace_name.trim()
   if (!workspaceName) throw new Error('A Workspace name is required.')
 
-  const members = normalizeMembers([
+  const members = normalizeProvisioningMembers([
     { email: input.admin_email, role: 'admin' },
     ...(input.pending_members ?? []),
   ])
@@ -69,7 +69,7 @@ export function parsePendingMember(value: string): PendingMemberInput {
   return { email, role }
 }
 
-function normalizeMembers(members: readonly PendingMemberInput[]): PendingMemberInput[] {
+export function normalizeProvisioningMembers(members: readonly PendingMemberInput[]): PendingMemberInput[] {
   const seen = new Set<string>()
   return members.map(member => ({ ...member, email: canonicalizeEmail(member.email) })).map(member => {
     if (seen.has(member.email)) throw new Error(`A pending Membership already exists for ${member.email}.`)

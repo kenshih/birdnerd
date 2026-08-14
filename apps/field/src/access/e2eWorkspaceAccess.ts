@@ -6,11 +6,12 @@
 
 import { createEvent } from '@birdnerd/events'
 import type { WorkspaceAccessModule } from './workspaceAccessModule'
-import { createInMemoryWorkspaceAccess } from './localWorkspaceAccess'
+import { createDurableWorkspaceAccess } from './durableWorkspaceAccess'
+import { getFieldCollaboration } from '../sync/fieldCollaboration'
 
 export function createE2EWorkspaceAccessModule(): WorkspaceAccessModule {
   const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
-  return createInMemoryWorkspaceAccess([
+  const events = [
     createEvent({
       event_type: 'workspace.created',
       workspace_id: workspaceId,
@@ -29,5 +30,17 @@ export function createE2EWorkspaceAccessModule(): WorkspaceAccessModule {
         role: 'admin',
       },
     }),
-  ])
+  ]
+  const { store } = getFieldCollaboration()
+  const durable = createDurableWorkspaceAccess(store)
+  let seeded: Promise<unknown> | undefined
+  return {
+    async resolve(identity) {
+      seeded ??= store.appendAll(events)
+      await seeded
+      const result = await durable.resolve(identity)
+      if (result.kind === 'active') store.activateWorkspace(result.access.workspace_id)
+      return result
+    },
+  }
 }

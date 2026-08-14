@@ -1,12 +1,61 @@
 # BirdNerd Entities
 
 > **Current-state diagram:** This document describes the legacy mutable
-> `birdnerd` IndexedDB model. Field 0.29.0 adds a separate, clean
-> Workspace-scoped Event Log and rebuildable Workspace-access projection cache;
+> `birdnerd` IndexedDB model. Field 0.30 adds a separate, clean
+> Workspace-scoped Event Log, replication state, and rebuildable access/pilot projections;
 > it does not migrate this legacy model. The future field-data write path is
 > defined by [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
 
 > **Note:** The diagrams below are easier to read in light mode (not dark mode).
+
+## Phase 30 collaboration replica
+
+```mermaid
+erDiagram
+    DOMAIN_EVENT {
+        uuid event_id PK
+        uuid workspace_id
+        uuid command_id
+        string event_type
+        int event_schema_version
+        int event_envelope_version
+        json hlc
+        json actor
+        json payload
+    }
+    OUTBOUND_QUEUE {
+        uuid event_id PK
+        uuid workspace_id
+        string status
+        int attempt_count
+        datetime retry_at
+    }
+    SYNC_METADATA {
+        uuid workspace_id PK
+        bigint server_cursor
+        json hlc_high_water
+    }
+    RECEIPT {
+        uuid event_id PK
+        string result
+        bigint server_sequence
+    }
+    PROJECTION_CACHE {
+        string cache_key PK
+        json workspace_access
+        json pilot_sessions_records_conflicts
+    }
+
+    DOMAIN_EVENT ||--o| OUTBOUND_QUEUE : stages
+    DOMAIN_EVENT ||--o| RECEIPT : receives
+    DOMAIN_EVENT }o--|| SYNC_METADATA : scoped_by
+    DOMAIN_EVENT }o--|| PROJECTION_CACHE : rebuilds
+```
+
+IndexedDB version 2 stores these concerns separately. Domain Events are the
+durable truth; queue, cursor, receipt, and projection rows may change or be
+rebuilt without mutating an Event. Supabase keeps the shared Event Log and a
+minimum derived Membership admission index in a non-exposed schema.
 
 ## Color Coding Conventions
 

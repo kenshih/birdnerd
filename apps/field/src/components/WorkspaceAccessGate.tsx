@@ -1,6 +1,6 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import type { AuthModule, AuthState, ExternalIdentity } from '../auth/authModule'
-import type { WorkspaceAccessModule, WorkspaceAccessResult } from '../access/workspaceAccessModule'
+import type { WorkspaceAccess, WorkspaceAccessModule, WorkspaceAccessResult } from '../access/workspaceAccessModule'
 
 type Props = {
   auth: AuthModule
@@ -12,6 +12,14 @@ type AccessState =
   | { kind: 'checking' }
   | { kind: 'resolved'; result: WorkspaceAccessResult }
   | { kind: 'error'; message: string }
+
+const WorkspaceAccessContext = createContext<WorkspaceAccess | undefined>(undefined)
+
+export function useWorkspaceAccess(): WorkspaceAccess {
+  const access = useContext(WorkspaceAccessContext)
+  if (!access) throw new Error('Workspace access is available only inside WorkspaceAccessGate.')
+  return access
+}
 
 export default function WorkspaceAccessGate({ auth, workspaceAccess, children }: Props) {
   const [authState, setAuthState] = useState<AuthState>({ kind: 'checking' })
@@ -47,7 +55,9 @@ export default function WorkspaceAccessGate({ auth, workspaceAccess, children }:
   if (authState.kind === 'signed-in') {
     if (accessState.kind === 'checking') return <CheckingAccess />
     if (accessState.kind === 'error') return <AccessProblem message={accessState.message} onSignOut={() => void auth.signOut()} />
-    if (accessState.result.kind === 'active') return <>{children}</>
+    if (accessState.result.kind === 'active') {
+      return <WorkspaceAccessContext.Provider value={accessState.result.access}>{children}</WorkspaceAccessContext.Provider>
+    }
     return <NoAccess identity={authState.identity} onSignOut={() => void auth.signOut()} />
   }
 

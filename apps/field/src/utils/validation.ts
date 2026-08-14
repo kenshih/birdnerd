@@ -4,6 +4,7 @@
  * All warnings are soft (never block saving).
  */
 import { isNewBanding, isBandFate } from '../data/codes'
+import { isUuidV7, parseRfc3339Milliseconds, upcastEvent, type DomainEvent } from '@birdnerd/events'
 import bandSizesData from '../data/band-sizes.json'
 import measurementRangesData from '../data/measurement-ranges.json'
 
@@ -13,6 +14,58 @@ const measurementRanges = measurementRangesData as Record<string, {
   wing?: { femaleMin?: number; femaleMax?: number; maleMin?: number; maleMax?: number }
   tail?: { femaleMin?: number; femaleMax?: number; maleMin?: number; maleMax?: number }
 }>
+
+export const EVENT_BUNDLE_FORMAT_VERSION = 1
+
+export type WorkspaceEventBundle = {
+  format: 'birdnerd-workspace-event-bundle'
+  format_version: typeof EVENT_BUNDLE_FORMAT_VERSION
+  manifest: {
+    workspace_id: string
+    exported_at: string
+    event_count: number
+    event_ids: string[]
+    content_sha256: string
+  }
+  events: DomainEvent[]
+}
+
+/** Validate the full recovery container and every Event before IndexedDB writes. */
+export async function parseWorkspaceEventBundle(serialized: string): Promise<WorkspaceEventBundle> {
+  const value: unknown = JSON.parse(serialized)
+  if (!isRecord(value) || value.format !== 'birdnerd-workspace-event-bundle' || value.format_version !== EVENT_BUNDLE_FORMAT_VERSION
+    || !isRecord(value.manifest) || !Array.isArray(value.events)) throw new Error('Unsupported or malformed Workspace Event Bundle.')
+  const workspaceId = value.manifest.workspace_id
+  if (typeof workspaceId !== 'string' || !isUuidV7(workspaceId)) throw new Error('Bundle manifest Workspace ID is invalid.')
+  if (typeof value.manifest.content_sha256 !== 'string' || value.manifest.content_sha256 !== await workspaceEventContentSha256(value.events)) {
+    throw new Error('Bundle Event Log integrity check failed.')
+  }
+  const events = value.events.map(upcastEvent)
+  validateWorkspaceEventScope(workspaceId, events)
+  const ids = events.map(event => event.event_id)
+  if (value.manifest.event_count !== events.length || !Array.isArray(value.manifest.event_ids)
+    || value.manifest.event_ids.length !== ids.length || value.manifest.event_ids.some((id, index) => id !== ids[index])) {
+    throw new Error('Bundle manifest does not match its Event Log.')
+  }
+  if (typeof value.manifest.exported_at !== 'string') throw new Error('Bundle export timestamp is invalid.')
+  parseRfc3339Milliseconds(value.manifest.exported_at)
+  return { ...value, events } as unknown as WorkspaceEventBundle
+}
+
+export function validateWorkspaceEventScope(workspaceId: string, events: readonly DomainEvent[]): void {
+  if (!isUuidV7(workspaceId)) throw new Error('Workspace ID is invalid.')
+  const ids = new Set<string>()
+  for (const event of events) {
+    if (event.workspace_id !== workspaceId) throw new Error('Bundle contains an Event from another Workspace.')
+    if (ids.has(event.event_id)) throw new Error('Bundle contains a duplicate Event ID.')
+    ids.add(event.event_id)
+  }
+}
+
+export async function workspaceEventContentSha256(value: unknown): Promise<string> {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(value)))
+  return [...new Uint8Array(bytes)].map(byte => byte.toString(16).padStart(2, '0')).join('')
+}
 
 export interface ValidationInput {
   sex?: string
@@ -182,4 +235,8 @@ export function validateRecord(
   }
 
   return warnings
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

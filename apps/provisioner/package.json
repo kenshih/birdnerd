@@ -6,11 +6,15 @@
   "dependencies": {
     "@birdnerd/banding": "0.2.0",
     "@birdnerd/events": "0.2.0",
-    "@birdnerd/sync-state": "0.2.0"
+    "@birdnerd/sync-state": "0.2.0",
+    "pg": "8.23.0"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run src",
     "provision": "node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/pg": "8.21.0"
   }
 }

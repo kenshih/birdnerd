@@ -26,7 +26,7 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Band Inventory** — Add, track, and manage band stock.
 
-**Data Manager** — Browse records, export session data (CSV, BBL, IBP), generate session summaries, view band history. The current mutable JSON backup/restore will be replaced by Workspace Event Bundles under the accepted collaboration architecture.
+**Data Manager** — Browse records, export session data (CSV, BBL, IBP), import master sheets, and perform recovery-only export/restore with immutable Workspace Event Bundles.
 
 ---
 
@@ -52,7 +52,7 @@ For the ER diagram, complete field definitions, and entity relationships, see [t
 
 **Immutable (White):** ChangeLog (append-only audit trail of all entity changes).
 
-### 4.2 Collaboration Evolution (Phase 29 local Event Core)
+### 4.2 Collaboration Pilot (Phase 30)
 
 Phase 26 replaces the standalone ChangeLog and mutable authoritative entities
 with a Workspace-scoped Event Log plus rebuildable projections. User Accounts
@@ -70,14 +70,15 @@ derives the signed-in Google principal, exact-email-matches a pending
 Membership, and atomically links/activates it before Field shows operational
 content or can exchange ordinary Events.
 
-Phase 30 also adds a deploy-only trusted operator flow that emits the first
+Field 0.30 adds a deploy-only trusted operator flow that emits the first
 Workspace and pending Workspace Membership Events without creating Supabase
 Auth users or placing privileged credentials on Field devices. The operational
 pilot uses a separate Event-projection workflow—not a dual write to legacy
 mutable forms—with Session creation, Banding Record creation and amendment,
 HLC-based field-level last-write-wins, visible physical-band conflicts, sync
-status, and recovery-only Workspace Event Bundles. Further field-data commands
-remain later work.
+status, and recovery-only Workspace Event Bundles. The operational slice lives
+in a clearly labelled Collaboration Pilot workflow and does not dual-write the
+legacy mutable forms. Further field-data commands remain later work.
 
 ### 4.3 Key Product Concepts
 
@@ -192,8 +193,6 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 ### 8.2 UX & Workflow
 
 - [ ] Audit all delete actions for cascade confirmation dialogs (see ux-spec § 1.2): Session, Location, Person — any entity with dependents should explain what gets deleted
-- [ ] Remove "Load Example Data (for Hallie)" button from Data Manager once real data is in use
-- [ ] JSON import merge mode: Currently replace-only; consider additive merge strategy for importing bundles without wiping existing data
 - [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
 - [ ] Required fields timing: When to start enforcing * required fields? (Validation phase complete — currently all soft warnings, no hard enforcement)
 - [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?

@@ -1,75 +1,297 @@
 /**
- * Field's durable local Event Log and Workspace-projection cache. The separate
- * `birdnerd-event-core` database deliberately starts clean: Phase 29 neither
- * reads nor mutates the legacy mutable `birdnerd` database. Events remain the
- * source of truth; the serialized projection is an expendable startup cache.
+ * Field's durable local replica. Immutable Events, exchange state, receipts,
+ * HLC high-water, and rebuildable projections are separate IndexedDB stores.
+ * The legacy mutable `birdnerd` database is never read or changed here.
  */
-import { admitWorkspaceEvent, projectWorkspaceEvents, snapshotWorkspaceProjection, type WorkspaceProjectionSnapshot } from '@birdnerd/banding'
-import type { DomainEvent } from '@birdnerd/events'
-import { EventLog, type AppendResult } from '@birdnerd/sync-state'
+import {
+  admitWorkspaceEvent,
+  projectPilotBanding,
+  projectWorkspaceEvents,
+  snapshotWorkspaceProjection,
+} from '@birdnerd/banding'
+import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock } from '@birdnerd/events'
+import {
+  EventLog,
+  type AppendResult,
+  type DurableReplica,
+  type ExchangeReceipt,
+  type ServerEvent,
+  type SyncCommit,
+  type SyncInput,
+} from '@birdnerd/sync-state'
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 const DATABASE_NAME = 'birdnerd-event-core'
-const DATABASE_VERSION = 1
-const PROJECTION_CACHE_KEY = 'workspace-access'
+const DATABASE_VERSION = 2
+const PROJECTION_CACHE_KEY = 'workspace-current-state'
 
-type StoredWorkspaceProjection = WorkspaceProjectionSnapshot & {
+type QueueEntry = {
+  event_id: string
+  workspace_id: string
+  status: 'pending' | 'accepted' | 'rejected'
+  attempt_count: number
+  retry_at: number
+  last_error?: string
+}
+
+type SyncMetadata = {
+  workspace_id: string
+  cursor: number
+  high_water?: HybridLogicalClock
+  last_failure?: string
+  retry_at?: number
+  failure_count?: number
+}
+
+type StoredReceipt = { event_id: string; receipt: ExchangeReceipt; recorded_at: number }
+
+type StoredProjection = {
   cache_key: typeof PROJECTION_CACHE_KEY
   event_ids: string[]
+  workspace_access: ReturnType<typeof snapshotWorkspaceProjection>
+  sessions: ReturnType<typeof projectPilotBanding>['sessions'] extends ReadonlyMap<string, infer T> ? T[] : never
+  banding_records: ReturnType<typeof projectPilotBanding>['banding_records'] extends ReadonlyMap<string, infer T> ? T[] : never
+  band_allocation_conflicts: ReturnType<typeof projectPilotBanding>['band_allocation_conflicts']
 }
 
 interface WorkspaceEventDatabase extends DBSchema {
-  event_log: {
-    key: string
-    value: DomainEvent
-    indexes: { 'by-workspace': string }
-  }
-  projection_cache: {
-    key: string
-    value: StoredWorkspaceProjection
-  }
+  event_log: { key: string; value: DomainEvent; indexes: { 'by-workspace': string } }
+  projection_cache: { key: string; value: StoredProjection }
+  outbound_queue: { key: string; value: QueueEntry; indexes: { 'by-workspace': string; 'by-status': string } }
+  sync_metadata: { key: string; value: SyncMetadata }
+  receipts: { key: string; value: StoredReceipt }
+}
+
+export type EventPipelineDiagnostics = {
+  commands: ReadonlyArray<{ command_id: string; events: readonly DomainEvent[] }>
+  projection: StoredProjection
+  queue: readonly QueueEntry[]
+  metadata?: SyncMetadata
+  receipts: readonly StoredReceipt[]
 }
 
 let database: IDBPDatabase<WorkspaceEventDatabase> | undefined
 
-/**
- * Durable Field storage boundary for append-only Events. `appendAll` persists
- * accepted Events and a derived cache in one IndexedDB transaction; a later
- * hydration always rebuilds the cache from the Event Log before use.
- */
-export class WorkspaceEventStore {
+/** Durable Field Adapter used by access, command, recovery, and Sync-State Modules. */
+export class WorkspaceEventStore implements DurableReplica {
   private log: EventLog | undefined
+  private activeWorkspaceId: string | undefined
+  private operation = Promise.resolve()
 
-  async snapshot(): Promise<readonly DomainEvent[]> {
-    return (await this.getLog()).snapshot()
+  activateWorkspace(workspaceId: string): void {
+    this.activeWorkspaceId = workspaceId
+  }
+
+  async snapshot(workspaceId?: string): Promise<readonly DomainEvent[]> {
+    const events = (await this.getLog()).snapshot()
+    return workspaceId ? events.filter(event => event.workspace_id === workspaceId) : events
   }
 
   async appendAll(events: readonly DomainEvent[]): Promise<readonly AppendResult[]> {
-    const log = await this.getLog()
-    const results = log.appendAll(events)
-    const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')
-    if (accepted.length === 0) return results
+    return this.exclusive(async () => {
+      const current = await this.snapshot()
+      const candidateLog = new EventLog(current, admitWorkspaceEvent)
+      const results = candidateLog.appendAll(events)
+      const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')
+      if (accepted.length === 0) return results
+      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => result.event))
+      this.log = new EventLog(candidateLog.snapshot(), () => ({ accepted: true }))
+      return results
+    })
+  }
 
-    try {
-      await writeEventsAndProjection(log.snapshot(), accepted.map(result => result.event))
-    } catch (error) {
-      // A failed transaction must not leave an in-memory log ahead of durable truth.
-      this.log = undefined
-      throw error
+  async appendAcceptedRemote(items: readonly ServerEvent[]): Promise<void> {
+    await this.exclusive(async () => {
+      const current = [...await this.snapshot()]
+      const byId = new Map(current.map(event => [event.event_id, event]))
+      for (const item of items) {
+        const event = upcastEvent(item.event)
+        const existing = byId.get(event.event_id)
+        if (existing && !sameEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
+        byId.set(event.event_id, event)
+      }
+      const events = [...byId.values()]
+      const db = await getDatabase()
+      const tx = db.transaction(['event_log', 'projection_cache', 'sync_metadata'], 'readwrite')
+      for (const item of items) await tx.objectStore('event_log').put(upcastEvent(item.event))
+      await updateHighWater(tx.objectStore('sync_metadata'), items.map(item => item.event))
+      await tx.objectStore('projection_cache').put(projectionCache(events))
+      await tx.done
+      this.log = new EventLog(events, () => ({ accepted: true }))
+    })
+  }
+
+  async tickClock(workspaceId: string, now = Date.now()): Promise<HybridLogicalClock> {
+    return this.exclusive(async () => {
+      const db = await getDatabase()
+      const metadata = await db.get('sync_metadata', workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
+      const highWater = tickHlc(metadata.high_water, now)
+      await db.put('sync_metadata', { ...metadata, high_water: highWater })
+      return highWater
+    })
+  }
+
+  async readSyncInput(limit: number, _now: number): Promise<SyncInput | undefined> {
+    if (!this.activeWorkspaceId) return undefined
+    const db = await getDatabase()
+    const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
+    const pending = (await db.getAllFromIndex('outbound_queue', 'by-workspace', this.activeWorkspaceId))
+      .filter(item => item.status === 'pending')
+    const queue = pending.slice(0, limit)
+    const events = await Promise.all(queue.map(item => db.get('event_log', item.event_id)))
+    return {
+      workspace_id: this.activeWorkspaceId,
+      cursor: metadata.cursor,
+      pending_events: events.filter((event): event is DomainEvent => event !== undefined),
+      has_more_pending: pending.length > queue.length,
+      failure_count: metadata.failure_count ?? 0,
+      retry_at: metadata.retry_at,
+      last_failure: metadata.last_failure,
     }
-    return results
+  }
+
+  async commit(result: SyncCommit): Promise<void> {
+    await this.exclusive(async () => {
+      const db = await getDatabase()
+      const currentEvents = await db.getAll('event_log')
+      const queues = await db.getAll('outbound_queue')
+      const queueById = new Map(queues.map(item => [item.event_id, { ...item }]))
+      const eventsById = new Map(currentEvents.map(event => [event.event_id, event]))
+      for (const receipt of result.receipts) {
+        const queue = queueById.get(receipt.event_id)
+        if (queue) {
+          queue.status = receipt.kind === 'rejected' ? 'rejected' : 'accepted'
+          queue.last_error = receipt.kind === 'rejected' ? receipt.reason : undefined
+          queue.attempt_count += 1
+        }
+      }
+      for (const item of result.pulled) {
+        const event = upcastEvent(item.event)
+        const existing = eventsById.get(event.event_id)
+        if (existing && !sameEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
+        eventsById.set(event.event_id, event)
+      }
+      const rejectedIds = new Set([...queueById.values()].filter(item => item.status === 'rejected').map(item => item.event_id))
+      const effectiveEvents = [...eventsById.values()].filter(event => !rejectedIds.has(event.event_id))
+      const workspaceId = this.activeWorkspaceId ?? result.pulled[0]?.event.workspace_id
+      if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
+      const metadata = await db.get('sync_metadata', workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
+      let highWater = metadata.high_water
+      for (const item of result.pulled) highWater = highWater ? observeHlc(highWater, item.event.hlc, Date.now()) : item.event.hlc
+
+      const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
+      for (const item of result.pulled) await tx.objectStore('event_log').put(upcastEvent(item.event))
+      for (const receipt of result.receipts) {
+        const queue = queueById.get(receipt.event_id)
+        if (queue) await tx.objectStore('outbound_queue').put(queue)
+        await tx.objectStore('receipts').put({ event_id: receipt.event_id, receipt, recorded_at: Date.now() })
+      }
+      await tx.objectStore('sync_metadata').put({ ...metadata, cursor: result.cursor, high_water: highWater, last_failure: undefined, retry_at: undefined, failure_count: 0 })
+      await tx.objectStore('projection_cache').put(projectionCache(effectiveEvents))
+      await tx.done
+      this.log = new EventLog(effectiveEvents, () => ({ accepted: true }))
+    })
+  }
+
+  async recordFailure(message: string, retryAt: number): Promise<void> {
+    if (!this.activeWorkspaceId) return
+    const db = await getDatabase()
+    const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
+    const tx = db.transaction(['sync_metadata', 'outbound_queue'], 'readwrite')
+    await tx.objectStore('sync_metadata').put({ ...metadata, last_failure: message, retry_at: retryAt, failure_count: (metadata.failure_count ?? 0) + 1 })
+    const queue = await tx.objectStore('outbound_queue').index('by-workspace').getAll(this.activeWorkspaceId)
+    for (const entry of queue.filter(item => item.status === 'pending')) {
+      await tx.objectStore('outbound_queue').put({ ...entry, attempt_count: entry.attempt_count + 1, retry_at: retryAt, last_error: message })
+    }
+    await tx.done
+  }
+
+  async exportWorkspaceEvents(workspaceId: string): Promise<readonly DomainEvent[]> {
+    const db = await getDatabase()
+    const events = await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)
+    const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
+    const rejected = new Set(queue.filter(item => item.status === 'rejected').map(item => item.event_id))
+    return sortEvents(events.filter(event => !rejected.has(event.event_id)))
+  }
+
+  async restoreWorkspace(workspaceId: string, bundleEvents: readonly DomainEvent[]): Promise<{ protected_pending: number }> {
+    return this.exclusive(async () => {
+      const db = await getDatabase()
+      const currentEvents = await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)
+      const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
+      const pendingIds = new Set(queue.filter(item => item.status === 'pending').map(item => item.event_id))
+      const pending = currentEvents.filter(event => pendingIds.has(event.event_id))
+      const replacement = new Map(bundleEvents.map(event => [event.event_id, upcastEvent(event)]))
+      for (const event of currentEvents) {
+        const bundled = replacement.get(event.event_id)
+        if (bundled && !sameEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+      }
+      for (const event of pending) {
+        replacement.set(event.event_id, event)
+      }
+      const events = [...replacement.values()]
+      const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
+      for (const event of currentEvents) await tx.objectStore('event_log').delete(event.event_id)
+      for (const entry of queue) await tx.objectStore('outbound_queue').delete(entry.event_id)
+      for (const event of currentEvents) await tx.objectStore('receipts').delete(event.event_id)
+      for (const event of events) await tx.objectStore('event_log').put(event)
+      for (const event of pending) await tx.objectStore('outbound_queue').put({ event_id: event.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 0, retry_at: 0 })
+      await tx.objectStore('sync_metadata').put({ workspace_id: workspaceId, cursor: 0, high_water: maxClock(events) })
+      await tx.objectStore('projection_cache').put(projectionCache(events))
+      await tx.done
+      this.log = new EventLog(events, () => ({ accepted: true }))
+      return { protected_pending: pending.length }
+    })
+  }
+
+  async diagnostics(workspaceId: string): Promise<EventPipelineDiagnostics> {
+    const db = await getDatabase()
+    const events = sortEvents((await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)).map(upcastEvent))
+    const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
+    const rejected = new Set(queue.filter(item => item.status === 'rejected').map(item => item.event_id))
+    const effectiveEvents = events.filter(event => !rejected.has(event.event_id))
+    const commands = new Map<string, DomainEvent[]>()
+    events.forEach(event => commands.set(event.command_id, [...(commands.get(event.command_id) ?? []), event]))
+    return {
+      commands: [...commands.entries()].map(([command_id, commandEvents]) => ({ command_id, events: commandEvents })),
+      projection: projectionCache(effectiveEvents),
+      queue,
+      metadata: await db.get('sync_metadata', workspaceId),
+      receipts: (await db.getAll('receipts')).filter(item => events.some(event => event.event_id === item.event_id)),
+    }
+  }
+
+  private async persistLocal(events: readonly DomainEvent[], accepted: readonly DomainEvent[]): Promise<void> {
+    const db = await getDatabase()
+    const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata'], 'readwrite')
+    for (const event of accepted) {
+      await tx.objectStore('event_log').put(event)
+      await tx.objectStore('outbound_queue').put({ event_id: event.event_id, workspace_id: event.workspace_id, status: 'pending', attempt_count: 0, retry_at: 0 })
+    }
+    await updateHighWater(tx.objectStore('sync_metadata'), accepted)
+    await tx.objectStore('projection_cache').put(projectionCache(events))
+    await tx.done
   }
 
   private async getLog(): Promise<EventLog> {
     if (this.log) return this.log
-    const events = sortEvents(await (await getDatabase()).getAll('event_log'))
-    this.log = new EventLog(events, admitWorkspaceEvent)
-    await writeProjectionCache(this.log.snapshot())
+    const db = await getDatabase()
+    const events = await db.getAll('event_log')
+    const queue = await db.getAll('outbound_queue')
+    const rejected = new Set(queue.filter(item => item.status === 'rejected').map(item => item.event_id))
+    const effective = sortEvents(events.filter(event => !rejected.has(event.event_id)).map(upcastEvent))
+    this.log = new EventLog(effective, () => ({ accepted: true }))
+    await db.put('projection_cache', projectionCache(effective))
     return this.log
+  }
+
+  private async exclusive<T>(work: () => Promise<T>): Promise<T> {
+    const result = this.operation.then(work)
+    this.operation = result.then(() => undefined, () => undefined)
+    return result
   }
 }
 
-/** Close the cached connection so unit tests can isolate a fresh Event Log database. */
 export function resetWorkspaceEventStore(): void {
   database?.close()
   database = undefined
@@ -84,32 +306,51 @@ async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
         eventLog.createIndex('by-workspace', 'workspace_id')
         db.createObjectStore('projection_cache', { keyPath: 'cache_key' })
       }
+      if (oldVersion < 2) {
+        const queue = db.createObjectStore('outbound_queue', { keyPath: 'event_id' })
+        queue.createIndex('by-workspace', 'workspace_id')
+        queue.createIndex('by-status', 'status')
+        db.createObjectStore('sync_metadata', { keyPath: 'workspace_id' })
+        db.createObjectStore('receipts', { keyPath: 'event_id' })
+      }
     },
   })
   return database
 }
 
-async function writeEventsAndProjection(events: readonly DomainEvent[], accepted: readonly DomainEvent[]): Promise<void> {
-  const db = await getDatabase()
-  const tx = db.transaction(['event_log', 'projection_cache'], 'readwrite')
-  for (const event of accepted) await tx.objectStore('event_log').put(event)
-  await tx.objectStore('projection_cache').put(projectionCache(events))
-  await tx.done
-}
-
-async function writeProjectionCache(events: readonly DomainEvent[]): Promise<void> {
-  const db = await getDatabase()
-  const cache = projectionCache(events)
-  const existing = await db.get('projection_cache', PROJECTION_CACHE_KEY)
-  if (JSON.stringify(existing) !== JSON.stringify(cache)) await db.put('projection_cache', cache)
-}
-
-function projectionCache(events: readonly DomainEvent[]): StoredWorkspaceProjection {
+function projectionCache(events: readonly DomainEvent[]): StoredProjection {
+  const pilot = projectPilotBanding(events)
   return {
     cache_key: PROJECTION_CACHE_KEY,
     event_ids: events.map(event => event.event_id),
-    ...snapshotWorkspaceProjection(projectWorkspaceEvents(events)),
+    workspace_access: snapshotWorkspaceProjection(projectWorkspaceEvents(events)),
+    sessions: [...pilot.sessions.values()],
+    banding_records: [...pilot.banding_records.values()],
+    band_allocation_conflicts: pilot.band_allocation_conflicts,
   }
+}
+
+type SyncMetadataStore = {
+  get(key: string): Promise<SyncMetadata | undefined>
+  put(value: SyncMetadata): Promise<unknown>
+}
+
+async function updateHighWater(store: SyncMetadataStore, events: readonly DomainEvent[]): Promise<void> {
+  const byWorkspace = new Map<string, DomainEvent[]>()
+  events.forEach(event => byWorkspace.set(event.workspace_id, [...(byWorkspace.get(event.workspace_id) ?? []), event]))
+  for (const [workspaceId, workspaceEvents] of byWorkspace) {
+    const metadata = await store.get(workspaceId)
+    let highWater = metadata?.high_water
+    for (const event of workspaceEvents) highWater = highWater ? observeHlc(highWater, event.hlc, Date.now()) : event.hlc
+    await store.put({ ...(metadata ?? { workspace_id: workspaceId, cursor: 0 }), high_water: highWater })
+  }
+}
+
+function maxClock(events: readonly DomainEvent[]): HybridLogicalClock | undefined {
+  return events.reduce<HybridLogicalClock | undefined>((winner, event) => {
+    if (!winner || event.hlc.physical_ms > winner.physical_ms || (event.hlc.physical_ms === winner.physical_ms && event.hlc.logical > winner.logical)) return event.hlc
+    return winner
+  }, undefined)
 }
 
 function sortEvents(events: readonly DomainEvent[]): DomainEvent[] {

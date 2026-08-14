@@ -17,11 +17,11 @@ const outputPath = resolve(repositoryRoot, 'packages/events/src/generated/eventB
 const checkOnly = process.argv.slice(2).includes('--check')
 const supportedKeywords = new Set([
   '$schema', 'title', 'description', 'type', 'required', 'properties', 'additionalProperties',
-  'enum', 'const', 'format', 'minLength', 'pattern', 'items', 'oneOf',
+  'enum', 'const', 'format', 'minLength', 'minimum', 'maximum', 'pattern', 'items', 'oneOf',
 ])
 
 const files = (await readdir(contractDirectory))
-  .filter((file) => file.endsWith('.v1.yaml'))
+  .filter((file) => file.endsWith('.yaml'))
   .sort()
 
 const contracts = await Promise.all(files.map(async (file) => {
@@ -34,16 +34,17 @@ const contracts = await Promise.all(files.map(async (file) => {
   return { file, schema }
 }))
 
-const envelope = contracts.find(({ file }) => file === 'event-envelope.v1.yaml')
-if (!envelope) throw new Error('schemas/workspace/event-envelope.v1.yaml is required.')
+const legacyEnvelope = contracts.find(({ file }) => file === 'event-envelope.v1.yaml')
+const envelope = contracts.find(({ file }) => file === 'event-envelope.v2.yaml')
+if (!legacyEnvelope || !envelope) throw new Error('Both v1 and v2 Event envelope contracts are required.')
 const payloadContracts = contracts
-  .filter(({ file }) => file !== 'event-envelope.v1.yaml')
+  .filter(({ file }) => !file.startsWith('event-envelope.'))
   .map(({ file, schema }) => ({ file, schema, eventType: eventTypeFromTitle(schema.title, file) }))
 
 const duplicateType = payloadContracts.find((contract, index) => payloadContracts.findIndex((other) => other.eventType === contract.eventType) !== index)
 if (duplicateType) throw new Error(`Duplicate Event Contract type: ${duplicateType.eventType}`)
 
-const generated = render({ envelope: envelope.schema, payloadContracts, files })
+const generated = render({ legacyEnvelope: legacyEnvelope.schema, envelope: envelope.schema, payloadContracts, files })
 if (checkOnly) {
   const committed = await readFile(outputPath, 'utf8')
   if (committed !== generated) {
@@ -89,7 +90,7 @@ function assertSupportedSchema(schema, source) {
   }
 }
 
-function render({ envelope, payloadContracts, files }) {
+function render({ legacyEnvelope, envelope, payloadContracts, files }) {
   const payloadTypes = payloadContracts.map(({ eventType, schema }) => `${JSON.stringify(eventType)}: ${typeFor(schema)}`).join('\n  ')
   const eventTypes = payloadContracts.map(({ eventType }) => JSON.stringify(eventType)).join(' | ')
   const eventCases = payloadContracts.map(({ eventType }) => (
@@ -100,22 +101,31 @@ function render({ envelope, payloadContracts, files }) {
   )).join('\n')
   const sourceFiles = files.map((file) => ` * - schemas/workspace/${file}`).join('\n')
   const envelopeFields = typeFor(envelope)
+  const legacyEnvelopeFields = typeFor(legacyEnvelope)
 
   return `/*\n * GENERATED FILE — do not edit by hand.\n * Run \`npm run generate:event-bindings\` after changing these contract sources:\n${sourceFiles}\n */\n\n` +
 `export type EventType = ${eventTypes}\n\n` +
 `export type EventPayloadByType = {\n  ${payloadTypes}\n}\n\n` +
 `type EventEnvelope = ${envelopeFields}\n\n` +
+`type LegacyEventEnvelope = ${legacyEnvelopeFields}\n\n` +
 `export type EventActor = EventEnvelope['actor']\n\n` +
 `export type DomainEvent<T extends EventType = EventType> = T extends EventType\n` +
 `  ? Omit<EventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }\n` +
 `  : never\n\n` +
+`export type LegacyDomainEvent<T extends EventType = EventType> = T extends EventType\n` +
+`  ? Omit<LegacyEventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }\n` +
+`  : never\n\n` +
 `export const EVENT_TYPES: readonly EventType[] = [${payloadContracts.map(({ eventType }) => JSON.stringify(eventType)).join(', ')}]\n\n` +
 `const EVENT_TYPE_BY_NAME: Readonly<Record<EventType, EventType>> = {\n${eventCases}\n}\n\n` +
 `const EVENT_ENVELOPE_SCHEMA = ${JSON.stringify(envelope, null, 2)} as const\n\n` +
+`const LEGACY_EVENT_ENVELOPE_SCHEMA = ${JSON.stringify(legacyEnvelope, null, 2)} as const\n\n` +
 `const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, unknown>> = {\n${payloadSchemas}\n}\n\n` +
-`/** Returns a structural Contract error, or undefined when the v1 Event is valid. */\n` +
+`/** Returns a structural Contract error, or undefined for a valid v1 or v2 Event. */\n` +
 `export function validateGeneratedEvent(value: unknown): string | undefined {\n` +
-`  const envelopeError = validateSchema(value, EVENT_ENVELOPE_SCHEMA, '$')\n` +
+`  const envelopeSchema = isRecord(value) && value.event_envelope_version === 2\n` +
+`    ? EVENT_ENVELOPE_SCHEMA\n` +
+`    : LEGACY_EVENT_ENVELOPE_SCHEMA\n` +
+`  const envelopeError = validateSchema(value, envelopeSchema, '$')\n` +
 `  if (envelopeError) return envelopeError\n` +
 `  const event = value as { event_type: unknown; payload: unknown }\n` +
 `  if (typeof event.event_type !== 'string' || !(event.event_type in EVENT_TYPE_BY_NAME)) {\n` +
@@ -139,7 +149,12 @@ function render({ envelope, payloadContracts, files }) {
 `    if (schema.format === 'email' && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(value)) return \`${'${path}'} must be an email address.\`\n` +
 `    return undefined\n` +
 `  }\n` +
-`  if (schema.type === 'integer') return Number.isInteger(value) ? undefined : \`${'${path}'} must be an integer.\`\n` +
+`  if (schema.type === 'integer') {\n` +
+`    if (!Number.isInteger(value)) return \`${'${path}'} must be an integer.\`\n` +
+`    if (typeof schema.minimum === 'number' && (value as number) < schema.minimum) return \`${'${path}'} is below the Contract minimum.\`\n` +
+`    if (typeof schema.maximum === 'number' && (value as number) > schema.maximum) return \`${'${path}'} exceeds the Contract maximum.\`\n` +
+`    return undefined\n` +
+`  }\n` +
 `  if (schema.type === 'number') return typeof value === 'number' && Number.isFinite(value) ? undefined : \`${'${path}'} must be a number.\`\n` +
 `  if (schema.type === 'boolean') return typeof value === 'boolean' ? undefined : \`${'${path}'} must be a boolean.\`\n` +
 `  if (schema.type === 'array') {\n` +

@@ -1,23 +1,32 @@
 /*
  * GENERATED FILE — do not edit by hand.
  * Run `npm run generate:event-bindings` after changing these contract sources:
+ * - schemas/workspace/banding-record-created.v1.yaml
+ * - schemas/workspace/banding-record-fields-amended.v1.yaml
  * - schemas/workspace/event-envelope.v1.yaml
+ * - schemas/workspace/event-envelope.v2.yaml
  * - schemas/workspace/membership-activated.v1.yaml
  * - schemas/workspace/membership-preauthorized.v1.yaml
+ * - schemas/workspace/session-created.v1.yaml
  * - schemas/workspace/user-account-linked.v1.yaml
  * - schemas/workspace/workspace-created.v1.yaml
  */
 
-export type EventType = "membership.activated" | "membership.preauthorized" | "user-account.linked" | "workspace.created"
+export type EventType = "banding-record.created" | "banding-record.fields-amended" | "membership.activated" | "membership.preauthorized" | "session.created" | "user-account.linked" | "workspace.created"
 
 export type EventPayloadByType = {
+  "banding-record.created": { "record_id": string; "session_id": string; "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string }
+  "banding-record.fields-amended": { "record_id": string; "fields": { "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string } }
   "membership.activated": { "membership_id": string; "user_account_id": string }
   "membership.preauthorized": { "membership_id": string; "email": string; "role": "admin" | "contributor" }
+  "session.created": { "session_id": string; "session_date"?: string; "location_name"?: string; "protocol"?: string; "notes"?: string }
   "user-account.linked": { "user_account_id": string; "identity": { "provider": "google"; "subject": string; "email": string } }
   "workspace.created": { "workspace_id": string; "name": string }
 }
 
-type EventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "workspace_id": string; "command_id": string; "occurred_at": string; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
+type EventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "event_envelope_version": 2; "workspace_id": string; "command_id": string; "occurred_at": string; "hlc": { "physical_ms": number; "logical": number }; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
+
+type LegacyEventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "workspace_id": string; "command_id": string; "occurred_at": string; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
 
 export type EventActor = EventEnvelope['actor']
 
@@ -25,16 +34,171 @@ export type DomainEvent<T extends EventType = EventType> = T extends EventType
   ? Omit<EventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }
   : never
 
-export const EVENT_TYPES: readonly EventType[] = ["membership.activated", "membership.preauthorized", "user-account.linked", "workspace.created"]
+export type LegacyDomainEvent<T extends EventType = EventType> = T extends EventType
+  ? Omit<LegacyEventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }
+  : never
+
+export const EVENT_TYPES: readonly EventType[] = ["banding-record.created", "banding-record.fields-amended", "membership.activated", "membership.preauthorized", "session.created", "user-account.linked", "workspace.created"]
 
 const EVENT_TYPE_BY_NAME: Readonly<Record<EventType, EventType>> = {
+  "banding-record.created": "banding-record.created",
+  "banding-record.fields-amended": "banding-record.fields-amended",
   "membership.activated": "membership.activated",
   "membership.preauthorized": "membership.preauthorized",
+  "session.created": "session.created",
   "user-account.linked": "user-account.linked",
   "workspace.created": "workspace.created",
 }
 
 const EVENT_ENVELOPE_SCHEMA = {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BirdNerd Domain Event envelope v2",
+  "type": "object",
+  "required": [
+    "event_id",
+    "event_type",
+    "event_schema_version",
+    "event_envelope_version",
+    "workspace_id",
+    "command_id",
+    "occurred_at",
+    "hlc",
+    "actor",
+    "payload"
+  ],
+  "properties": {
+    "event_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "event_schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "event_envelope_version": {
+      "type": "integer",
+      "const": 2
+    },
+    "workspace_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "command_id": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "occurred_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "hlc": {
+      "type": "object",
+      "required": [
+        "physical_ms",
+        "logical"
+      ],
+      "properties": {
+        "physical_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "logical": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      },
+      "additionalProperties": false
+    },
+    "actor": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "provisioner_id"
+          ],
+          "properties": {
+            "kind": {
+              "const": "restricted-provisioner"
+            },
+            "provisioner_id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "identity"
+          ],
+          "properties": {
+            "kind": {
+              "const": "external-identity"
+            },
+            "identity": {
+              "type": "object",
+              "required": [
+                "provider",
+                "subject",
+                "email"
+              ],
+              "properties": {
+                "provider": {
+                  "const": "google"
+                },
+                "subject": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "email": {
+                  "type": "string",
+                  "format": "email"
+                }
+              },
+              "additionalProperties": false
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "user_account_id"
+          ],
+          "properties": {
+            "kind": {
+              "const": "user-account"
+            },
+            "user_account_id": {
+              "type": "string",
+              "format": "uuid",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+} as const
+
+const LEGACY_EVENT_ENVELOPE_SCHEMA = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "BirdNerd Domain Event envelope",
   "type": "object",
@@ -160,15 +324,21 @@ const EVENT_ENVELOPE_SCHEMA = {
 } as const
 
 const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, unknown>> = {
+  "banding-record.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.created v1","type":"object","required":["record_id","session_id"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false},
+  "banding-record.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.fields-amended v1","type":"object","required":["record_id","fields"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false}},"additionalProperties":false},
   "membership.activated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.activated v1","type":"object","required":["membership_id","user_account_id"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},"additionalProperties":false},
   "membership.preauthorized": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.preauthorized v1","type":"object","required":["membership_id","email","role"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"email":{"type":"string","format":"email"},"role":{"enum":["admin","contributor"]}},"additionalProperties":false},
+  "session.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.created v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_date":{"type":"string"},"location_name":{"type":"string"},"protocol":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false},
   "user-account.linked": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.linked v1","type":"object","required":["user_account_id","identity"],"properties":{"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"identity":{"type":"object","required":["provider","subject","email"],"properties":{"provider":{"const":"google"},"subject":{"type":"string","minLength":1},"email":{"type":"string","format":"email"}},"additionalProperties":false}},"additionalProperties":false},
   "workspace.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"workspace.created v1","type":"object","required":["workspace_id","name"],"properties":{"workspace_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"name":{"type":"string","minLength":1}},"additionalProperties":false},
 }
 
-/** Returns a structural Contract error, or undefined when the v1 Event is valid. */
+/** Returns a structural Contract error, or undefined for a valid v1 or v2 Event. */
 export function validateGeneratedEvent(value: unknown): string | undefined {
-  const envelopeError = validateSchema(value, EVENT_ENVELOPE_SCHEMA, '$')
+  const envelopeSchema = isRecord(value) && value.event_envelope_version === 2
+    ? EVENT_ENVELOPE_SCHEMA
+    : LEGACY_EVENT_ENVELOPE_SCHEMA
+  const envelopeError = validateSchema(value, envelopeSchema, '$')
   if (envelopeError) return envelopeError
   const event = value as { event_type: unknown; payload: unknown }
   if (typeof event.event_type !== 'string' || !(event.event_type in EVENT_TYPE_BY_NAME)) {
@@ -193,7 +363,12 @@ function validateSchema(value: unknown, schema: unknown, path: string): string |
     if (schema.format === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return `${path} must be an email address.`
     return undefined
   }
-  if (schema.type === 'integer') return Number.isInteger(value) ? undefined : `${path} must be an integer.`
+  if (schema.type === 'integer') {
+    if (!Number.isInteger(value)) return `${path} must be an integer.`
+    if (typeof schema.minimum === 'number' && (value as number) < schema.minimum) return `${path} is below the Contract minimum.`
+    if (typeof schema.maximum === 'number' && (value as number) > schema.maximum) return `${path} exceeds the Contract maximum.`
+    return undefined
+  }
   if (schema.type === 'number') return typeof value === 'number' && Number.isFinite(value) ? undefined : `${path} must be a number.`
   if (schema.type === 'boolean') return typeof value === 'boolean' ? undefined : `${path} must be a boolean.`
   if (schema.type === 'array') {

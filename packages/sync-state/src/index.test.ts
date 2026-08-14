@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { createEvent } from '@birdnerd/events'
-import { EventLog } from './index.js'
+import { createSyncCoordinator, EventLog, InMemoryEventExchange, type DurableReplica, type SyncCommit } from './index.js'
 
 describe('EventLog', () => {
   it('appends through admission and deduplicates retrying the same immutable event', () => {
@@ -30,3 +30,170 @@ describe('EventLog', () => {
     expect(() => new EventLog([event], () => ({ accepted: false, reason: 'Not admitted.' }))).toThrow('Initial Event Log entry was rejected')
   })
 })
+
+describe('SyncCoordinator', () => {
+  it('pushes pending Events, consumes server-sequenced pages, and commits each cursor durably', async () => {
+    const local = makeEvent('018f8c7b-0000-7000-8000-000000000010')
+    const remote = makeEvent('018f8c7b-0000-7000-8000-000000000011')
+    const exchange = new InMemoryEventExchange([remote])
+    const commits: SyncCommit[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() { return { workspace_id: local.workspace_id, cursor: 0, pending_events: [local], has_more_pending: false, failure_count: 0 } },
+      async commit(result) { commits.push(result) },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const coordinator = createSyncCoordinator(replica, exchange, { batch_size: 1, now: () => 5000 })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'idle', last_synced_at: 5000 })
+    expect(commits.map(commit => commit.cursor)).toEqual([1, 2, 2])
+    expect(commits[0].receipts[0]).toMatchObject({ kind: 'accepted', event_id: local.event_id })
+    expect(commits.flatMap(commit => commit.pulled).map(item => item.event.event_id)).toEqual([remote.event_id, local.event_id])
+  })
+
+  it('retains work and records exponential retry after exchange failure', async () => {
+    const failures: Array<{ message: string; retryAt: number }> = []
+    const replica: DurableReplica = {
+      async readSyncInput() { return { workspace_id: makeEvent().workspace_id, cursor: 0, pending_events: [makeEvent()], has_more_pending: false, failure_count: 0 } },
+      async commit() {},
+      async recordFailure(message, retryAt) { failures.push({ message, retryAt }) },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = async () => { throw new Error('network down') }
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 10_000, retry_base_ms: 500, schedule: () => {} })
+
+    expect(await coordinator.synchronize()).toEqual({ kind: 'offline', message: 'network down', retry_at: 10_500 })
+    expect(await coordinator.synchronize()).toEqual({ kind: 'offline', message: 'network down', retry_at: 11_000 })
+    expect(failures).toHaveLength(2)
+  })
+
+  it('honors a durable retry deadline after coordinator restart', async () => {
+    const event = makeEvent()
+    const scheduled: number[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: event.workspace_id,
+          cursor: 0,
+          pending_events: [event],
+          has_more_pending: false,
+          failure_count: 3,
+          retry_at: 11_000,
+          last_failure: 'still offline',
+        }
+      },
+      async commit() { throw new Error('unexpected') },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = vi.fn(async () => [])
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 10_000, schedule: (_run, delay) => scheduled.push(delay) })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'offline', message: 'still offline', retry_at: 11_000 })
+    expect(exchange.push).not.toHaveBeenCalled()
+    expect(scheduled).toEqual([1_000])
+  })
+
+  it('schedules the next pending batch after a successful bounded push', async () => {
+    const event = makeEvent()
+    const scheduled: number[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() { return { workspace_id: event.workspace_id, cursor: 0, pending_events: [event], has_more_pending: true, failure_count: 0 } },
+      async commit() {},
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const coordinator = createSyncCoordinator(replica, new InMemoryEventExchange(), {
+      now: () => 10_000,
+      schedule: (_run, delay) => scheduled.push(delay),
+    })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'idle', last_synced_at: 10_000 })
+    expect(scheduled).toEqual([0])
+  })
+
+  it('commits mixed acceptance and permanent rejection receipts in one durable batch', async () => {
+    const accepted = makeEvent('018f8c7b-0000-7000-8000-000000000010')
+    const rejected = makeEvent('018f8c7b-0000-7000-8000-000000000011')
+    const commits: SyncCommit[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return { workspace_id: accepted.workspace_id, cursor: 0, pending_events: [accepted, rejected], has_more_pending: false, failure_count: 0 }
+      },
+      async commit(result) { commits.push(result) },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    const receipts = [
+      { kind: 'accepted', event_id: accepted.event_id, server_sequence: 1 },
+      { kind: 'rejected', event_id: rejected.event_id, reason: 'not admitted', permanent: true },
+    ] as const
+    exchange.push = async () => receipts
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 10_000 })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'attention', rejected: 1, last_synced_at: 10_000 })
+    expect(commits).toEqual([{ receipts, pulled: [], cursor: 0 }])
+  })
+
+  it('re-pulls a page after an interrupted durable commit instead of skipping its cursor', async () => {
+    const remote = makeEvent('018f8c7b-0000-7000-8000-000000000011')
+    const exchange = new InMemoryEventExchange([remote])
+    const pull = vi.spyOn(exchange, 'pull')
+    let cursor = 0
+    let failureCount = 0
+    let retryAt: number | undefined
+    let lastFailure: string | undefined
+    let interruptCommit = true
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: remote.workspace_id,
+          cursor,
+          pending_events: [],
+          has_more_pending: false,
+          failure_count: failureCount,
+          retry_at: retryAt,
+          last_failure: lastFailure,
+        }
+      },
+      async commit(result) {
+        if (interruptCommit) {
+          interruptCommit = false
+          throw new Error('simulated crash before transaction commit')
+        }
+        cursor = result.cursor
+        failureCount = 0
+        retryAt = undefined
+        lastFailure = undefined
+      },
+      async recordFailure(message, nextRetryAt) {
+        failureCount += 1
+        retryAt = nextRetryAt
+        lastFailure = message
+      },
+    }
+
+    const beforeRestart = createSyncCoordinator(replica, exchange, { now: () => 10_000, retry_base_ms: 500, schedule: () => {} })
+    await expect(beforeRestart.synchronize()).resolves.toEqual({
+      kind: 'offline',
+      message: 'simulated crash before transaction commit',
+      retry_at: 10_500,
+    })
+    expect(cursor).toBe(0)
+
+    const afterRestart = createSyncCoordinator(replica, exchange, { now: () => 10_500, retry_base_ms: 500, schedule: () => {} })
+    await expect(afterRestart.synchronize()).resolves.toEqual({ kind: 'idle', last_synced_at: 10_500 })
+    expect(cursor).toBe(1)
+    expect(pull).toHaveBeenNthCalledWith(1, remote.workspace_id, 0, 100)
+    expect(pull).toHaveBeenNthCalledWith(2, remote.workspace_id, 0, 100)
+  })
+})
+
+function makeEvent(eventId = '018f8c7b-0000-7000-8000-000000000010') {
+  return createEvent({
+    event_id: eventId,
+    event_type: 'workspace.created',
+    workspace_id: '018f8c7b-0000-7000-8000-000000000001',
+    command_id: '018f8c7b-0000-7000-8000-000000000002',
+    actor: { kind: 'restricted-provisioner', provisioner_id: 'local-admin' },
+    payload: { workspace_id: '018f8c7b-0000-7000-8000-000000000001', name: 'Cedar Creek' },
+  })
+}

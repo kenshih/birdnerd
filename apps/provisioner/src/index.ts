@@ -1,28 +1,38 @@
 /**
- * Local-only provision-file hand-off. This CLI writes only canonical Event Log
- * JSON, never database rows or projections. Phase 30 adds authenticated
- * Supabase Event Admission and sync.
+ * Deploy-only trusted-operator CLI. Its database login is distinct from the
+ * migration deployer and can execute only BirdNerd's private bootstrap
+ * function; the credential never belongs in Field or a browser bundle.
  */
 
-import { mkdir, writeFile } from 'node:fs/promises'
-import { dirname, resolve } from 'node:path'
-import { encodeEventLog } from '@birdnerd/events'
-import { parsePendingMember, provisionWorkspace, type PendingMemberInput } from './provisioning.js'
+import { Client } from 'pg'
+import { bootstrapWorkspace, type ProvisioningMember } from './databaseProvisioner.js'
+import { parsePendingMember } from './provisioning.js'
 
 type CliOptions = {
   workspace_name: string
   admin_email: string
-  output: string
-  pending_members: PendingMemberInput[]
+  provisioner_id: string
+  pending_members: ProvisioningMember[]
 }
 
-export async function runCli(args: readonly string[]): Promise<string> {
+export async function runCli(args: readonly string[], environment: NodeJS.ProcessEnv = process.env): Promise<unknown> {
   const options = parseArgs(args)
-  const events = provisionWorkspace(options)
-  const outputPath = resolve(options.output)
-  await mkdir(dirname(outputPath), { recursive: true })
-  await writeFile(outputPath, encodeEventLog(events), 'utf8')
-  return outputPath
+  const connectionString = environment.BIRDNERD_PROVISIONER_DATABASE_URL
+  if (!connectionString) throw new Error('BIRDNERD_PROVISIONER_DATABASE_URL is required in the trusted operator environment.')
+  const client = new Client({ connectionString })
+  await client.connect()
+  try {
+    return await bootstrapWorkspace(client, {
+      workspace_name: options.workspace_name,
+      provisioner_id: options.provisioner_id,
+      members: [
+        { email: options.admin_email, role: 'admin' },
+        ...options.pending_members,
+      ],
+    })
+  } finally {
+    await client.end()
+  }
 }
 
 function parseArgs(args: readonly string[]): CliOptions {
@@ -30,7 +40,7 @@ function parseArgs(args: readonly string[]): CliOptions {
   for (let index = 0; index < args.length; index += 1) {
     const flag = args[index]
     if (flag === '--help' || flag === '-h') throw new Error(helpText())
-    if (flag !== '--workspace-name' && flag !== '--admin-email' && flag !== '--member' && flag !== '--output') {
+    if (flag !== '--workspace-name' && flag !== '--admin-email' && flag !== '--member' && flag !== '--provisioner-id') {
       throw new Error(`Unknown argument: ${flag}\n\n${helpText()}`)
     }
     const value = args[index + 1]
@@ -41,11 +51,10 @@ function parseArgs(args: readonly string[]): CliOptions {
 
   const workspaceName = requiredValue(values, '--workspace-name')
   const adminEmail = requiredValue(values, '--admin-email')
-  const output = values.get('--output')?.at(-1) ?? './birdnerd-provisioning-events.json'
   return {
     workspace_name: workspaceName,
     admin_email: adminEmail,
-    output,
+    provisioner_id: values.get('--provisioner-id')?.at(-1) ?? 'phase-30-operator',
     pending_members: (values.get('--member') ?? []).map(parsePendingMember),
   }
 }
@@ -59,15 +68,15 @@ function requiredValue(values: ReadonlyMap<string, string[]>, flag: string): str
 function helpText(): string {
   return [
     'Usage:',
-    '  npm run provision -- --workspace-name "Cedar Creek" --admin-email admin@example.com [--member person@example.com:contributor] [--output ./events.json]',
+    '  BIRDNERD_PROVISIONER_DATABASE_URL=postgresql://... npm run provision -- --workspace-name "Cedar Creek" --admin-email admin@example.com [--member person@example.com:contributor]',
     '',
-    'The Provisioner emits a canonical Event Log. It never writes projections or database rows.',
+    'The credential must be a login granted only the birdnerd_provisioner role.',
   ].join('\n')
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
   runCli(process.argv.slice(2))
-    .then(outputPath => console.log(`Provisioned Event Log: ${outputPath}`))
+    .then(receipt => console.log(JSON.stringify(receipt, null, 2)))
     .catch(error => {
       console.error(error instanceof Error ? error.message : error)
       process.exitCode = 1
