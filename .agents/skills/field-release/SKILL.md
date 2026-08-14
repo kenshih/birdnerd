@@ -22,10 +22,22 @@ that actually ships before changing version numbers or release trackers.
    completion. If the user deliberately chooses a version that represents a
    narrower slice, record the shipped scope accurately.
 
-## Update release metadata before committing
+## Update release metadata before committing or opening a Field-phase PR
 
-Make the release updates as one working-tree change, before the feature commit
-is created:
+For an agreed Field phase/version, make the version, lockfile, changelog, and
+specification updates on the delivery branch before the PR is opened. This
+lets reviewers assess the release claim with the implementation. Make them as
+one working-tree change before the feature commit is created when possible;
+if implementation already landed without them, add a transparent corrective
+commit before review/merge. Do not defer these three release metadata files to
+post-merge bookkeeping.
+
+Keep the following post-merge: `docs/plan.md` completion/archive changes,
+tags, deployment, and any statement that the release is shipped. After merge,
+reconcile the reviewed proposed version with the merged code before marking
+the roadmap phase complete.
+
+Prepare the pre-merge release metadata as follows:
 
 - Set `apps/field/package.json` to the approved Field version.
 - Synchronize the `apps/field` version in `package-lock.json` using the normal

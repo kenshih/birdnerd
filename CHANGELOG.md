@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.30.0 — **Supabase Event Exchange & Collaboration Pilot.** Invited
+  Google users can claim one Workspace, append immutable pilot Session and
+  Banding Record Events while offline, and synchronize through authenticated
+  Supabase admission/exchange with durable queue, receipt, retry, HLC, and
+  cursor state. The Collaboration Pilot exposes field-level concurrent
+  amendments, visible physical-band conflicts, and a development-only Event
+  Pipeline. Data Manager now exports and recovery-restores Workspace Event
+  Bundles without losing unsynced local Events; `sync-db` is excluded from the
+  production Pages build. The hosted two-Station pilot remains an explicit
+  post-release operator acceptance gate.
 - Repo — Add the project-local `$delivery-contract` skill. It establishes a
   decision-ready contract in the relevant GitHub Issue before a complex phase
   begins, invokes `$codebase-design` when a Module/Interface/Seam/Adapter

@@ -37,10 +37,17 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
    in the PR. Stop only for a genuinely blocking ambiguity, an unsafe or
    irreversible data/security decision, missing credentials or authority, or a
    conflict with an existing user change.
-5. Use applicable project skills. In particular, use `$field-release` before
-   any Field version, release, Field changelog, or Field phase-completion
-   operation. For repo-only changes, follow the normal `CHANGELOG.md` policy
-   without inventing an unrelated Field release. Use `$supabase` for any
+5. Use applicable project skills. For a Field phase with an agreed target
+   version, use `$field-release` **before opening the PR** to add the proposed
+   `apps/field` version, synchronized lockfile entry, and concise
+   `[Unreleased]` changelog record to the delivery branch. These release
+   metadata changes are part of the reviewable release claim and must not be
+   deferred until after merge. If the target version or shipped scope is
+   unclear, stop for that decision rather than opening a PR with stale Field
+   metadata. Keep phase completion, roadmap archival, tagging, deployment, and
+   any claim that the release is shipped as post-merge steps. For repo-only
+   changes, follow the normal `CHANGELOG.md` policy without inventing an
+   unrelated Field release. Use `$supabase` for any
    Supabase work, `$codebase-design` when the delivery-contract design gate
    applies, and `$code-review` for the two-axis independent review described
    below. Honor each skill's approval gates.
@@ -133,7 +140,13 @@ misleading comments or TODOs.
 
 ## 5. Open a decision-useful PR
 
-Push the branch and open or update a PR against the agreed base. Use the
+Before pushing a Field-phase PR, verify the version named by the delivery
+contract is present in `apps/field/package.json` and `package-lock.json`, and
+that `CHANGELOG.md` has an accurate `[Unreleased]` entry. Include these files
+in the reviewed delivery diff. Do not treat the PR as review-ready while this
+pre-merge metadata is missing.
+
+Then push the branch and open or update a PR against the agreed base. Use the
 repository PR template and make every section evidence-based; write `N/A —
 why` rather than leaving a section blank. The PR must let a reviewer answer,
 without reconstructing the work:
@@ -147,6 +160,11 @@ without reconstructing the work:
 Link the issue and phase/spec sources. Include screenshots or recordings when
 a visual change is important to reviewing behavior. Never put secrets, local
 paths, or unverified claims in the PR.
+
+For a Field phase, state the proposed Field version and changelog entry in the
+PR summary so reviewers can evaluate the release claim. State separately that
+roadmap completion and deployment still require merge approval and their own
+evidence.
 
 ## 6. Obtain and answer an independent review
 

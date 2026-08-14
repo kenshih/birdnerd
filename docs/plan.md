@@ -32,19 +32,19 @@ Complete a deploy-only trusted operator flow that bootstraps the first Workspace
 - **Delivery contract:** [Issue #12](https://github.com/kenshih/birdnerd/issues/12)
 - **Patch task — developer Event-pipeline visibility:** add or document a developer-only troubleshooting view of the complete Event path: local Event Log entries grouped by `command_id`, derived projection/cache, outbound queue and retry/cursor state, server admission/acknowledgement/rejection, and sync errors. Keep it out of the production user workflow; establish a deliberate observability seam that later adapters can feed rather than coupling diagnostics to one storage or transport implementation.
 
-### Phase 31 — Net Reconciliation, cleanup (Field 0.31.0)
+---
+
+### Backlog: Net Reconciliation, cleanup (Field 0.31.0)
 
 Reconcile code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
 
-### Phase 32 — Net Hours (Field 0.32.0)
+### Backlog: Net Hours (Field 0.32.0)
 
 Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog/net-hours groundwork.
 
-### Phase 33 — Smart Band Entry (Field 0.33.0)
+### Backlog: Smart Band Entry (Field 0.33.0)
 
 Speed up band record entry and help catch missing or mis-deployed bands through species-size suggestions and inventory-series sequencing.
-
----
 
 ## Backlog: Bandsheet OCR
 
