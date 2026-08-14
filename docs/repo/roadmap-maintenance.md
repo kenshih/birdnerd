@@ -10,7 +10,7 @@ Field release and versioning steps.
 |----------|------|--------------|
 | [plan.md](../plan.md) | Current phase, upcoming phased work, and the unscheduled backlog | Full shipped-change history or detailed completed-phase scope |
 | [CHANGELOG.md](../../CHANGELOG.md) | Shipped, user-visible, versioned, or meaningful repo/deployment changes | Future work or an open-task list |
-| [plan archives](../archives/) | Detailed scope and outcomes for completed phases or completed sub-phases | The current roadmap |
+| [plan archives](../archives/) | Durable scope and outcome summaries for completed phases or completed sub-phases | The current roadmap or a duplicate release narrative |
 | App specs | The behavior and design that currently exist | Roadmap ordering or historical release notes |
 
 `docs/plan.md` is repo-level: identify the affected app or package when a
@@ -52,12 +52,12 @@ supports the claim:
 
 1. Make the release, version, changelog, and specification updates required by
    the changed scope. For Field releases, follow `$field-release`.
-2. Move detailed completed material out of the active plan into the next
-   `docs/archives/plan.vN.md` file, with the archive date, completed scope,
-   and links back to the active plan and changelog.
-3. Update `plan.md`: remove the completed detail, add or revise its compact
-   row in **Completed & archived**, and move the **Current** marker to the
-   next phase.
+2. Add a durable completed-scope and outcome summary to the applicable rolling
+   `docs/archives/plan.vN.md` file. Do not create a new archive for an
+   individual phase or small batch of phases.
+3. Update `plan.md`: remove the completed detail, update the single compact
+   archive-range row in **Archived roadmap history**, and move the **Current**
+   marker to the next phase.
 4. For a partially completed long-running phase, archive only the completed
    sub-phases and leave the unfinished work in its backlog. Label a superseded
    path explicitly rather than implying it is complete.
@@ -67,16 +67,26 @@ supports the claim:
 
 ## Archive conventions
 
-- Archive by coherent completion boundary, not necessarily one archive per
-  phase. The archive filename increments in order (`plan.vN.md`).
-- An archive is the canonical detailed record for its completed scope. Avoid
-  copying that detail back into the active plan.
-- Preserve unfinished phase goals and assumptions in `plan.md` when only some
-  sub-phases shipped.
-- Keep the active plan's archive index complete and even: every archived phase
-  range should have one visible status row and a link to its canonical archive.
-- Deferred or long-running work belongs in a separately labelled backlog.
-  Its phase number does not alter the execution order of **Current roadmap**.
+- Use a rolling archive for roughly twenty numbered phases. `plan.v1.md`
+  covers Phases 1–20; `plan.v2.md` covers Phases 21–40. Start `plan.v3.md`
+  only when the first completed phase is beyond Phase 40, then continue with
+  the next twenty-phase range. Use phase numbers, rather than release count or
+  archive age, to choose the range.
+- Append the completed phase or sub-phase to its existing rolling archive. An
+  archive is a concise durable record of scope, decisions, and outcome—not a
+  per-release changelog, test report, or pilot transcript. Link to the
+  changelog, specifications, ADRs, issues, or runbooks for that detail.
+- Keep the active plan's **Archived roadmap history** to one terse row per
+  archive: archive name, covered phase range, and a link. Do not add a new
+  row for each recent phase, release version, patch, pilot, or unfinished
+  sub-phase.
+- Preserve unfinished goals and assumptions in a separately labelled backlog.
+  From the archive index, link to the archive only; do not summarize the
+  remaining task list there. Its phase number does not alter the execution
+  order of **Current roadmap**.
+- When an archive boundary is reached, compact repeated wording while retaining
+  the outcome and durable decision for each phase. Verify every historical
+  archive link after the rotation or consolidation.
 
 ## Related references
 

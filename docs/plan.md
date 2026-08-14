@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v9.md](archives/plan.v9.md) | [archives/plan.v8.md](archives/plan.v8.md)
+See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v2.md](archives/plan.v2.md) | [archives/plan.v1.md](archives/plan.v1.md)
 
 **Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
@@ -8,33 +8,29 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ---
 
-## Completed & archived
+## Archived roadmap history
 
-| Status | Scope | Canonical detail |
-|--------|-------|------------------|
-| Complete | Phases 1–14 | [plan.v3](archives/plan.v3.md) |
-| Complete | Phases 15–18 | [plan.v4](archives/plan.v4.md) |
-| Complete | Phases 19–21 | [plan.v5](archives/plan.v5.md) |
-| Partially complete | Phase 22 — OCR 0.2.0–0.4.1, Shared 0.2.0, Field 0.22.0 | [plan.v6](archives/plan.v6.md); unfinished OCR work remains below |
-| Partially complete / superseded | Phase 23 — Sync 0.1.0–0.2.0 | [plan.v6](archives/plan.v6.md); unfinished P2P work remains below as historical research |
-| Complete | Phases 24–25 | [plan.v7](archives/plan.v7.md) |
-| Complete | Phases 26–28 | [plan.v8](archives/plan.v8.md) |
-| Complete | Phase 29 — Field 0.29.0 | [plan.v9](archives/plan.v9.md) |
+| Archive | Phase span | Record |
+|---------|------------|--------|
+| v1 | 1–20 | [Completed phase summaries](archives/plan.v1.md) |
+| v2 | 21–40 (through 30) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
 
 ---
 
 ## Current roadmap
 
-### Phase 30 — Supabase Event Exchange & Collaboration Pilot (Field 0.30.0) — **Current**
+### Phase 31 — TBD (Field version TBD) — **Current**
 
-Complete a deploy-only trusted operator flow that bootstraps the first Workspace and pending Workspace Memberships, a server-side initial-access claim, versioned Supabase schema migrations, Event Admission, `@birdnerd/sync-state`, the Supabase event-exchange adapter, Event Bundle recovery, offline behavior, and retirement of `sync-db` from production Pages. Deliver the smallest operational Event slice that can prove the Phase 26 two-Station/two-to-four-member pilot: Session creation, Banding Record creation and field amendment, physical-band conflict visibility, and HLC-based field-level last-write-wins.
-
-- **Delivery contract:** [Issue #12](https://github.com/kenshih/birdnerd/issues/12)
-- **Patch task — developer Event-pipeline visibility:** add or document a developer-only troubleshooting view of the complete Event path: local Event Log entries grouped by `command_id`, derived projection/cache, outbound queue and retry/cursor state, server admission/acknowledgement/rejection, and sync errors. Keep it out of the production user workflow; establish a deliberate observability seam that later adapters can feed rather than coupling diagnostics to one storage or transport implementation.
+Define the next collaboration-architecture delivery scope from
+[ADR 0016](adr/0016-event-sourced-collaboration-architecture.md) and the
+Phase 30 pilot evidence. Phase 30 proves the Supabase event-exchange vertical
+slice and two-Station operation; it does not complete ADR 0016. Establish a
+new delivery contract before choosing the remaining capability, architecture
+decision, or Field version.
 
 ---
 
-### Backlog: Net Reconciliation, cleanup (Field 0.31.0)
+### Backlog: Net Reconciliation, cleanup
 
 Reconcile code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
 
@@ -48,7 +44,9 @@ Speed up band record entry and help catch missing or mis-deployed bands through 
 
 ## Backlog: Bandsheet OCR
 
-Goal: Build a row-by-row transcription assistant for one supported BirdNerd bandsheet layout, with OCR layered in incrementally. **Completed sub-phases (0.2.0–0.4.1) are archived in [plan.v6](archives/plan.v6.md); only unfinished work remains below.**
+Build a row-by-row transcription assistant for one supported BirdNerd
+bandsheet layout, with OCR layered in incrementally. The delivered foundation
+is recorded in [plan.v2](archives/plan.v2.md).
 
 Assumptions for Phase 22:
 - Focus on one known bandsheet layout for the foreseeable next phases
@@ -99,7 +97,8 @@ Assumptions for Phase 23:
 - Success = two real devices sync a banding record change across the internet, with access gated to enrolled devices only
 - Decision gate at Sync 0.5.0: integrate into field app, continue parallel, or deprioritize in favor of Supabase
 
-**Completed sub-phases (Sync 0.1.0–0.2.0) are archived in [plan.v6](archives/plan.v6.md); only unfinished work remains below.**
+Completed Sync 0.1.0–0.2.0 work is recorded in
+[plan.v2](archives/plan.v2.md).
 
 ### Sync 0.3.0 — Device Identity & Pairing
 - Web Crypto API keypair generation per device, stored in IndexedDB

@@ -48,7 +48,12 @@ Prepare the pre-merge release metadata as follows:
   shipped behavior changes them.
 - Update `docs/plan.md` only when the user agrees the phase is complete; follow
   [Roadmap Maintenance](../../../docs/repo/roadmap-maintenance.md) for the
-  status, archive, and **Current**-marker steps.
+  status, rolling-archive, and **Current**-marker steps. Add the phase outcome
+  to the existing twenty-phase archive (normally `plan.v1` for Phases 1–20,
+  `plan.v2` for Phases 21–40) rather than creating a new `plan.vN` file for a
+  release or a small batch. Keep the active plan to one concise row per
+  archive range; put release versions, patch detail, evidence, and unfinished
+  task lists in the changelog, archive, specifications, or backlog instead.
 - Bump the bundle schema and add a migration only when bundled entity fields
   are added, removed, or renamed. Bump IndexedDB only for store/index changes.
 

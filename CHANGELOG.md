@@ -16,8 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   amendments, visible physical-band conflicts, and a development-only Event
   Pipeline. Data Manager now exports and recovery-restores Workspace Event
   Bundles without losing unsynced local Events; `sync-db` is excluded from the
-  production Pages build. The hosted two-Station pilot remains an explicit
-  post-release operator acceptance gate.
+  production Pages build. The hosted two-Station pilot passed after release;
+  Field 0.30.1 then corrected linked-Google-identity access discovered during
+  that pilot.
 - Repo — Add the project-local `$delivery-contract` skill. It establishes a
   decision-ready contract in the relevant GitHub Issue before a complex phase
   begins, invokes `$codebase-design` when a Module/Interface/Seam/Adapter

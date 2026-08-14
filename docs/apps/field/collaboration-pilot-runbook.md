@@ -117,19 +117,18 @@ locally against a different project.
 
 ## Pilot evidence
 
-Status for PR review: **not run**. The hosted acceptance requires the reviewed
-PR to be merged/released, operator-only Supabase credentials, and two to four
-human Members on two real Stations; none are available to an implementation
-session. Do not mark Phase 30 complete until the run above is performed and the
-following evidence is replaced with observed values.
+Status: **passed on 2026-08-13**. The hosted acceptance used the deployed
+Field 0.30.0 slice plus the Field 0.30.1 linked-Google-identity hotfix, one
+Admin, one Contributor, and two real Stations. Operator-only credentials
+remained outside Field and the repository.
 
 | Evidence | Observed value |
 |---|---|
-| Field build/version and deployment | Pending |
-| Workspace/Provisioner audit command IDs | Pending |
-| Members and Station/device identifiers | Pending |
-| Online/offline convergence and HLC LWW | Pending |
-| Physical-band conflict visibility | Pending |
-| Event Bundle recovery with protected offline Event | Pending |
-| Supabase advisor result | Pending |
-| Failures/follow-ups | Pending |
+| Field build/version and deployment | Field 0.30.0 deployed from PR #13; Field 0.30.1 deployed as the linked-Google-identity pilot hotfix (Pages workflow run `31766473959`). |
+| Workspace/Provisioner audit command IDs | Workspace `019ffdd7-d09f-7c41-8990-602d5fffa3b0`; command `019ffdd7-d0a9-79b5-8f2d-8f2b0f516763`. |
+| Members and Station/device identifiers | One preauthorized Admin and one Contributor claimed access and used two real Stations. Personal/device identifiers remain in the operator record, not Git. |
+| Online/offline convergence and HLC LWW | Both Stations received the online baseline. Offline amendment and creation work converged after reconnect. |
+| Physical-band conflict visibility | Both Stations retained and showed the collision for physical band `9999-00003`; no record was silently lost. |
+| Event Bundle recovery with protected offline Event | After an older Bundle restore, the UI protected offline Event `9999-00004` (`BEWR`); reconnect/catch-up restored it on both Stations. |
+| Supabase advisor result | Only the three intended authenticated `SECURITY DEFINER` RPC warnings remained; experimental `rls_auto_enable`/`ensure_rls`/`test_table` baseline removed. Leaked-password protection is nonblocking while password authentication stays disabled. |
+| Failures/follow-ups | Field 0.30.1 fixed linked Google identities whose historical Supabase default provider was `email`, allowing the normal claim to run. |
