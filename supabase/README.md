@@ -24,3 +24,15 @@ versioned migration instead of silently drifting at the provider boundary.
 Hosted application and Provisioner steps are in
 `docs/apps/field/collaboration-pilot-runbook.md`. Never link or push to the pilot
 project merely to test an unreviewed local migration.
+
+For the reviewed Phase 30 pilot migration, the schema-deployer first links this
+checkout to the pilot project, then pushes the reviewed migration:
+
+```bash
+npx supabase link --project-ref ibowsjgtvkuiqqukcksr
+npx supabase db push --linked
+```
+
+Confirm the project ref in the Supabase Dashboard before entering its database
+password. The complete hosted verification and least-privilege instructions
+remain in the pilot runbook.

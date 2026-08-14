@@ -32,11 +32,11 @@ function browserPort(): BrowserPort {
 }
 
 function identityFrom(session: Session): ExternalIdentity {
-  const provider = typeof session.user.app_metadata.provider === 'string'
+  const googleIdentity = session.user.identities?.find(candidate => candidate.provider === 'google')
+  const provider = googleIdentity?.provider ?? (typeof session.user.app_metadata.provider === 'string'
     ? session.user.app_metadata.provider
-    : 'google'
-  const identity = session.user.identities?.find(candidate => candidate.provider === provider)
-  const identityData = identity?.identity_data as Record<string, unknown> | undefined
+    : 'google')
+  const identityData = googleIdentity?.identity_data as Record<string, unknown> | undefined
 
   return {
     provider,

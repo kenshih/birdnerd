@@ -62,6 +62,22 @@ describe('Supabase Google auth adapter', () => {
     )
   })
 
+  it('uses a linked Google identity instead of the account’s historical default provider', async () => {
+    const linkedGoogleSession = {
+      ...session,
+      user: {
+        ...session.user,
+        app_metadata: { provider: 'email' },
+      },
+    }
+    const { port } = makePort(linkedGoogleSession)
+
+    await expect(createSupabaseGoogleAuthModule(port, makeBrowser()).getState()).resolves.toMatchObject({
+      kind: 'signed-in',
+      identity: { provider: 'google', subject: 'google-subject-id', email: 'bander@example.com' },
+    })
+  })
+
   it('uses the Field base path for the Google OAuth return URL', async () => {
     const { port } = makePort()
     const auth = createSupabaseGoogleAuthModule(port, makeBrowser())

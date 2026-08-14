@@ -6,3 +6,6 @@
 .env.keys
 .env.local
 .env.*.local
+
+# Operator-downloaded TLS certificates belong outside the repository.
+*.crt

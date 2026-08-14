@@ -22,9 +22,18 @@ Member responsibilities so privileged credentials never reach Field.
 Use the schema-deployer credential, not the Provisioner credential:
 
 ```bash
+# One-time link for this checkout. Confirm this is the pilot-project ref in
+# the Supabase Dashboard before entering the database password locally.
+npx supabase link --project-ref ibowsjgtvkuiqqukcksr
 npx supabase db push --linked
 npx supabase db advisors --linked
 ```
+
+`supabase db push --linked` requires a linked project. If it reports
+`Cannot find project ref`, run the `supabase link` command above first; it
+stores the link locally and does not apply a migration by itself. Never put the
+database password, a connection string, a service-role key, or any credential
+in the repository or a `VITE_*` variable.
 
 Review the applied migration in `supabase/migrations`. Confirm:
 
@@ -34,21 +43,47 @@ Review the applied migration in `supabase/migrations`. Confirm:
 - browser roles have no table DML or private-schema usage; and
 - the security advisor has no unresolved Phase 30 finding.
 
+The advisor is expected to warn that authenticated users can execute
+`public.birdnerd_claim_initial_access`, `public.birdnerd_append_events`, and
+`public.birdnerd_pull_events` as `SECURITY DEFINER` functions. They are the
+three deliberate, authenticated RPC boundary functions: each has a fixed safe
+search path, revokes `PUBLIC`/`anon` execution, and checks the caller and
+active Membership before private-schema access. Verify the warning names are
+exactly those three functions and that `anon` has no execute grant.
+
+Treat a warning for `public.rls_auto_enable`, its `ensure_rls` event trigger,
+or `public.test_table` as an unresolved experimental baseline. Remove all
+three before the pilot; do not use a broad `CASCADE`:
+
+```sql
+drop event trigger if exists ensure_rls;
+drop function if exists public.rls_auto_enable();
+drop table if exists public.test_table;
+```
+
+Leaked-password protection is not a Phase 30 blocker only while password
+sign-in remains disabled; enable it if password authentication is ever enabled.
+
 ## 3. Create the restricted Provisioner login
 
 Create a distinct login in a trusted operator environment and keep its password
 in the password manager:
 
 ```sql
-create role birdnerd_phase30_operator login password '<managed-password>';
-grant birdnerd_provisioner to birdnerd_phase30_operator;
+create role birdnerd_pilot_bootstrap login password '<managed-password>';
+grant birdnerd_provisioner to birdnerd_pilot_bootstrap;
 ```
 
 The login must not receive table grants, `service_role`, or migration-deployer
-privileges. Run the CLI once and preserve its JSON audit receipt:
+privileges. In the Supabase Dashboard, open **Project Settings → Database**,
+download the SSL certificate, and save it outside the repository (for example,
+`/private/tmp/birdnerd-pilot/prod-supabase.cer`). The Provisioner uses the
+direct `db.<project-ref>.supabase.co:5432` host and verifies that certificate;
+do not turn verification off. Run the CLI once and preserve its JSON audit
+receipt:
 
 ```bash
-export BIRDNERD_PROVISIONER_DATABASE_URL='postgresql://...'
+export BIRDNERD_PROVISIONER_DATABASE_URL='postgresql://birdnerd_pilot_bootstrap:<password>@db.ibowsjgtvkuiqqukcksr.supabase.co:5432/postgres?sslmode=verify-full&sslrootcert=/private/tmp/birdnerd-pilot/prod-supabase.cer'
 npm run provision -- \
   --workspace-name "Cedar Creek" \
   --admin-email admin@example.com \
