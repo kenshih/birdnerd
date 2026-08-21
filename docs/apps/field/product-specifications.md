@@ -80,19 +80,53 @@ status, and recovery-only Workspace Event Bundles. The operational slice lives
 in a clearly labelled Collaboration Pilot workflow and does not dual-write the
 legacy mutable forms. Further field-data commands remain later work.
 
-### 4.3 Key Product Concepts
+### 4.3 Phase 31 operational target
 
-**Band Inventory & Status:** Each band from BBL has a lifecycle: `available` → `deployed` (assigned to bird) → recaptured, replaced, destroyed, lost, or retired. The app tracks current status and deployment date.
+Phase 31 makes the Workspace Event Log the default Field data path and removes
+the separate Collaboration Pilot and legacy mutable replica after real-device
+acceptance. The complete current non-photo Session and Banding Record forms,
+Stations/Nets, Person/Bander roster, Session crew, and Band inventory project
+from immutable Workspace Events. All scientific/observational fields remain
+optional and validations remain soft.
+
+Contributor is the normal field role and may enter, correct, deactivate, and
+reactivate operational data and resolve Band conflicts. Admin additionally
+configures Stations, Nets, the roster, and User Account-to-Person links.
+Membership invitation, role change, deactivation, and reactivation remain out
+of Field and use the trusted Provisioner CLI. See
+[ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md).
+
+Managed, foreign, and unbanded selection are explicit alternatives. A missing
+local inventory projection is never inferred to mean foreign. Band deployment
+is derived from active Banding Record facts; valid recaptures do not conflict
+with the original deployment. Concurrent Band-ID claims for the same normalized
+number and incompatible new-deployment claims remain visible for later
+correction.
+
+The active Net picker remains Station-scoped. Phase 31 does not freeze or emit
+Events for `SessionNetLog`; the Net Hours phase will reconsider the effort
+model before it becomes a shared contract.
+
+### 4.4 Key Product Concepts
+
+**Band Inventory & Status:** Each managed Band retains its inventory metadata
+and lifecycle facts. Available/deployed state and deployment date are derived
+from active Banding Record facts; recaptures remain encounter history rather
+than a second deployment. Lost, destroyed, replaced, and retired facts remain
+explicitly correctable.
 
 **Foreign Recaptures:** When a bander encounters a bird wearing a band not in our inventory (issued by another station/permit), the record stores the band number as free text with no FK to the Band entity (`bandId` is null). Capture Code is forced to `F` (Foreign). The band number is preserved for BBL recapture reporting but no Band record is created — we never manage another permit's bands.
 
 **Bander Registry:** Banders are linked to an organization with a role (Master Bander, Sub-permittee, Bander, Trainee) and active status. This enables selective participation in sessions and role-based validation rules.
 
-**Session Structure:** A session (date + location + protocol) contains multiple nets and involves multiple banders. Each net's effort is logged separately (times, remarks), and bander participation is tracked. This supports flexible crew composition and differential effort calculation.
+**Session Structure:** A session (date + Station + protocol) involves multiple
+banders and may reference active Nets from that Station on Banding Records.
+Session crew is shared in Phase 31. The legacy per-net effort model is deferred
+for reconsideration with Net Hours.
 
 **Validation Datasets (Future):** We will provide species-specific ranges for morphometrics (wing, tail, tarsus, etc.) and code consistency rules to flag unusual combinations (e.g., HY adult molt codes, season/sex mismatches).
 
-### 4.4 Database Conventions
+### 4.5 Database Conventions
 
 1. **Primary Key:** All entities use `id` (string) as primary key.
 2. **Audit Timestamps:** Operational and reference entities have `created` (insertion time) and `updated` (modification time). This supports change tracking and conflict resolution for offline sync.
@@ -130,7 +164,8 @@ legacy mutable forms. Further field-data commands remain later work.
 - **Soft warnings only** — birds escape, partial records are valuable. Never block save.
 - **Inline display** — warnings/errors appear under the relevant field, live as the user fills the form
 - **Override mechanism** — future consideration (see backlog). Originally from Hallie's doc for Species × Band size ("Did you gauge the leg?" → auto-note). May not be needed for other validations.
-- **Required fields** marked with * are enforced at submission time, not during entry
+- **All data fields are optional.** Structural IDs and references required to
+  express the Event are not scientific form requirements.
 
 ---
 
@@ -181,6 +216,9 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 ### 8.1 Data Model
 
 - [ ] Reconsider whether `master_bander_id` should remain a FK on Session, or if all session leaders should be pulled from SessionBanderLog
+- [ ] Reconsider the Session-Net effort model with Net Hours; Phase 31 keeps
+  the Station's active-Net picker but does not freeze `SessionNetLog` Events or
+  automatic dense initialization.
 - [x] Band number format: Formatted with hyphen (1154-81501) — resolved
 - [ ] BBL upload-only fields: decide which become first-class BandingRecord fields vs derived/export-only
 - [ ] Capture details: add `how_captured`, `scribe`, `banded_leg`, `eye_color`, `weight_time`?
@@ -194,7 +232,6 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 
 - [ ] Audit all delete actions for cascade confirmation dialogs (see ux-spec § 1.2): Session, Location, Person — any entity with dependents should explain what gets deleted
 - [ ] Status code UX: Present as composite (300, 318, 500) or let users build from base + additional info?
-- [ ] Required fields timing: When to start enforcing * required fields? (Validation phase complete — currently all soft warnings, no hard enforcement)
 - [ ] Empidonax / Selasphorus special forms: What do these look like? When to implement?
 - [ ] Lindsay Wildlife / rehabbed birds: Location is where banded but record should reflect release location. Separate field? Note?
 - [ ] Status not required for unbanded birds (Hallie: "do NOT require Status entry if unbanded")
@@ -216,6 +253,7 @@ This is the **canonical list** of unresolved design decisions and outstanding TO
 - [x] Session ID display on banding form: shows station code + date, not raw ID (implemented in Phase 8)
 - [x] IBP vs BBL storage: Store IBP internally, derive BBL at export (decided, coded in Phase 5)
 - [x] Net soft-delete: Use `active: boolean` instead of hard delete. Inactive nets hidden from session setup, preserved in historical data. Same pattern as Person.active.
-- [x] SessionNetLog dense model: Auto-generate a log entry for every active net on session create, pre-filled with session open/close times. Banders only edit exceptions. Enables accurate net-hours for MAPS reporting.
+- [x] Required-fields timing: no scientific/observational form field blocks
+  save; partial records remain valid and warnings stay soft.
 - [x] Precipitation: Combobox (free text or pick from suggestions: clear, fog, thick fog, drizzle, rain, snow). Not constrained to enum.
 - [x] Blood Sample validation: Resolved — warns if Status is missing or not 318/319/334 (implemented in Phase 15.5)

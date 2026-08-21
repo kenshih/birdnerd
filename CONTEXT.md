@@ -8,8 +8,8 @@ initial rollout has one Workspace containing both banding stations.
 
 ## Workspace-Owned Data
 
-The mutable operational data shared by every Workspace Member: people and
-memberships, stations and nets, band inventory, sessions and their logs,
+The operational data shared by every Workspace Member: people and
+memberships, stations and nets, band inventory, sessions and their crew,
 banding records, and photo metadata. Static species and code-table references
 are bundled locally; transferring photo blobs is outside the first
 collaboration release.
@@ -28,27 +28,32 @@ this is represented by a Location; each Session occurs at one Station.
 
 ## User Account
 
-An authenticated identity that can access BirdNerd. A User Account is linked
-to one Person and gains access to shared data through Workspace Membership. A
-single User Account may belong to multiple Workspaces.
+An authenticated identity that can access BirdNerd. A User Account gains
+access to shared data through Workspace Membership and may optionally link to
+at most one roster Person per Workspace. A single User Account may belong to
+multiple Workspaces.
 
 ## Workspace Membership
 
 A User Account's authorization relationship to a Workspace. The initial
 membership roles are Admin and Contributor; they govern application access,
 not field qualifications. Contributors may create and edit shared operational
-data. Admins additionally manage membership, Workspace settings, and
-deactivation/removal operations.
+data, including correction, deactivation, and explicit reactivation. Admins
+additionally configure Stations, Nets, and the Person/Bander roster.
+Membership lifecycle administration is performed outside Field by the trusted
+Provisioner CLI in Phase 31.
 
 ## Invitation
 
-An Admin's pre-authorization of a Person's email address to join a Workspace
-with a specified membership role. It creates a pending Workspace Membership
+Pre-authorization of a person's email address to join a Workspace with a
+specified membership role. A trusted operator performs it on behalf of the
+administrative process in Phase 31. It creates a pending Workspace Membership
 that becomes active when the recipient signs in with the authorized identity.
 An Invitation need not send an email. Revoking membership does not delete the
 Person or their historical work. For the initial Google-only login, an Admin
-pre-authorizes the exact Google email; the first matching login activates the
-membership. There is no self-service Workspace joining.
+pre-authorizes the exact Google email through the Provisioner CLI; the first
+matching login activates the membership. There is no self-service Workspace
+joining or Field membership-management screen.
 
 ## Operational Role
 
@@ -92,19 +97,20 @@ when connectivity returns. Membership changes require connectivity.
 ## Canonical ID
 
 The UUIDv7 identifier generated locally for every persistent Workspace-owned
-entity and Domain Event. Canonical IDs are collision-safe across offline
+entity and Domain Event. Relationship facts may instead use their canonical
+pair of referenced IDs. Canonical IDs are collision-safe across offline
 devices and are not human-facing labels; station codes, band numbers, and
 other operational identifiers remain separate fields. The collaboration
 release starts with UUIDv7 data rather than remapping historical local IDs.
 
 ## Provisioning
 
-The restricted setup process that creates a Workspace, its first Admin,
-operational configuration, and seed data. Provisioning uses the ordinary
-command → event → projection pipeline, so the resulting Event Log can be
-replayed and validates initial hydration without privileged direct inserts. A
-restricted Provisioner, not the Field PWA, owns the first Workspace and Admin
-Membership bootstrap path.
+The restricted trusted-operator process that bootstraps a Workspace and
+administers Memberships. Provisioning uses canonical Events, so the resulting
+Event Log is replayable and auditable without privileged direct inserts. A
+restricted Provisioner, not the Field PWA, owns the first Workspace/Admin
+bootstrap plus Phase 31 invite, role-change, deactivation, and reactivation
+paths. Membership Events and the admission index commit atomically.
 
 ## Event Contract
 
@@ -142,8 +148,16 @@ reserved for an explicitly identified invariant, not a default requirement.
 
 A visible projection conflict when a managed physical Band has incompatible
 active assignments to more than one Banding Record. Both immutable facts remain
-in the Event Log; last-write-wins must not hide either record. An Admin resolves
-the situation by recording a corrective Domain Event.
+in the Event Log; last-write-wins must not hide either record. An active
+Contributor or Admin resolves the situation by recording a corrective Domain
+Event.
+
+## Band-Number Conflict
+
+A visible projection conflict when two active Band entities claim the same
+normalized physical band number. Offline replicas retain both facts rather
+than rejecting or merging them. An active Contributor or Admin resolves the
+conflict with a later amendment or deactivation Event.
 
 ## Audit History
 
@@ -197,10 +211,9 @@ bindings and fails on a diff; branch protection prevents drift from merging to
 ## Conflict Order
 
 The deterministic ordering used to choose a Current-State Projection winner
-when changes conflict. BirdNerd will use a hybrid logical clock with the
-Domain Event's Canonical ID as the final tie-breaker, rather than trusting
-device wall-clock time alone. The precise clock encoding and merge rules are
-yet to be specified.
+when changes conflict. BirdNerd compares the Domain Event's hybrid logical
+clock `physical_ms`, then `logical`, then its Canonical Event ID, rather than
+trusting device wall-clock time alone.
 
 ## Field-Level Last-Write-Wins
 
@@ -225,10 +238,12 @@ write time are retained with the event or its projection for later review.
 
 ## Removal
 
-An Admin-authorized Domain Event that deactivates an item or removes it from
-active use while retaining its history and references. Routine application
-operations never physically delete shared Domain Events or projections; true
-data erasure is a separately governed administrative or privacy process.
+An authorized Domain Event that deactivates an item or removes it from active
+use while retaining its history and references. Contributors may apply the
+lifecycle to ordinary operational data; configuration and Membership use their
+higher authority boundary. Routine application operations never physically
+delete shared Domain Events or projections; true data erasure is a separately
+governed administrative or privacy process.
 
 ## Sync Adapter
 
@@ -246,14 +261,17 @@ not make Google identity data an authorization source and is replaceable.
 
 ## Event Admission
 
-The provider-specific decision to accept or reject a submitted Domain Event.
-For the first Sync Adapter, Supabase verifies active Workspace Membership, the
-target Workspace, event identity, and envelope/schema validity before
-appending. It does not reconcile objects or own projection logic; a future P2P
-adapter can implement the same contract with signed events and membership
-history. Admission uses membership at upload time: events queued by a device
-after the sender is revoked are rejected but retained locally for review or
-export.
+The provider-specific trust-boundary decision to accept or reject a submitted
+Domain Event. For the first Sync Adapter, Supabase derives the actor from Auth,
+verifies active Workspace Membership and the Event type's minimum role,
+validates the target Workspace, envelope/schema, and immutable identity, and
+uses a minimum entity-reference index to reject known cross-Workspace or
+wrong-kind references. Unknown dependencies are retryable so out-of-order
+delivery can converge. It does not reconcile objects or own projection logic;
+a future P2P adapter can implement the same contract with signed events and
+membership history. Admission uses membership at upload time: events queued by
+a device after the sender is revoked are rejected but retained locally for
+review or export.
 
 ## Event Signature
 

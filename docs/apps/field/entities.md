@@ -4,7 +4,9 @@
 > `birdnerd` IndexedDB model. Field 0.30 adds a separate, clean
 > Workspace-scoped Event Log, replication state, and rebuildable access/pilot projections;
 > it does not migrate this legacy model. The future field-data write path is
-> defined by [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
+> defined by [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md)
+> and the Phase 31 catalog in
+> [ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md).
 
 > **Note:** The diagrams below are easier to read in light mode (not dark mode).
 
@@ -56,6 +58,19 @@ IndexedDB version 2 stores these concerns separately. Domain Events are the
 durable truth; queue, cursor, receipt, and projection rows may change or be
 rebuilt without mutating an Event. Supabase keeps the shared Event Log and a
 minimum derived Membership admission index in a non-exposed schema.
+
+## Phase 31 operational projection (target)
+
+The Event Log remains the only durable operational model. Rebuildable
+Workspace projections include Station, Net, Person, Bander, optional
+User Account-to-Person link, Band, Session, Session crew relationship, and
+Banding Record. Deactivation is lifecycle state rather than deletion.
+
+`SessionNetLog` is not in the Phase 31 projection; an active Net may still be
+referenced from a Banding Record through its Session's Station. Managed Band
+selection references a Band ID, foreign selection stores free text, and
+unbanded is explicit. Band deployment and both allocation/number conflicts are
+derived from current active facts.
 
 ## Color Coding Conventions
 

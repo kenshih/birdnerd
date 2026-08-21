@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [ADR 0017 — operational Workspace authority](adr/0017-operational-workspace-authority.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v2.md](archives/plan.v2.md) | [archives/plan.v1.md](archives/plan.v1.md)
+See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [ADR 0017 — operational Workspace authority](adr/0017-operational-workspace-authority.md) | [ADR 0018 — Phase 31 operational Event Catalog](adr/0018-phase-31-operational-event-catalog.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v2.md](archives/plan.v2.md) | [archives/plan.v1.md](archives/plan.v1.md)
 
 **Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
@@ -24,8 +24,9 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 Replace the collaboration pilot and legacy mutable replica with the default
 offline shared Field workflow: Workspace configuration, roster, Stations/Nets,
 baseline inventory, complete non-photo Session and Banding Record entry, and
-event-based correction/removal. The mutable `birdnerd` database and legacy
-DataBundle retire after a two-Station acceptance session; the deferred
+event-based correction/removal. Membership administration remains out of Field
+through narrow trusted Provisioner CLI operations. The mutable `birdnerd`
+database and legacy DataBundle retire after a two-Station acceptance session; the deferred
 Session–Net effort model is not frozen here. [Delivery contract: #14](https://github.com/kenshih/birdnerd/issues/14)
 
 ### Phase 32 — Event-backed Data Manager (Field version TBD)

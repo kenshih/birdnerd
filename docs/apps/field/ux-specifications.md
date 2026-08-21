@@ -40,11 +40,14 @@ or ineligible claim shows the existing no-access screen. This remains neither
 an in-app provisioning path nor a join request.
 
 Roles are converted into UI capabilities at the Workspace boundary. A
-Contributor sees the operational Field screens; an Admin also sees
-workspace/member-management screens. Hiding a page or button is UX only:
-server-side Event Admission independently verifies active Membership before it
-accepts an event. See [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md)
-for the authorization model.
+Contributor sees the operational Field screens; an Admin additionally sees
+Station, Net, Person/Bander roster, and User Account-to-Person link controls.
+Phase 31 has no Field membership-management screen: a trusted operator uses
+the Provisioner CLI for invitations, role changes, deactivation, and
+reactivation. Hiding a page or button is UX only; server-side Event Admission
+independently verifies active Membership and the Event type's minimum role.
+See [ADR 0017](../../adr/0017-operational-workspace-authority.md) and
+[ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md).
 
 ### 0.1 Collaboration Pilot
 
@@ -53,8 +56,9 @@ Event workflow. It shows Workspace name and non-blocking sync state, then lets a
 Member create a partial Session, select it, create partial Banding Records, and
 amend a record. Every save completes locally before sync begins, so an offline
 status never disables these actions. A repeated physical band appears in a
-yellow conflict panel that explicitly says both facts remain for Admin
-correction. The legacy Session screen remains separate and is not dual-written.
+yellow conflict panel that explicitly says both facts remain for Contributor
+or Admin correction. The legacy Session screen remains separate and is not
+dual-written.
 
 The status states are: Ready to sync, Syncing, last-synced time, Offline with
 locally retained changes, and Events needing attention after permanent server
@@ -64,6 +68,27 @@ In development builds only, Home includes **Event Pipeline**. It groups local
 Events by `command_id` and shows the rebuildable projection, outbound
 queue/retry/cursor state, server receipts/rejections, and sync errors. It is not
 present in production navigation.
+
+### 0.2 Phase 31 default workflow (target)
+
+The Collaboration Pilot label and duplicate legacy paths disappear. Normal
+Session, Banding Record, Station/Net, People/roster, Session crew, and Band
+Inventory screens read and write the shared Event-backed projection while
+retaining offline-first save behavior and visible sync state. Membership
+administration is intentionally absent from Field.
+
+All observational fields remain optional. Remove actions become role-aware
+deactivation with explicit reactivation, preserve historical references, and
+do not cascade-delete accepted Events. Managed, foreign, and unbanded Band
+selection are explicit; unresolved inventory is shown as unresolved rather
+than being converted to foreign. Band-allocation and duplicate-band-number
+conflicts remain visible with a corrective action available to any active
+Contributor.
+
+The Banding Record Net picker lists active Nets for the selected Session's
+Station. The Manage Nets effort screen and automatic `SessionNetLog`
+initialization below describe the legacy workflow and do not ship on the Phase
+31 Event-backed path.
 
 ---
 
@@ -118,6 +143,9 @@ This ensures every page has a consistent way to return home, regardless of navig
 **Accessibility:** The home button must include `alt="Home"` on the image, `aria-label="Home"` on the button element, and `title="Home"` for hover tooltip on desktop.
 
 ### 1.2 Cascade Delete Confirmation
+
+> **Legacy mutable workflow:** Phase 31 replaces these destructive actions with
+> deactivation/reactivation and does not cascade-delete immutable Events.
 
 When deleting an entity that has dependent data, show a confirmation dialog that explains what will be deleted:
 
@@ -408,6 +436,10 @@ After selecting a session, the Session View shows metadata summary, action butto
 **Recap chip:** Records with capture code `R` (recap) display a small "recap" chip — a grey rounded label (`background: #e9ecef`, `color: #6c757d`, `font-size: 0.7rem`) — inline after the band number. This provides at-a-glance differentiation from new bandings without cluttering the row.
 
 ### 3.3 Manage Nets (sub-page)
+
+> **Deferred legacy design:** This dense `SessionNetLog` screen is not part of
+> Phase 31. The active-Net picker remains; Net Hours will reconsider the effort
+> model.
 
 Accessible from the **Edit Session** form via a "Manage Nets" button (placed at the top, before the form fields). Uses the dense model: on session create, auto-generates a SessionNetLog entry for every active net at the location, pre-filled with session open/close times. Back button returns to Edit Session.
 

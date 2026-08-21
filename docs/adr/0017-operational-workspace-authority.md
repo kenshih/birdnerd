@@ -21,6 +21,10 @@ configuration remain controlled.
 - **Admin** is a strict superset of Contributor. Admin-only responsibilities
   are Workspace Membership/access administration and configuration of Stations,
   Nets, and the Bander roster.
+- Membership administration remains outside the Field PWA in Phase 31. A
+  trusted operator uses narrow Provisioner CLI commands to invite, change role,
+  deactivate, or reactivate a Membership on behalf of the administrative
+  process. Admins do not receive a Field membership-management screen.
 - A conflict correction is always a later immutable corrective Event. It never
   rewrites or deletes either original allocation fact.
 - An Admin may explicitly link a User Account to one roster Person. Field
@@ -30,11 +34,16 @@ configuration remain controlled.
 
 ## Consequences
 
-- Phase 31 domain commands and projections enforce this authority model;
-  Supabase remains responsible only for authenticated Membership admission and
-  does not become the business authorization model.
+- Phase 31 domain commands enforce this authority model for immediate offline
+  feedback. Supabase Event Admission independently enforces a static
+  Event-type-to-minimum-role table because the browser is not trusted, but it
+  does not run operational projections or reconcile business state. Membership
+  lifecycle Events are server-constructed through the trusted operator path.
 - The Phase 30 phrase "Admin correction" means that a conflict is visible to
   an Admin, not that an Admin is required to resolve it. Future specifications
   and UI use the authority rules above.
 - Workspace configuration and field operations are auditable through the
   Event Log, including deactivation and explicit reactivation.
+- The detailed Event Catalog, admission index, and trusted-operator boundary
+  are recorded in
+  [ADR 0018](0018-phase-31-operational-event-catalog.md).

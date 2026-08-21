@@ -119,7 +119,10 @@ This means components rendering or validating a BandingRecord can load session-l
 
 #### SessionNetLog
 
-**Dense model:** On session create, auto-generate a log entry for every active net at the location, pre-filled with session open/close times. Banders only edit exceptions (late open, early close, remarks). This ensures accurate per-net effort tracking for MAPS net-hours reporting.
+**Legacy mutable model:** On session create, auto-generate a log entry for every
+active net at the location, pre-filled with session open/close times. Phase 31
+does not carry this model into the operational Event Catalog; Net Hours will
+reconsider it before any shared contract is frozen.
 
 - **id** (string, PK)
 - **session_id** (FK to Session)
@@ -518,6 +521,44 @@ imports that mutable format into the Event Log.
   before writing, preserves pending local Events, resets the pull cursor,
   rebuilds, and catches up through normal authenticated sync.
 
+### Phase 31 operational Event architecture (target)
+
+- `@birdnerd/banding` exposes a discriminated command/decision Interface and a
+  deterministic operational projection Interface. It owns authority checks,
+  lifecycle semantics, field-level HLC reduction, and Band conflict
+  derivation; UI, storage, and transport remain adapters.
+- The Event Catalog covers Station, Net, Person, Bander, User Account-to-Person
+  link, Band, Session, Session crew, and complete non-photo Banding Record
+  behavior. Existing Phase 30 Event v1 shapes stay immutable; complete Session
+  and Record contracts use v2 plus deterministic upcasters. Contract tooling
+  dispatches by Event type and per-type schema version.
+- Amendment omission means unchanged and JSON `null` means explicitly clear.
+  Lifecycle is independent: an amendment never reactivates an entity.
+- Band selection is one managed/foreign/unbanded value. Managed selection
+  carries Band ID and a number snapshot; a missing local parent remains an
+  unresolved reference. Deployment is derived from active Record facts, and
+  projections surface both incompatible new-deployment claims and duplicate
+  normalized band-number claims.
+- Supabase append admission applies a static Event-type minimum-role table and
+  a minimum entity-ID/kind/Workspace reference index. Known wrong-kind or
+  cross-Workspace references are permanent rejections; an unknown dependency
+  is retryable so out-of-order delivery can converge. This index is not a
+  server business projection.
+- The provider-neutral receipt union adds `deferred` for that retryable
+  dependency. Sync-State keeps the local Event effective and pending, persists
+  its reason/attempt, and schedules bounded backoff; only permanent rejection
+  removes it from the effective projection.
+- Field contains no Membership-management UI. The trusted Provisioner CLI adds
+  invite, role-change, deactivate, and reactivate commands backed by narrow
+  private functions. Each constructs Membership Events and updates the
+  admission index atomically, returns an audit receipt, and protects the last
+  active Admin invariant.
+- The active-Net picker remains available by Station. There is no Phase 31
+  `SessionNetLog` Event family or automatic per-session Net initialization.
+
+See [ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md) for the
+catalog and admission decisions.
+
 ### Data Validation Datasets (future)
 
 Tables provided by domain experts for validation:
@@ -545,6 +586,12 @@ Tables provided by domain experts for validation:
 
 Raw Event Log, Membership index, and receipt tables are not Data API surfaces.
 The publishable key is the only Supabase key embedded in Field.
+
+Phase 31 keeps those browser RPCs and extends append validation with the
+reviewed Event-type role table and entity-reference index. Membership
+administration is separate: the trusted Provisioner runtime may execute only
+narrow private invite/role/deactivate/reactivate functions and receives audit
+receipts, never table DML.
 
 ### OpenAPI / GraphQL (Future)
 
