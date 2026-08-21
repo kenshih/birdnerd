@@ -45,7 +45,9 @@ making hosted data writes part of routine development. [Delivery contract: #17](
 Build the shared browse, preview-first idempotent master-sheet CSV import, and
 BBL/IBP exports from Workspace Event projections. It proves historical intake
 and agency reporting without a legacy database; photo attachments and the
-reconsidered Net Hours model remain later cutover work.
+reconsidered Net Hours model remain later cutover work. Restore the deferred
+Data Manager Browse Records/read-only path and unskip its Phase 33 Playwright
+coverage as part of this work.
 
 ---
 
