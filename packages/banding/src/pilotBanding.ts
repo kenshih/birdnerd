@@ -150,7 +150,9 @@ export function projectPilotBanding(events: readonly DomainEvent[]): PilotProjec
     if (event.event_type === 'banding-record.created') {
       applyFields(event.payload.record_id, bandingFields(event.payload), event)
     } else if (event.event_type === 'banding-record.fields-amended') {
-      applyFields(event.payload.record_id, event.payload.fields, event)
+      // Phase 31's v2 amendment contract adds nullable complete-form fields.
+      // This retained Phase 30 projection only reads its historical subset.
+      applyFields(event.payload.record_id, event.payload.fields as BandingRecordFields, event)
     }
   }
 

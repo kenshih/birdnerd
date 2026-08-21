@@ -45,4 +45,11 @@ describe('operational Module', () => {
     expect(projection.unresolved_references).toEqual([])
     expect(projection.band_number_conflicts).toEqual([{ band_number: '123456789', band_ids: ['018f8c7b-0000-7000-8000-000000000024', '018f8c7b-0000-7000-8000-000000000026'] }])
   })
+
+  it('allows Account-to-Person links only to an active projected Person', () => {
+    const person_id = '018f8c7b-0000-7000-8000-000000000030'
+    expect(() => decideOperationalCommand(projectOperationalEvents([]), context, { kind: 'link-user-account-person', user_account_id: actor, person_id })).toThrow('active Person')
+    const person = createEvent({ ...eventContext, event_id: '018f8c7b-0000-7000-8000-000000000031', event_type: 'person.created', payload: { person_id, fields: { name: 'A Bander' } } })
+    expect(decideOperationalCommand(projectOperationalEvents([person]), context, { kind: 'link-user-account-person', user_account_id: actor, person_id }).events[0]).toMatchObject({ event_type: 'user-account.person-linked', payload: { user_account_id: actor, person_id } })
+  })
 })

@@ -41,7 +41,10 @@ export function decideOperationalCommand(projection: OperationalProjection, cont
   if (needsAdmin && context.role !== 'admin') throw new Error('Admin role is required for Workspace configuration.')
   if (command.kind === 'receive-bands') return { events: command.bands.map(band => createEvent({ ...eventContext, event_type: 'band.received', payload: { band_id: band.band_id ?? createUuidV7(), band_number: band.band_number, fields: band.fields ?? {} } })), warnings: [] }
   if (command.kind === 'set-session-crew') return { events: [createEvent({ ...eventContext, event_type: command.present ? 'session-crew-member.added' : 'session-crew-member.removed', payload: { session_id: command.session_id, bander_id: command.bander_id } })], warnings: [] }
-  if (command.kind === 'link-user-account-person') return { events: [createEvent({ ...eventContext, event_type: command.person_id ? 'user-account.person-linked' : 'user-account.person-unlinked', payload: command.person_id ? { user_account_id: command.user_account_id, person_id: command.person_id } : { user_account_id: command.user_account_id } })], warnings: [] }
+  if (command.kind === 'link-user-account-person') {
+    if (command.person_id && (!projection.entities.get(command.person_id)?.active || projection.entities.get(command.person_id)?.kind !== 'person')) throw new Error('An Account can be linked only to an active Person in this Workspace.')
+    return { events: [createEvent({ ...eventContext, event_type: command.person_id ? 'user-account.person-linked' : 'user-account.person-unlinked', payload: command.person_id ? { user_account_id: command.user_account_id, person_id: command.person_id } : { user_account_id: command.user_account_id } })], warnings: [] }
+  }
   const id = command.kind === 'create' ? command.entity_id ?? createUuidV7() : command.entity_id
   if (command.kind !== 'create' && !projection.entities.has(id)) throw new Error(`${command.entity_kind} does not exist.`)
   if (command.kind === 'create') {

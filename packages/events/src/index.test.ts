@@ -66,7 +66,7 @@ describe('@birdnerd/events', () => {
   })
 
   it('upcasts Phase 30 payloads to the explicit current v2 shapes', () => {
-    const session = createEvent({
+    const session = createEvent<'session.created'>({
       event_schema_version: 1,
       event_type: 'session.created', workspace_id: workspaceId, command_id: '018f8c7b-0000-7000-8000-000000000002',
       actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
@@ -80,6 +80,24 @@ describe('@birdnerd/events', () => {
     })
     expect(upcastEvent(session)).toMatchObject({ event_schema_version: 2, payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', fields: { session_date: '2026-08-20', notes: 'Windy' } } })
     expect(upcastEvent(record)).toMatchObject({ event_schema_version: 2, payload: { record_id: '018f8c7b-0000-7000-8000-000000000005', session_id: '018f8c7b-0000-7000-8000-000000000004', fields: { species_code: 'AMRO' } } })
+  })
+
+  it('admits only the reviewed complete-form fields and explicit nullable clears', () => {
+    const actor = { kind: 'user-account' as const, user_account_id: '018f8c7b-0000-7000-8000-000000000003' }
+    const session = createEvent({
+      event_type: 'session.created', workspace_id: workspaceId, command_id: '018f8c7b-0000-7000-8000-000000000002', actor,
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', fields: { session_date: '2026-08-21', station_id: '018f8c7b-0000-7000-8000-000000000010', protocol: 'MAPS', maps_period: 3, open_time: '06:00', close_time: '12:00', master_bander_id: '018f8c7b-0000-7000-8000-000000000011', weather_open_temp: 10, weather_close_cloud: 75, notes: null } },
+    })
+    expect(() => assertEvent(session)).not.toThrow()
+    const fields = { species_code: 'AMRO', wing: 102.4, feather_pull: false, net_id: '018f8c7b-0000-7000-8000-000000000012', bander_id: '018f8c7b-0000-7000-8000-000000000011', band_selection: { kind: 'managed' as const, band_id: '018f8c7b-0000-7000-8000-000000000013', band_number: '1234-56789' } }
+    const record = createEvent<'banding-record.created'>({
+      event_type: 'banding-record.created', workspace_id: workspaceId, command_id: session.command_id, actor,
+      payload: { record_id: '018f8c7b-0000-7000-8000-000000000005', session_id: '018f8c7b-0000-7000-8000-000000000004', fields },
+    })
+    expect(() => assertEvent(record)).not.toThrow()
+    const v2Payload = { record_id: '018f8c7b-0000-7000-8000-000000000005', session_id: '018f8c7b-0000-7000-8000-000000000004', fields }
+    expect(() => assertEvent({ ...record, event_schema_version: 2, payload: { ...v2Payload, fields: { ...fields, unreviewed_field: 'nope' } } })).toThrow('not allowed by the Contract')
+    expect(() => assertEvent({ ...record, event_schema_version: 2, payload: { ...v2Payload, fields: { ...fields, band_selection: { kind: 'managed', band_id: 'not-a-uuid', band_number: '1234-56789' } } } })).toThrow('must match exactly one')
   })
 
   it('compares immutable Event content independently of object property order', () => {
