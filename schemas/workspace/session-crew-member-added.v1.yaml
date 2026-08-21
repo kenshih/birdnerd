@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: session-crew-member.added v1
+type: object
+required: [session_id, bander_id]
+properties: { session_id: { type: string }, bander_id: { type: string } }
+additionalProperties: false

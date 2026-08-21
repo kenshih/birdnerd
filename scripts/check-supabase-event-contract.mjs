@@ -34,11 +34,11 @@ if (process.argv.includes('--print-fingerprint')) {
   process.exit(0)
 }
 
-const migrationFiles = (await readdir(migrationDirectory)).filter(file => file.endsWith('_phase_30_event_exchange.sql'))
-if (migrationFiles.length !== 1) throw new Error(`Expected one Phase 30 Event-exchange migration; found ${migrationFiles.length}.`)
-const sql = await readFile(resolve(migrationDirectory, migrationFiles[0]), 'utf8')
+const migrationFiles = (await readdir(migrationDirectory)).filter(file => /_phase_(30_event_exchange|31_operational_catalog)\.sql$/.test(file)).sort()
+if (migrationFiles.length !== 2) throw new Error(`Expected Phase 30 and Phase 31 Event-exchange migrations; found ${migrationFiles.length}.`)
+const sql = (await Promise.all(migrationFiles.map(file => readFile(resolve(migrationDirectory, file), 'utf8')))).join('\n')
 const errors = []
-const marker = /event-contract-sha256:\s*([0-9a-f]{64})/.exec(sql)?.[1]
+const marker = [...sql.matchAll(/event-contract-sha256:\s*([0-9a-f]{64})/g)].at(-1)?.[1]
 if (marker !== fingerprint) errors.push(`SQL Event Contract fingerprint is stale (expected ${fingerprint}).`)
 
 checkExactKeys(sql, "event", envelope, 'Event envelope')
@@ -57,7 +57,7 @@ for (const { eventType, schema } of payloads) {
   for (const [property, propertySchema] of Object.entries(schema.properties ?? {})) {
     if (propertySchema.type !== 'object') continue
     if (property === 'identity' && branch.includes("payload -> 'identity' <> actor -> 'identity'")) continue
-    checkExactKeys(branch, property, propertySchema, `${eventType}.${property}`)
+    checkExactKeys(branch, `payload -> '${property}'`, propertySchema, `${eventType}.${property}`)
   }
 }
 
@@ -68,7 +68,9 @@ if (errors.length > 0) {
 
 function checkExactKeys(source, subject, schema, label) {
   const subjectPattern = escapeRegExp(subject)
+  const fallbackSubject = subject.startsWith("payload -> '") ? subject.slice("payload -> '".length, -1) : subject
   const match = new RegExp(`has_exact_keys\\(\\s*${subjectPattern}\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}')(?:\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}'))?\\s*\\)`, 's').exec(source)
+    ?? new RegExp(`has_exact_keys\\(\\s*${escapeRegExp(fallbackSubject)}\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}')(?:\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}'))?\\s*\\)`, 's').exec(source)
   if (!match) {
     errors.push(`${label} has no checkable has_exact_keys call.`)
     return

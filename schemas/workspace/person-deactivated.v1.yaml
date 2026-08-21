@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: person.deactivated v1
+type: object
+required: [person_id]
+properties: { person_id: { type: string } }
+additionalProperties: false

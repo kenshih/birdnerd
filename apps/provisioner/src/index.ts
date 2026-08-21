@@ -5,14 +5,19 @@
  */
 
 import { Client } from 'pg'
-import { bootstrapWorkspace, type ProvisioningMember } from './databaseProvisioner.js'
+import { bootstrapWorkspace, changeMembership, type ProvisioningMember } from './databaseProvisioner.js'
 import { parsePendingMember } from './provisioning.js'
 
 type CliOptions = {
+  operation: 'bootstrap' | 'invite' | 'set-role' | 'deactivate' | 'reactivate'
   workspace_name: string
   admin_email: string
   provisioner_id: string
   pending_members: ProvisioningMember[]
+  workspace_id?: string
+  membership_id?: string
+  email?: string
+  role?: 'admin' | 'contributor'
 }
 
 export async function runCli(args: readonly string[], environment: NodeJS.ProcessEnv = process.env): Promise<unknown> {
@@ -22,6 +27,7 @@ export async function runCli(args: readonly string[], environment: NodeJS.Proces
   const client = new Client({ connectionString })
   await client.connect()
   try {
+    if (options.operation !== 'bootstrap') return changeMembership(client, options.operation, { ...options, workspace_id: options.workspace_id! })
     return await bootstrapWorkspace(client, {
       workspace_name: options.workspace_name,
       provisioner_id: options.provisioner_id,
@@ -37,10 +43,12 @@ export async function runCli(args: readonly string[], environment: NodeJS.Proces
 
 function parseArgs(args: readonly string[]): CliOptions {
   const values = new Map<string, string[]>()
-  for (let index = 0; index < args.length; index += 1) {
+  const operation = (args[0] && !args[0].startsWith('--') ? args[0] : 'bootstrap') as CliOptions['operation']
+  if (!['bootstrap', 'invite', 'set-role', 'deactivate', 'reactivate'].includes(operation)) throw new Error(`Unknown operation: ${operation}\n\n${helpText()}`)
+  for (let index = operation === 'bootstrap' && args[0] !== 'bootstrap' ? 0 : 1; index < args.length; index += 1) {
     const flag = args[index]
     if (flag === '--help' || flag === '-h') throw new Error(helpText())
-    if (flag !== '--workspace-name' && flag !== '--admin-email' && flag !== '--member' && flag !== '--provisioner-id') {
+    if (!['--workspace-name', '--admin-email', '--member', '--provisioner-id', '--workspace-id', '--membership-id', '--email', '--role'].includes(flag)) {
       throw new Error(`Unknown argument: ${flag}\n\n${helpText()}`)
     }
     const value = args[index + 1]
@@ -49,12 +57,16 @@ function parseArgs(args: readonly string[]): CliOptions {
     index += 1
   }
 
+  if (operation !== 'bootstrap') return {
+    operation, workspace_name: '', admin_email: '', pending_members: [], provisioner_id: values.get('--provisioner-id')?.at(-1) ?? 'phase-31-operator',
+    workspace_id: requiredValue(values, '--workspace-id'), membership_id: values.get('--membership-id')?.at(-1), email: values.get('--email')?.at(-1), role: values.get('--role')?.at(-1) as CliOptions['role'],
+  }
   const workspaceName = requiredValue(values, '--workspace-name')
   const adminEmail = requiredValue(values, '--admin-email')
   return {
-    workspace_name: workspaceName,
+    operation, workspace_name: workspaceName,
     admin_email: adminEmail,
-    provisioner_id: values.get('--provisioner-id')?.at(-1) ?? 'phase-30-operator',
+    provisioner_id: values.get('--provisioner-id')?.at(-1) ?? 'phase-31-operator',
     pending_members: (values.get('--member') ?? []).map(parsePendingMember),
   }
 }
@@ -68,7 +80,9 @@ function requiredValue(values: ReadonlyMap<string, string[]>, flag: string): str
 function helpText(): string {
   return [
     'Usage:',
-    '  BIRDNERD_PROVISIONER_DATABASE_URL=postgresql://... npm run provision -- --workspace-name "Cedar Creek" --admin-email admin@example.com [--member person@example.com:contributor]',
+    '  ... provision -- bootstrap --workspace-name "Cedar Creek" --admin-email admin@example.com [--member person@example.com:contributor]',
+    '  ... provision -- invite --workspace-id <uuid> --email person@example.com --role contributor',
+    '  ... provision -- set-role|deactivate|reactivate --workspace-id <uuid> --membership-id <uuid> [--role admin|contributor]',
     '',
     'The credential must be a login granted only the birdnerd_provisioner role.',
   ].join('\n')

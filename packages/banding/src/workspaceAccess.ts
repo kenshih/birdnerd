@@ -184,6 +184,7 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     return activeMembership ? { accepted: true } : deny('The Event actor is not an active Member of the target Workspace.')
   }
 
+  if (candidate.event_type !== 'membership.activated') return deny('This Event is not part of the Workspace-access catalog.')
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')
   const workspaceMembership = projection.workspace_memberships.get(candidate.payload.membership_id)
   if (workspaceMembership && candidate.workspace_id !== workspaceMembership.workspace_id) {

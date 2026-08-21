@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: user-account.person-linked v1
+type: object
+required: [user_account_id, person_id]
+properties: { user_account_id: { type: string }, person_id: { type: string } }
+additionalProperties: false

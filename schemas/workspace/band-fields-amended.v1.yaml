@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: band.fields-amended v1
+type: object
+required: [band_id, fields]
+properties: { band_id: { type: string }, fields: { type: object, additionalProperties: true } }
+additionalProperties: false

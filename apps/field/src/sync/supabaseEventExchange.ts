@@ -67,6 +67,9 @@ function receipt(value: unknown): ExchangeReceipt {
   if ((value.kind === 'accepted' || value.kind === 'duplicate') && Number.isSafeInteger(value.server_sequence)) {
     return { kind: value.kind, event_id: value.event_id, server_sequence: value.server_sequence as number }
   }
+  if (value.kind === 'deferred' && typeof value.reason === 'string' && value.retryable === true) {
+    return { kind: 'deferred', event_id: value.event_id, reason: value.reason, retryable: true }
+  }
   if (value.kind === 'rejected' && typeof value.reason === 'string' && value.permanent === true) {
     return { kind: 'rejected', event_id: value.event_id, reason: value.reason, permanent: true }
   }

@@ -1,30 +1,94 @@
 /*
  * GENERATED FILE — do not edit by hand.
  * Run `npm run generate:event-bindings` after changing these contract sources:
+ * - schemas/workspace/band-deactivated.v1.yaml
+ * - schemas/workspace/band-fields-amended.v1.yaml
+ * - schemas/workspace/band-reactivated.v1.yaml
+ * - schemas/workspace/band-received.v1.yaml
+ * - schemas/workspace/bander-created.v1.yaml
+ * - schemas/workspace/bander-deactivated.v1.yaml
+ * - schemas/workspace/bander-fields-amended.v1.yaml
+ * - schemas/workspace/bander-reactivated.v1.yaml
  * - schemas/workspace/banding-record-created.v1.yaml
+ * - schemas/workspace/banding-record-deactivated.v1.yaml
  * - schemas/workspace/banding-record-fields-amended.v1.yaml
+ * - schemas/workspace/banding-record-reactivated.v1.yaml
  * - schemas/workspace/event-envelope.v1.yaml
  * - schemas/workspace/event-envelope.v2.yaml
  * - schemas/workspace/membership-activated.v1.yaml
+ * - schemas/workspace/membership-deactivated.v1.yaml
  * - schemas/workspace/membership-preauthorized.v1.yaml
+ * - schemas/workspace/membership-reactivated.v1.yaml
+ * - schemas/workspace/membership-role-changed.v1.yaml
+ * - schemas/workspace/net-created.v1.yaml
+ * - schemas/workspace/net-deactivated.v1.yaml
+ * - schemas/workspace/net-fields-amended.v1.yaml
+ * - schemas/workspace/net-reactivated.v1.yaml
+ * - schemas/workspace/person-created.v1.yaml
+ * - schemas/workspace/person-deactivated.v1.yaml
+ * - schemas/workspace/person-fields-amended.v1.yaml
+ * - schemas/workspace/person-reactivated.v1.yaml
  * - schemas/workspace/session-created.v1.yaml
+ * - schemas/workspace/session-crew-member-added.v1.yaml
+ * - schemas/workspace/session-crew-member-removed.v1.yaml
+ * - schemas/workspace/session-deactivated.v1.yaml
+ * - schemas/workspace/session-fields-amended.v1.yaml
+ * - schemas/workspace/session-reactivated.v1.yaml
+ * - schemas/workspace/station-created.v1.yaml
+ * - schemas/workspace/station-deactivated.v1.yaml
+ * - schemas/workspace/station-fields-amended.v1.yaml
+ * - schemas/workspace/station-reactivated.v1.yaml
  * - schemas/workspace/user-account-linked.v1.yaml
+ * - schemas/workspace/user-account-person-linked.v1.yaml
+ * - schemas/workspace/user-account-person-unlinked.v1.yaml
  * - schemas/workspace/workspace-created.v1.yaml
  */
 
-export type EventType = "banding-record.created" | "banding-record.fields-amended" | "membership.activated" | "membership.preauthorized" | "session.created" | "user-account.linked" | "workspace.created"
+export type EventType = "band.deactivated" | "band.fields-amended" | "band.reactivated" | "band.received" | "bander.created" | "bander.deactivated" | "bander.fields-amended" | "bander.reactivated" | "banding-record.created" | "banding-record.deactivated" | "banding-record.fields-amended" | "banding-record.reactivated" | "membership.activated" | "membership.deactivated" | "membership.preauthorized" | "membership.reactivated" | "membership.role-changed" | "net.created" | "net.deactivated" | "net.fields-amended" | "net.reactivated" | "person.created" | "person.deactivated" | "person.fields-amended" | "person.reactivated" | "session.created" | "session-crew-member.added" | "session-crew-member.removed" | "session.deactivated" | "session.fields-amended" | "session.reactivated" | "station.created" | "station.deactivated" | "station.fields-amended" | "station.reactivated" | "user-account.linked" | "user-account.person-linked" | "user-account.person-unlinked" | "workspace.created"
 
 export type EventPayloadByType = {
+  "band.deactivated": { "band_id": string }
+  "band.fields-amended": { "band_id": string; "fields": Record<string, unknown> }
+  "band.reactivated": { "band_id": string }
+  "band.received": { "band_id": string; "band_number": string; "fields"?: Record<string, unknown> }
+  "bander.created": { "bander_id": string; "person_id": string; "fields"?: Record<string, unknown> }
+  "bander.deactivated": { "bander_id": string }
+  "bander.fields-amended": { "bander_id": string; "fields": Record<string, unknown> }
+  "bander.reactivated": { "bander_id": string }
   "banding-record.created": { "record_id": string; "session_id": string; "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string }
+  "banding-record.deactivated": { "record_id": string }
   "banding-record.fields-amended": { "record_id": string; "fields": { "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string } }
+  "banding-record.reactivated": { "record_id": string }
   "membership.activated": { "membership_id": string; "user_account_id": string }
+  "membership.deactivated": { "membership_id": string }
   "membership.preauthorized": { "membership_id": string; "email": string; "role": "admin" | "contributor" }
+  "membership.reactivated": { "membership_id": string }
+  "membership.role-changed": { "membership_id": string; "role": "admin" | "contributor" }
+  "net.created": { "net_id": string; "station_id": string; "fields"?: Record<string, unknown> }
+  "net.deactivated": { "net_id": string }
+  "net.fields-amended": { "net_id": string; "fields": Record<string, unknown> }
+  "net.reactivated": { "net_id": string }
+  "person.created": { "person_id": string; "fields"?: Record<string, unknown> }
+  "person.deactivated": { "person_id": string }
+  "person.fields-amended": { "person_id": string; "fields": Record<string, unknown> }
+  "person.reactivated": { "person_id": string }
   "session.created": { "session_id": string; "session_date"?: string; "location_name"?: string; "protocol"?: string; "notes"?: string }
+  "session-crew-member.added": { "session_id": string; "bander_id": string }
+  "session-crew-member.removed": { "session_id": string; "bander_id": string }
+  "session.deactivated": { "session_id": string }
+  "session.fields-amended": { "session_id": string; "fields": Record<string, unknown> }
+  "session.reactivated": { "session_id": string }
+  "station.created": { "station_id": string; "fields"?: Record<string, unknown> }
+  "station.deactivated": { "station_id": string }
+  "station.fields-amended": { "station_id": string; "fields": Record<string, unknown> }
+  "station.reactivated": { "station_id": string }
   "user-account.linked": { "user_account_id": string; "identity": { "provider": "google"; "subject": string; "email": string } }
+  "user-account.person-linked": { "user_account_id": string; "person_id": string }
+  "user-account.person-unlinked": { "user_account_id": string }
   "workspace.created": { "workspace_id": string; "name": string }
 }
 
-type EventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "event_envelope_version": 2; "workspace_id": string; "command_id": string; "occurred_at": string; "hlc": { "physical_ms": number; "logical": number }; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
+type EventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": number; "event_envelope_version": 2; "workspace_id": string; "command_id": string; "occurred_at": string; "hlc": { "physical_ms": number; "logical": number }; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
 
 type LegacyEventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "workspace_id": string; "command_id": string; "occurred_at": string; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
 
@@ -38,15 +102,47 @@ export type LegacyDomainEvent<T extends EventType = EventType> = T extends Event
   ? Omit<LegacyEventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }
   : never
 
-export const EVENT_TYPES: readonly EventType[] = ["banding-record.created", "banding-record.fields-amended", "membership.activated", "membership.preauthorized", "session.created", "user-account.linked", "workspace.created"]
+export const EVENT_TYPES: readonly EventType[] = ["band.deactivated", "band.fields-amended", "band.reactivated", "band.received", "bander.created", "bander.deactivated", "bander.fields-amended", "bander.reactivated", "banding-record.created", "banding-record.deactivated", "banding-record.fields-amended", "banding-record.reactivated", "membership.activated", "membership.deactivated", "membership.preauthorized", "membership.reactivated", "membership.role-changed", "net.created", "net.deactivated", "net.fields-amended", "net.reactivated", "person.created", "person.deactivated", "person.fields-amended", "person.reactivated", "session.created", "session-crew-member.added", "session-crew-member.removed", "session.deactivated", "session.fields-amended", "session.reactivated", "station.created", "station.deactivated", "station.fields-amended", "station.reactivated", "user-account.linked", "user-account.person-linked", "user-account.person-unlinked", "workspace.created"]
 
 const EVENT_TYPE_BY_NAME: Readonly<Record<EventType, EventType>> = {
+  "band.deactivated": "band.deactivated",
+  "band.fields-amended": "band.fields-amended",
+  "band.reactivated": "band.reactivated",
+  "band.received": "band.received",
+  "bander.created": "bander.created",
+  "bander.deactivated": "bander.deactivated",
+  "bander.fields-amended": "bander.fields-amended",
+  "bander.reactivated": "bander.reactivated",
   "banding-record.created": "banding-record.created",
+  "banding-record.deactivated": "banding-record.deactivated",
   "banding-record.fields-amended": "banding-record.fields-amended",
+  "banding-record.reactivated": "banding-record.reactivated",
   "membership.activated": "membership.activated",
+  "membership.deactivated": "membership.deactivated",
   "membership.preauthorized": "membership.preauthorized",
+  "membership.reactivated": "membership.reactivated",
+  "membership.role-changed": "membership.role-changed",
+  "net.created": "net.created",
+  "net.deactivated": "net.deactivated",
+  "net.fields-amended": "net.fields-amended",
+  "net.reactivated": "net.reactivated",
+  "person.created": "person.created",
+  "person.deactivated": "person.deactivated",
+  "person.fields-amended": "person.fields-amended",
+  "person.reactivated": "person.reactivated",
   "session.created": "session.created",
+  "session-crew-member.added": "session-crew-member.added",
+  "session-crew-member.removed": "session-crew-member.removed",
+  "session.deactivated": "session.deactivated",
+  "session.fields-amended": "session.fields-amended",
+  "session.reactivated": "session.reactivated",
+  "station.created": "station.created",
+  "station.deactivated": "station.deactivated",
+  "station.fields-amended": "station.fields-amended",
+  "station.reactivated": "station.reactivated",
   "user-account.linked": "user-account.linked",
+  "user-account.person-linked": "user-account.person-linked",
+  "user-account.person-unlinked": "user-account.person-unlinked",
   "workspace.created": "workspace.created",
 }
 
@@ -77,7 +173,7 @@ const EVENT_ENVELOPE_SCHEMA = {
     },
     "event_schema_version": {
       "type": "integer",
-      "const": 1
+      "minimum": 1
     },
     "event_envelope_version": {
       "type": "integer",
@@ -324,12 +420,44 @@ const LEGACY_EVENT_ENVELOPE_SCHEMA = {
 } as const
 
 const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, unknown>> = {
+  "band.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.deactivated v1","type":"object","required":["band_id"],"properties":{"band_id":{"type":"string"}},"additionalProperties":false},
+  "band.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.fields-amended v1","type":"object","required":["band_id","fields"],"properties":{"band_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "band.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.reactivated v1","type":"object","required":["band_id"],"properties":{"band_id":{"type":"string"}},"additionalProperties":false},
+  "band.received": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.received v1","type":"object","required":["band_id","band_number"],"properties":{"band_id":{"type":"string"},"band_number":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "bander.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.created v1","type":"object","required":["bander_id","person_id"],"properties":{"bander_id":{"type":"string"},"person_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "bander.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.deactivated v1","type":"object","required":["bander_id"],"properties":{"bander_id":{"type":"string"}},"additionalProperties":false},
+  "bander.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.fields-amended v1","type":"object","required":["bander_id","fields"],"properties":{"bander_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "bander.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.reactivated v1","type":"object","required":["bander_id"],"properties":{"bander_id":{"type":"string"}},"additionalProperties":false},
   "banding-record.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.created v1","type":"object","required":["record_id","session_id"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false},
+  "banding-record.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.deactivated v1","type":"object","required":["record_id"],"properties":{"record_id":{"type":"string"}},"additionalProperties":false},
   "banding-record.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.fields-amended v1","type":"object","required":["record_id","fields"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false}},"additionalProperties":false},
+  "banding-record.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.reactivated v1","type":"object","required":["record_id"],"properties":{"record_id":{"type":"string"}},"additionalProperties":false},
   "membership.activated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.activated v1","type":"object","required":["membership_id","user_account_id"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},"additionalProperties":false},
+  "membership.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.deactivated v1","type":"object","required":["membership_id"],"properties":{"membership_id":{"type":"string"}},"additionalProperties":false},
   "membership.preauthorized": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.preauthorized v1","type":"object","required":["membership_id","email","role"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"email":{"type":"string","format":"email"},"role":{"enum":["admin","contributor"]}},"additionalProperties":false},
+  "membership.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.reactivated v1","type":"object","required":["membership_id"],"properties":{"membership_id":{"type":"string"}},"additionalProperties":false},
+  "membership.role-changed": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.role-changed v1","type":"object","required":["membership_id","role"],"properties":{"membership_id":{"type":"string"},"role":{"enum":["admin","contributor"]}},"additionalProperties":false},
+  "net.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.created v1","type":"object","required":["net_id","station_id"],"properties":{"net_id":{"type":"string"},"station_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "net.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.deactivated v1","type":"object","required":["net_id"],"properties":{"net_id":{"type":"string"}},"additionalProperties":false},
+  "net.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.fields-amended v1","type":"object","required":["net_id","fields"],"properties":{"net_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "net.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.reactivated v1","type":"object","required":["net_id"],"properties":{"net_id":{"type":"string"}},"additionalProperties":false},
+  "person.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.created v1","type":"object","required":["person_id"],"properties":{"person_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "person.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.deactivated v1","type":"object","required":["person_id"],"properties":{"person_id":{"type":"string"}},"additionalProperties":false},
+  "person.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.fields-amended v1","type":"object","required":["person_id","fields"],"properties":{"person_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "person.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.reactivated v1","type":"object","required":["person_id"],"properties":{"person_id":{"type":"string"}},"additionalProperties":false},
   "session.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.created v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_date":{"type":"string"},"location_name":{"type":"string"},"protocol":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false},
+  "session-crew-member.added": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session-crew-member.added v1","type":"object","required":["session_id","bander_id"],"properties":{"session_id":{"type":"string"},"bander_id":{"type":"string"}},"additionalProperties":false},
+  "session-crew-member.removed": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session-crew-member.removed v1","type":"object","required":["session_id","bander_id"],"properties":{"session_id":{"type":"string"},"bander_id":{"type":"string"}},"additionalProperties":false},
+  "session.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.deactivated v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string"}},"additionalProperties":false},
+  "session.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.fields-amended v1","type":"object","required":["session_id","fields"],"properties":{"session_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "session.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.reactivated v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string"}},"additionalProperties":false},
+  "station.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.created v1","type":"object","required":["station_id"],"properties":{"station_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "station.deactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.deactivated v1","type":"object","required":["station_id"],"properties":{"station_id":{"type":"string"}},"additionalProperties":false},
+  "station.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.fields-amended v1","type":"object","required":["station_id","fields"],"properties":{"station_id":{"type":"string"},"fields":{"type":"object","additionalProperties":true}},"additionalProperties":false},
+  "station.reactivated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.reactivated v1","type":"object","required":["station_id"],"properties":{"station_id":{"type":"string"}},"additionalProperties":false},
   "user-account.linked": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.linked v1","type":"object","required":["user_account_id","identity"],"properties":{"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"identity":{"type":"object","required":["provider","subject","email"],"properties":{"provider":{"const":"google"},"subject":{"type":"string","minLength":1},"email":{"type":"string","format":"email"}},"additionalProperties":false}},"additionalProperties":false},
+  "user-account.person-linked": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.person-linked v1","type":"object","required":["user_account_id","person_id"],"properties":{"user_account_id":{"type":"string"},"person_id":{"type":"string"}},"additionalProperties":false},
+  "user-account.person-unlinked": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.person-unlinked v1","type":"object","required":["user_account_id"],"properties":{"user_account_id":{"type":"string"}},"additionalProperties":false},
   "workspace.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"workspace.created v1","type":"object","required":["workspace_id","name"],"properties":{"workspace_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"name":{"type":"string","minLength":1}},"additionalProperties":false},
 }
 

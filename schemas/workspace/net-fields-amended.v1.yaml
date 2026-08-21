@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: net.fields-amended v1
+type: object
+required: [net_id, fields]
+properties: { net_id: { type: string }, fields: { type: object, additionalProperties: true } }
+additionalProperties: false

@@ -160,9 +160,12 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) {
-          queue.status = receipt.kind === 'rejected' ? 'rejected' : 'accepted'
-          queue.last_error = receipt.kind === 'rejected' ? receipt.reason : undefined
+          // A deferred receipt is an admission-order dependency, not a
+          // failure of the immutable fact. Keep it effective and pending.
+          queue.status = receipt.kind === 'rejected' ? 'rejected' : receipt.kind === 'deferred' ? 'pending' : 'accepted'
+          queue.last_error = receipt.kind === 'rejected' || receipt.kind === 'deferred' ? receipt.reason : undefined
           queue.attempt_count += 1
+          if (receipt.kind === 'deferred' && result.deferred_retry_at !== undefined) queue.retry_at = result.deferred_retry_at
         }
       }
       for (const item of result.pulled) {
@@ -186,7 +189,15 @@ export class WorkspaceEventStore implements DurableReplica {
         if (queue) await tx.objectStore('outbound_queue').put(queue)
         await tx.objectStore('receipts').put({ event_id: receipt.event_id, receipt, recorded_at: Date.now() })
       }
-      await tx.objectStore('sync_metadata').put({ ...metadata, cursor: result.cursor, high_water: highWater, last_failure: undefined, retry_at: undefined, failure_count: 0 })
+      const hasDeferred = result.receipts.some(receipt => receipt.kind === 'deferred')
+      await tx.objectStore('sync_metadata').put({
+        ...metadata,
+        cursor: result.cursor,
+        high_water: highWater,
+        last_failure: hasDeferred ? result.receipts.find(receipt => receipt.kind === 'deferred')?.reason : undefined,
+        retry_at: hasDeferred ? result.deferred_retry_at : undefined,
+        failure_count: hasDeferred ? (metadata.failure_count ?? 0) + 1 : 0,
+      })
       await tx.objectStore('projection_cache').put(projectionCache(effectiveEvents))
       await tx.done
       this.log = new EventLog(effectiveEvents, () => ({ accepted: true }))

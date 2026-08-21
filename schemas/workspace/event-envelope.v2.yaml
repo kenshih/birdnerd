@@ -23,7 +23,7 @@ properties:
     type: string
   event_schema_version:
     type: integer
-    const: 1
+    minimum: 1
   event_envelope_version:
     type: integer
     const: 2

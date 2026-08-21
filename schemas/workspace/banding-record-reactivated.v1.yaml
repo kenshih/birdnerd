@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: banding-record.reactivated v1
+type: object
+required: [record_id]
+properties: { record_id: { type: string } }
+additionalProperties: false

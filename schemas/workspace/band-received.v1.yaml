@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: band.received v1
+type: object
+required: [band_id, band_number]
+properties: { band_id: { type: string }, band_number: { type: string }, fields: { type: object, additionalProperties: true } }
+additionalProperties: false

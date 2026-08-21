@@ -46,6 +46,13 @@ const LEGACY_EVENT_TYPES = new Set<EventType>([
   'membership.activated',
 ])
 
+/** Current write version is selected per Event type, not by the envelope. */
+const CURRENT_SCHEMA_VERSION: Partial<Record<EventType, number>> = {
+  'session.created': 2,
+  'banding-record.created': 2,
+  'banding-record.fields-amended': 2,
+}
+
 function fillRandom(bytes: Uint8Array): Uint8Array {
   globalThis.crypto.getRandomValues(bytes as Uint8Array<ArrayBuffer>)
   return bytes
@@ -86,7 +93,7 @@ export function createEvent<T extends EventType>(input: CreateEventInput<T>): Do
   const event = {
     ...input,
     event_id: input.event_id ?? createUuidV7(),
-    event_schema_version: 1,
+    event_schema_version: CURRENT_SCHEMA_VERSION[input.event_type] ?? 1,
     event_envelope_version: 2,
     occurred_at: occurredAt,
     hlc: input.hlc ?? { physical_ms: parseRfc3339Milliseconds(occurredAt), logical: 0 },
@@ -129,7 +136,16 @@ export function encodeEventLog(events: readonly DomainEvent[]): string {
 export function upcastEvent(value: unknown): DomainEvent {
   if (isRecord(value) && value.event_envelope_version === 2) {
     assertEvent(value)
-    return value
+    const currentVersion = CURRENT_SCHEMA_VERSION[value.event_type as EventType] ?? 1
+    return value.event_schema_version === currentVersion
+      ? value as DomainEvent
+      : ({ ...value, event_schema_version: currentVersion } as DomainEvent)
+  }
+
+  // Give the compatibility error its domain meaning before the historical
+  // envelope validator rejects a current per-type schema number.
+  if (isRecord(value) && typeof value.event_type === 'string' && !LEGACY_EVENT_TYPES.has(value.event_type as EventType)) {
+    throw new Error(`${value.event_type} was introduced with Event envelope version 2 and cannot be decoded as v1.`)
   }
 
   const contractError = validateGeneratedEvent(value)
