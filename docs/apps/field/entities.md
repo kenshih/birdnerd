@@ -59,7 +59,7 @@ durable truth; queue, cursor, receipt, and projection rows may change or be
 rebuilt without mutating an Event. Supabase keeps the shared Event Log and a
 minimum derived Membership admission index in a non-exposed schema.
 
-## Phase 31 operational projection (target)
+## Phase 31 operational projection
 
 The Event Log remains the only durable operational model. Rebuildable
 Workspace projections include Station, Net, Person, Bander, optional

@@ -521,7 +521,7 @@ imports that mutable format into the Event Log.
   before writing, preserves pending local Events, resets the pull cursor,
   rebuilds, and catches up through normal authenticated sync.
 
-### Phase 31 operational Event architecture (target)
+### Phase 31 operational Event architecture
 
 - `@birdnerd/banding` exposes a discriminated command/decision Interface and a
   deterministic operational projection Interface. It owns authority checks,

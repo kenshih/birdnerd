@@ -69,13 +69,19 @@ Events by `command_id` and shows the rebuildable projection, outbound
 queue/retry/cursor state, server receipts/rejections, and sync errors. It is not
 present in production navigation.
 
-### 0.2 Phase 31 default workflow (target)
+### 0.2 Phase 31 default workflow
 
-The Collaboration Pilot label and duplicate legacy paths disappear. Normal
+**Field Data** replaces the Collaboration Pilot label and is the only normal
+field-data entry point. Normal
 Session, Banding Record, Station/Net, People/roster, Session crew, and Band
 Inventory screens read and write the shared Event-backed projection while
 retaining offline-first save behavior and visible sync state. Membership
 administration is intentionally absent from Field.
+
+Legacy mutable routes remain unlinked pending the documented two-Station
+acceptance; they neither receive Event-backed writes nor provide a normal-path
+fallback. The acceptance result governs their later removal without a legacy
+data migration.
 
 All observational fields remain optional. Remove actions become role-aware
 deactivation with explicit reactivation, preserve historical references, and
@@ -101,13 +107,8 @@ initialization below describe the legacy workflow and do not ship on the Phase
 ┌─────────────────────────────────────┐
 │         BirdNerd                    │
 │                                     │
-│  [Collaboration Pilot]              │
-│  [Session Data]                     │
-│  [Data Manager]                     │
+│  [Field Data]                       │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
-│  [Band Inventory]                   │
-│  [People]                           │
-│  [Project Locations]                │
 │  [Event Pipeline]  (development)    │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
@@ -117,17 +118,15 @@ initialization below describe the legacy workflow and do not ship on the Phase
 └─────────────────────────────────────┘
 ```
 
-Buttons are grouped with subtle dividers: **field activities** (Collaboration Pilot, Session Data, Data Manager), **back office and diagnostics** (Band Inventory, People, Locations, plus Event Pipeline in development builds), and **meta** (Feedback and About).
+Buttons are grouped with subtle dividers: **field activities** (Field Data),
+**diagnostics** (Event Pipeline in development builds), and **meta** (Feedback
+and About). Field Data itself contains the event-backed Session, Record,
+Inventory, and Admin configuration tabs.
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
-| **Collaboration Pilot** | Create and synchronize shared Event-backed Sessions and Banding Records | Collaboration Pilot |
-| **Session Data** | Create/manage daily sessions, record bird encounters | Session List / Session Form |
-| **Data Manager** | Agency export, backup & restore | Data Manager (§7) |
+| **Field Data** | Create, correct, synchronize, and inspect shared Event-backed Sessions, Records, inventory, and configuration | Field Data |
 | **Event Pipeline** *(development only)* | Inspect local Events, projections, queue/cursor/retry state, receipts, and errors | Event Pipeline |
-| **Project Locations** | Register locations, manage nets | Location List / Location Form |
-| **People** | Manage team members and assign roles (Bander, etc.) | People List / Person Detail |
-| **Band Inventory** | View/manage USGS band inventory | Band Inventory Screen |
 | **Report Bugs / Feedback** | Send feedback via email | Email client |
 | **About** | App version, credits, links | About Page |
 

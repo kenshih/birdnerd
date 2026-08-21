@@ -80,14 +80,19 @@ status, and recovery-only Workspace Event Bundles. The operational slice lives
 in a clearly labelled Collaboration Pilot workflow and does not dual-write the
 legacy mutable forms. Further field-data commands remain later work.
 
-### 4.3 Phase 31 operational target
+### 4.3 Phase 31 operational workflow
 
-Phase 31 makes the Workspace Event Log the default Field data path and removes
-the separate Collaboration Pilot and legacy mutable replica after real-device
-acceptance. The complete current non-photo Session and Banding Record forms,
+Phase 31 makes the Workspace Event Log the default Field data path. The Field
+Data home entry replaces the separate Collaboration Pilot and unlinks legacy
+mutable workflows. The complete current non-photo Session and Banding Record forms,
 Stations/Nets, Person/Bander roster, Session crew, and Band inventory project
 from immutable Workspace Events. All scientific/observational fields remain
 optional and validations remain soft.
+
+The legacy mutable replica and DataBundle code are deliberately retained without
+data migration or deletion until the two-Station real-device acceptance in the
+runbook has passed. That later removal is not a browser-path fallback and is not
+part of this delivery.
 
 Contributor is the normal field role and may enter, correct, deactivate, and
 reactivate operational data and resolve Band conflicts. Admin additionally

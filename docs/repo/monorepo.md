@@ -31,11 +31,14 @@ Keep app-specific concerns inside each app:
 
 Use `packages/shared/` only for app-agnostic domain code that can be consumed cleanly by both apps.
 
-## Collaboration Package Direction (Phase 30 event exchange)
+## Collaboration Package Direction (Phases 30–31 event exchange)
 
 Phase 29 established generated portable contracts and Field's durable local
 Workspace Event Log. Phase 30 adds the HLC envelope, pilot Event catalog,
-Supabase Event Admission/exchange, and durable replication state.
+Supabase Event Admission/exchange, and durable replication state. Phase 31
+extends that catalog with operational configuration, roster, inventory, v2
+Session/Record forms, deferred-reference receipts, and Provisioner Membership
+lifecycle operations.
 
 - `schemas/` — portable YAML-authored Event Contracts using a restricted JSON
   Schema subset. `npm run generate:event-bindings` writes the committed
@@ -57,9 +60,10 @@ accepted Event Log entries and an expendable projection cache. It starts clean
 and never migrates the legacy mutable `birdnerd` database.
 
 `apps/provisioner/` is a deploy-only trusted-operator Adapter. Its restricted
-database login can execute only the private bootstrap function, which appends
-canonical `workspace.created` and `membership.preauthorized` Events and returns
-an audit receipt. It is never bundled with Field and does not create Auth users.
+database login can execute only the private bootstrap and Membership lifecycle
+functions, which append canonical Events and return audit receipts. It is never
+bundled with Field, does not create Auth users, and is the only Membership
+administration path.
 
 `packages/shared/` remains the home of existing generic shared material such
 as the lexicon. See

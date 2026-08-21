@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-type NavMode = 'pilot' | 'sessions' | 'banders' | 'band-inventory' | 'locations' | 'export' | 'diagnostics' | 'feedback' | 'about'
+type NavMode = 'pilot' | 'diagnostics' | 'feedback' | 'about'
 
 interface Props {
   onNavigate: (mode: NavMode) => void
@@ -17,12 +17,9 @@ const NAV_GROUPS: NavItem[][] = [
   [
     { mode: 'pilot', label: 'Field Data', description: 'Offline-first shared sessions, records, and inventory', enabled: true },
   ],
-  [
-    { mode: 'band-inventory', label: 'Band Inventory', description: 'Add, track, and manage band stock', enabled: true },
-    { mode: 'banders', label: 'People', description: 'Manage team members and roles', enabled: true },
-    { mode: 'locations', label: 'Project Locations', description: 'Manage banding locations and nets', enabled: true },
-    ...(import.meta.env.DEV ? [{ mode: 'diagnostics' as const, label: 'Event Pipeline', description: 'Developer replica and sync evidence', enabled: true }] : []),
-  ],
+  ...(import.meta.env.DEV
+    ? [[{ mode: 'diagnostics' as const, label: 'Event Pipeline', description: 'Developer replica and sync evidence', enabled: true }]]
+    : []),
   [
     { mode: 'feedback', label: 'Report Bugs / Feedback', description: 'Send us an email', enabled: true },
     { mode: 'about', label: 'About BirdNerd', description: '', enabled: true },

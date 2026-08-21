@@ -19,7 +19,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ## Current roadmap
 
-### Phase 31 — Event-backed operational Field (Field version TBD) — **Current**
+### Phase 31 — Event-backed operational Field (Field 0.31.0) — **Current**
 
 Replace the collaboration pilot and legacy mutable replica with the default
 offline shared Field workflow: Workspace configuration, roster, Stations/Nets,
