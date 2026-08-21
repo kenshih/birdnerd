@@ -121,6 +121,18 @@ describe('WorkspaceEventStore replica exchange', () => {
     ]))
   })
 
+  it('keeps a deferred admission dependency effective and pending across restart', async () => {
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    const local = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
+    await store.appendAll([local])
+    await store.commit({ receipts: [{ kind: 'deferred', event_id: local.event_id, reason: 'Station is not indexed yet.', retryable: true }], pulled: [], cursor: 0, deferred_retry_at: 5000 })
+    expect(await store.snapshot()).toContainEqual(local)
+    expect((await store.readSyncInput(100, 1000))?.pending_events).toEqual([local])
+    expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'pending', attempt_count: 1, retry_at: 5000 })
+  })
+
   it('scopes a replica snapshot to one Workspace', async () => {
     const store = new WorkspaceEventStore()
     const first = sessionEvent('018f8c7b-0000-7000-8000-000000000004')

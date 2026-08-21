@@ -5,6 +5,7 @@
  */
 import {
   admitWorkspaceEvent,
+  projectOperationalEvents,
   projectPilotBanding,
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
@@ -52,6 +53,10 @@ type StoredProjection = {
   sessions: ReturnType<typeof projectPilotBanding>['sessions'] extends ReadonlyMap<string, infer T> ? T[] : never
   banding_records: ReturnType<typeof projectPilotBanding>['banding_records'] extends ReadonlyMap<string, infer T> ? T[] : never
   band_allocation_conflicts: ReturnType<typeof projectPilotBanding>['band_allocation_conflicts']
+  operational_entities: ReturnType<typeof projectOperationalEvents>['entities'] extends ReadonlyMap<string, infer T> ? T[] : never
+  operational_session_crew: string[]
+  operational_unresolved_references: ReturnType<typeof projectOperationalEvents>['unresolved_references']
+  band_number_conflicts: ReturnType<typeof projectOperationalEvents>['band_number_conflicts']
 }
 
 interface WorkspaceEventDatabase extends DBSchema {
@@ -331,6 +336,7 @@ async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
 
 function projectionCache(events: readonly DomainEvent[]): StoredProjection {
   const pilot = projectPilotBanding(events)
+  const operational = projectOperationalEvents(events)
   return {
     cache_key: PROJECTION_CACHE_KEY,
     event_ids: events.map(event => event.event_id),
@@ -338,6 +344,10 @@ function projectionCache(events: readonly DomainEvent[]): StoredProjection {
     sessions: [...pilot.sessions.values()],
     banding_records: [...pilot.banding_records.values()],
     band_allocation_conflicts: pilot.band_allocation_conflicts,
+    operational_entities: [...operational.entities.values()],
+    operational_session_crew: [...operational.session_crew],
+    operational_unresolved_references: operational.unresolved_references,
+    band_number_conflicts: operational.band_number_conflicts,
   }
 }
 
