@@ -37,3 +37,24 @@ npx supabase db push --linked
 Confirm the project ref in the Supabase Dashboard before entering its database
 password. The complete hosted verification and least-privilege instructions
 remain in the pilot runbook.
+
+## getting a psql session to local supabase
+
+assuming you've started supabase locally with the above npx commands...
+
+```
+docker exec -it supabase_db_birdnerd psql -U postgres -d postgres
+```
+
+## some useful commands in psql
+
+```sql
+\x auto
+\dn
+\df+ public.birdnerd_append_events
+\sf public.birdnerd_append_events
+
+select pg_get_functiondef(
+  'public.birdnerd_append_events(jsonb)'::regprocedure
+);
+```

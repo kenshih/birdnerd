@@ -142,7 +142,7 @@ select is(
   0, 'a repeated invite is an idempotent audit receipt without a duplicate Event'
 );
 select throws_ok(
-  format('select birdnerd_private.set_role_membership(%L::uuid, %L::uuid, %L, %L, %L)', (select workspace_id from phase31_fixture), (select membership_id from birdnerd_private.membership_index where email = 'phase31-admin@example.com'), 'owner', 'pgtap'),
+  format('select birdnerd_private.set_role_membership(%L::uuid, %L::uuid, %L, %L, %L)', (select workspace_id from phase31_fixture), (select membership_id from birdnerd_private.membership_index where email = 'phase31-admin@example.com'), null, 'owner', 'pgtap'),
   'P0001', 'set-role requires admin or contributor.', 'invalid Membership roles are rejected by the private boundary'
 );
 

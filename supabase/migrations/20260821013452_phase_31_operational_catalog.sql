@@ -123,7 +123,29 @@ begin
     if not birdnerd_private.has_exact_keys(actor, array['kind','identity']) or not birdnerd_private.has_exact_keys(actor -> 'identity', array['provider','subject','email']) or actor -> 'identity' ->> 'provider' <> 'google' or coalesce(actor -> 'identity' ->> 'subject','') = '' or actor -> 'identity' ->> 'email' <> lower(btrim(actor -> 'identity' ->> 'email')) then return 'External identity actor is invalid.'; end if;
   else return 'Event actor kind is unsupported.'; end if;
   if (event_type in ('session.created','banding-record.created','banding-record.fields-amended') and event ->> 'event_schema_version' not in ('1','2')) or (event_type not in ('session.created','banding-record.created','banding-record.fields-amended') and event -> 'event_schema_version' <> '1'::jsonb) then return 'Event schema version is unsupported.'; end if;
-  if event_type = 'station.created' then if not birdnerd_private.has_exact_keys(payload,array['station_id'],array['fields']) then return 'station.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_station_fields(payload -> 'fields') then return 'station fields invalid.'; end if;
+  if event_type = 'workspace.created' then
+    if not birdnerd_private.has_exact_keys(payload, array['workspace_id','name'])
+      or not birdnerd_private.optional_strings(payload, array['workspace_id','name'])
+      or payload ->> 'workspace_id' <> event ->> 'workspace_id'
+      or not birdnerd_private.is_uuid_v7(payload ->> 'workspace_id')
+      or coalesce(payload ->> 'name', '') = '' then return 'workspace.created payload is invalid.'; end if;
+  elsif event_type = 'membership.preauthorized' then
+    if not birdnerd_private.has_exact_keys(payload, array['membership_id','email','role'])
+      or not birdnerd_private.optional_strings(payload, array['membership_id','email','role'])
+      or not birdnerd_private.is_uuid_v7(payload ->> 'membership_id')
+      or payload ->> 'email' <> lower(btrim(payload ->> 'email'))
+      or payload ->> 'role' not in ('admin','contributor') then return 'membership.preauthorized payload is invalid.'; end if;
+  elsif event_type = 'user-account.linked' then
+    if not birdnerd_private.has_exact_keys(payload, array['user_account_id','identity'])
+      or jsonb_typeof(payload -> 'user_account_id') <> 'string'
+      or not birdnerd_private.is_uuid_v7(payload ->> 'user_account_id')
+      or payload -> 'identity' <> actor -> 'identity' then return 'user-account.linked payload is invalid.'; end if;
+  elsif event_type = 'membership.activated' then
+    if not birdnerd_private.has_exact_keys(payload, array['membership_id','user_account_id'])
+      or not birdnerd_private.optional_strings(payload, array['membership_id','user_account_id'])
+      or not birdnerd_private.is_uuid_v7(payload ->> 'membership_id')
+      or not birdnerd_private.is_uuid_v7(payload ->> 'user_account_id') then return 'membership.activated payload is invalid.'; end if;
+  elsif event_type = 'station.created' then if not birdnerd_private.has_exact_keys(payload,array['station_id'],array['fields']) then return 'station.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_station_fields(payload -> 'fields') then return 'station fields invalid.'; end if;
   elsif event_type = 'station.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['station_id','fields']) or not birdnerd_private.valid_station_fields(payload -> 'fields') then return 'station.fields-amended payload is invalid.'; end if;
   elsif event_type = 'station.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['station_id']) then return 'station.deactivated payload is invalid.'; end if;
   elsif event_type = 'station.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['station_id']) then return 'station.reactivated payload is invalid.'; end if;
@@ -248,7 +270,7 @@ begin
           result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity identity is invalid.','permanent',true);
         elsif exists (select 1 from unnest(reference_ids) as refs(reference_id) where reference_id is not null and not birdnerd_private.is_uuid_v7(reference_id)) then
           result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference is invalid.','permanent',true);
-        elsif exists (select 1 from unnest(reference_ids) with ordinality reference_id(id, position) where id is not null and exists (select 1 from birdnerd_private.entity_reference_index where entity_id=id::uuid) and not exists (select 1 from birdnerd_private.entity_reference_index where workspace_id=(event ->> 'workspace_id')::uuid and entity_id=id::uuid and entity_kind=expected_kinds[position])) then
+        elsif exists (select 1 from unnest(reference_ids) with ordinality reference_id(id, position) where id is not null and exists (select 1 from birdnerd_private.entity_reference_index where entity_id=id::uuid) and not exists (select 1 from birdnerd_private.entity_reference_index as reference_index where reference_index.workspace_id=(event ->> 'workspace_id')::uuid and reference_index.entity_id=id::uuid and reference_index.entity_kind=expected_kinds[position])) then
           result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference has the wrong Workspace or kind.','permanent',true);
         elsif exists (select 1 from unnest(reference_ids) as refs(reference_id) where reference_id is not null and not exists (select 1 from birdnerd_private.entity_reference_index where entity_id=reference_id::uuid)) then
           result := jsonb_build_object('kind','deferred','event_id',event ->> 'event_id','reason','Referenced parent is not indexed yet.','retryable',true);
