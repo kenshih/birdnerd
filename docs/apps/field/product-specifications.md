@@ -115,10 +115,13 @@ model before it becomes a shared contract.
 ### 4.4 Key Product Concepts
 
 **Band Inventory & Status:** Each managed Band retains its inventory metadata
-and lifecycle facts. Available/deployed state and deployment date are derived
-from active Banding Record facts; recaptures remain encounter history rather
-than a second deployment. Lost, destroyed, replaced, and retired facts remain
-explicitly correctable.
+(`band_number`, optional `band_size`, and optional `band_type`) plus lifecycle
+facts. No Band status is stored or manually edited. Available, deployed, lost,
+destroyed, and replaced outcomes, current species, deployment/last-seen dates,
+and encounter history are rebuilt from active Banding Record facts; a Band's
+deactivation/reactivation alone owns its inactive/retired lifecycle. Correcting
+or deactivating a source Record recomputes the inventory instead of writing a
+second status value, and Event conflict order determines competing winners.
 
 **Foreign Recaptures:** When a bander encounters a bird wearing a band not in our inventory (issued by another station/permit), the record stores the band number as free text with no FK to the Band entity (`bandId` is null). Capture Code is forced to `F` (Foreign). The band number is preserved for BBL recapture reporting but no Band record is created — we never manage another permit's bands.
 

@@ -91,6 +91,13 @@ than being converted to foreign. Band-allocation and duplicate-band-number
 conflicts remain visible with a corrective action available to any active
 Contributor.
 
+The Event-backed Inventory tab receives a displayed prefix/suffix range with
+optional size and type choices from the current Field code tables. Its overview
+and list show derived status, intrinsic metadata, current species, deployment
+and last-seen dates, and active encounter history. Contributors may correct
+intrinsic facts or deactivate/reactivate the Band, and may jump from a history
+row to correct the source Record; there is no Band-status editor.
+
 The Banding Record Net picker lists active Nets for the selected Session's
 Station. The Manage Nets effort screen and automatic `SessionNetLog`
 initialization below describe the legacy workflow and do not ship on the Phase

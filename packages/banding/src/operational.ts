@@ -4,6 +4,7 @@
  * field-level LWW. Storage, transport and React deliberately stay outside.
  */
 import { compareEventOrder, createEvent, createUuidV7, type DomainEvent, type EventType, type HybridLogicalClock, type UuidV7, type WorkspaceMembershipRole } from '@birdnerd/events'
+import { deriveBandInventory, normalizeBandNumber, type BandInventoryProjection } from './bandInventory.js'
 
 export type OperationalEntityKind = 'station' | 'net' | 'person' | 'bander' | 'band' | 'session' | 'banding-record'
 export type OperationalEntity = { id: UuidV7; kind: OperationalEntityKind; fields: Record<string, unknown>; active: boolean; field_event_ids: Record<string, string> }
@@ -14,16 +15,20 @@ export type OperationalProjection = {
   unresolved_references: readonly { event_id: string; reference_id: string; expected_kind: OperationalEntityKind }[]
   band_number_conflicts: readonly { band_number: string; band_ids: readonly UuidV7[] }[]
   band_allocation_conflicts: readonly { band_id: UuidV7; record_ids: readonly UuidV7[] }[]
+  band_inventory: BandInventoryProjection
 }
 
+export type ReceivedBand = { band_id?: UuidV7; band_number: string; band_size?: string; band_type?: string }
+type GenericCreateEntityKind = Exclude<OperationalEntityKind, 'net' | 'bander' | 'band' | 'banding-record'>
+
 export type OperationalCommand =
-  | { kind: 'create'; entity_kind: Exclude<OperationalEntityKind, 'net' | 'bander' | 'banding-record'>; entity_id?: UuidV7; fields?: Record<string, unknown> }
+  | { kind: 'create'; entity_kind: GenericCreateEntityKind; entity_id?: UuidV7; fields?: Record<string, unknown> }
   | { kind: 'create'; entity_kind: 'net'; entity_id?: UuidV7; station_id: UuidV7; fields?: Record<string, unknown> }
   | { kind: 'create'; entity_kind: 'bander'; entity_id?: UuidV7; person_id: UuidV7; fields?: Record<string, unknown> }
   | { kind: 'create'; entity_kind: 'banding-record'; entity_id?: UuidV7; session_id: UuidV7; fields?: Record<string, unknown> }
   | { kind: 'amend'; entity_kind: OperationalEntityKind; entity_id: UuidV7; fields: Record<string, unknown> }
   | { kind: 'deactivate' | 'reactivate'; entity_kind: OperationalEntityKind; entity_id: UuidV7 }
-  | { kind: 'receive-bands'; bands: readonly { band_id?: UuidV7; band_number: string; fields?: Record<string, unknown> }[] }
+  | { kind: 'receive-bands'; bands: readonly ReceivedBand[] }
   | { kind: 'set-session-crew'; session_id: UuidV7; bander_id: UuidV7; present: boolean }
   | { kind: 'link-user-account-person'; user_account_id: UuidV7; person_id?: UuidV7 }
 
@@ -32,14 +37,23 @@ export type OperationalCommandContext = { workspace_id: UuidV7; user_account_id:
 
 const ADMIN_KINDS = new Set<OperationalEntityKind>(['station', 'net', 'person', 'bander'])
 const ENTITY_ID_KEY: Record<OperationalEntityKind, string> = { station: 'station_id', net: 'net_id', person: 'person_id', bander: 'bander_id', band: 'band_id', session: 'session_id', 'banding-record': 'record_id' }
-const CREATE_TYPE: Record<OperationalEntityKind, EventType> = { station: 'station.created', net: 'net.created', person: 'person.created', bander: 'bander.created', band: 'band.received', session: 'session.created', 'banding-record': 'banding-record.created' }
+const CREATE_TYPE: Record<Exclude<OperationalEntityKind, 'band'>, EventType> = { station: 'station.created', net: 'net.created', person: 'person.created', bander: 'bander.created', session: 'session.created', 'banding-record': 'banding-record.created' }
 
 /** Decide a role-checked local command. Soft warnings never suppress facts. */
 export function decideOperationalCommand(projection: OperationalProjection, context: OperationalCommandContext, command: OperationalCommand): OperationalDecision {
+  // Keep this runtime boundary defensive for untyped callers: Band receipt has
+  // a distinct structural payload and may only enter through receive-bands.
+  if ((command as { kind: string; entity_kind?: string }).kind === 'create' && (command as { entity_kind?: string }).entity_kind === 'band') throw new Error('Bands must be created with receive-bands.')
   const eventContext = { workspace_id: context.workspace_id, command_id: context.command_id ?? createUuidV7(), occurred_at: context.occurred_at, hlc: context.hlc, actor: { kind: 'user-account' as const, user_account_id: context.user_account_id } }
   const needsAdmin = command.kind === 'link-user-account-person' || (command.kind !== 'receive-bands' && command.kind !== 'set-session-crew' && ADMIN_KINDS.has(command.entity_kind))
   if (needsAdmin && context.role !== 'admin') throw new Error('Admin role is required for Workspace configuration.')
-  if (command.kind === 'receive-bands') return { events: command.bands.map(band => createEvent({ ...eventContext, event_type: 'band.received', payload: { band_id: band.band_id ?? createUuidV7(), band_number: band.band_number, fields: band.fields ?? {} } })), warnings: [] }
+  if (command.kind === 'receive-bands') return {
+    events: command.bands.map(band => {
+      const fields = Object.fromEntries(Object.entries({ band_size: band.band_size, band_type: band.band_type }).filter(([, value]) => value !== undefined))
+      return createEvent({ ...eventContext, event_type: 'band.received', payload: { band_id: band.band_id ?? createUuidV7(), band_number: band.band_number, ...(Object.keys(fields).length ? { fields } : {}) } })
+    }),
+    warnings: [],
+  }
   if (command.kind === 'set-session-crew') return { events: [createEvent({ ...eventContext, event_type: command.present ? 'session-crew-member.added' : 'session-crew-member.removed', payload: { session_id: command.session_id, bander_id: command.bander_id } })], warnings: [] }
   if (command.kind === 'link-user-account-person') {
     if (command.person_id && (!projection.entities.get(command.person_id)?.active || projection.entities.get(command.person_id)?.kind !== 'person')) throw new Error('An Account can be linked only to an active Person in this Workspace.')
@@ -56,7 +70,7 @@ export function decideOperationalCommand(projection: OperationalProjection, cont
         : command.entity_kind === 'banding-record'
           ? { session_id: command.session_id }
           : {}
-    return { events: [createEvent({ ...eventContext, event_type: CREATE_TYPE[command.entity_kind], payload: { [idKey]: id, ...references, ...(command.entity_kind === 'band' ? { band_number: String(command.fields?.band_number ?? '') } : {}), ...(command.fields ? { fields: command.fields } : {}) } as never })], warnings: [] }
+    return { events: [createEvent({ ...eventContext, event_type: CREATE_TYPE[command.entity_kind], payload: { [idKey]: id, ...references, ...(command.fields ? { fields: command.fields } : {}) } as never })], warnings: [] }
   }
   const suffix = command.kind === 'amend' ? 'fields-amended' : command.kind === 'deactivate' ? 'deactivated' : 'reactivated'
   const event_type = `${command.entity_kind}.${suffix}` as EventType
@@ -130,10 +144,10 @@ export function projectOperationalEvents(events: readonly DomainEvent[]): Operat
     if (type === 'user-account.person-linked') addUnresolvedIfMissing(event, (event.payload as { person_id: UuidV7 }).person_id, 'person')
   }
   const byNumber = new Map<string, UuidV7[]>()
-  for (const e of entities.values()) if (e.kind === 'band' && e.active && typeof e.fields.band_number === 'string') byNumber.set(normalizeBand(e.fields.band_number), [...(byNumber.get(normalizeBand(e.fields.band_number)) ?? []), e.id])
+  for (const e of entities.values()) if (e.kind === 'band' && e.active && typeof e.fields.band_number === 'string') byNumber.set(normalizeBandNumber(e.fields.band_number), [...(byNumber.get(normalizeBandNumber(e.fields.band_number)) ?? []), e.id])
   const allocation = new Map<UuidV7, UuidV7[]>()
   for (const e of entities.values()) if (e.kind === 'banding-record' && e.active && e.fields.band_selection && typeof e.fields.band_selection === 'object') { const s = e.fields.band_selection as { kind?: string; band_id?: UuidV7 }; if (s.kind === 'managed' && s.band_id && isNewDeployment(e.fields.capture_code)) allocation.set(s.band_id, [...(allocation.get(s.band_id) ?? []), e.id]) }
-  return { entities, session_crew: new Set([...crew].filter(([, event]) => event.event_type === 'session-crew-member.added').map(([key]) => key)), person_by_user_account: new Map([...links].filter(([, link]) => link.person_id).map(([id, link]) => [id, link.person_id!])), unresolved_references: unresolved, band_number_conflicts: [...byNumber].filter(([, ids]) => ids.length > 1).map(([band_number, band_ids]) => ({ band_number, band_ids })), band_allocation_conflicts: [...allocation].filter(([, ids]) => ids.length > 1).map(([band_id, record_ids]) => ({ band_id, record_ids })) }
+  return { entities, session_crew: new Set([...crew].filter(([, event]) => event.event_type === 'session-crew-member.added').map(([key]) => key)), person_by_user_account: new Map([...links].filter(([, link]) => link.person_id).map(([id, link]) => [id, link.person_id!])), unresolved_references: unresolved, band_number_conflicts: [...byNumber].filter(([, ids]) => ids.length > 1).map(([band_number, band_ids]) => ({ band_number, band_ids })), band_allocation_conflicts: [...allocation].filter(([, ids]) => ids.length > 1).map(([band_id, record_ids]) => ({ band_id, record_ids })), band_inventory: deriveBandInventory(entities, events) }
   function addUnresolvedIfMissing(event: DomainEvent, id: UuidV7, kind: OperationalEntityKind) {
     const entity = entities.get(id)
     if (!entity || entity.kind !== kind) unresolved.push({ event_id: event.event_id, reference_id: id, expected_kind: kind })
@@ -156,5 +170,4 @@ function fieldsFrom(event: DomainEvent): Record<string, unknown> {
     : Object.keys(fields).length > 0 ? fields : Object.fromEntries(Object.entries(payload).filter(([key]) => !key.endsWith('_id')))
 }
 function isLater(candidate: DomainEvent, previous: DomainEvent | undefined): boolean { return !previous || compareEventOrder(candidate, previous) > 0 }
-function normalizeBand(value: string): string { return value.replace(/[^a-z0-9]/gi, '').toUpperCase() }
 function isNewDeployment(value: unknown): boolean { return value === '1' || value === 'N' }

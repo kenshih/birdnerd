@@ -51,9 +51,9 @@ export type EventType = "band.deactivated" | "band.fields-amended" | "band.react
 
 export type EventPayloadByType = {
   "band.deactivated": { "band_id": string }
-  "band.fields-amended": { "band_id": string; "fields": { "band_number"?: string | null } }
+  "band.fields-amended": { "band_id": string; "fields": { "band_number"?: string | null; "band_size"?: string | null; "band_type"?: string | null } }
   "band.reactivated": { "band_id": string }
-  "band.received": { "band_id": string; "band_number": string; "fields"?: { "band_number"?: string | null } }
+  "band.received": { "band_id": string; "band_number": string; "fields"?: { "band_size"?: string | null; "band_type"?: string | null } }
   "bander.created": { "bander_id": string; "person_id": string; "fields"?: { "role"?: string | null } }
   "bander.deactivated": { "bander_id": string }
   "bander.fields-amended": { "bander_id": string; "fields": { "role"?: string | null; "person_id"?: string | null } }
@@ -93,9 +93,9 @@ export type EventPayloadByType = {
 
 export type EventPayloadByTypeAndVersion = {
   "band.deactivated": { 1: { "band_id": string } }
-  "band.fields-amended": { 1: { "band_id": string; "fields": { "band_number"?: string | null } } }
+  "band.fields-amended": { 1: { "band_id": string; "fields": { "band_number"?: string | null; "band_size"?: string | null; "band_type"?: string | null } } }
   "band.reactivated": { 1: { "band_id": string } }
-  "band.received": { 1: { "band_id": string; "band_number": string; "fields"?: { "band_number"?: string | null } } }
+  "band.received": { 1: { "band_id": string; "band_number": string; "fields"?: { "band_size"?: string | null; "band_type"?: string | null } } }
   "bander.created": { 1: { "bander_id": string; "person_id": string; "fields"?: { "role"?: string | null } } }
   "bander.deactivated": { 1: { "bander_id": string } }
   "bander.fields-amended": { 1: { "bander_id": string; "fields": { "role"?: string | null; "person_id"?: string | null } } }
@@ -550,9 +550,9 @@ const LEGACY_EVENT_ENVELOPE_SCHEMA = {
 
 const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, Readonly<Record<number, unknown>>>> = {
   "band.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.deactivated v1","type":"object","required":["band_id"],"properties":{"band_id":{"type":"string"}},"additionalProperties":false} },
-  "band.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.fields-amended v1","type":"object","required":["band_id","fields"],"properties":{"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "band.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.fields-amended v1","type":"object","required":["band_id","fields"],"properties":{"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"oneOf":[{"type":"string"},{"const":null}]},"band_size":{"oneOf":[{"type":"string"},{"const":null}]},"band_type":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
   "band.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.reactivated v1","type":"object","required":["band_id"],"properties":{"band_id":{"type":"string"}},"additionalProperties":false} },
-  "band.received": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.received v1","type":"object","required":["band_id","band_number"],"properties":{"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"fields":{"type":"object","properties":{"band_number":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "band.received": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.received v1","type":"object","required":["band_id","band_number"],"properties":{"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"fields":{"type":"object","properties":{"band_size":{"oneOf":[{"type":"string"},{"const":null}]},"band_type":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
   "bander.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.created v1","type":"object","required":["bander_id","person_id"],"properties":{"bander_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"person_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"role":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
   "bander.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.deactivated v1","type":"object","required":["bander_id"],"properties":{"bander_id":{"type":"string"}},"additionalProperties":false} },
   "bander.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.fields-amended v1","type":"object","required":["bander_id","fields"],"properties":{"bander_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"role":{"oneOf":[{"type":"string"},{"const":null}]},"person_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },

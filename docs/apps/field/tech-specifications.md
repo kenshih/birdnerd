@@ -539,6 +539,14 @@ imports that mutable format into the Event Log.
   unresolved reference. Deployment is derived from active Record facts, and
   projections surface both incompatible new-deployment claims and duplicate
   normalized band-number claims.
+- `band.received` retains a structural Band ID/number plus optional `band_size`
+  and `band_type`; one typed batch command emits one independently retryable
+  Event per Band under one command ID. `band.fields-amended` uses field-level
+  HLC/LWW and `null` explicit clears for those intrinsic facts. The rebuildable
+  Band-inventory projection exposes status, current species, deployment and
+  last-seen dates, and ordered encounters. Status is never persisted: active
+  Record capture/replacement facts derive it, while Band lifecycle Events alone
+  derive inactivity, so correcting or deactivating a source fact recomputes it.
 - Supabase append admission applies a static Event-type minimum-role table and
   a minimum entity-ID/kind/Workspace reference index. Known wrong-kind or
   cross-Workspace references are permanent rejections; an unknown dependency

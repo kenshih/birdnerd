@@ -1,5 +1,5 @@
 begin;
-select plan(25);
+select plan(29);
 
 select has_table('birdnerd_private', 'entity_reference_index', 'private entity-reference admission index exists');
 select ok((select relrowsecurity from pg_class where oid = 'birdnerd_private.entity_reference_index'::regclass), 'entity-reference index uses RLS defense in depth');
@@ -76,6 +76,46 @@ select ok(
     'actor',jsonb_build_object('kind','user-account','user_account_id','018f8c7b-0000-7000-8000-000000000204'),
     'payload',jsonb_build_object('record_id','018f8c7b-0000-7000-8000-000000000222','session_id','018f8c7b-0000-7000-8000-000000000205','fields',jsonb_build_object('band_selection',jsonb_build_object('kind','managed','band_id','not-a-uuid','band_number','1234')))
   )) is not null, 'Banding Record v2 rejects malformed managed selection references'
+);
+
+select is(
+  birdnerd_private.validate_event(jsonb_build_object(
+    'event_id','018f8c7b-0000-7000-8000-000000000223','event_type','band.received','event_schema_version',1,'event_envelope_version',2,
+    'workspace_id','018f8c7b-0000-7000-8000-000000000202','command_id','018f8c7b-0000-7000-8000-000000000224','occurred_at','2026-08-21T12:00:00.000Z',
+    'hlc',jsonb_build_object('physical_ms',1787313600000,'logical',0),
+    'actor',jsonb_build_object('kind','user-account','user_account_id','018f8c7b-0000-7000-8000-000000000204'),
+    'payload',jsonb_build_object('band_id','018f8c7b-0000-7000-8000-000000000225','band_number','1154-81501','fields',jsonb_build_object('band_size','1B','band_type','Standard'))
+  )), null, 'Band receipt accepts optional intrinsic size and type metadata'
+);
+
+select ok(
+  birdnerd_private.validate_event(jsonb_build_object(
+    'event_id','018f8c7b-0000-7000-8000-000000000260','event_type','band.received','event_schema_version',1,'event_envelope_version',2,
+    'workspace_id','018f8c7b-0000-7000-8000-000000000202','command_id','018f8c7b-0000-7000-8000-000000000261','occurred_at','2026-08-21T12:00:00.000Z',
+    'hlc',jsonb_build_object('physical_ms',1787313600000,'logical',0),
+    'actor',jsonb_build_object('kind','user-account','user_account_id','018f8c7b-0000-7000-8000-000000000204'),
+    'payload',jsonb_build_object('band_id','018f8c7b-0000-7000-8000-000000000262','band_number','1154-81501','fields',jsonb_build_object('band_number','1154-81502'))
+  )) is not null, 'Band receipt rejects a nested band_number outside the portable Contract'
+);
+
+select is(
+  birdnerd_private.validate_event(jsonb_build_object(
+    'event_id','018f8c7b-0000-7000-8000-000000000226','event_type','band.fields-amended','event_schema_version',1,'event_envelope_version',2,
+    'workspace_id','018f8c7b-0000-7000-8000-000000000202','command_id','018f8c7b-0000-7000-8000-000000000227','occurred_at','2026-08-21T12:00:00.000Z',
+    'hlc',jsonb_build_object('physical_ms',1787313600000,'logical',0),
+    'actor',jsonb_build_object('kind','user-account','user_account_id','018f8c7b-0000-7000-8000-000000000204'),
+    'payload',jsonb_build_object('band_id','018f8c7b-0000-7000-8000-000000000225','fields',jsonb_build_object('band_size',null,'band_type','Lock-on'))
+  )), null, 'Band amendment accepts explicit metadata clears'
+);
+
+select ok(
+  birdnerd_private.validate_event(jsonb_build_object(
+    'event_id','018f8c7b-0000-7000-8000-000000000228','event_type','band.fields-amended','event_schema_version',1,'event_envelope_version',2,
+    'workspace_id','018f8c7b-0000-7000-8000-000000000202','command_id','018f8c7b-0000-7000-8000-000000000229','occurred_at','2026-08-21T12:00:00.000Z',
+    'hlc',jsonb_build_object('physical_ms',1787313600000,'logical',0),
+    'actor',jsonb_build_object('kind','user-account','user_account_id','018f8c7b-0000-7000-8000-000000000204'),
+    'payload',jsonb_build_object('band_id','018f8c7b-0000-7000-8000-000000000225','fields',jsonb_build_object('status','deployed'))
+  )) is not null, 'Band amendment rejects mutable status state'
 );
 
 create temp table phase31_fixture as

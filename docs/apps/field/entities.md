@@ -69,8 +69,12 @@ Banding Record. Deactivation is lifecycle state rather than deletion.
 `SessionNetLog` is not in the Phase 31 projection; an active Net may still be
 referenced from a Banding Record through its Session's Station. Managed Band
 selection references a Band ID, foreign selection stores free text, and
-unbanded is explicit. Band deployment and both allocation/number conflicts are
-derived from current active facts.
+unbanded is explicit. A managed Band stores its number and optional size/type,
+but never a mutable status. Available/deployed/lost/destroyed/replaced state,
+species, dates, and encounter history derive from active Banding Record facts;
+inactive state derives from Band lifecycle Events. Event order resolves any
+competing winner, and corrections or deactivations rebuild the result. Both
+allocation/number conflicts are likewise derived from current active facts.
 
 ## Color Coding Conventions
 

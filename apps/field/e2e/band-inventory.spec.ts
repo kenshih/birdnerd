@@ -10,7 +10,7 @@ import { openBandInventory } from './helpers'
 test('added bands appear by size+type, list in full, and group into strings', async ({ page }) => {
   await openBandInventory(page)
 
-  // Product-red: Phase 31 receiving must retain batch range, size, and type.
+  // Phase 31 receiving retains batch range, size, and type.
   const prefix = page.getByLabel('Prefix', { exact: true })
   await expect(prefix).toBeVisible()
   await prefix.fill('1154')
@@ -19,8 +19,9 @@ test('added bands appear by size+type, list in full, and group into strings', as
   await page.getByLabel('Band Size', { exact: true }).selectOption('1B')
   await page.getByLabel('Band type', { exact: true }).selectOption('Lock-on')
   await page.getByRole('button', { name: /^Add 5 Bands$/ }).click()
-  await expect(page.getByText('By Size & Type')).toBeVisible()
-  await expect(page.getByText('Lock-on')).toBeVisible()
+  const sizeTypeSummary = page.getByRole('heading', { name: 'By Size & Type', exact: true }).locator('..')
+  await expect(sizeTypeSummary).toContainText('1B · Lock-on')
+  await expect(sizeTypeSummary).toContainText('5 available')
   await expect(page.getByText('Export Inventory (CSV)')).toBeVisible()
 
   await page.getByRole('button', { name: /View All Bands/i }).click()

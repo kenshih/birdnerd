@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEvent } from '@birdnerd/events'
-import { decideOperationalCommand, projectOperationalEvents } from './operational.js'
+import { decideOperationalCommand, projectOperationalEvents, type OperationalCommand } from './operational.js'
 
 const workspace_id = '018f8c7b-0000-7000-8000-000000000001'
 const actor = '018f8c7b-0000-7000-8000-000000000002'
@@ -21,6 +21,31 @@ describe('operational Module', () => {
       kind: 'create', entity_kind: 'net', entity_id: '018f8c7b-0000-7000-8000-000000000009', station_id, fields: { label: 'N1' },
     })
     expect(decision.events[0]).toMatchObject({ event_type: 'net.created', payload: { station_id, fields: { label: 'N1' } } })
+  })
+
+  it('receives a typed metadata batch as independently retryable Events under one command', () => {
+    const decision = decideOperationalCommand(projectOperationalEvents([]), context, {
+      kind: 'receive-bands',
+      bands: [
+        { band_id: '018f8c7b-0000-7000-8000-000000000014', band_number: '1154-81501', band_size: '1B', band_type: 'Standard' },
+        { band_id: '018f8c7b-0000-7000-8000-000000000015', band_number: '1154-81502', band_size: '1B', band_type: 'Standard' },
+      ],
+    })
+
+    expect(decision.events).toHaveLength(2)
+    expect(new Set(decision.events.map(event => event.event_id)).size).toBe(2)
+    expect(new Set(decision.events.map(event => event.command_id))).toEqual(new Set([context.command_id]))
+    expect(decision.events[0]).toMatchObject({
+      event_type: 'band.received',
+      payload: { band_number: '1154-81501', fields: { band_size: '1B', band_type: 'Standard' } },
+    })
+  })
+
+  it('rejects generic Band creation at the runtime boundary', () => {
+    const legacyUntypedCommand = {
+      kind: 'create', entity_kind: 'band', fields: { band_number: '1154-81501' },
+    } as unknown as OperationalCommand
+    expect(() => decideOperationalCommand(projectOperationalEvents([]), context, legacyUntypedCommand)).toThrow('receive-bands')
   })
 
   it('replays fields by HLC/event ID without letting an amendment reactivate an entity', () => {

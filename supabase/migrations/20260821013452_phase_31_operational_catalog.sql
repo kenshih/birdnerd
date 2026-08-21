@@ -1,4 +1,4 @@
--- event-contract-sha256: 50ca9f27943ab05b7b5c9dd9e1355a9f594a95499e0699138ac1ef1358ba8c07
+-- event-contract-sha256: 590e8e229c105dabd38a45c92dbf2d5b159dd36918c60a8817f78637b39faf74
 -- Phase 31 keeps these admission aids private: they are not a business
 -- projection and receive no Data API/browser table grants.
 create table birdnerd_private.entity_reference_index (
@@ -98,8 +98,12 @@ $$;
 create or replace function birdnerd_private.valid_bander_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
   select birdnerd_private.valid_optional_fields(fields, array['role','person_id'], array['role'], array[]::text[], array[]::text[], array['person_id']);
 $$;
-create or replace function birdnerd_private.valid_band_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
-  select birdnerd_private.valid_optional_fields(fields, array['band_number'], array['band_number'], array[]::text[], array[]::text[], array[]::text[]);
+create or replace function birdnerd_private.valid_band_fields(fields jsonb, allow_band_number boolean default true) returns boolean language sql immutable set search_path='' as $$
+  select birdnerd_private.valid_optional_fields(
+    fields,
+    case when allow_band_number then array['band_number','band_size','band_type'] else array['band_size','band_type'] end,
+    case when allow_band_number then array['band_number','band_size','band_type'] else array['band_size','band_type'] end,
+    array[]::text[], array[]::text[], array[]::text[]);
 $$;
 create or replace function birdnerd_private.valid_banding_record_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
   select birdnerd_private.valid_optional_fields(fields,
@@ -161,7 +165,7 @@ begin
   elsif event_type = 'bander.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['bander_id','fields']) or not birdnerd_private.valid_bander_fields(payload -> 'fields') then return 'bander.fields-amended payload is invalid.'; end if;
   elsif event_type = 'bander.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['bander_id']) then return 'bander.deactivated payload is invalid.'; end if;
   elsif event_type = 'bander.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['bander_id']) then return 'bander.reactivated payload is invalid.'; end if;
-  elsif event_type = 'band.received' then if not birdnerd_private.has_exact_keys(payload,array['band_id','band_number'],array['fields']) then return 'band.received payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_band_fields(payload -> 'fields') then return 'band fields invalid.'; end if;
+  elsif event_type = 'band.received' then if not birdnerd_private.has_exact_keys(payload,array['band_id','band_number'],array['fields']) then return 'band.received payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_band_fields(payload -> 'fields', false) then return 'band fields invalid.'; end if;
   elsif event_type = 'band.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['band_id','fields']) or not birdnerd_private.valid_band_fields(payload -> 'fields') then return 'band.fields-amended payload is invalid.'; end if;
   elsif event_type = 'band.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['band_id']) then return 'band.deactivated payload is invalid.'; end if;
   elsif event_type = 'band.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['band_id']) then return 'band.reactivated payload is invalid.'; end if;

@@ -19,6 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   Membership/entity-reference indexes and least-privilege Provisioner lifecycle
   commands. Legacy mutable routes are unlinked but retained without migration
   or deletion until the documented two-Station acceptance passes.
+  Event-backed Band Inventory now retains optional size/type across typed batch
+  receipt and metadata corrections, and derives status, species, dates, and
+  encounter history from active Record and Band-lifecycle facts instead of a
+  manually editable Band status.
 - Field 0.30.0 — **Supabase Event Exchange & Collaboration Pilot.** Invited
   Google users can claim one Workspace, append immutable pilot Session and
   Banding Record Events while offline, and synchronize through authenticated

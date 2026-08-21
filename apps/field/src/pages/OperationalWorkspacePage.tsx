@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { decideOperationalCommand, projectOperationalEvents, type OperationalEntity, type OperationalEntityKind } from '@birdnerd/banding'
+import { decideOperationalCommand, projectOperationalEvents, type BandInventoryItem, type OperationalEntity, type OperationalEntityKind } from '@birdnerd/banding'
 import { createUuidV7 } from '@birdnerd/events'
 import type { SyncStatus } from '@birdnerd/sync-state'
 import {
-  AGE_CODES, BIRD_STATUS_CODES, BP_CODES, CAPTURE_STATUS_CODES, CP_CODES,
+  AGE_CODES, BAND_SIZE_CODES, BAND_TYPE_CODES, BIRD_STATUS_CODES, BP_CODES, CAPTURE_STATUS_CODES, CP_CODES,
   DISPOSITION_CODES, FAT_CODES, FF_MOLT_CODES, FF_WEAR_CODES, HOW_AGED_CODES,
   HOW_SEXED_CODES, JUV_BODY_PLUMAGE_CODES, MOLT_CODES, MOLT_LIMITS_CODES,
   PRESENT_CONDITION_CODES, SEX_CODES, SKULL_CODES, WRP_CODES,
@@ -11,6 +11,7 @@ import {
 import PageHeader from '../components/PageHeader'
 import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
 import { getFieldCollaboration } from '../sync/fieldCollaboration'
+import { expandBandRange } from '../utils/bandBatch'
 
 type Tab = 'sessions' | 'records' | 'inventory' | 'configuration'
 type BandMode = 'unbanded' | 'foreign' | 'managed'
@@ -56,8 +57,15 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const [banderPersonId, setBanderPersonId] = useState('')
   const [banderRole, setBanderRole] = useState('Bander')
   const [editingBanderId, setEditingBanderId] = useState('')
+  const [bandPrefix, setBandPrefix] = useState('')
+  const [bandStartSuffix, setBandStartSuffix] = useState('')
+  const [bandEndSuffix, setBandEndSuffix] = useState('')
   const [bandNumber, setBandNumber] = useState('')
+  const [bandSize, setBandSize] = useState('')
+  const [bandType, setBandType] = useState('')
   const [editingBandId, setEditingBandId] = useState('')
+  const [selectedBandHistoryId, setSelectedBandHistoryId] = useState('')
+  const [showBandStrings, setShowBandStrings] = useState(false)
   const [linkUserAccountId, setLinkUserAccountId] = useState('')
   const [linkPersonId, setLinkPersonId] = useState('')
 
@@ -78,7 +86,12 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const stations = active('station')
   const sessions = active('session').sort((a, b) => text(b.fields.session_date).localeCompare(text(a.fields.session_date)))
   const bands = active('band').sort((a, b) => text(a.fields.band_number).localeCompare(text(b.fields.band_number)))
-  const inventoryBands = entities.filter(entity => entity.kind === 'band').sort((a, b) => text(a.fields.band_number).localeCompare(text(b.fields.band_number)))
+  const inventoryBands = [...projection.band_inventory.values()].sort((a, b) => a.band_number.localeCompare(b.band_number, undefined, { numeric: true }))
+  const inventoryCounts = inventoryBands.reduce<Record<string, number>>((counts, band) => ({ ...counts, [band.status]: (counts[band.status] ?? 0) + 1 }), {})
+  const inventoryBySizeType = summarizeInventory(inventoryBands)
+  const inventoryStrings = bandStrings(inventoryBands)
+  const selectedInventoryBand = projection.band_inventory.get(selectedBandHistoryId)
+  const pendingBandRange = expandBandRange({ prefix: bandPrefix, start_suffix: bandStartSuffix, end_suffix: bandEndSuffix })
   const people = active('person')
   const banders = active('bander').filter(bander => people.some(person => person.id === bander.fields.person_id)).sort((a, b) => ROLE_ORDER[text(a.fields.role)] - ROLE_ORDER[text(b.fields.role)] || banderLabel(a, people).localeCompare(banderLabel(b, people)))
   const linkedBander = banders.find(bander => bander.fields.person_id === projection.person_by_user_account.get(access.user_account_id))
@@ -86,7 +99,6 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const selectedStationId = text(selectedSession?.fields.station_id)
   const stationNets = active('net').filter(net => text(net.fields.station_id) === selectedStationId).sort((a, b) => text(a.fields.label).localeCompare(text(b.fields.label), undefined, { numeric: true }))
   const sessionRecords = active('banding-record').filter(record => !sessionId || text(record.fields.session_id) === sessionId)
-  const managedDeployments = new Map<string, OperationalEntity[]>(bands.map(band => [band.id, active('banding-record').filter(record => managedBandIdFrom(record) === band.id && isNewDeployment(record.fields.capture_code))]))
 
   async function perform(work: () => Promise<void>) {
     setError(undefined); setSaving(true)
@@ -145,7 +157,7 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   }
   function selectManagedBand(id: string) {
     setManagedBandId(id)
-    const deployed = (managedDeployments.get(id)?.length ?? 0) > 0
+    const deployed = projection.band_inventory.get(id)?.status === 'deployed'
     setRecordDraft(draft => ({ ...draft, capture_code: deployed ? 'R' : '1' }))
   }
   function beginSessionEdit(id: string) {
@@ -163,7 +175,25 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   }
   function createStation(event: FormEvent) { event.preventDefault(); void perform(async () => { if (editingStationId) await decide({ kind: 'amend', entity_kind: 'station', entity_id: editingStationId, fields: { name: stationName.trim() || null } }); else await decide({ kind: 'create', entity_kind: 'station', fields: compact({ name: stationName.trim() }) }); setStationName(''); setEditingStationId('') }) }
   function createNet(event: FormEvent) { event.preventDefault(); if (!netStationId) return; void perform(async () => { if (editingNetId) await decide({ kind: 'amend', entity_kind: 'net', entity_id: editingNetId, fields: { label: netLabel.trim() || null, station_id: netStationId } }); else await decide({ kind: 'create', entity_kind: 'net', station_id: netStationId, fields: compact({ label: netLabel.trim() }) }); setNetLabel(''); setNetStationId(''); setEditingNetId('') }) }
-  function receiveBand(event: FormEvent) { event.preventDefault(); void perform(async () => { if (editingBandId) await decide({ kind: 'amend', entity_kind: 'band', entity_id: editingBandId, fields: { band_number: bandNumber.trim() || null } }); else await decide({ kind: 'receive-bands', bands: [{ band_number: bandNumber.trim() }] }); setBandNumber(''); setEditingBandId('') }) }
+  function receiveBand(event: FormEvent) {
+    event.preventDefault()
+    void perform(async () => {
+      if (editingBandId) {
+        const current = projection.entities.get(editingBandId)
+        if (!current) throw new Error('Band no longer exists.')
+        const fields = { band_number: bandNumber.trim() || null, band_size: bandSize || null, band_type: bandType || null }
+        const changes = changedFields(current.fields, fields)
+        if (Object.keys(changes).length) await decide({ kind: 'amend', entity_kind: 'band', entity_id: editingBandId, fields: changes })
+      } else {
+        const range = bandNumber.trim()
+          ? { band_numbers: [bandNumber.trim()] }
+          : expandBandRange({ prefix: bandPrefix, start_suffix: bandStartSuffix, end_suffix: bandEndSuffix })
+        if ('error' in range && range.error) throw new Error(range.error)
+        await decide({ kind: 'receive-bands', bands: range.band_numbers.map(band_number => ({ band_number, ...(bandSize ? { band_size: bandSize } : {}), ...(bandType ? { band_type: bandType } : {}) })) })
+      }
+      resetBandForm()
+    })
+  }
   function createPerson(event: FormEvent) { event.preventDefault(); void perform(async () => { if (editingPersonId) await decide({ kind: 'amend', entity_kind: 'person', entity_id: editingPersonId, fields: { name: personName.trim() || null, initials: personInitials.trim().toUpperCase() || null } }); else await decide({ kind: 'create', entity_kind: 'person', fields: compact({ name: personName.trim(), initials: personInitials.trim().toUpperCase() }) }); setPersonName(''); setPersonInitials(''); setEditingPersonId('') }) }
   function createBander(event: FormEvent) { event.preventDefault(); if (!banderPersonId) return; void perform(async () => { if (editingBanderId) await decide({ kind: 'amend', entity_kind: 'bander', entity_id: editingBanderId, fields: { person_id: banderPersonId, role: banderRole } }); else await decide({ kind: 'create', entity_kind: 'bander', person_id: banderPersonId, fields: { role: banderRole } }); setBanderPersonId(''); setEditingBanderId('') }) }
   function beginConfigurationEdit(entity: OperationalEntity) {
@@ -171,7 +201,7 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
     if (entity.kind === 'net') { setEditingNetId(entity.id); setNetLabel(text(entity.fields.label)); setNetStationId(text(entity.fields.station_id)); return }
     if (entity.kind === 'person') { setEditingPersonId(entity.id); setPersonName(text(entity.fields.name)); setPersonInitials(text(entity.fields.initials)); return }
     if (entity.kind === 'bander') { setEditingBanderId(entity.id); setBanderPersonId(text(entity.fields.person_id)); setBanderRole(text(entity.fields.role) || 'Bander'); return }
-    if (entity.kind === 'band') { setEditingBandId(entity.id); setBandNumber(text(entity.fields.band_number)) }
+    if (entity.kind === 'band') { setEditingBandId(entity.id); setBandNumber(text(entity.fields.band_number)); setBandSize(text(entity.fields.band_size)); setBandType(text(entity.fields.band_type)) }
   }
   function toggleCrew(banderId: string) {
     if (!editingSessionId) { setPlannedCrew(current => { const next = new Set(current); if (next.has(banderId)) next.delete(banderId); else next.add(banderId); return next }); return }
@@ -180,6 +210,16 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   }
   function linkPerson(event: FormEvent) { event.preventDefault(); const user_account_id = linkUserAccountId.trim() || access.user_account_id; void perform(async () => { await decide({ kind: 'link-user-account-person', user_account_id, person_id: linkPersonId || undefined }); setLinkUserAccountId(''); setLinkPersonId('') }) }
   function correctRecord(recordId: string) { setTab('records'); setSessionId(text(projection.entities.get(recordId)?.fields.session_id)); beginRecordEdit(recordId) }
+  function resetBandForm() { setEditingBandId(''); setBandNumber(''); setBandPrefix(''); setBandStartSuffix(''); setBandEndSuffix(''); setBandSize(''); setBandType('') }
+  function exportInventory() {
+    const blob = new Blob([inventoryCsv(inventoryBands)], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `birdnerd_band_inventory_${today()}.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
+  }
 
   return <main style={styles.page}>
     <PageHeader title="Field Data" onHome={onHome} />
@@ -207,7 +247,7 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
         <FormSection title="Identity"><FormRow><TextField label="Species code"><input value={text(recordDraft.species_code)} onChange={event => updateRecord('species_code', event.target.value.toUpperCase())} /></TextField><SelectField label="Capture code" value={text(recordDraft.capture_code)} onChange={value => updateRecord('capture_code', value)} options={CAPTURE_STATUS_CODES} /></FormRow>
           <SelectField label="Band selection" value={bandMode} onChange={value => selectBandMode(value as BandMode)} options={[{ code: 'unbanded', label: 'Unbanded' }, { code: 'foreign', label: 'Foreign recapture' }, { code: 'managed', label: 'Managed inventory' }]} />
           {bandMode === 'foreign' && <TextField label="Foreign band number"><input value={foreignBandNumber} onChange={event => setForeignBandNumber(event.target.value)} /></TextField>}
-          {bandMode === 'managed' && <><SelectField label="Managed Band" value={managedBandId} onChange={selectManagedBand} options={bands.map(band => ({ code: band.id, label: `${text(band.fields.band_number)}${(managedDeployments.get(band.id)?.length ?? 0) ? ' — deployed; Recapture selected' : ''}` }))} />{!managedBandId && <p style={styles.warning}>Choose a known inventory Band. Do not classify an unavailable local Band as foreign; sync or correct it later.</p>}</>}
+          {bandMode === 'managed' && <><SelectField label="Managed Band" value={managedBandId} onChange={selectManagedBand} options={bands.filter(band => ['available', 'deployed'].includes(projection.band_inventory.get(band.id)?.status ?? '') || band.id === managedBandId).map(band => ({ code: band.id, label: `${text(band.fields.band_number)} — ${projection.band_inventory.get(band.id)?.status ?? 'unresolved'}` }))} />{!managedBandId && <p style={styles.warning}>Choose a known inventory Band. Do not classify an unavailable local Band as foreign; sync or correct it later.</p>}</>}
           {text(recordDraft.capture_code) === 'R' && <FormRow><SelectField label="Present Condition" value={text(recordDraft.present_condition)} onChange={value => updateRecord('present_condition', value)} options={PRESENT_CONDITION_CODES} /><TextField label="Replaced Band #"><input value={text(recordDraft.replaced_band_number)} onChange={event => updateRecord('replaced_band_number', event.target.value)} /></TextField></FormRow>}
           <FormRow><SelectField label="Age" value={text(recordDraft.age)} onChange={value => updateRecord('age', value)} options={AGE_CODES} /><SelectField label="How Aged" value={text(recordDraft.how_aged)} onChange={value => updateRecord('how_aged', value)} options={HOW_AGED_CODES} /></FormRow><FormRow><SelectField label="Sex" value={text(recordDraft.sex)} onChange={value => updateRecord('sex', value)} options={SEX_CODES} /><SelectField label="How Sexed" value={text(recordDraft.how_sexed)} onChange={value => updateRecord('how_sexed', value)} options={HOW_SEXED_CODES} /></FormRow><FormRow><SelectField label="How Aged (2nd)" value={text(recordDraft.how_aged_2)} onChange={value => updateRecord('how_aged_2', value)} options={HOW_AGED_CODES} /><SelectField label="How Sexed (2nd)" value={text(recordDraft.how_sexed_2)} onChange={value => updateRecord('how_sexed_2', value)} options={HOW_SEXED_CODES} /></FormRow><SelectField label="WRP" value={text(recordDraft.wrp)} onChange={value => updateRecord('wrp', value)} options={WRP_CODES} />
         </FormSection>
@@ -220,7 +260,26 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
       <EntityList title="Banding Records" entities={entities.filter(entity => entity.kind === 'banding-record' && (!sessionId || text(entity.fields.session_id) === sessionId))} detail={entity => recordLabel(entity, bands)} onDeactivate={entity => void perform(() => decide({ kind: entity.active ? 'deactivate' : 'reactivate', entity_kind: 'banding-record', entity_id: entity.id }))} onCorrect={correctRecord} />
       <ConflictPanels projection={projection} bands={bands} onCorrect={correctRecord} />
     </>}
-    {tab === 'inventory' && <><form style={styles.card} onSubmit={receiveBand}><h2>{editingBandId ? 'Amend Band' : 'Receive Band'}</h2><label>Band number<input value={bandNumber} onChange={event => setBandNumber(event.target.value)} /></label><p style={styles.hint}>Band number is optional; enter it when available so duplicate-number conflicts can be surfaced.</p><button disabled={saving}>Save offline</button>{editingBandId && <button type="button" onClick={() => { setEditingBandId(''); setBandNumber('') }}>Cancel amendment</button>}</form><EntityList title="Inventory" entities={inventoryBands} detail={entity => text(entity.fields.band_number) || entity.id} onCorrect={id => { const entity = projection.entities.get(id); if (entity) beginConfigurationEdit(entity) }} onDeactivate={entity => void perform(() => decide({ kind: entity.active ? 'deactivate' : 'reactivate', entity_kind: 'band', entity_id: entity.id }))} /><ConflictPanels projection={projection} bands={bands} onCorrect={correctRecord} /></>}
+    {tab === 'inventory' && <>
+      <form style={styles.card} onSubmit={receiveBand}><h2>{editingBandId ? 'Amend Band' : 'Receive Band'}</h2>
+        <TextField label="Band number"><input value={bandNumber} onChange={event => setBandNumber(event.target.value)} placeholder="One displayed Band number" /></TextField>
+        {!editingBandId && <><p style={styles.hint}>Or receive a displayed prefix/suffix range:</p><TextField label="Prefix"><input inputMode="numeric" value={bandPrefix} onChange={event => setBandPrefix(event.target.value.replace(/\D/g, '').slice(0, 4))} placeholder="4 digits, e.g. 1154" /></TextField><FormRow><TextField label="Start"><input inputMode="numeric" value={bandStartSuffix} onChange={event => setBandStartSuffix(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="81501" /></TextField><TextField label="End"><input inputMode="numeric" value={bandEndSuffix} onChange={event => setBandEndSuffix(event.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="81550" /></TextField></FormRow></>}
+        <FormRow><SelectField label="Band Size" value={bandSize} onChange={setBandSize} options={BAND_SIZE_CODES} /><SelectField label="Band type" value={bandType} onChange={setBandType} options={BAND_TYPE_CODES} /></FormRow>
+        {!editingBandId && pendingBandRange.band_numbers.length > 0 && <p style={styles.hint}>Preview: {pendingBandRange.band_numbers[0]} to {pendingBandRange.band_numbers[pendingBandRange.band_numbers.length - 1]} ({pendingBandRange.band_numbers.length} band{pendingBandRange.band_numbers.length === 1 ? '' : 's'})</p>}
+        <p style={styles.hint}>Size and type are optional intrinsic facts. Operational status is derived from active Banding Records and cannot be edited here.</p>
+        <button disabled={saving}>{editingBandId || bandNumber.trim() ? 'Save offline' : `Add ${pendingBandRange.band_numbers.length || 0} Band${pendingBandRange.band_numbers.length === 1 ? '' : 's'}`}</button>{editingBandId && <button type="button" onClick={resetBandForm}>Cancel amendment</button>}
+      </form>
+      <section style={styles.card}><h2>Inventory overview</h2><div style={styles.summaryGrid}><InventoryCount label="Total" count={inventoryBands.length} /><InventoryCount label="Available" count={inventoryCounts.available ?? 0} /><InventoryCount label="Deployed" count={inventoryCounts.deployed ?? 0} /><InventoryCount label="Lost / destroyed / replaced" count={(inventoryCounts.lost ?? 0) + (inventoryCounts.destroyed ?? 0) + (inventoryCounts.replaced ?? 0)} /><InventoryCount label="Inactive" count={inventoryCounts.inactive ?? 0} /></div></section>
+      {inventoryBySizeType.length > 0 && <section style={styles.card}><h2>By Size &amp; Type</h2>{inventoryBySizeType.map(item => <div key={`${item.size}-${item.type}`} style={styles.row}><span>{item.size || 'Size not entered'} · {item.type || 'Type not entered'}</span><span>{item.available} available · {item.deployed} deployed · {item.total} total</span></div>)}</section>}
+      <span style={styles.actions}><button type="button" onClick={() => setShowBandStrings(true)}>View All Bands</button><button type="button" disabled={inventoryBands.length === 0} onClick={exportInventory}>Export Inventory (CSV)</button></span>
+      {showBandStrings && <details open style={styles.card}><summary>Strings by 100s ({inventoryStrings.length})</summary>{inventoryStrings.length === 0 ? <p>No numeric Band strings.</p> : inventoryStrings.map(item => <div key={`${item.prefix}-${item.hundred}`} style={styles.row}><span>{item.label}</span><span>{item.available}/{item.total} available</span></div>)}</details>}
+      <section style={styles.card}><h2>Inventory</h2>{inventoryBands.length === 0 ? <p>None yet.</p> : inventoryBands.map(item => {
+        const entity = projection.entities.get(item.band_id)
+        return <div key={item.band_id} style={styles.inventoryRow}><div><strong>{item.band_number || item.band_id}</strong><div style={styles.hint}>{[item.band_size, item.band_type, item.status].filter(Boolean).join(' · ')}{item.active ? '' : ' · (inactive)'}</div><div style={styles.hint}>{item.encounters.length} encounter{item.encounters.length === 1 ? '' : 's'}</div>{(item.current_species || item.deployment_date || item.last_seen_date) && <div style={styles.hint}>{item.current_species ? `Current species ${item.current_species}` : ''}{item.deployment_date ? ` · deployed ${item.deployment_date}` : ''}{item.last_seen_date ? ` · last seen ${item.last_seen_date}` : ''}</div>}</div><span style={styles.actions}><button type="button" onClick={() => setSelectedBandHistoryId(selectedBandHistoryId === item.band_id ? '' : item.band_id)}>{selectedBandHistoryId === item.band_id ? 'Hide history' : `History (${item.encounters.length})`}</button>{entity && <><button type="button" onClick={() => beginConfigurationEdit(entity)}>Correct</button><button type="button" onClick={() => void perform(() => decide({ kind: entity.active ? 'deactivate' : 'reactivate', entity_kind: 'band', entity_id: entity.id }))}>{entity.active ? 'Deactivate' : 'Reactivate'}</button></>}</span></div>
+      })}</section>
+      {selectedInventoryBand && <BandHistory band={selectedInventoryBand} onCorrectRecord={correctRecord} />}
+      <ConflictPanels projection={projection} bands={bands} onCorrect={correctRecord} />
+    </>}
     {tab === 'configuration' && (access.role === 'admin' ? <>
       <form style={styles.card} onSubmit={createStation}><h2>{editingStationId ? 'Amend Station' : 'Station'}</h2><label>Name<input value={stationName} onChange={event => setStationName(event.target.value)} /></label><button disabled={saving}>Save offline</button></form>
       <form style={styles.card} onSubmit={createNet}><h2>{editingNetId ? 'Amend Net' : 'Net'}</h2><SelectField label="Station" value={netStationId} onChange={setNetStationId} options={stations.map(station => ({ code: station.id, label: text(station.fields.name) || station.id }))} /><label>Label<input value={netLabel} onChange={event => setNetLabel(event.target.value)} /></label><button disabled={saving || !netStationId}>Save offline</button></form>
@@ -239,9 +298,11 @@ function WeatherSection({ title, draft, prefix, update }: { title: string; draft
 function CodeGrid({ draft, update }: { draft: Draft; update: (key: string, value: string | boolean) => void }) { const fields = [['molt_limits_p_covs', 'P Covs'], ['molt_limits_s_covs', 'G Covs'], ['molt_limits_alula', 'Alula'], ['molt_limits_pp', 'PP'], ['molt_limits_ss', 'SS'], ['molt_limits_tert', 'Tert'], ['molt_limits_rec', 'Rec'], ['molt_limits_body_plum', 'Body Plum'], ['molt_limits_non_feather', 'Non-Feather']] as const; return <div style={styles.grid}>{fields.map(([field, label]) => <SelectField key={field} label={label} value={text(draft[field])} onChange={value => update(field, value)} options={MOLT_LIMITS_CODES} />)}</div> }
 function NumberField({ label, field, draft, update, step = '1' }: { label: string; field: string; draft: Draft; update: (key: string, value: string) => void; step?: string }) { return <TextField label={label}><input type="number" step={step} value={text(draft[field])} onChange={event => update(field, event.target.value)} /></TextField> }
 function TextField({ label, children }: { label: string; children: React.ReactNode }) { return <label style={styles.field}><span>{label}</span>{children}</label> }
-function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: readonly Code[] }) { return <TextField label={label}><select value={value} onChange={event => onChange(event.target.value)}><option value="">—</option>{options.map(option => <option key={option.code} value={option.code}>{option.code === option.label ? option.label : `${option.code} — ${option.label}`}</option>)}</select></TextField> }
+function SelectField({ label, value, onChange, options }: { label: string; value: string; onChange: (value: string) => void; options: readonly Code[] }) { return <TextField label={label}><select aria-label={label} value={value} onChange={event => onChange(event.target.value)}><option value="">—</option>{options.map(option => <option key={option.code} value={option.code}>{option.code === option.label ? option.label : `${option.code} — ${option.label}`}</option>)}</select></TextField> }
 function FormRow({ children }: { children: React.ReactNode }) { return <div style={styles.grid}>{children}</div> }
 function FormSection({ title, children }: { title: string; children: React.ReactNode }) { return <section style={styles.section}><h3>{title}</h3>{children}</section> }
+function InventoryCount({ label, count }: { label: string; count: number }) { return <span style={styles.summaryItem}><span style={styles.hint}>{label}</span><strong>{count}</strong></span> }
+function BandHistory({ band, onCorrectRecord }: { band: BandInventoryItem; onCorrectRecord: (recordId: string) => void }) { return <section style={styles.card}><h2>Band history — {band.band_number || band.band_id}</h2>{band.encounters.length === 0 ? <p>No active encounters.</p> : band.encounters.map(encounter => <div key={`${encounter.record_id}-${encounter.relationship}`} style={styles.row}><span>{[encounter.session_date || 'Date not entered', encounter.species_code || 'Species not entered', encounter.capture_code ? `Code ${encounter.capture_code}` : 'Code not entered', encounter.relationship === 'replaced' ? 'old band replaced' : 'managed band'].join(' · ')}</span><button type="button" onClick={() => onCorrectRecord(encounter.record_id)}>Correct record</button></div>)}</section> }
 function EntityList({ title, entities, detail, onDeactivate, onCorrect }: { title: string; entities: readonly OperationalEntity[]; detail: (entity: OperationalEntity) => string; onDeactivate: (entity: OperationalEntity) => void; onCorrect?: (id: string) => void }) { return <section style={styles.card}><h2>{title}</h2>{entities.length === 0 ? <p>None yet.</p> : entities.map(entity => <div key={entity.id} style={styles.row}><span>{detail(entity)}{entity.active ? '' : ' (inactive)'}</span><span style={styles.actions}>{onCorrect && entity.active && <button type="button" onClick={() => onCorrect(entity.id)}>Correct</button>}<button type="button" onClick={() => onDeactivate(entity)}>{entity.active ? 'Deactivate' : 'Reactivate'}</button></span></div>)}</section> }
 function ConflictPanels({ projection, bands, onCorrect }: { projection: ReturnType<typeof projectOperationalEvents>; bands: readonly OperationalEntity[]; onCorrect: (id: string) => void }) { return <>{projection.band_number_conflicts.map(conflict => <section style={styles.warning} key={`number-${conflict.band_number}`}><strong>Band-number conflict: {conflict.band_number}</strong><p>Both offline inventory facts remain. A Contributor can deactivate or amend the incorrect inventory Band; no history is deleted.</p>{conflict.band_ids.map(id => <span key={id} style={styles.actions}>{text(bands.find(band => band.id === id)?.fields.band_number) || id}</span>)}</section>)}{projection.band_allocation_conflicts.map(conflict => <section style={styles.warning} key={`allocation-${conflict.band_id}`}><strong>Band allocation conflict: {text(bands.find(band => band.id === conflict.band_id)?.fields.band_number) || conflict.band_id}</strong><p>Both new-deployment facts remain. Correct one record with an amendment or deactivate it; a recapture does not conflict.</p>{conflict.record_ids.map(id => <button type="button" key={id} onClick={() => onCorrect(id)}>Correct record {id.slice(0, 8)}</button>)}</section>)}</> }
 function currentBandSelection(mode: BandMode, foreign: string, managedId: string, bands: readonly OperationalEntity[]) { if (mode === 'foreign') return { kind: 'foreign', band_number: foreign.trim() }; if (mode === 'managed') { const band = bands.find(item => item.id === managedId); return { kind: 'managed', band_id: managedId, band_number: text(band?.fields.band_number) } } return { kind: 'unbanded' } }
@@ -251,12 +312,14 @@ function changedFields(current: Record<string, unknown>, candidate: Record<strin
 function compact(fields: Record<string, unknown>): Record<string, unknown> { return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== null && value !== undefined && value !== '')) }
 function text(value: unknown): string { return value === undefined || value === null ? '' : String(value) }
 function today(): string { return new Date().toISOString().slice(0, 10) }
-function isNewDeployment(value: unknown): boolean { return value === '1' || value === 'N' }
-function managedBandIdFrom(record: OperationalEntity): string { const selection = record.fields.band_selection as { kind?: string; band_id?: string } | undefined; return selection?.kind === 'managed' ? selection.band_id ?? '' : '' }
 function stationNameFor(id: string, stations: readonly OperationalEntity[]): string { return text(stations.find(station => station.id === id)?.fields.name) || id || 'Unresolved Station' }
 function sessionLabel(session: OperationalEntity, stations: readonly OperationalEntity[]): string { return [text(session.fields.session_date) || 'Date not entered', stationNameFor(text(session.fields.station_id), stations)].filter(Boolean).join(' — ') }
 function banderLabel(bander: OperationalEntity, people: readonly OperationalEntity[]): string { const person = people.find(item => item.id === bander.fields.person_id); return `${text(person?.fields.initials) || '—'} — ${text(person?.fields.name) || 'Unresolved Person'} (${text(bander.fields.role) || 'Bander'})` }
 function recordLabel(record: OperationalEntity, bands: readonly OperationalEntity[]): string { const selection = record.fields.band_selection as { kind?: string; band_number?: string; band_id?: string } | undefined; const band = selection?.kind === 'managed' ? text(bands.find(item => item.id === selection.band_id)?.fields.band_number) || 'Unresolved managed Band' : selection?.kind === 'foreign' ? selection.band_number || 'Foreign Band' : selection?.kind === 'unbanded' ? 'Unbanded' : ''; return [text(record.fields.species_code) || 'Species not entered', band, text(record.fields.capture_code) === 'R' ? 'recap' : ''].filter(Boolean).join(' · ') }
+function summarizeInventory(bands: readonly BandInventoryItem[]) { const summary = new Map<string, { size: string; type: string; available: number; deployed: number; total: number }>(); for (const band of bands) { const size = band.band_size ?? ''; const type = band.band_type ?? ''; const key = `${size}\u0000${type}`; const item = summary.get(key) ?? { size, type, available: 0, deployed: 0, total: 0 }; item.total += 1; if (band.status === 'available') item.available += 1; if (band.status === 'deployed') item.deployed += 1; summary.set(key, item) } return [...summary.values()].sort((a, b) => a.size.localeCompare(b.size, undefined, { numeric: true }) || a.type.localeCompare(b.type)) }
+function bandStrings(bands: readonly BandInventoryItem[]) { const groups = new Map<string, { prefix: string; hundred: number; numbers: string[]; available: number }>(); for (const band of bands) { const match = /^(\d+)-(\d+)$/.exec(band.band_number); if (!match) continue; const prefix = match[1]; const hundred = Math.floor(Number(match[2]) / 100); const key = `${prefix}-${hundred}`; const group = groups.get(key) ?? { prefix, hundred, numbers: [], available: 0 }; group.numbers.push(band.band_number); if (band.status === 'available') group.available += 1; groups.set(key, group) } return [...groups.values()].sort((a, b) => a.prefix.localeCompare(b.prefix) || a.hundred - b.hundred).map(group => { group.numbers.sort((a, b) => a.localeCompare(b, undefined, { numeric: true })); const first = group.numbers[0] ?? ''; const last = group.numbers[group.numbers.length - 1] ?? ''; return { ...group, label: first === last ? first : `${first} to ${last}`, total: group.numbers.length } }) }
+function inventoryCsv(bands: readonly BandInventoryItem[]): string { const headers = ['band_number', 'band_size', 'band_type', 'derived_status', 'current_species', 'deployment_date', 'last_seen_date', 'encounter_count']; const rows = bands.map(band => [band.band_number, band.band_size, band.band_type, band.status, band.current_species, band.deployment_date, band.last_seen_date, band.encounters.length].map(csvValue).join(',')); return [headers.join(','), ...rows].join('\n') }
+function csvValue(value: unknown): string { const serialized = value === null || value === undefined ? '' : String(value); return /[",\n]/.test(serialized) ? `"${serialized.replace(/"/g, '""')}"` : serialized }
 function statusText(status: SyncStatus) { return status.kind === 'syncing' ? 'Syncing…' : status.kind === 'offline' ? `Offline — changes stay on this device (${status.message})` : status.kind === 'attention' ? `${status.rejected} Events need attention` : status.last_synced_at ? `Synced ${new Date(status.last_synced_at).toLocaleTimeString()}` : 'Ready to sync' }
 
-const styles: Record<string, React.CSSProperties> = { page: { minHeight: '100dvh', padding: '1rem 1.25rem 3rem', background: '#f5f5f5', color: '#1b4332', display: 'flex', flexDirection: 'column', gap: '1rem' }, status: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.35rem 1rem', alignItems: 'center', background: '#e8f5e9', borderRadius: 10, padding: '0.8rem' }, tabs: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }, tab: { minHeight: 40, textTransform: 'capitalize' }, selected: { minHeight: 40, textTransform: 'capitalize', background: '#2d6a4f', color: '#fff' }, card: { display: 'flex', flexDirection: 'column', gap: '0.7rem', padding: '1rem', background: '#fff', borderRadius: 10 }, row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '0.6rem', borderTop: '1px solid #ddd' }, actions: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }, grid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.6rem' }, field: { display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 600 }, section: { borderTop: '1px solid #d8f3dc', paddingTop: '0.8rem' }, crew: { display: 'flex', flexDirection: 'column', gap: '0.35rem', borderTop: '1px solid #d8f3dc', paddingTop: '0.7rem' }, details: { padding: '0.4rem 0', color: '#1b4332' }, check: { display: 'flex', alignItems: 'center', gap: '0.5rem' }, hint: { margin: 0, fontSize: '0.85rem', color: '#555' }, error: { margin: 0, padding: '0.75rem', background: '#f8d7da', color: '#721c24', borderRadius: 8 }, warning: { margin: 0, padding: '0.75rem', background: '#fff3cd', color: '#5c4400', borderRadius: 8 } }
+const styles: Record<string, React.CSSProperties> = { page: { minHeight: '100dvh', padding: '1rem 1.25rem 3rem', background: '#f5f5f5', color: '#1b4332', display: 'flex', flexDirection: 'column', gap: '1rem' }, status: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.35rem 1rem', alignItems: 'center', background: '#e8f5e9', borderRadius: 10, padding: '0.8rem' }, tabs: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }, tab: { minHeight: 40, textTransform: 'capitalize' }, selected: { minHeight: 40, textTransform: 'capitalize', background: '#2d6a4f', color: '#fff' }, card: { display: 'flex', flexDirection: 'column', gap: '0.7rem', padding: '1rem', background: '#fff', borderRadius: 10 }, row: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '0.6rem', borderTop: '1px solid #ddd' }, inventoryRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', padding: '0.7rem', borderTop: '1px solid #ddd', flexWrap: 'wrap' }, actions: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }, grid: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '0.6rem' }, summaryGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.6rem' }, summaryItem: { display: 'flex', flexDirection: 'column', padding: '0.7rem', background: '#f0f7f4', borderRadius: 8 }, field: { display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 600 }, section: { borderTop: '1px solid #d8f3dc', paddingTop: '0.8rem' }, crew: { display: 'flex', flexDirection: 'column', gap: '0.35rem', borderTop: '1px solid #d8f3dc', paddingTop: '0.7rem' }, details: { padding: '0.4rem 0', color: '#1b4332' }, check: { display: 'flex', alignItems: 'center', gap: '0.5rem' }, hint: { margin: 0, fontSize: '0.85rem', color: '#555' }, error: { margin: 0, padding: '0.75rem', background: '#f8d7da', color: '#721c24', borderRadius: 8 }, warning: { margin: 0, padding: '0.75rem', background: '#fff3cd', color: '#5c4400', borderRadius: 8 } }

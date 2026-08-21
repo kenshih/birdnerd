@@ -85,6 +85,15 @@ silently merge those offline facts. A Contributor resolves either inventory or
 allocation conflicts with later amendment/deactivation Events; history remains
 intact.
 
+`band.received` carries the structural Band ID and display number plus optional
+size/type metadata; batch receipt remains one command with one retryable Event
+per physical Band. Amendments use field-level LWW and explicit clears. Band
+status is deliberately absent from both contracts: the projection derives
+available/deployed/lost/destroyed/replaced state, species, dates, and encounter
+history from active Record facts in Event conflict order, while Band lifecycle
+Events alone derive inactive/retired state. This avoids a mutable status that
+can diverge from immutable encounter history.
+
 ### Event Admission
 
 The browser append RPC enforces a static Event-type-to-minimum-role table from
