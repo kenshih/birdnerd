@@ -6,7 +6,7 @@
 > it does not migrate this legacy model. The future field-data write path is
 > defined by [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md)
 > and the Phase 31 catalog in
-> [ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md).
+> [ADR 0018](../../adr/0018-operational-event-catalog.md).
 
 > **Note:** The diagrams below are easier to read in light mode (not dark mode).
 

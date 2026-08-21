@@ -46,4 +46,4 @@ configuration remain controlled.
   Event Log, including deactivation and explicit reactivation.
 - The detailed Event Catalog, admission index, and trusted-operator boundary
   are recorded in
-  [ADR 0018](0018-phase-31-operational-event-catalog.md).
+  [ADR 0018](0018-operational-event-catalog.md).

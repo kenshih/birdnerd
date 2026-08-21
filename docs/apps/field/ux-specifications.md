@@ -47,7 +47,7 @@ the Provisioner CLI for invitations, role changes, deactivation, and
 reactivation. Hiding a page or button is UX only; server-side Event Admission
 independently verifies active Membership and the Event type's minimum role.
 See [ADR 0017](../../adr/0017-operational-workspace-authority.md) and
-[ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md).
+[ADR 0018](../../adr/0018-operational-event-catalog.md).
 
 ### 0.1 Collaboration Pilot
 

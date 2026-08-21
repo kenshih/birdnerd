@@ -10,7 +10,7 @@ and projection path, so bootstrap authority does not require privileged direct
 projection or database writes. It will also pre-authorize pending Memberships
 for the closed pilot; the Field PWA has no workspace-creation or join flow.
 
-[ADR 0018](0018-phase-31-operational-event-catalog.md) extends the same
+[ADR 0018](0018-operational-event-catalog.md) extends the same
 least-privilege operator boundary with post-bootstrap Membership invite,
 role-change, deactivation, and reactivation commands; it does not broaden the
 Provisioner to raw table access.

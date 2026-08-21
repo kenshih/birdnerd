@@ -556,7 +556,7 @@ imports that mutable format into the Event Log.
 - The active-Net picker remains available by Station. There is no Phase 31
   `SessionNetLog` Event family or automatic per-session Net initialization.
 
-See [ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md) for the
+See [ADR 0018](../../adr/0018-operational-event-catalog.md) for the
 catalog and admission decisions.
 
 ### Data Validation Datasets (future)

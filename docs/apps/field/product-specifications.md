@@ -94,7 +94,7 @@ reactivate operational data and resolve Band conflicts. Admin additionally
 configures Stations, Nets, the roster, and User Account-to-Person links.
 Membership invitation, role change, deactivation, and reactivation remain out
 of Field and use the trusted Provisioner CLI. See
-[ADR 0018](../../adr/0018-phase-31-operational-event-catalog.md).
+[ADR 0018](../../adr/0018-operational-event-catalog.md).
 
 Managed, foreign, and unbanded selection are explicit alternatives. A missing
 local inventory projection is never inferred to mean foreign. Band deployment
