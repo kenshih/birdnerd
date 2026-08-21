@@ -17,7 +17,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { createFieldAuthModule } from './auth/fieldAuth'
 import WorkspaceAccessGate from './components/WorkspaceAccessGate'
 import { createFieldWorkspaceAccessModule } from './access/fieldWorkspaceAccess'
-import PilotWorkspacePage from './pages/PilotWorkspacePage'
+import OperationalWorkspacePage from './pages/OperationalWorkspacePage'
 import EventPipelinePage from './pages/EventPipelinePage'
 
 type AppView =
@@ -50,7 +50,7 @@ export default function App() {
   let page: React.ReactNode = null
 
   if (view.mode === 'pilot') {
-    page = <PilotWorkspacePage onHome={goHome} />
+    page = <OperationalWorkspacePage onHome={goHome} />
   } else if (view.mode === 'diagnostics') {
     page = <EventPipelinePage onHome={goHome} />
   } else if (view.mode === 'session') {

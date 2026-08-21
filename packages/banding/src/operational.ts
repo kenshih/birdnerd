@@ -145,6 +145,9 @@ function fieldsFrom(event: DomainEvent): Record<string, unknown> {
   const fields = typeof payload.fields === 'object' && payload.fields !== null ? payload.fields as Record<string, unknown> : {}
   // band_number is a structural field in band.received rather than a nested
   // amendment map, but it remains a current-state fact for conflict checks.
+  if (event.event_type === 'net.created') return { station_id: payload.station_id, ...fields }
+  if (event.event_type === 'bander.created') return { person_id: payload.person_id, ...fields }
+  if (event.event_type === 'banding-record.created') return { session_id: payload.session_id, ...fields }
   return event.event_type === 'band.received'
     ? { band_number: payload.band_number, ...fields }
     : Object.keys(fields).length > 0 ? fields : Object.fromEntries(Object.entries(payload).filter(([key]) => !key.endsWith('_id')))

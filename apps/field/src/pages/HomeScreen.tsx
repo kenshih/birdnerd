@@ -15,9 +15,7 @@ interface NavItem {
 
 const NAV_GROUPS: NavItem[][] = [
   [
-    { mode: 'pilot', label: 'Collaboration Pilot', description: 'Offline-first shared Sessions and Banding Records', enabled: true },
-    { mode: 'sessions', label: 'Session Data', description: 'Create sessions and record bird encounters', enabled: true },
-    { mode: 'export', label: 'Data Manager', description: 'Browse records, export CSV, backup & restore', enabled: true },
+    { mode: 'pilot', label: 'Field Data', description: 'Offline-first shared sessions, records, and inventory', enabled: true },
   ],
   [
     { mode: 'band-inventory', label: 'Band Inventory', description: 'Add, track, and manage band stock', enabled: true },
