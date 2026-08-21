@@ -8,8 +8,10 @@ import { openNewRecordForm } from './helpers'
  */
 test('capture time offers a net-check quick-select with time slots', async ({ page }) => {
   await openNewRecordForm(page)
-  const captureTime = page.locator('select[name="captureTime"]')
+  const captureTime = page.getByLabel('Capture Time', { exact: true })
   await expect(captureTime).toBeVisible()
+  // Product-red while the operational form has regressed to a raw time input.
+  await expect(captureTime).toHaveJSProperty('tagName', 'SELECT')
   const opts = await captureTime.locator('option').allTextContents()
   expect(opts[0]).toBe('—')
   expect(opts.some(o => /^\d{2}:\d{2}$/.test(o))).toBe(true)

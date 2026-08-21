@@ -84,6 +84,7 @@ export function decideCreateSession(
   return createEvent({
     ...context,
     command_id: context.command_id ?? createUuidV7(),
+    event_schema_version: 1,
     event_type: 'session.created',
     payload: compact({ ...fields, session_id: fields.session_id ?? createUuidV7() }),
   })
@@ -99,6 +100,7 @@ export function decideCreateBandingRecord(
   return createEvent({
     ...context,
     command_id: context.command_id ?? createUuidV7(),
+    event_schema_version: 1,
     event_type: 'banding-record.created',
     payload: compact({ ...fields, record_id: fields.record_id ?? createUuidV7() }),
   })
@@ -115,6 +117,7 @@ export function decideAmendBandingRecord(
   return createEvent({
     ...context,
     command_id: context.command_id ?? createUuidV7(),
+    event_schema_version: 1,
     event_type: 'banding-record.fields-amended',
     payload: { record_id: recordId, fields: compact(fields) },
   })
@@ -129,7 +132,8 @@ export function projectPilotBanding(events: readonly DomainEvent[]): PilotProjec
   for (const event of events) {
     if (event.event_type === 'session.created' && event.actor.kind === 'user-account') {
       sessions.set(event.payload.session_id, {
-        ...event.payload,
+        ...sessionFields(event.payload),
+        session_id: event.payload.session_id,
         created_by: event.actor.user_account_id,
       })
     }
@@ -146,7 +150,9 @@ export function projectPilotBanding(events: readonly DomainEvent[]): PilotProjec
     if (event.event_type === 'banding-record.created') {
       applyFields(event.payload.record_id, bandingFields(event.payload), event)
     } else if (event.event_type === 'banding-record.fields-amended') {
-      applyFields(event.payload.record_id, event.payload.fields, event)
+      // Phase 31's v2 amendment contract adds nullable complete-form fields.
+      // This retained Phase 30 projection only reads its historical subset.
+      applyFields(event.payload.record_id, event.payload.fields as BandingRecordFields, event)
     }
   }
 
@@ -180,7 +186,14 @@ export function projectPilotBanding(events: readonly DomainEvent[]): PilotProjec
 }
 
 function bandingFields(payload: DomainEvent<'banding-record.created'>['payload']): BandingRecordFields {
+  if ('fields' in payload) return payload.fields as BandingRecordFields
   const { record_id: _recordId, session_id: _sessionId, ...fields } = payload
+  return fields
+}
+
+function sessionFields(payload: DomainEvent<'session.created'>['payload']): SessionFields {
+  if ('fields' in payload) return payload.fields as SessionFields
+  const { session_id: _sessionId, ...fields } = payload
   return fields
 }
 

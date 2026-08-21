@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createEvent } from '@birdnerd/events'
+import { createEvent, type DomainEvent } from '@birdnerd/events'
 import { admitWorkspaceEvent, decidePendingMembershipActivation, projectWorkspaceEvents, resolveWorkspaceAccess } from './workspaceAccess.js'
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
@@ -80,5 +80,30 @@ describe('Workspace access', () => {
     expect(resolveWorkspaceAccess([...initial, linkedAccount, wrongWorkspaceActivation], identity)).toMatchObject({
       kind: 'pending', workspace_membership: { membership_id: membershipId },
     })
+  })
+
+  it('rejects Contributor configuration Events while allowing normal operational Events', () => {
+    const identity = { provider: 'google' as const, subject: 'google-123', email: 'bander@example.com' }
+    const initial = provisionedEvents()
+    const activation = decidePendingMembershipActivation(initial, identity)
+    const contributorMembership = createEvent({ event_type: 'membership.preauthorized', workspace_id: workspaceId, command_id: initial[0]!.command_id, actor: { kind: 'restricted-provisioner', provisioner_id: 'local-admin' }, payload: { membership_id: membershipId, email: identity.email, role: 'contributor' } })
+    const contributorEvents: DomainEvent[] = [initial[0]!, contributorMembership, ...activation]
+    const actor = { kind: 'user-account' as const, user_account_id: (activation[1] as DomainEvent<'membership.activated'>).payload.user_account_id }
+    const station = createEvent({ event_type: 'station.created', workspace_id: workspaceId, command_id: '018f8c7b-0000-7000-8000-000000000010', actor, payload: { station_id: '018f8c7b-0000-7000-8000-000000000011' } })
+    const session = createEvent({ event_type: 'session.created', workspace_id: workspaceId, command_id: station.command_id, actor, payload: { session_id: '018f8c7b-0000-7000-8000-000000000012', fields: {} } })
+    expect(admitWorkspaceEvent(station, contributorEvents)).toEqual({ accepted: false, reason: 'Admin role is required for Workspace configuration.' })
+    expect(admitWorkspaceEvent(session, contributorEvents)).toEqual({ accepted: true })
+  })
+
+  it('replays server-only Membership lifecycle facts before local admission', () => {
+    const identity = { provider: 'google' as const, subject: 'google-123', email: 'bander@example.com' }
+    const initial = provisionedEvents()
+    const activation = decidePendingMembershipActivation(initial, identity)
+    const member = (activation[1] as DomainEvent<'membership.activated'>).payload.user_account_id
+    const deactivated = createEvent({ event_type: 'membership.deactivated', workspace_id: workspaceId, command_id: initial[0]!.command_id, actor: { kind: 'restricted-provisioner', provisioner_id: 'operator' }, payload: { membership_id: membershipId } })
+    const events = [...initial, ...activation, deactivated]
+    expect(resolveWorkspaceAccess(events, identity)).toEqual({ kind: 'no-access' })
+    const session = createEvent({ event_type: 'session.created', workspace_id: workspaceId, command_id: deactivated.command_id, actor: { kind: 'user-account', user_account_id: member }, payload: { session_id: '018f8c7b-0000-7000-8000-000000000012', fields: {} } })
+    expect(admitWorkspaceEvent(session, events)).toEqual({ accepted: false, reason: 'The Event actor is not an active Member of the target Workspace.' })
   })
 })

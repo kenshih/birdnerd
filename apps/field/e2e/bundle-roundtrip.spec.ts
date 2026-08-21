@@ -1,6 +1,11 @@
 import { expect, test } from '@playwright/test'
 import { readFileSync } from 'node:fs'
-import { gotoHome } from './helpers'
+import {
+  chooseFirstSession,
+  createForeignRecord,
+  entitySection,
+  openNewRecordForm,
+} from './helpers'
 
 /**
  * Recovery round-trip through the authenticated E2E access fixture and normal
@@ -11,20 +16,15 @@ import { gotoHome } from './helpers'
 test('Workspace Event Bundle restore catches up accepted remote Events through normal sync', async ({ page }) => {
   page.on('dialog', dialog => dialog.accept())
 
-  await gotoHome(page)
-  await page.getByText('Collaboration Pilot').click()
-  await page.getByLabel('Location').fill('North Station')
-  await page.getByRole('button', { name: 'Create Session' }).click()
-  await page.getByText('North Station').click()
-  await page.getByLabel('Physical band').fill('1234-56789')
-  await page.getByLabel('Species code').fill('SOSP')
-  await page.getByRole('button', { name: 'Create Record' }).click()
-  await expect(page.getByRole('button', { name: /SOSP 1234-56789/ })).toBeVisible()
+  await openNewRecordForm(page)
+  await createForeignRecord(page, 'SOSP', '1234-56789')
   await page.getByRole('button', { name: 'Sync now' }).click()
   await expect(page.getByText(/^Synced /)).toBeVisible()
 
   await page.getByRole('button', { name: 'Home' }).click()
-  await page.getByText('Data Manager').first().click()
+  const dataManager = page.getByRole('button', { name: /Data Manager/ })
+  await expect(dataManager).toBeVisible()
+  await dataManager.click()
 
   const downloadPromise = page.waitForEvent('download')
   await page.getByRole('button', { name: 'Export Event Bundle' }).click()
@@ -41,22 +41,23 @@ test('Workspace Event Bundle restore catches up accepted remote Events through n
   ])
 
   await page.getByRole('button', { name: 'Home' }).click()
-  await page.getByText('Collaboration Pilot').click()
-  await page.getByText('North Station').click()
-  await page.getByLabel('Physical band').fill('9876-54321')
-  await page.getByLabel('Species code').fill('WIWA')
-  await page.getByRole('button', { name: 'Create Record' }).click()
-  await expect(page.getByRole('button', { name: /WIWA 9876-54321/ })).toBeVisible()
+  await page.getByRole('button', { name: /Field Data/ }).click()
+  await page.getByRole('button', { name: 'records', exact: true }).click()
+  await chooseFirstSession(page)
+  await createForeignRecord(page, 'WIWA', '9876-54321')
   await page.getByRole('button', { name: 'Sync now' }).click()
   await expect(page.getByText(/^Synced /)).toBeVisible()
 
   await page.getByRole('button', { name: 'Home' }).click()
-  await page.getByText('Data Manager').first().click()
+  await page.getByRole('button', { name: /Data Manager/ }).click()
   await page.setInputFiles('input[accept=".json"]', file)
   await expect(page.getByText(/Restored 6 Events and protected 0 unsynced local Events/)).toBeVisible()
 
   await page.getByRole('button', { name: 'Home' }).click()
-  await page.getByText('Collaboration Pilot').click()
-  await expect(page.getByRole('button', { name: /SOSP 1234-56789/ })).toBeVisible()
-  await expect(page.getByRole('button', { name: /WIWA 9876-54321/ })).toBeVisible()
+  await page.getByRole('button', { name: /Field Data/ }).click()
+  await page.getByRole('button', { name: 'records', exact: true }).click()
+  await expect(entitySection(page, 'Banding Records')).toContainText('SOSP')
+  await expect(entitySection(page, 'Banding Records')).toContainText('1234-56789')
+  await expect(entitySection(page, 'Banding Records')).toContainText('WIWA')
+  await expect(entitySection(page, 'Banding Records')).toContainText('9876-54321')
 })

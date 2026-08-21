@@ -19,7 +19,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ## Current roadmap
 
-### Phase 31 — Event-backed operational Field (Field version TBD) — **Current**
+### Phase 31 — Event-backed operational Field (Field 0.31.0) — **Current**
 
 Replace the collaboration pilot and legacy mutable replica with the default
 offline shared Field workflow: Workspace configuration, roster, Stations/Nets,
@@ -29,12 +29,25 @@ through narrow trusted Provisioner CLI operations. The mutable `birdnerd`
 database and legacy DataBundle retire after a two-Station acceptance session; the deferred
 Session–Net effort model is not frozen here. [Delivery contract: #14](https://github.com/kenshih/birdnerd/issues/14)
 
-### Phase 32 — Event-backed Data Manager (Field version TBD)
+### Phase 32 — Local Field development environment (Field version TBD)
+
+Make `npm run dev` the safe, local-first Field workflow: Supabase CLI owns the
+local Docker stack and an explicit fixture loader rebuilds selected disposable
+Workspace data from versioned `data/` declarations. A development-only local
+Auth adapter signs known fixture Members into local Supabase without a Google
+redirect, while real local RPC, RLS, Event admission, synchronization, and
+two-profile manual testing remain in use. Hosted pilot testing stays explicit;
+the fixture format may later support a separately approved pilot reset without
+making hosted data writes part of routine development. [Delivery contract: #17](https://github.com/kenshih/birdnerd/issues/17)
+
+### Phase 33 — Event-backed Data Manager (Field version TBD)
 
 Build the shared browse, preview-first idempotent master-sheet CSV import, and
 BBL/IBP exports from Workspace Event projections. It proves historical intake
 and agency reporting without a legacy database; photo attachments and the
-reconsidered Net Hours model remain later cutover work.
+reconsidered Net Hours model remain later cutover work. Restore the deferred
+Data Manager Browse Records/read-only path and unskip its Phase 33 Playwright
+coverage as part of this work.
 
 ---
 
@@ -140,6 +153,7 @@ Completed Sync 0.1.0–0.2.0 work is recorded in
 
 **Dev tooling**
 - Dependency refresh pass: review and update app/package dependencies across the monorepo at an intentional checkpoint
+- Guarded Supabase schema deployment ([delivery contract #16](https://github.com/kenshih/birdnerd/issues/16)): add a dedicated protected deployment boundary with a least-privileged credential; it must deploy an approved schema before a dependent Pages build, without putting database authority in the Pages job. Decide protected-on-main versus explicit release dispatch as part of the delivery.
 - E2E UX tests (Playwright): smoke harness + Phase 24 guards (`apps/field/e2e/`, `npm run test:e2e`, not CI-gated). **Test-buildout (0.24.x):** shared rich-record fixture + record save→reopen and JSON bundle export→import round-trips (0.24.3); band deployment/recapture/delete-warning flow (0.24.4–0.24.6). CI now gates the deploy on lint + `npm test` (e2e still local). Still to do: agency-export *content* (unit), CSV download fires, mobile width; possibly add e2e to CI. Goal: enough coverage that Claude can work more autonomously and Ken trusts no UX regressions.
 - Storybook for component-level UX checks (optional)
 - Vitest Browser Mode (`@vitest/browser`): component tests for BandSearchSelect, SearchableSelect, SpeciesAutocomplete (open/close, click-outside, type-to-filter, selection); prerequisite for dropdown consolidation

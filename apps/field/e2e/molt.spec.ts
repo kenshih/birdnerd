@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { openNewRecordForm } from './helpers'
+import { fieldSelect, openNewRecordForm } from './helpers'
 
 /**
  * Phase 24 commit 2: the molt-limits "S Covs" tract is relabeled "G Covs" and a
@@ -15,9 +15,8 @@ test('molt section shows G Covs and Alula, and no longer shows S Covs', async ({
 
 test('Alula molt-limit value persists across save and re-open for edit', async ({ page }) => {
   await openNewRecordForm(page)
-  await page.locator('select[name="moltLimitsAlula"]').selectOption('F')
-  await page.getByRole('button', { name: /Save Record/i }).first().click()
-  // back in the session view — re-open the saved record for editing
-  await page.getByRole('button', { name: /^Edit$/ }).first().click()
-  await expect(page.locator('select[name="moltLimitsAlula"]')).toHaveValue('F')
+  await fieldSelect(page, 'Alula').selectOption('F')
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await page.locator('label').filter({ hasText: 'Edit existing Record' }).locator('select').selectOption({ index: 1 })
+  await expect(fieldSelect(page, 'Alula')).toHaveValue('F')
 })

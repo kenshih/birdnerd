@@ -1,25 +1,21 @@
 import { test, expect } from '@playwright/test'
-import { openBandList, deployBand } from './helpers'
+import { deployBand, entityRow } from './helpers'
 
 /**
- * Deleting a band that's referenced by a record (deployed) must surface a soft
- * warning before removing it — those records remain but lose their band link.
- * Guards the FK-aware delete confirmation in BandHistoryView.
+ * Phase 31 intentionally replaces hard deletion with reversible deactivation.
+ * A deployed Band remains in immutable history and can be reactivated.
  */
-test('deleting a deployed band warns that records reference it', async ({ page }) => {
-  // capture the blocking confirm() inline — it must be handled during the click
-  let dialogMessage = ''
-  page.on('dialog', d => { dialogMessage = d.message(); void d.accept() })
-
-  // deploy a band (gives it one referencing record)
+test('a deployed band is deactivated and reactivated without deleting history', async ({ page }) => {
   const band = await deployBand(page)
 
-  // open the band's detail and delete it
-  await openBandList(page)
-  await page.getByRole('button', { name: new RegExp(band) }).click() // Band History
-  await page.getByRole('button', { name: /^Delete$/ }).click()
+  await page.getByRole('button', { name: 'inventory', exact: true }).click()
+  const row = entityRow(page, 'Inventory', band)
+  await row.getByRole('button', { name: 'Deactivate', exact: true }).click()
+  await expect(row).toContainText('(inactive)')
 
-  // the confirm warned about referencing records, and the band is gone
-  expect(dialogMessage).toMatch(/banding record/)
-  await expect(page.getByRole('button', { name: new RegExp(band) })).toHaveCount(0)
+  await row.getByRole('button', { name: 'Reactivate', exact: true }).click()
+  await expect(row).not.toContainText('(inactive)')
+
+  await page.getByRole('button', { name: 'records', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Banding Records', exact: true }).locator('..')).toContainText(band)
 })

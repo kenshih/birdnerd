@@ -8,6 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.31.0 — **Event-backed operational Field.** Field Data is now the
+  default offline shared workflow: Admins configure Stations, Nets, roster and
+  Account-to-Person links; Contributors create, correct, deactivate, and
+  reactivate complete optional non-photo Sessions and Banding Records with
+  shared crew, station-scoped active Nets, and explicit managed/foreign/
+  unbanded selection. Immutable v2 Session/Record contracts upcast the pilot
+  forms; replicas retain deferred-reference receipts and Membership lifecycle
+  access changes. Supabase admits the expanded catalog through private
+  Membership/entity-reference indexes and least-privilege Provisioner lifecycle
+  commands. Legacy mutable routes are unlinked but retained without migration
+  or deletion until the documented two-Station acceptance passes.
+  Event-backed Band Inventory now retains optional size/type across typed batch
+  receipt and metadata corrections, and derives status, species, dates, and
+  encounter history from active Record and Band-lifecycle facts instead of a
+  manually editable Band status. Home once again reaches recovery-only
+  Workspace Event Bundle export/restore without exposing the legacy mutable
+  Data Manager. The operational projection also restores Session-derived
+  net-check Capture Time choices, read-only Record inspection, and Session
+  protocol/MAPS-period/active-Record summaries.
 - Field 0.30.0 — **Supabase Event Exchange & Collaboration Pilot.** Invited
   Google users can claim one Workspace, append immutable pilot Session and
   Banding Record Events while offline, and synchronize through authenticated

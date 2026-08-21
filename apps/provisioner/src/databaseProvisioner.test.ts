@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createEvent } from '@birdnerd/events'
-import { bootstrapWorkspace } from './databaseProvisioner.js'
+import { bootstrapWorkspace, changeMembership } from './databaseProvisioner.js'
 
 describe('database Provisioner adapter', () => {
   it('calls only the private bootstrap operation and returns its audit receipt', async () => {
@@ -56,5 +56,30 @@ describe('database Provisioner adapter', () => {
       workspace_name: 'Cedar',
       members: [{ email: 'admin@example.com', role: 'admin' }],
     })).rejects.toThrow('invalid bootstrap audit receipt')
+  })
+
+  it('uses only a named private membership operation and validates its receipt', async () => {
+    const workspace_id = '018f8c7b-0000-7000-8000-000000000001'
+    const membership_id = '018f8c7b-0000-7000-8000-000000000003'
+    const command_id = '018f8c7b-0000-7000-8000-000000000002'
+    const event = createEvent({ event_type: 'membership.role-changed', workspace_id, command_id, actor: { kind: 'restricted-provisioner', provisioner_id: 'test' }, payload: { membership_id, role: 'contributor' } })
+    const query = vi.fn(async () => ({ rows: [{ receipt: { workspace_id, membership_id, command_id, events: [event] } }], command: 'SELECT', rowCount: 1, oid: 0, fields: [] }))
+    await expect(changeMembership({ query }, 'set-role', { workspace_id, membership_id, role: 'contributor' })).resolves.toMatchObject({ workspace_id, membership_id, events: [event] })
+    expect(query).toHaveBeenCalledWith('select birdnerd_private.set_role_membership($1::uuid, $2::uuid, $3, $4, $5) as receipt', [workspace_id, membership_id, null, 'contributor', 'phase-31-operator'])
+  })
+
+  it('accepts the empty-event audit receipt for an idempotent repeated invite', async () => {
+    const workspace_id = '018f8c7b-0000-7000-8000-000000000001'
+    const membership_id = '018f8c7b-0000-7000-8000-000000000003'
+    const command_id = '018f8c7b-0000-7000-8000-000000000002'
+    const query = vi.fn(async () => ({ rows: [{ receipt: { workspace_id, membership_id, command_id, events: [] } }], command: 'SELECT', rowCount: 1, oid: 0, fields: [] }))
+    await expect(changeMembership({ query }, 'invite', { workspace_id, email: 'member@example.com', role: 'contributor' })).resolves.toMatchObject({ workspace_id, membership_id, events: [] })
+  })
+
+  it('rejects invalid lifecycle input before database access', async () => {
+    const query = vi.fn()
+    await expect(changeMembership({ query }, 'invite', { workspace_id: 'bad', email: 'x', role: 'admin' })).rejects.toThrow('Workspace ID')
+    await expect(changeMembership({ query }, 'deactivate', { workspace_id: '018f8c7b-0000-7000-8000-000000000001' })).rejects.toThrow('Membership ID')
+    expect(query).not.toHaveBeenCalled()
   })
 })

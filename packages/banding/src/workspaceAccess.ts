@@ -26,7 +26,7 @@ export type WorkspaceMembership = {
   workspace_id: UuidV7
   email: string
   role: WorkspaceMembershipRole
-  status: 'pending' | 'active'
+  status: 'pending' | 'active' | 'inactive'
   user_account_id?: UuidV7
 }
 
@@ -120,6 +120,21 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
     })
   }
 
+  // Lifecycle facts are server-constructed but still replayed locally so an
+  // offline Field replica never continues to authorize a revoked Member.
+  // They run after activation to make a later deactivation effective even if
+  // events were received in a different transport order.
+  for (const event of events) {
+    if (event.event_type !== 'membership.role-changed' && event.event_type !== 'membership.deactivated' && event.event_type !== 'membership.reactivated') continue
+    const membership = workspaceMemberships.get(event.payload.membership_id)
+    if (!membership || membership.workspace_id !== event.workspace_id) continue
+    if (event.event_type === 'membership.role-changed') {
+      workspaceMemberships.set(membership.membership_id, { ...membership, role: event.payload.role })
+    } else {
+      workspaceMemberships.set(membership.membership_id, { ...membership, status: event.event_type === 'membership.reactivated' ? 'active' : 'inactive' })
+    }
+  }
+
   return { workspaces, workspace_memberships: workspaceMemberships, user_accounts: userAccounts }
 }
 
@@ -173,7 +188,8 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     return { accepted: true }
   }
 
-  if (candidate.event_type === 'session.created' || candidate.event_type === 'banding-record.created' || candidate.event_type === 'banding-record.fields-amended') {
+  const minimumRole = operationalMinimumRole(candidate.event_type)
+  if (minimumRole) {
     if (candidate.actor.kind !== 'user-account') return deny('An active Workspace Member must author operational Events.')
     const actorUserAccountId = candidate.actor.user_account_id
     const activeMembership = [...projection.workspace_memberships.values()].find(workspaceMembership => (
@@ -181,15 +197,24 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
       && workspaceMembership.status === 'active'
       && workspaceMembership.user_account_id === actorUserAccountId
     ))
-    return activeMembership ? { accepted: true } : deny('The Event actor is not an active Member of the target Workspace.')
+    if (!activeMembership) return deny('The Event actor is not an active Member of the target Workspace.')
+    if (minimumRole === 'admin' && activeMembership.role !== 'admin') return deny('Admin role is required for Workspace configuration.')
+    return { accepted: true }
   }
 
+  if (candidate.event_type !== 'membership.activated') return deny('This Event is not part of the Workspace-access catalog.')
   if (candidate.actor.kind !== 'external-identity') return deny('A signed-in external identity must activate its Membership.')
   const workspaceMembership = projection.workspace_memberships.get(candidate.payload.membership_id)
   if (workspaceMembership && candidate.workspace_id !== workspaceMembership.workspace_id) {
     return deny('A Membership activation must target the Membership Workspace.')
   }
   return { accepted: true }
+}
+
+function operationalMinimumRole(eventType: DomainEvent['event_type']): 'admin' | 'contributor' | undefined {
+  if (['station.created','station.fields-amended','station.deactivated','station.reactivated','net.created','net.fields-amended','net.deactivated','net.reactivated','person.created','person.fields-amended','person.deactivated','person.reactivated','bander.created','bander.fields-amended','bander.deactivated','bander.reactivated','user-account.person-linked','user-account.person-unlinked'].includes(eventType)) return 'admin'
+  if (['band.received','band.fields-amended','band.deactivated','band.reactivated','session.created','session.fields-amended','session.deactivated','session.reactivated','session-crew-member.added','session-crew-member.removed','banding-record.created','banding-record.fields-amended','banding-record.deactivated','banding-record.reactivated'].includes(eventType)) return 'contributor'
+  return undefined
 }
 
 /** Resolve an external identity to current Workspace access without changing the Event Log. */

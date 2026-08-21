@@ -17,8 +17,9 @@ import ErrorBoundary from './components/ErrorBoundary'
 import { createFieldAuthModule } from './auth/fieldAuth'
 import WorkspaceAccessGate from './components/WorkspaceAccessGate'
 import { createFieldWorkspaceAccessModule } from './access/fieldWorkspaceAccess'
-import PilotWorkspacePage from './pages/PilotWorkspacePage'
+import OperationalWorkspacePage from './pages/OperationalWorkspacePage'
 import EventPipelinePage from './pages/EventPipelinePage'
+import WorkspaceEventBundlePage from './pages/WorkspaceEventBundlePage'
 
 type AppView =
   | { mode: 'home' }
@@ -34,6 +35,7 @@ type AppView =
   | { mode: 'feedback' }
   | { mode: 'about' }
   | { mode: 'diagnostics' }
+  | { mode: 'event-bundle' }
   | { mode: 'band-history-from-record'; band: Band; returnSession: Session }
 
 export default function App() {
@@ -50,9 +52,11 @@ export default function App() {
   let page: React.ReactNode = null
 
   if (view.mode === 'pilot') {
-    page = <PilotWorkspacePage onHome={goHome} />
+    page = <OperationalWorkspacePage onHome={goHome} />
   } else if (view.mode === 'diagnostics') {
     page = <EventPipelinePage onHome={goHome} />
+  } else if (view.mode === 'event-bundle') {
+    page = <WorkspaceEventBundlePage onHome={goHome} />
   } else if (view.mode === 'session') {
     page = (
       <SessionView

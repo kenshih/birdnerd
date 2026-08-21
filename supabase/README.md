@@ -1,8 +1,9 @@
 # Supabase schema workflow
 
-Phase 30's reviewed SQL migration owns the private Event Log, derived
-Membership admission index, durable receipts, restricted bootstrap operation,
-and the three authenticated browser RPCs. Terraform is not the schema manager.
+The reviewed Phase 30–31 SQL migrations own the private Event Log, derived
+Membership and entity-reference admission indexes, durable receipts, restricted
+Provisioner Membership operations, and the authenticated browser exchange
+RPCs. Terraform is not the schema manager.
 
 Local verification:
 
@@ -22,11 +23,11 @@ Any YAML Contract change therefore requires a reviewed validator update in the
 versioned migration instead of silently drifting at the provider boundary.
 
 Hosted application and Provisioner steps are in
-`docs/apps/field/collaboration-pilot-runbook.md`. Never link or push to the pilot
-project merely to test an unreviewed local migration.
+`docs/apps/field/collaboration-pilot-runbook.md`. Never link or push to the shared
+Workspace merely to test an unreviewed local migration.
 
-For the reviewed Phase 30 pilot migration, the schema-deployer first links this
-checkout to the pilot project, then pushes the reviewed migration:
+For a reviewed migration, the schema-deployer first links this checkout to the
+target project, then pushes the reviewed migration:
 
 ```bash
 npx supabase link --project-ref ibowsjgtvkuiqqukcksr
@@ -36,3 +37,24 @@ npx supabase db push --linked
 Confirm the project ref in the Supabase Dashboard before entering its database
 password. The complete hosted verification and least-privilege instructions
 remain in the pilot runbook.
+
+## getting a psql session to local supabase
+
+assuming you've started supabase locally with the above npx commands...
+
+```
+docker exec -it supabase_db_birdnerd psql -U postgres -d postgres
+```
+
+## some useful commands in psql
+
+```sql
+\x auto
+\dn
+\df+ public.birdnerd_append_events
+\sf public.birdnerd_append_events
+
+select pg_get_functiondef(
+  'public.birdnerd_append_events(jsonb)'::regprocedure
+);
+```

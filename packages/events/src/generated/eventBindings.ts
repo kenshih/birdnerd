@@ -1,52 +1,277 @@
 /*
  * GENERATED FILE — do not edit by hand.
  * Run `npm run generate:event-bindings` after changing these contract sources:
+ * - schemas/workspace/band-deactivated.v1.yaml
+ * - schemas/workspace/band-fields-amended.v1.yaml
+ * - schemas/workspace/band-reactivated.v1.yaml
+ * - schemas/workspace/band-received.v1.yaml
+ * - schemas/workspace/bander-created.v1.yaml
+ * - schemas/workspace/bander-deactivated.v1.yaml
+ * - schemas/workspace/bander-fields-amended.v1.yaml
+ * - schemas/workspace/bander-reactivated.v1.yaml
  * - schemas/workspace/banding-record-created.v1.yaml
+ * - schemas/workspace/banding-record-created.v2.yaml
+ * - schemas/workspace/banding-record-deactivated.v1.yaml
  * - schemas/workspace/banding-record-fields-amended.v1.yaml
+ * - schemas/workspace/banding-record-fields-amended.v2.yaml
+ * - schemas/workspace/banding-record-reactivated.v1.yaml
  * - schemas/workspace/event-envelope.v1.yaml
  * - schemas/workspace/event-envelope.v2.yaml
  * - schemas/workspace/membership-activated.v1.yaml
+ * - schemas/workspace/membership-deactivated.v1.yaml
  * - schemas/workspace/membership-preauthorized.v1.yaml
+ * - schemas/workspace/membership-reactivated.v1.yaml
+ * - schemas/workspace/membership-role-changed.v1.yaml
+ * - schemas/workspace/net-created.v1.yaml
+ * - schemas/workspace/net-deactivated.v1.yaml
+ * - schemas/workspace/net-fields-amended.v1.yaml
+ * - schemas/workspace/net-reactivated.v1.yaml
+ * - schemas/workspace/person-created.v1.yaml
+ * - schemas/workspace/person-deactivated.v1.yaml
+ * - schemas/workspace/person-fields-amended.v1.yaml
+ * - schemas/workspace/person-reactivated.v1.yaml
  * - schemas/workspace/session-created.v1.yaml
+ * - schemas/workspace/session-created.v2.yaml
+ * - schemas/workspace/session-crew-member-added.v1.yaml
+ * - schemas/workspace/session-crew-member-removed.v1.yaml
+ * - schemas/workspace/session-deactivated.v1.yaml
+ * - schemas/workspace/session-fields-amended.v1.yaml
+ * - schemas/workspace/session-reactivated.v1.yaml
+ * - schemas/workspace/station-created.v1.yaml
+ * - schemas/workspace/station-deactivated.v1.yaml
+ * - schemas/workspace/station-fields-amended.v1.yaml
+ * - schemas/workspace/station-reactivated.v1.yaml
  * - schemas/workspace/user-account-linked.v1.yaml
+ * - schemas/workspace/user-account-person-linked.v1.yaml
+ * - schemas/workspace/user-account-person-unlinked.v1.yaml
  * - schemas/workspace/workspace-created.v1.yaml
  */
 
-export type EventType = "banding-record.created" | "banding-record.fields-amended" | "membership.activated" | "membership.preauthorized" | "session.created" | "user-account.linked" | "workspace.created"
+export type EventType = "band.deactivated" | "band.fields-amended" | "band.reactivated" | "band.received" | "bander.created" | "bander.deactivated" | "bander.fields-amended" | "bander.reactivated" | "banding-record.created" | "banding-record.deactivated" | "banding-record.fields-amended" | "banding-record.reactivated" | "membership.activated" | "membership.deactivated" | "membership.preauthorized" | "membership.reactivated" | "membership.role-changed" | "net.created" | "net.deactivated" | "net.fields-amended" | "net.reactivated" | "person.created" | "person.deactivated" | "person.fields-amended" | "person.reactivated" | "session.created" | "session-crew-member.added" | "session-crew-member.removed" | "session.deactivated" | "session.fields-amended" | "session.reactivated" | "station.created" | "station.deactivated" | "station.fields-amended" | "station.reactivated" | "user-account.linked" | "user-account.person-linked" | "user-account.person-unlinked" | "workspace.created"
 
 export type EventPayloadByType = {
-  "banding-record.created": { "record_id": string; "session_id": string; "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string }
-  "banding-record.fields-amended": { "record_id": string; "fields": { "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string } }
+  "band.deactivated": { "band_id": string }
+  "band.fields-amended": { "band_id": string; "fields": { "band_number"?: string | null; "band_size"?: string | null; "band_type"?: string | null } }
+  "band.reactivated": { "band_id": string }
+  "band.received": { "band_id": string; "band_number": string; "fields"?: { "band_size"?: string | null; "band_type"?: string | null } }
+  "bander.created": { "bander_id": string; "person_id": string; "fields"?: { "role"?: string | null } }
+  "bander.deactivated": { "bander_id": string }
+  "bander.fields-amended": { "bander_id": string; "fields": { "role"?: string | null; "person_id"?: string | null } }
+  "bander.reactivated": { "bander_id": string }
+  "banding-record.created": { "record_id": string; "session_id": string; "fields": { "species_code"?: string | null; "band_number"?: string | null; "capture_code"?: string | null; "wrp"?: string | null; "age"?: string | null; "how_aged"?: string | null; "how_aged_2"?: string | null; "sex"?: string | null; "how_sexed"?: string | null; "how_sexed_2"?: string | null; "skull"?: string | null; "cp"?: string | null; "bp"?: string | null; "fat"?: string | null; "body_molt"?: string | null; "ff_molt"?: string | null; "ff_wear"?: string | null; "juv_body_plumage"?: string | null; "molt_limits_p_covs"?: string | null; "molt_limits_s_covs"?: string | null; "molt_limits_alula"?: string | null; "molt_limits_pp"?: string | null; "molt_limits_ss"?: string | null; "molt_limits_tert"?: string | null; "molt_limits_rec"?: string | null; "molt_limits_body_plum"?: string | null; "molt_limits_non_feather"?: string | null; "wing"?: number | null; "tail"?: number | null; "tarsus"?: number | null; "exposed_culmen"?: number | null; "other_measurement"?: number | null; "body_mass"?: number | null; "status"?: string | null; "disposition"?: string | null; "capture_time"?: string | null; "release_time"?: string | null; "net_id"?: string | null; "bander_id"?: string | null; "present_condition"?: string | null; "replaced_band_number"?: string | null; "notes"?: string | null; "feather_pull"?: boolean | null; "blood_sample"?: boolean | null; "band_selection"?: { "kind": "managed"; "band_id": string; "band_number": string } | { "kind": "foreign"; "band_number": string } | { "kind": "unbanded" } | null } }
+  "banding-record.deactivated": { "record_id": string }
+  "banding-record.fields-amended": { "record_id": string; "fields": { "species_code"?: string | null; "band_number"?: string | null; "capture_code"?: string | null; "wrp"?: string | null; "age"?: string | null; "how_aged"?: string | null; "how_aged_2"?: string | null; "sex"?: string | null; "how_sexed"?: string | null; "how_sexed_2"?: string | null; "skull"?: string | null; "cp"?: string | null; "bp"?: string | null; "fat"?: string | null; "body_molt"?: string | null; "ff_molt"?: string | null; "ff_wear"?: string | null; "juv_body_plumage"?: string | null; "molt_limits_p_covs"?: string | null; "molt_limits_s_covs"?: string | null; "molt_limits_alula"?: string | null; "molt_limits_pp"?: string | null; "molt_limits_ss"?: string | null; "molt_limits_tert"?: string | null; "molt_limits_rec"?: string | null; "molt_limits_body_plum"?: string | null; "molt_limits_non_feather"?: string | null; "wing"?: number | null; "tail"?: number | null; "tarsus"?: number | null; "exposed_culmen"?: number | null; "other_measurement"?: number | null; "body_mass"?: number | null; "status"?: string | null; "disposition"?: string | null; "capture_time"?: string | null; "release_time"?: string | null; "net_id"?: string | null; "bander_id"?: string | null; "present_condition"?: string | null; "replaced_band_number"?: string | null; "notes"?: string | null; "feather_pull"?: boolean | null; "blood_sample"?: boolean | null; "band_selection"?: { "kind": "managed"; "band_id": string; "band_number": string } | { "kind": "foreign"; "band_number": string } | { "kind": "unbanded" } | null } }
+  "banding-record.reactivated": { "record_id": string }
   "membership.activated": { "membership_id": string; "user_account_id": string }
+  "membership.deactivated": { "membership_id": string }
   "membership.preauthorized": { "membership_id": string; "email": string; "role": "admin" | "contributor" }
-  "session.created": { "session_id": string; "session_date"?: string; "location_name"?: string; "protocol"?: string; "notes"?: string }
+  "membership.reactivated": { "membership_id": string }
+  "membership.role-changed": { "membership_id": string; "role": "admin" | "contributor" }
+  "net.created": { "net_id": string; "station_id": string; "fields"?: { "label"?: string | null } }
+  "net.deactivated": { "net_id": string }
+  "net.fields-amended": { "net_id": string; "fields": { "label"?: string | null; "station_id"?: string | null } }
+  "net.reactivated": { "net_id": string }
+  "person.created": { "person_id": string; "fields"?: { "name"?: string | null; "initials"?: string | null } }
+  "person.deactivated": { "person_id": string }
+  "person.fields-amended": { "person_id": string; "fields": { "name"?: string | null; "initials"?: string | null } }
+  "person.reactivated": { "person_id": string }
+  "session.created": { "session_id": string; "fields": { "session_date"?: string | null; "location_name"?: string | null; "station_id"?: string | null; "protocol"?: string | null; "maps_period"?: number | null; "open_time"?: string | null; "close_time"?: string | null; "master_bander_id"?: string | null; "weather_open_temp"?: number | null; "weather_open_wind"?: number | null; "weather_open_cloud"?: number | null; "weather_open_precip"?: string | null; "weather_close_temp"?: number | null; "weather_close_wind"?: number | null; "weather_close_cloud"?: number | null; "weather_close_precip"?: string | null; "notes"?: string | null } }
+  "session-crew-member.added": { "session_id": string; "bander_id": string }
+  "session-crew-member.removed": { "session_id": string; "bander_id": string }
+  "session.deactivated": { "session_id": string }
+  "session.fields-amended": { "session_id": string; "fields": { "session_date"?: string | null; "location_name"?: string | null; "station_id"?: string | null; "protocol"?: string | null; "maps_period"?: number | null; "open_time"?: string | null; "close_time"?: string | null; "master_bander_id"?: string | null; "weather_open_temp"?: number | null; "weather_open_wind"?: number | null; "weather_open_cloud"?: number | null; "weather_open_precip"?: string | null; "weather_close_temp"?: number | null; "weather_close_wind"?: number | null; "weather_close_cloud"?: number | null; "weather_close_precip"?: string | null; "notes"?: string | null } }
+  "session.reactivated": { "session_id": string }
+  "station.created": { "station_id": string; "fields"?: { "name"?: string | null } }
+  "station.deactivated": { "station_id": string }
+  "station.fields-amended": { "station_id": string; "fields": { "name"?: string | null } }
+  "station.reactivated": { "station_id": string }
   "user-account.linked": { "user_account_id": string; "identity": { "provider": "google"; "subject": string; "email": string } }
+  "user-account.person-linked": { "user_account_id": string; "person_id": string }
+  "user-account.person-unlinked": { "user_account_id": string }
   "workspace.created": { "workspace_id": string; "name": string }
 }
 
-type EventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "event_envelope_version": 2; "workspace_id": string; "command_id": string; "occurred_at": string; "hlc": { "physical_ms": number; "logical": number }; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
+export type EventPayloadByTypeAndVersion = {
+  "band.deactivated": { 1: { "band_id": string } }
+  "band.fields-amended": { 1: { "band_id": string; "fields": { "band_number"?: string | null; "band_size"?: string | null; "band_type"?: string | null } } }
+  "band.reactivated": { 1: { "band_id": string } }
+  "band.received": { 1: { "band_id": string; "band_number": string; "fields"?: { "band_size"?: string | null; "band_type"?: string | null } } }
+  "bander.created": { 1: { "bander_id": string; "person_id": string; "fields"?: { "role"?: string | null } } }
+  "bander.deactivated": { 1: { "bander_id": string } }
+  "bander.fields-amended": { 1: { "bander_id": string; "fields": { "role"?: string | null; "person_id"?: string | null } } }
+  "bander.reactivated": { 1: { "bander_id": string } }
+  "banding-record.created": { 1: { "record_id": string; "session_id": string; "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string }; 2: { "record_id": string; "session_id": string; "fields": { "species_code"?: string | null; "band_number"?: string | null; "capture_code"?: string | null; "wrp"?: string | null; "age"?: string | null; "how_aged"?: string | null; "how_aged_2"?: string | null; "sex"?: string | null; "how_sexed"?: string | null; "how_sexed_2"?: string | null; "skull"?: string | null; "cp"?: string | null; "bp"?: string | null; "fat"?: string | null; "body_molt"?: string | null; "ff_molt"?: string | null; "ff_wear"?: string | null; "juv_body_plumage"?: string | null; "molt_limits_p_covs"?: string | null; "molt_limits_s_covs"?: string | null; "molt_limits_alula"?: string | null; "molt_limits_pp"?: string | null; "molt_limits_ss"?: string | null; "molt_limits_tert"?: string | null; "molt_limits_rec"?: string | null; "molt_limits_body_plum"?: string | null; "molt_limits_non_feather"?: string | null; "wing"?: number | null; "tail"?: number | null; "tarsus"?: number | null; "exposed_culmen"?: number | null; "other_measurement"?: number | null; "body_mass"?: number | null; "status"?: string | null; "disposition"?: string | null; "capture_time"?: string | null; "release_time"?: string | null; "net_id"?: string | null; "bander_id"?: string | null; "present_condition"?: string | null; "replaced_band_number"?: string | null; "notes"?: string | null; "feather_pull"?: boolean | null; "blood_sample"?: boolean | null; "band_selection"?: { "kind": "managed"; "band_id": string; "band_number": string } | { "kind": "foreign"; "band_number": string } | { "kind": "unbanded" } | null } } }
+  "banding-record.deactivated": { 1: { "record_id": string } }
+  "banding-record.fields-amended": { 1: { "record_id": string; "fields": { "band_number"?: string; "species_code"?: string; "age"?: string; "sex"?: string; "capture_time"?: string; "notes"?: string } }; 2: { "record_id": string; "fields": { "species_code"?: string | null; "band_number"?: string | null; "capture_code"?: string | null; "wrp"?: string | null; "age"?: string | null; "how_aged"?: string | null; "how_aged_2"?: string | null; "sex"?: string | null; "how_sexed"?: string | null; "how_sexed_2"?: string | null; "skull"?: string | null; "cp"?: string | null; "bp"?: string | null; "fat"?: string | null; "body_molt"?: string | null; "ff_molt"?: string | null; "ff_wear"?: string | null; "juv_body_plumage"?: string | null; "molt_limits_p_covs"?: string | null; "molt_limits_s_covs"?: string | null; "molt_limits_alula"?: string | null; "molt_limits_pp"?: string | null; "molt_limits_ss"?: string | null; "molt_limits_tert"?: string | null; "molt_limits_rec"?: string | null; "molt_limits_body_plum"?: string | null; "molt_limits_non_feather"?: string | null; "wing"?: number | null; "tail"?: number | null; "tarsus"?: number | null; "exposed_culmen"?: number | null; "other_measurement"?: number | null; "body_mass"?: number | null; "status"?: string | null; "disposition"?: string | null; "capture_time"?: string | null; "release_time"?: string | null; "net_id"?: string | null; "bander_id"?: string | null; "present_condition"?: string | null; "replaced_band_number"?: string | null; "notes"?: string | null; "feather_pull"?: boolean | null; "blood_sample"?: boolean | null; "band_selection"?: { "kind": "managed"; "band_id": string; "band_number": string } | { "kind": "foreign"; "band_number": string } | { "kind": "unbanded" } | null } } }
+  "banding-record.reactivated": { 1: { "record_id": string } }
+  "membership.activated": { 1: { "membership_id": string; "user_account_id": string } }
+  "membership.deactivated": { 1: { "membership_id": string } }
+  "membership.preauthorized": { 1: { "membership_id": string; "email": string; "role": "admin" | "contributor" } }
+  "membership.reactivated": { 1: { "membership_id": string } }
+  "membership.role-changed": { 1: { "membership_id": string; "role": "admin" | "contributor" } }
+  "net.created": { 1: { "net_id": string; "station_id": string; "fields"?: { "label"?: string | null } } }
+  "net.deactivated": { 1: { "net_id": string } }
+  "net.fields-amended": { 1: { "net_id": string; "fields": { "label"?: string | null; "station_id"?: string | null } } }
+  "net.reactivated": { 1: { "net_id": string } }
+  "person.created": { 1: { "person_id": string; "fields"?: { "name"?: string | null; "initials"?: string | null } } }
+  "person.deactivated": { 1: { "person_id": string } }
+  "person.fields-amended": { 1: { "person_id": string; "fields": { "name"?: string | null; "initials"?: string | null } } }
+  "person.reactivated": { 1: { "person_id": string } }
+  "session.created": { 1: { "session_id": string; "session_date"?: string; "location_name"?: string; "protocol"?: string; "notes"?: string }; 2: { "session_id": string; "fields": { "session_date"?: string | null; "location_name"?: string | null; "station_id"?: string | null; "protocol"?: string | null; "maps_period"?: number | null; "open_time"?: string | null; "close_time"?: string | null; "master_bander_id"?: string | null; "weather_open_temp"?: number | null; "weather_open_wind"?: number | null; "weather_open_cloud"?: number | null; "weather_open_precip"?: string | null; "weather_close_temp"?: number | null; "weather_close_wind"?: number | null; "weather_close_cloud"?: number | null; "weather_close_precip"?: string | null; "notes"?: string | null } } }
+  "session-crew-member.added": { 1: { "session_id": string; "bander_id": string } }
+  "session-crew-member.removed": { 1: { "session_id": string; "bander_id": string } }
+  "session.deactivated": { 1: { "session_id": string } }
+  "session.fields-amended": { 1: { "session_id": string; "fields": { "session_date"?: string | null; "location_name"?: string | null; "station_id"?: string | null; "protocol"?: string | null; "maps_period"?: number | null; "open_time"?: string | null; "close_time"?: string | null; "master_bander_id"?: string | null; "weather_open_temp"?: number | null; "weather_open_wind"?: number | null; "weather_open_cloud"?: number | null; "weather_open_precip"?: string | null; "weather_close_temp"?: number | null; "weather_close_wind"?: number | null; "weather_close_cloud"?: number | null; "weather_close_precip"?: string | null; "notes"?: string | null } } }
+  "session.reactivated": { 1: { "session_id": string } }
+  "station.created": { 1: { "station_id": string; "fields"?: { "name"?: string | null } } }
+  "station.deactivated": { 1: { "station_id": string } }
+  "station.fields-amended": { 1: { "station_id": string; "fields": { "name"?: string | null } } }
+  "station.reactivated": { 1: { "station_id": string } }
+  "user-account.linked": { 1: { "user_account_id": string; "identity": { "provider": "google"; "subject": string; "email": string } } }
+  "user-account.person-linked": { 1: { "user_account_id": string; "person_id": string } }
+  "user-account.person-unlinked": { 1: { "user_account_id": string } }
+  "workspace.created": { 1: { "workspace_id": string; "name": string } }
+}
+
+export type EventSchemaVersionByType = {
+  "band.deactivated": 1,
+  "band.fields-amended": 1,
+  "band.reactivated": 1,
+  "band.received": 1,
+  "bander.created": 1,
+  "bander.deactivated": 1,
+  "bander.fields-amended": 1,
+  "bander.reactivated": 1,
+  "banding-record.created": 2,
+  "banding-record.deactivated": 1,
+  "banding-record.fields-amended": 2,
+  "banding-record.reactivated": 1,
+  "membership.activated": 1,
+  "membership.deactivated": 1,
+  "membership.preauthorized": 1,
+  "membership.reactivated": 1,
+  "membership.role-changed": 1,
+  "net.created": 1,
+  "net.deactivated": 1,
+  "net.fields-amended": 1,
+  "net.reactivated": 1,
+  "person.created": 1,
+  "person.deactivated": 1,
+  "person.fields-amended": 1,
+  "person.reactivated": 1,
+  "session.created": 2,
+  "session-crew-member.added": 1,
+  "session-crew-member.removed": 1,
+  "session.deactivated": 1,
+  "session.fields-amended": 1,
+  "session.reactivated": 1,
+  "station.created": 1,
+  "station.deactivated": 1,
+  "station.fields-amended": 1,
+  "station.reactivated": 1,
+  "user-account.linked": 1,
+  "user-account.person-linked": 1,
+  "user-account.person-unlinked": 1,
+  "workspace.created": 1
+}
+
+type EventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": number; "event_envelope_version": 2; "workspace_id": string; "command_id": string; "occurred_at": string; "hlc": { "physical_ms": number; "logical": number }; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
 
 type LegacyEventEnvelope = { "event_id": string; "event_type": string; "event_schema_version": 1; "workspace_id": string; "command_id": string; "occurred_at": string; "actor": { "kind": "restricted-provisioner"; "provisioner_id": string } | { "kind": "external-identity"; "identity": { "provider": "google"; "subject": string; "email": string } } | { "kind": "user-account"; "user_account_id": string }; "payload": Record<string, unknown> }
 
 export type EventActor = EventEnvelope['actor']
 
 export type DomainEvent<T extends EventType = EventType> = T extends EventType
-  ? Omit<EventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }
+  ? { [V in keyof EventPayloadByTypeAndVersion[T] & number]: Omit<EventEnvelope, 'event_type' | 'event_schema_version' | 'payload'> & { event_type: T; event_schema_version: V; payload: EventPayloadByTypeAndVersion[T][V] } }[keyof EventPayloadByTypeAndVersion[T] & number]
   : never
 
 export type LegacyDomainEvent<T extends EventType = EventType> = T extends EventType
-  ? Omit<LegacyEventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }
+  ? Omit<LegacyEventEnvelope, 'event_type' | 'event_schema_version' | 'payload'> & { event_type: T; event_schema_version: 1; payload: EventPayloadByTypeAndVersion[T][1] }
   : never
 
-export const EVENT_TYPES: readonly EventType[] = ["banding-record.created", "banding-record.fields-amended", "membership.activated", "membership.preauthorized", "session.created", "user-account.linked", "workspace.created"]
+export const EVENT_TYPES: readonly EventType[] = ["band.deactivated", "band.fields-amended", "band.reactivated", "band.received", "bander.created", "bander.deactivated", "bander.fields-amended", "bander.reactivated", "banding-record.created", "banding-record.deactivated", "banding-record.fields-amended", "banding-record.reactivated", "membership.activated", "membership.deactivated", "membership.preauthorized", "membership.reactivated", "membership.role-changed", "net.created", "net.deactivated", "net.fields-amended", "net.reactivated", "person.created", "person.deactivated", "person.fields-amended", "person.reactivated", "session.created", "session-crew-member.added", "session-crew-member.removed", "session.deactivated", "session.fields-amended", "session.reactivated", "station.created", "station.deactivated", "station.fields-amended", "station.reactivated", "user-account.linked", "user-account.person-linked", "user-account.person-unlinked", "workspace.created"]
+
+export const CURRENT_EVENT_SCHEMA_VERSION: Readonly<EventSchemaVersionByType> = {
+  "band.deactivated": 1,
+  "band.fields-amended": 1,
+  "band.reactivated": 1,
+  "band.received": 1,
+  "bander.created": 1,
+  "bander.deactivated": 1,
+  "bander.fields-amended": 1,
+  "bander.reactivated": 1,
+  "banding-record.created": 2,
+  "banding-record.deactivated": 1,
+  "banding-record.fields-amended": 2,
+  "banding-record.reactivated": 1,
+  "membership.activated": 1,
+  "membership.deactivated": 1,
+  "membership.preauthorized": 1,
+  "membership.reactivated": 1,
+  "membership.role-changed": 1,
+  "net.created": 1,
+  "net.deactivated": 1,
+  "net.fields-amended": 1,
+  "net.reactivated": 1,
+  "person.created": 1,
+  "person.deactivated": 1,
+  "person.fields-amended": 1,
+  "person.reactivated": 1,
+  "session.created": 2,
+  "session-crew-member.added": 1,
+  "session-crew-member.removed": 1,
+  "session.deactivated": 1,
+  "session.fields-amended": 1,
+  "session.reactivated": 1,
+  "station.created": 1,
+  "station.deactivated": 1,
+  "station.fields-amended": 1,
+  "station.reactivated": 1,
+  "user-account.linked": 1,
+  "user-account.person-linked": 1,
+  "user-account.person-unlinked": 1,
+  "workspace.created": 1
+}
 
 const EVENT_TYPE_BY_NAME: Readonly<Record<EventType, EventType>> = {
+  "band.deactivated": "band.deactivated",
+  "band.fields-amended": "band.fields-amended",
+  "band.reactivated": "band.reactivated",
+  "band.received": "band.received",
+  "bander.created": "bander.created",
+  "bander.deactivated": "bander.deactivated",
+  "bander.fields-amended": "bander.fields-amended",
+  "bander.reactivated": "bander.reactivated",
   "banding-record.created": "banding-record.created",
+  "banding-record.deactivated": "banding-record.deactivated",
   "banding-record.fields-amended": "banding-record.fields-amended",
+  "banding-record.reactivated": "banding-record.reactivated",
   "membership.activated": "membership.activated",
+  "membership.deactivated": "membership.deactivated",
   "membership.preauthorized": "membership.preauthorized",
+  "membership.reactivated": "membership.reactivated",
+  "membership.role-changed": "membership.role-changed",
+  "net.created": "net.created",
+  "net.deactivated": "net.deactivated",
+  "net.fields-amended": "net.fields-amended",
+  "net.reactivated": "net.reactivated",
+  "person.created": "person.created",
+  "person.deactivated": "person.deactivated",
+  "person.fields-amended": "person.fields-amended",
+  "person.reactivated": "person.reactivated",
   "session.created": "session.created",
+  "session-crew-member.added": "session-crew-member.added",
+  "session-crew-member.removed": "session-crew-member.removed",
+  "session.deactivated": "session.deactivated",
+  "session.fields-amended": "session.fields-amended",
+  "session.reactivated": "session.reactivated",
+  "station.created": "station.created",
+  "station.deactivated": "station.deactivated",
+  "station.fields-amended": "station.fields-amended",
+  "station.reactivated": "station.reactivated",
   "user-account.linked": "user-account.linked",
+  "user-account.person-linked": "user-account.person-linked",
+  "user-account.person-unlinked": "user-account.person-unlinked",
   "workspace.created": "workspace.created",
 }
 
@@ -77,7 +302,7 @@ const EVENT_ENVELOPE_SCHEMA = {
     },
     "event_schema_version": {
       "type": "integer",
-      "const": 1
+      "minimum": 1
     },
     "event_envelope_version": {
       "type": "integer",
@@ -323,14 +548,46 @@ const LEGACY_EVENT_ENVELOPE_SCHEMA = {
   "additionalProperties": false
 } as const
 
-const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, unknown>> = {
-  "banding-record.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.created v1","type":"object","required":["record_id","session_id"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false},
-  "banding-record.fields-amended": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.fields-amended v1","type":"object","required":["record_id","fields"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false}},"additionalProperties":false},
-  "membership.activated": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.activated v1","type":"object","required":["membership_id","user_account_id"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},"additionalProperties":false},
-  "membership.preauthorized": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.preauthorized v1","type":"object","required":["membership_id","email","role"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"email":{"type":"string","format":"email"},"role":{"enum":["admin","contributor"]}},"additionalProperties":false},
-  "session.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.created v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_date":{"type":"string"},"location_name":{"type":"string"},"protocol":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false},
-  "user-account.linked": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.linked v1","type":"object","required":["user_account_id","identity"],"properties":{"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"identity":{"type":"object","required":["provider","subject","email"],"properties":{"provider":{"const":"google"},"subject":{"type":"string","minLength":1},"email":{"type":"string","format":"email"}},"additionalProperties":false}},"additionalProperties":false},
-  "workspace.created": {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"workspace.created v1","type":"object","required":["workspace_id","name"],"properties":{"workspace_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"name":{"type":"string","minLength":1}},"additionalProperties":false},
+const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, Readonly<Record<number, unknown>>>> = {
+  "band.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.deactivated v1","type":"object","required":["band_id"],"properties":{"band_id":{"type":"string"}},"additionalProperties":false} },
+  "band.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.fields-amended v1","type":"object","required":["band_id","fields"],"properties":{"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"oneOf":[{"type":"string"},{"const":null}]},"band_size":{"oneOf":[{"type":"string"},{"const":null}]},"band_type":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "band.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.reactivated v1","type":"object","required":["band_id"],"properties":{"band_id":{"type":"string"}},"additionalProperties":false} },
+  "band.received": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"band.received v1","type":"object","required":["band_id","band_number"],"properties":{"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"fields":{"type":"object","properties":{"band_size":{"oneOf":[{"type":"string"},{"const":null}]},"band_type":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "bander.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.created v1","type":"object","required":["bander_id","person_id"],"properties":{"bander_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"person_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"role":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "bander.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.deactivated v1","type":"object","required":["bander_id"],"properties":{"bander_id":{"type":"string"}},"additionalProperties":false} },
+  "bander.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.fields-amended v1","type":"object","required":["bander_id","fields"],"properties":{"bander_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"role":{"oneOf":[{"type":"string"},{"const":null}]},"person_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "bander.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"bander.reactivated v1","type":"object","required":["bander_id"],"properties":{"bander_id":{"type":"string"}},"additionalProperties":false} },
+  "banding-record.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.created v1","type":"object","required":["record_id","session_id"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false}, 2: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.created v2","type":"object","required":["record_id","session_id","fields"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"species_code":{"oneOf":[{"type":"string"},{"const":null}]},"band_number":{"oneOf":[{"type":"string"},{"const":null}]},"capture_code":{"oneOf":[{"type":"string"},{"const":null}]},"wrp":{"oneOf":[{"type":"string"},{"const":null}]},"age":{"oneOf":[{"type":"string"},{"const":null}]},"how_aged":{"oneOf":[{"type":"string"},{"const":null}]},"how_aged_2":{"oneOf":[{"type":"string"},{"const":null}]},"sex":{"oneOf":[{"type":"string"},{"const":null}]},"how_sexed":{"oneOf":[{"type":"string"},{"const":null}]},"how_sexed_2":{"oneOf":[{"type":"string"},{"const":null}]},"skull":{"oneOf":[{"type":"string"},{"const":null}]},"cp":{"oneOf":[{"type":"string"},{"const":null}]},"bp":{"oneOf":[{"type":"string"},{"const":null}]},"fat":{"oneOf":[{"type":"string"},{"const":null}]},"body_molt":{"oneOf":[{"type":"string"},{"const":null}]},"ff_molt":{"oneOf":[{"type":"string"},{"const":null}]},"ff_wear":{"oneOf":[{"type":"string"},{"const":null}]},"juv_body_plumage":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_p_covs":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_s_covs":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_alula":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_pp":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_ss":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_tert":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_rec":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_body_plum":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_non_feather":{"oneOf":[{"type":"string"},{"const":null}]},"wing":{"oneOf":[{"type":"number"},{"const":null}]},"tail":{"oneOf":[{"type":"number"},{"const":null}]},"tarsus":{"oneOf":[{"type":"number"},{"const":null}]},"exposed_culmen":{"oneOf":[{"type":"number"},{"const":null}]},"other_measurement":{"oneOf":[{"type":"number"},{"const":null}]},"body_mass":{"oneOf":[{"type":"number"},{"const":null}]},"status":{"oneOf":[{"type":"string"},{"const":null}]},"disposition":{"oneOf":[{"type":"string"},{"const":null}]},"capture_time":{"oneOf":[{"type":"string"},{"const":null}]},"release_time":{"oneOf":[{"type":"string"},{"const":null}]},"net_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"bander_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"present_condition":{"oneOf":[{"type":"string"},{"const":null}]},"replaced_band_number":{"oneOf":[{"type":"string"},{"const":null}]},"notes":{"oneOf":[{"type":"string"},{"const":null}]},"feather_pull":{"oneOf":[{"type":"boolean"},{"const":null}]},"blood_sample":{"oneOf":[{"type":"boolean"},{"const":null}]},"band_selection":{"oneOf":[{"type":"object","required":["kind","band_id","band_number"],"properties":{"kind":{"const":"managed"},"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"}},"additionalProperties":false},{"type":"object","required":["kind","band_number"],"properties":{"kind":{"const":"foreign"},"band_number":{"type":"string"}},"additionalProperties":false},{"type":"object","required":["kind"],"properties":{"kind":{"const":"unbanded"}},"additionalProperties":false},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "banding-record.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.deactivated v1","type":"object","required":["record_id"],"properties":{"record_id":{"type":"string"}},"additionalProperties":false} },
+  "banding-record.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.fields-amended v1","type":"object","required":["record_id","fields"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"band_number":{"type":"string"},"species_code":{"type":"string"},"age":{"type":"string"},"sex":{"type":"string"},"capture_time":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false}},"additionalProperties":false}, 2: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.fields-amended v2","type":"object","required":["record_id","fields"],"properties":{"record_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"species_code":{"oneOf":[{"type":"string"},{"const":null}]},"band_number":{"oneOf":[{"type":"string"},{"const":null}]},"capture_code":{"oneOf":[{"type":"string"},{"const":null}]},"wrp":{"oneOf":[{"type":"string"},{"const":null}]},"age":{"oneOf":[{"type":"string"},{"const":null}]},"how_aged":{"oneOf":[{"type":"string"},{"const":null}]},"how_aged_2":{"oneOf":[{"type":"string"},{"const":null}]},"sex":{"oneOf":[{"type":"string"},{"const":null}]},"how_sexed":{"oneOf":[{"type":"string"},{"const":null}]},"how_sexed_2":{"oneOf":[{"type":"string"},{"const":null}]},"skull":{"oneOf":[{"type":"string"},{"const":null}]},"cp":{"oneOf":[{"type":"string"},{"const":null}]},"bp":{"oneOf":[{"type":"string"},{"const":null}]},"fat":{"oneOf":[{"type":"string"},{"const":null}]},"body_molt":{"oneOf":[{"type":"string"},{"const":null}]},"ff_molt":{"oneOf":[{"type":"string"},{"const":null}]},"ff_wear":{"oneOf":[{"type":"string"},{"const":null}]},"juv_body_plumage":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_p_covs":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_s_covs":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_alula":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_pp":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_ss":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_tert":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_rec":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_body_plum":{"oneOf":[{"type":"string"},{"const":null}]},"molt_limits_non_feather":{"oneOf":[{"type":"string"},{"const":null}]},"wing":{"oneOf":[{"type":"number"},{"const":null}]},"tail":{"oneOf":[{"type":"number"},{"const":null}]},"tarsus":{"oneOf":[{"type":"number"},{"const":null}]},"exposed_culmen":{"oneOf":[{"type":"number"},{"const":null}]},"other_measurement":{"oneOf":[{"type":"number"},{"const":null}]},"body_mass":{"oneOf":[{"type":"number"},{"const":null}]},"status":{"oneOf":[{"type":"string"},{"const":null}]},"disposition":{"oneOf":[{"type":"string"},{"const":null}]},"capture_time":{"oneOf":[{"type":"string"},{"const":null}]},"release_time":{"oneOf":[{"type":"string"},{"const":null}]},"net_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"bander_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"present_condition":{"oneOf":[{"type":"string"},{"const":null}]},"replaced_band_number":{"oneOf":[{"type":"string"},{"const":null}]},"notes":{"oneOf":[{"type":"string"},{"const":null}]},"feather_pull":{"oneOf":[{"type":"boolean"},{"const":null}]},"blood_sample":{"oneOf":[{"type":"boolean"},{"const":null}]},"band_selection":{"oneOf":[{"type":"object","required":["kind","band_id","band_number"],"properties":{"kind":{"const":"managed"},"band_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"band_number":{"type":"string"}},"additionalProperties":false},{"type":"object","required":["kind","band_number"],"properties":{"kind":{"const":"foreign"},"band_number":{"type":"string"}},"additionalProperties":false},{"type":"object","required":["kind"],"properties":{"kind":{"const":"unbanded"}},"additionalProperties":false},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "banding-record.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"banding-record.reactivated v1","type":"object","required":["record_id"],"properties":{"record_id":{"type":"string"}},"additionalProperties":false} },
+  "membership.activated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.activated v1","type":"object","required":["membership_id","user_account_id"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},"additionalProperties":false} },
+  "membership.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.deactivated v1","type":"object","required":["membership_id"],"properties":{"membership_id":{"type":"string"}},"additionalProperties":false} },
+  "membership.preauthorized": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.preauthorized v1","type":"object","required":["membership_id","email","role"],"properties":{"membership_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"email":{"type":"string","format":"email"},"role":{"enum":["admin","contributor"]}},"additionalProperties":false} },
+  "membership.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.reactivated v1","type":"object","required":["membership_id"],"properties":{"membership_id":{"type":"string"}},"additionalProperties":false} },
+  "membership.role-changed": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"membership.role-changed v1","type":"object","required":["membership_id","role"],"properties":{"membership_id":{"type":"string"},"role":{"enum":["admin","contributor"]}},"additionalProperties":false} },
+  "net.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.created v1","type":"object","required":["net_id","station_id"],"properties":{"net_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"station_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"label":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "net.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.deactivated v1","type":"object","required":["net_id"],"properties":{"net_id":{"type":"string"}},"additionalProperties":false} },
+  "net.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.fields-amended v1","type":"object","required":["net_id","fields"],"properties":{"net_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"label":{"oneOf":[{"type":"string"},{"const":null}]},"station_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "net.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"net.reactivated v1","type":"object","required":["net_id"],"properties":{"net_id":{"type":"string"}},"additionalProperties":false} },
+  "person.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.created v1","type":"object","required":["person_id"],"properties":{"person_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"name":{"oneOf":[{"type":"string"},{"const":null}]},"initials":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "person.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.deactivated v1","type":"object","required":["person_id"],"properties":{"person_id":{"type":"string"}},"additionalProperties":false} },
+  "person.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.fields-amended v1","type":"object","required":["person_id","fields"],"properties":{"person_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"name":{"oneOf":[{"type":"string"},{"const":null}]},"initials":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "person.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"person.reactivated v1","type":"object","required":["person_id"],"properties":{"person_id":{"type":"string"}},"additionalProperties":false} },
+  "session.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.created v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"session_date":{"type":"string"},"location_name":{"type":"string"},"protocol":{"type":"string"},"notes":{"type":"string"}},"additionalProperties":false}, 2: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.created v2","type":"object","required":["session_id","fields"],"properties":{"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"session_date":{"oneOf":[{"type":"string"},{"const":null}]},"location_name":{"oneOf":[{"type":"string"},{"const":null}]},"station_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"protocol":{"oneOf":[{"type":"string"},{"const":null}]},"maps_period":{"oneOf":[{"type":"number"},{"const":null}]},"open_time":{"oneOf":[{"type":"string"},{"const":null}]},"close_time":{"oneOf":[{"type":"string"},{"const":null}]},"master_bander_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"weather_open_temp":{"oneOf":[{"type":"number"},{"const":null}]},"weather_open_wind":{"oneOf":[{"type":"number"},{"const":null}]},"weather_open_cloud":{"oneOf":[{"type":"number"},{"const":null}]},"weather_open_precip":{"oneOf":[{"type":"string"},{"const":null}]},"weather_close_temp":{"oneOf":[{"type":"number"},{"const":null}]},"weather_close_wind":{"oneOf":[{"type":"number"},{"const":null}]},"weather_close_cloud":{"oneOf":[{"type":"number"},{"const":null}]},"weather_close_precip":{"oneOf":[{"type":"string"},{"const":null}]},"notes":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "session-crew-member.added": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session-crew-member.added v1","type":"object","required":["session_id","bander_id"],"properties":{"session_id":{"type":"string"},"bander_id":{"type":"string"}},"additionalProperties":false} },
+  "session-crew-member.removed": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session-crew-member.removed v1","type":"object","required":["session_id","bander_id"],"properties":{"session_id":{"type":"string"},"bander_id":{"type":"string"}},"additionalProperties":false} },
+  "session.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.deactivated v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string"}},"additionalProperties":false} },
+  "session.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.fields-amended v1","type":"object","required":["session_id","fields"],"properties":{"session_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"session_date":{"oneOf":[{"type":"string"},{"const":null}]},"location_name":{"oneOf":[{"type":"string"},{"const":null}]},"station_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"protocol":{"oneOf":[{"type":"string"},{"const":null}]},"maps_period":{"oneOf":[{"type":"number"},{"const":null}]},"open_time":{"oneOf":[{"type":"string"},{"const":null}]},"close_time":{"oneOf":[{"type":"string"},{"const":null}]},"master_bander_id":{"oneOf":[{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},{"const":null}]},"weather_open_temp":{"oneOf":[{"type":"number"},{"const":null}]},"weather_open_wind":{"oneOf":[{"type":"number"},{"const":null}]},"weather_open_cloud":{"oneOf":[{"type":"number"},{"const":null}]},"weather_open_precip":{"oneOf":[{"type":"string"},{"const":null}]},"weather_close_temp":{"oneOf":[{"type":"number"},{"const":null}]},"weather_close_wind":{"oneOf":[{"type":"number"},{"const":null}]},"weather_close_cloud":{"oneOf":[{"type":"number"},{"const":null}]},"weather_close_precip":{"oneOf":[{"type":"string"},{"const":null}]},"notes":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "session.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"session.reactivated v1","type":"object","required":["session_id"],"properties":{"session_id":{"type":"string"}},"additionalProperties":false} },
+  "station.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.created v1","type":"object","required":["station_id"],"properties":{"station_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"name":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "station.deactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.deactivated v1","type":"object","required":["station_id"],"properties":{"station_id":{"type":"string"}},"additionalProperties":false} },
+  "station.fields-amended": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.fields-amended v1","type":"object","required":["station_id","fields"],"properties":{"station_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"fields":{"type":"object","properties":{"name":{"oneOf":[{"type":"string"},{"const":null}]}},"additionalProperties":false}},"additionalProperties":false} },
+  "station.reactivated": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"station.reactivated v1","type":"object","required":["station_id"],"properties":{"station_id":{"type":"string"}},"additionalProperties":false} },
+  "user-account.linked": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.linked v1","type":"object","required":["user_account_id","identity"],"properties":{"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"identity":{"type":"object","required":["provider","subject","email"],"properties":{"provider":{"const":"google"},"subject":{"type":"string","minLength":1},"email":{"type":"string","format":"email"}},"additionalProperties":false}},"additionalProperties":false} },
+  "user-account.person-linked": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.person-linked v1","type":"object","required":["user_account_id","person_id"],"properties":{"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"person_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},"additionalProperties":false} },
+  "user-account.person-unlinked": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"user-account.person-unlinked v1","type":"object","required":["user_account_id"],"properties":{"user_account_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"}},"additionalProperties":false} },
+  "workspace.created": { 1: {"$schema":"https://json-schema.org/draft/2020-12/schema","title":"workspace.created v1","type":"object","required":["workspace_id","name"],"properties":{"workspace_id":{"type":"string","format":"uuid","pattern":"^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"},"name":{"type":"string","minLength":1}},"additionalProperties":false} },
 }
 
 /** Returns a structural Contract error, or undefined for a valid v1 or v2 Event. */
@@ -344,7 +601,11 @@ export function validateGeneratedEvent(value: unknown): string | undefined {
   if (typeof event.event_type !== 'string' || !(event.event_type in EVENT_TYPE_BY_NAME)) {
     return '$.event_type must name a supported Event Contract.'
   }
-  return validateSchema(event.payload, EVENT_PAYLOAD_SCHEMAS[event.event_type as EventType], '$.payload')
+  const schemaVersion = (value as { event_schema_version?: unknown }).event_schema_version
+  if (typeof schemaVersion !== 'number' || !Number.isInteger(schemaVersion) || schemaVersion < 1) return '$.event_schema_version must be a positive integer.'
+  const payloadSchema = EVENT_PAYLOAD_SCHEMAS[event.event_type as EventType][schemaVersion]
+  if (!payloadSchema) return '$.event_schema_version is not supported for this Event type.'
+  return validateSchema(event.payload, payloadSchema, '$.payload')
 }
 
 function validateSchema(value: unknown, schema: unknown, path: string): string | undefined {

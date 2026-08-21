@@ -1,0 +1,73 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: banding-record.fields-amended v2
+type: object
+required: [record_id, fields]
+properties:
+  record_id:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  fields:
+    type: object
+    properties:
+      species_code: &nullable_string { oneOf: [{ type: string }, { const: null }] }
+      band_number: *nullable_string
+      capture_code: *nullable_string
+      wrp: *nullable_string
+      age: *nullable_string
+      how_aged: *nullable_string
+      how_aged_2: *nullable_string
+      sex: *nullable_string
+      how_sexed: *nullable_string
+      how_sexed_2: *nullable_string
+      skull: *nullable_string
+      cp: *nullable_string
+      bp: *nullable_string
+      fat: *nullable_string
+      body_molt: *nullable_string
+      ff_molt: *nullable_string
+      ff_wear: *nullable_string
+      juv_body_plumage: *nullable_string
+      molt_limits_p_covs: *nullable_string
+      molt_limits_s_covs: *nullable_string
+      molt_limits_alula: *nullable_string
+      molt_limits_pp: *nullable_string
+      molt_limits_ss: *nullable_string
+      molt_limits_tert: *nullable_string
+      molt_limits_rec: *nullable_string
+      molt_limits_body_plum: *nullable_string
+      molt_limits_non_feather: *nullable_string
+      wing: &nullable_number { oneOf: [{ type: number }, { const: null }] }
+      tail: *nullable_number
+      tarsus: *nullable_number
+      exposed_culmen: *nullable_number
+      other_measurement: *nullable_number
+      body_mass: *nullable_number
+      status: *nullable_string
+      disposition: *nullable_string
+      capture_time: *nullable_string
+      release_time: *nullable_string
+      net_id: &nullable_uuid { oneOf: [{ type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }, { const: null }] }
+      bander_id: *nullable_uuid
+      present_condition: *nullable_string
+      replaced_band_number: *nullable_string
+      notes: *nullable_string
+      feather_pull: &nullable_boolean { oneOf: [{ type: boolean }, { const: null }] }
+      blood_sample: *nullable_boolean
+      band_selection:
+        oneOf:
+          - type: object
+            required: [kind, band_id, band_number]
+            properties: { kind: { const: managed }, band_id: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }, band_number: { type: string } }
+            additionalProperties: false
+          - type: object
+            required: [kind, band_number]
+            properties: { kind: { const: foreign }, band_number: { type: string } }
+            additionalProperties: false
+          - type: object
+            required: [kind]
+            properties: { kind: { const: unbanded } }
+            additionalProperties: false
+          - const: null
+    additionalProperties: false
+additionalProperties: false

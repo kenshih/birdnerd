@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: membership.reactivated v1
+type: object
+required: [membership_id]
+properties: { membership_id: { type: string } }
+additionalProperties: false

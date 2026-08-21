@@ -1,4 +1,4 @@
-# Phase 30 collaboration pilot runbook
+# Collaboration and Phase 31 operational acceptance runbook
 
 Use this runbook only after PR review and merge/release approval. It separates
 schema-deployer, restricted-Provisioner, browser configuration, and pilot
@@ -41,7 +41,7 @@ Review the applied migration in `supabase/migrations`. Confirm:
 - `anon` cannot execute the three public RPCs;
 - `authenticated` can execute only claim, append, and pull;
 - browser roles have no table DML or private-schema usage; and
-- the security advisor has no unresolved Phase 30 finding.
+- the security advisor has no unresolved Phase 31 finding.
 
 The advisor is expected to warn that authenticated users can execute
 `public.birdnerd_claim_initial_access`, `public.birdnerd_append_events`, and
@@ -61,7 +61,7 @@ drop function if exists public.rls_auto_enable();
 drop table if exists public.test_table;
 ```
 
-Leaked-password protection is not a Phase 30 blocker only while password
+Leaked-password protection is not a Phase 31 blocker only while password
 sign-in remains disabled; enable it if password authentication is ever enabled.
 
 ## 3. Create the restricted Provisioner login
@@ -90,32 +90,41 @@ npm run provision -- \
   --member member@example.com:contributor
 ```
 
-## 4. Two-Station acceptance
+## 4. Two-Station Phase 31 acceptance
 
-Every participant first updates to the Phase 30 Field build. Use two Stations
-and two to four exact-email Members:
+Every participant first updates to the reviewed Phase 31 Field build. Use two
+Stations and two to four exact-email Members. The trusted operator performs
+Membership lifecycle commands through Provisioner; Field must expose no
+Membership management.
 
 1. Each Member signs in with Google. Expected: invited users claim access;
    an uninvited account sees no Workspace data.
-2. Create a pilot Session and partial Banding Record online. Expected: the
-   Event Pipeline traces local append, projection, queue, receipt, and cursor.
-3. Put both Stations offline and create/amend different fields. Expected: saves
+2. As an Admin, configure Station, active Net, Person/Bander, User
+   Account-to-Person link, and received Band inventory. Expected: these remain
+   Event-backed configuration facts with no browser table DML.
+3. Create a complete non-photo Session, add crew, create a managed, foreign,
+   and unbanded Banding Record, then amend and deactivate/reactivate one fact.
+   Expected: all optional scientific fields save offline and active-Net choices
+   are limited to the Session Station.
+4. Put both Stations offline and create/amend different fields. Expected: saves
    remain available and status says changes stay on-device.
-4. Assign the same physical band to two records. Expected: both records remain
-   and a conflict is visible.
-5. Reconnect both Stations and sync. Expected: Event logs converge and field
+5. Assign the same physical band to two records. Expected: both records remain
+   and a conflict and corrective path are visible.
+6. Reconnect both Stations and sync. Expected: Event logs converge and field
    values resolve by HLC then Event ID without silent loss.
-6. Export a Workspace Event Bundle, make an additional offline edit, restore
+7. Export a Workspace Event Bundle, make an additional offline edit, restore
    the older Bundle, and reconnect. Expected: the offline Event is protected,
    the replica rebuilds, and normal sync catches up.
-7. Record participant/device/build, audit IDs, outcomes, advisor result, and
-   any failure before expanding the Event catalog.
+8. Record participant/device/build, Provisioner and event audit IDs, outcomes,
+   advisor result, and any failure. Only after this acceptance may a later
+   change remove the unlinked legacy mutable database and DataBundle code;
+   Phase 31 neither migrates nor deletes legacy data.
 
 After Pages deploy, verify `/birdnerd/` and `/birdnerd/ocr/` work and
 `/birdnerd/sync-db/` is absent. The `sync-db` experiment may be used only
 locally against a different project.
 
-## Pilot evidence
+## Phase 30 pilot evidence
 
 Status: **passed on 2026-08-13**. The hosted acceptance used the deployed
 Field 0.30.0 slice plus the Field 0.30.1 linked-Google-identity hotfix, one

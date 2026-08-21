@@ -26,7 +26,9 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Band Inventory** — Add, track, and manage band stock.
 
-**Data Manager** — Browse records, export session data (CSV, BBL, IBP), import master sheets, and perform recovery-only export/restore with immutable Workspace Event Bundles.
+**Data Manager** — Export and recovery-restore the active Workspace's immutable
+Event Log. Shared record browsing, import preview, and agency exports return in
+Phase 33 after they are rebuilt on Event-backed projections.
 
 ---
 
@@ -80,14 +82,19 @@ status, and recovery-only Workspace Event Bundles. The operational slice lives
 in a clearly labelled Collaboration Pilot workflow and does not dual-write the
 legacy mutable forms. Further field-data commands remain later work.
 
-### 4.3 Phase 31 operational target
+### 4.3 Phase 31 operational workflow
 
-Phase 31 makes the Workspace Event Log the default Field data path and removes
-the separate Collaboration Pilot and legacy mutable replica after real-device
-acceptance. The complete current non-photo Session and Banding Record forms,
+Phase 31 makes the Workspace Event Log the default Field data path. The Field
+Data home entry replaces the separate Collaboration Pilot and unlinks legacy
+mutable workflows. The complete current non-photo Session and Banding Record forms,
 Stations/Nets, Person/Bander roster, Session crew, and Band inventory project
 from immutable Workspace Events. All scientific/observational fields remain
 optional and validations remain soft.
+
+The legacy mutable replica and DataBundle code are deliberately retained without
+data migration or deletion until the two-Station real-device acceptance in the
+runbook has passed. That later removal is not a browser-path fallback and is not
+part of this delivery.
 
 Contributor is the normal field role and may enter, correct, deactivate, and
 reactivate operational data and resolve Band conflicts. Admin additionally
@@ -110,10 +117,13 @@ model before it becomes a shared contract.
 ### 4.4 Key Product Concepts
 
 **Band Inventory & Status:** Each managed Band retains its inventory metadata
-and lifecycle facts. Available/deployed state and deployment date are derived
-from active Banding Record facts; recaptures remain encounter history rather
-than a second deployment. Lost, destroyed, replaced, and retired facts remain
-explicitly correctable.
+(`band_number`, optional `band_size`, and optional `band_type`) plus lifecycle
+facts. No Band status is stored or manually edited. Available, deployed, lost,
+destroyed, and replaced outcomes, current species, deployment/last-seen dates,
+and encounter history are rebuilt from active Banding Record facts; a Band's
+deactivation/reactivation alone owns its inactive/retired lifecycle. Correcting
+or deactivating a source Record recomputes the inventory instead of writing a
+second status value, and Event conflict order determines competing winners.
 
 **Foreign Recaptures:** When a bander encounters a bird wearing a band not in our inventory (issued by another station/permit), the record stores the band number as free text with no FK to the Band entity (`bandId` is null). Capture Code is forced to `F` (Foreign). The band number is preserved for BBL recapture reporting but no Band record is created — we never manage another permit's bands.
 
@@ -122,7 +132,10 @@ explicitly correctable.
 **Session Structure:** A session (date + Station + protocol) involves multiple
 banders and may reference active Nets from that Station on Banding Records.
 Session crew is shared in Phase 31. The legacy per-net effort model is deferred
-for reconsideration with Net Hours.
+for reconsideration with Net Hours. Session lists summarize protocol, MAPS
+period, and the number of active projected Records. Each listed Record can be
+opened in a projection-backed read-only view before entering the separate
+correction flow.
 
 **Validation Datasets (Future):** We will provide species-specific ranges for morphometrics (wing, tail, tarsus, etc.) and code consistency rules to flag unusual combinations (e.g., HY adult molt codes, season/sex mismatches).
 

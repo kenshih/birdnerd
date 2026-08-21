@@ -7,7 +7,7 @@ const event = createEvent({
   workspace_id: '018f8c7b-0000-7000-8000-000000000001',
   command_id: '018f8c7b-0000-7000-8000-000000000002',
   actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
-  payload: { session_id: '018f8c7b-0000-7000-8000-000000000004' },
+  payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', fields: {} },
 })
 
 describe('Supabase Event exchange adapter', () => {

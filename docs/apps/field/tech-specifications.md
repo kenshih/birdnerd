@@ -521,7 +521,7 @@ imports that mutable format into the Event Log.
   before writing, preserves pending local Events, resets the pull cursor,
   rebuilds, and catches up through normal authenticated sync.
 
-### Phase 31 operational Event architecture (target)
+### Phase 31 operational Event architecture
 
 - `@birdnerd/banding` exposes a discriminated command/decision Interface and a
   deterministic operational projection Interface. It owns authority checks,
@@ -539,6 +539,14 @@ imports that mutable format into the Event Log.
   unresolved reference. Deployment is derived from active Record facts, and
   projections surface both incompatible new-deployment claims and duplicate
   normalized band-number claims.
+- `band.received` retains a structural Band ID/number plus optional `band_size`
+  and `band_type`; one typed batch command emits one independently retryable
+  Event per Band under one command ID. `band.fields-amended` uses field-level
+  HLC/LWW and `null` explicit clears for those intrinsic facts. The rebuildable
+  Band-inventory projection exposes status, current species, deployment and
+  last-seen dates, and ordered encounters. Status is never persisted: active
+  Record capture/replacement facts derive it, while Band lifecycle Events alone
+  derive inactivity, so correcting or deactivating a source fact recomputes it.
 - Supabase append admission applies a static Event-type minimum-role table and
   a minimum entity-ID/kind/Workspace reference index. Known wrong-kind or
   cross-Workspace references are permanent rejections; an unknown dependency
@@ -555,6 +563,15 @@ imports that mutable format into the Event Log.
   active Admin invariant.
 - The active-Net picker remains available by Station. There is no Phase 31
   `SessionNetLog` Event family or automatic per-session Net initialization.
+- Home reaches Event Bundle recovery through a focused Event-replica adapter;
+  it never mounts the retained legacy mutable Data Manager. Restore validation,
+  unsynced-Event protection, rebuild, and authenticated catch-up stay behind
+  the existing collaboration boundary.
+- Operational UI reads only the rebuildable projection: Session summaries
+  derive protocol, MAPS period, and active Record counts; Record inspection is
+  a disabled view with no command path; and Capture Time choices come from the
+  selected Session through the pure `netCheckTimes` helper while retaining a
+  projected off-cadence value.
 
 See [ADR 0018](../../adr/0018-operational-event-catalog.md) for the
 catalog and admission decisions.

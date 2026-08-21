@@ -5,6 +5,7 @@
  */
 import {
   admitWorkspaceEvent,
+  projectOperationalEvents,
   projectPilotBanding,
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
@@ -52,6 +53,10 @@ type StoredProjection = {
   sessions: ReturnType<typeof projectPilotBanding>['sessions'] extends ReadonlyMap<string, infer T> ? T[] : never
   banding_records: ReturnType<typeof projectPilotBanding>['banding_records'] extends ReadonlyMap<string, infer T> ? T[] : never
   band_allocation_conflicts: ReturnType<typeof projectPilotBanding>['band_allocation_conflicts']
+  operational_entities: ReturnType<typeof projectOperationalEvents>['entities'] extends ReadonlyMap<string, infer T> ? T[] : never
+  operational_session_crew: string[]
+  operational_unresolved_references: ReturnType<typeof projectOperationalEvents>['unresolved_references']
+  band_number_conflicts: ReturnType<typeof projectOperationalEvents>['band_number_conflicts']
 }
 
 interface WorkspaceEventDatabase extends DBSchema {
@@ -160,9 +165,12 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) {
-          queue.status = receipt.kind === 'rejected' ? 'rejected' : 'accepted'
-          queue.last_error = receipt.kind === 'rejected' ? receipt.reason : undefined
+          // A deferred receipt is an admission-order dependency, not a
+          // failure of the immutable fact. Keep it effective and pending.
+          queue.status = receipt.kind === 'rejected' ? 'rejected' : receipt.kind === 'deferred' ? 'pending' : 'accepted'
+          queue.last_error = receipt.kind === 'rejected' || receipt.kind === 'deferred' ? receipt.reason : undefined
           queue.attempt_count += 1
+          if (receipt.kind === 'deferred' && result.deferred_retry_at !== undefined) queue.retry_at = result.deferred_retry_at
         }
       }
       for (const item of result.pulled) {
@@ -186,7 +194,15 @@ export class WorkspaceEventStore implements DurableReplica {
         if (queue) await tx.objectStore('outbound_queue').put(queue)
         await tx.objectStore('receipts').put({ event_id: receipt.event_id, receipt, recorded_at: Date.now() })
       }
-      await tx.objectStore('sync_metadata').put({ ...metadata, cursor: result.cursor, high_water: highWater, last_failure: undefined, retry_at: undefined, failure_count: 0 })
+      const hasDeferred = result.receipts.some(receipt => receipt.kind === 'deferred')
+      await tx.objectStore('sync_metadata').put({
+        ...metadata,
+        cursor: result.cursor,
+        high_water: highWater,
+        last_failure: hasDeferred ? result.receipts.find(receipt => receipt.kind === 'deferred')?.reason : undefined,
+        retry_at: hasDeferred ? result.deferred_retry_at : undefined,
+        failure_count: hasDeferred ? (metadata.failure_count ?? 0) + 1 : 0,
+      })
       await tx.objectStore('projection_cache').put(projectionCache(effectiveEvents))
       await tx.done
       this.log = new EventLog(effectiveEvents, () => ({ accepted: true }))
@@ -320,6 +336,7 @@ async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
 
 function projectionCache(events: readonly DomainEvent[]): StoredProjection {
   const pilot = projectPilotBanding(events)
+  const operational = projectOperationalEvents(events)
   return {
     cache_key: PROJECTION_CACHE_KEY,
     event_ids: events.map(event => event.event_id),
@@ -327,6 +344,10 @@ function projectionCache(events: readonly DomainEvent[]): StoredProjection {
     sessions: [...pilot.sessions.values()],
     banding_records: [...pilot.banding_records.values()],
     band_allocation_conflicts: pilot.band_allocation_conflicts,
+    operational_entities: [...operational.entities.values()],
+    operational_session_crew: [...operational.session_crew],
+    operational_unresolved_references: operational.unresolved_references,
+    band_number_conflicts: operational.band_number_conflicts,
   }
 }
 

@@ -1,0 +1,31 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: session.fields-amended v1
+type: object
+required: [session_id, fields]
+properties:
+  session_id:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  fields:
+    type: object
+    properties:
+      session_date: &nullable_string { oneOf: [{ type: string }, { const: null }] }
+      location_name: *nullable_string
+      station_id: &nullable_uuid { oneOf: [{ type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }, { const: null }] }
+      protocol: *nullable_string
+      maps_period: &nullable_number { oneOf: [{ type: number }, { const: null }] }
+      open_time: *nullable_string
+      close_time: *nullable_string
+      master_bander_id: *nullable_uuid
+      weather_open_temp: *nullable_number
+      weather_open_wind: *nullable_number
+      weather_open_cloud: *nullable_number
+      weather_open_precip: *nullable_string
+      weather_close_temp: *nullable_number
+      weather_close_wind: *nullable_number
+      weather_close_cloud: *nullable_number
+      weather_close_precip: *nullable_string
+      notes: *nullable_string
+    additionalProperties: false
+additionalProperties: false

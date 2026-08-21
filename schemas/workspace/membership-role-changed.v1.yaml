@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: membership.role-changed v1
+type: object
+required: [membership_id, role]
+properties: { membership_id: { type: string }, role: { enum: [admin, contributor] } }
+additionalProperties: false

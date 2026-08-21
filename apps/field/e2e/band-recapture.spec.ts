@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { openBandList, deployBand, selectBand } from './helpers'
+import { deployBand, entityRow, fieldSelect, selectManagedBand } from './helpers'
 
 /**
  * Recapture flow: a second record on an already-deployed band (capture code R)
@@ -12,16 +12,12 @@ test('a recapture links to the deployed band and shows two encounters', async ({
   const band = await deployBand(page)
 
   // recapture the same band in the same session (encounter 2)
-  await page.getByRole('button', { name: /New Bird Record/i }).click()
-  await selectBand(page, band)
-  await page.locator('select[name="bbpCode"]').selectOption('R') // recapture
-  await page.getByRole('button', { name: /Save Record/i }).first().click()
-  await expect(page.getByRole('button', { name: /^View$/ }).first()).toBeVisible()
+  await selectManagedBand(page, band)
+  await expect(fieldSelect(page, 'Capture code')).toHaveValue('R')
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Banding Records', exact: true }).locator('..').locator(':scope > div')).toHaveCount(2)
 
-  // band is still deployed, and its history shows both encounters
-  await openBandList(page)
-  const bandRow = page.getByRole('button', { name: new RegExp(band) })
-  await expect(bandRow).toContainText('deployed')
-  await bandRow.click() // open Band History
-  await expect(page.getByText(/2 encounters/)).toBeVisible()
+  await page.getByRole('button', { name: 'inventory', exact: true }).click()
+  // Product-red until Inventory exposes retained encounter history.
+  await expect(entityRow(page, 'Inventory', band)).toContainText('2 encounters')
 })

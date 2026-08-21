@@ -73,7 +73,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const pending = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
     const conflicting = createEvent({
       ...pending,
-      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005', fields: {} },
     })
     await store.appendAll([pending])
 
@@ -87,7 +87,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const accepted = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
     const conflicting = createEvent({
       ...accepted,
-      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005', fields: {} },
     })
     await store.appendAcceptedRemote([{ event: accepted, server_sequence: 1 }])
 
@@ -121,6 +121,18 @@ describe('WorkspaceEventStore replica exchange', () => {
     ]))
   })
 
+  it('keeps a deferred admission dependency effective and pending across restart', async () => {
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    const local = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
+    await store.appendAll([local])
+    await store.commit({ receipts: [{ kind: 'deferred', event_id: local.event_id, reason: 'Station is not indexed yet.', retryable: true }], pulled: [], cursor: 0, deferred_retry_at: 5000 })
+    expect(await store.snapshot()).toContainEqual(local)
+    expect((await store.readSyncInput(100, 1000))?.pending_events).toEqual([local])
+    expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'pending', attempt_count: 1, retry_at: 5000 })
+  })
+
   it('scopes a replica snapshot to one Workspace', async () => {
     const store = new WorkspaceEventStore()
     const first = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
@@ -144,7 +156,7 @@ function sessionEvent(eventId: string) {
     workspace_id: workspaceId,
     command_id: commandId,
     actor: { kind: 'user-account', user_account_id: userId },
-    payload: { session_id: eventId },
+    payload: { session_id: eventId, fields: {} },
   })
 }
 

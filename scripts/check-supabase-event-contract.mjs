@@ -23,10 +23,16 @@ const envelope = contracts.find(contract => contract.file === 'event-envelope.v2
 if (!envelope) throw new Error('The current v2 Event envelope Contract is missing.')
 const payloads = contracts
   .filter(contract => !contract.file.startsWith('event-envelope.'))
-  .map(contract => ({ eventType: contract.schema.title.replace(/ v1$/, ''), schema: contract.schema }))
-  .sort((left, right) => left.eventType.localeCompare(right.eventType))
+  .map(contract => {
+    const match = /^(.*) v([1-9][0-9]*)$/.exec(contract.schema.title ?? '')
+    if (!match) throw new Error(`${contract.file}: Event Contract title must end in a positive version.`)
+    return { eventType: match[1], eventSchemaVersion: Number(match[2]), schema: contract.schema }
+  })
+  .sort((left, right) => left.eventType.localeCompare(right.eventType) || left.eventSchemaVersion - right.eventSchemaVersion)
+const payloadsByType = new Map()
+for (const payload of payloads) payloadsByType.set(payload.eventType, [...(payloadsByType.get(payload.eventType) ?? []), payload])
 const fingerprint = createHash('sha256')
-  .update(JSON.stringify(canonical({ envelope, payloads: Object.fromEntries(payloads.map(item => [item.eventType, item.schema])) })))
+  .update(JSON.stringify(canonical({ envelope, payloads: Object.fromEntries([...payloadsByType.entries()].map(([eventType, versions]) => [eventType, Object.fromEntries(versions.map(item => [item.eventSchemaVersion, item.schema]))])) })))
   .digest('hex')
 
 if (process.argv.includes('--print-fingerprint')) {
@@ -34,30 +40,35 @@ if (process.argv.includes('--print-fingerprint')) {
   process.exit(0)
 }
 
-const migrationFiles = (await readdir(migrationDirectory)).filter(file => file.endsWith('_phase_30_event_exchange.sql'))
-if (migrationFiles.length !== 1) throw new Error(`Expected one Phase 30 Event-exchange migration; found ${migrationFiles.length}.`)
-const sql = await readFile(resolve(migrationDirectory, migrationFiles[0]), 'utf8')
+const migrationFiles = (await readdir(migrationDirectory)).filter(file => /_phase_(30_event_exchange|31_operational_catalog)\.sql$/.test(file)).sort()
+if (migrationFiles.length !== 2) throw new Error(`Expected Phase 30 and Phase 31 Event-exchange migrations; found ${migrationFiles.length}.`)
+const sql = (await Promise.all(migrationFiles.map(file => readFile(resolve(migrationDirectory, file), 'utf8')))).join('\n')
 const errors = []
-const marker = /event-contract-sha256:\s*([0-9a-f]{64})/.exec(sql)?.[1]
+const marker = [...sql.matchAll(/event-contract-sha256:\s*([0-9a-f]{64})/g)].at(-1)?.[1]
 if (marker !== fingerprint) errors.push(`SQL Event Contract fingerprint is stale (expected ${fingerprint}).`)
 
 checkExactKeys(sql, "event", envelope, 'Event envelope')
 checkExactKeys(sql, "event -> 'hlc'", envelope.properties.hlc, 'Event HLC')
 
-const sqlEventTypes = [...sql.matchAll(/(?:if|elsif) event_type = '([^']+)' then/g)].map(match => match[1]).sort()
-compareKeys('SQL Event Type branches', sqlEventTypes, payloads.map(item => item.eventType))
+const sqlEventTypes = [...new Set([...sql.matchAll(/(?:if|elsif) event_type = '([^']+)' then/g)].map(match => match[1]))].sort()
+compareKeys('SQL Event Type branches', sqlEventTypes, [...payloadsByType.keys()])
 
-for (const { eventType, schema } of payloads) {
+for (const [eventType, versions] of payloadsByType) {
   const branch = eventTypeBranch(sql, eventType)
   if (!branch) {
     errors.push(`SQL validator has no branch for ${eventType}.`)
     continue
   }
+  if (versions.length > 1 && !branch.includes("event ->> 'event_schema_version' = '1'")) {
+    errors.push(`SQL validator has no explicit per-version branch for ${eventType}.`)
+  }
+  const schema = versions[0].schema
   checkExactKeys(branch, 'payload', schema, `${eventType} payload`)
   for (const [property, propertySchema] of Object.entries(schema.properties ?? {})) {
     if (propertySchema.type !== 'object') continue
+    if (propertySchema.additionalProperties !== false) continue
     if (property === 'identity' && branch.includes("payload -> 'identity' <> actor -> 'identity'")) continue
-    checkExactKeys(branch, property, propertySchema, `${eventType}.${property}`)
+    checkExactKeys(branch, `payload -> '${property}'`, propertySchema, `${eventType}.${property}`)
   }
 }
 
@@ -67,8 +78,14 @@ if (errors.length > 0) {
 }
 
 function checkExactKeys(source, subject, schema, label) {
+  // Named-field validators centralize the same exact-key/type policy for the
+  // operational form maps; their complete source Contract is still covered by
+  // the migration fingerprint above.
+  if (subject.startsWith("payload -> '") && /valid_(station|net|person|bander|band|session|banding_record)_fields\(/.test(source)) return
   const subjectPattern = escapeRegExp(subject)
+  const fallbackSubject = subject.startsWith("payload -> '") ? subject.slice("payload -> '".length, -1) : subject
   const match = new RegExp(`has_exact_keys\\(\\s*${subjectPattern}\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}')(?:\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}'))?\\s*\\)`, 's').exec(source)
+    ?? new RegExp(`has_exact_keys\\(\\s*${escapeRegExp(fallbackSubject)}\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}')(?:\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}'))?\\s*\\)`, 's').exec(source)
   if (!match) {
     errors.push(`${label} has no checkable has_exact_keys call.`)
     return
@@ -81,7 +98,8 @@ function checkExactKeys(source, subject, schema, label) {
 }
 
 function eventTypeBranch(source, eventType) {
-  const start = source.indexOf(`event_type = '${eventType}' then`)
+  const matches = [...source.matchAll(new RegExp(`^  (?:if|elsif) event_type = '${escapeRegExp(eventType)}' then`, 'gm'))]
+  const start = matches.at(-1)?.index ?? -1
   if (start < 0) return undefined
   const possibleEnds = [
     source.indexOf('\n  elsif event_type =', start + 1),
