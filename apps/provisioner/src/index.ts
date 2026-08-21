@@ -21,7 +21,7 @@ type CliOptions = {
 }
 
 export async function runCli(args: readonly string[], environment: NodeJS.ProcessEnv = process.env): Promise<unknown> {
-  const options = parseArgs(args)
+  const options = parseCliOptions(args)
   const connectionString = environment.BIRDNERD_PROVISIONER_DATABASE_URL
   if (!connectionString) throw new Error('BIRDNERD_PROVISIONER_DATABASE_URL is required in the trusted operator environment.')
   const client = new Client({ connectionString })
@@ -41,7 +41,8 @@ export async function runCli(args: readonly string[], environment: NodeJS.Proces
   }
 }
 
-function parseArgs(args: readonly string[]): CliOptions {
+/** Parse command grammar without connecting, so operator mistakes cannot reach the database. */
+export function parseCliOptions(args: readonly string[]): CliOptions {
   const values = new Map<string, string[]>()
   const operation = (args[0] && !args[0].startsWith('--') ? args[0] : 'bootstrap') as CliOptions['operation']
   if (!['bootstrap', 'invite', 'set-role', 'deactivate', 'reactivate'].includes(operation)) throw new Error(`Unknown operation: ${operation}\n\n${helpText()}`)

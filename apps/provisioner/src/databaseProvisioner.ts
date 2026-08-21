@@ -1,5 +1,5 @@
 import type { QueryResult } from 'pg'
-import { isUuidV7, upcastEvent, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
+import { canonicalizeEmail, isUuidV7, upcastEvent, type DomainEvent, type WorkspaceMembershipRole } from '@birdnerd/events'
 import { normalizeProvisioningMembers } from './provisioning.js'
 
 export type ProvisioningMember = { email: string; role: WorkspaceMembershipRole }
@@ -40,11 +40,21 @@ export async function bootstrapWorkspace(
 /** Calls a narrow private lifecycle function; this Adapter never receives raw
  * Event Log or Membership table privileges. */
 export async function changeMembership(database: ProvisioningDatabase, operation: 'invite' | 'set-role' | 'deactivate' | 'reactivate', input: { workspace_id: string; membership_id?: string; email?: string; role?: WorkspaceMembershipRole; provisioner_id?: string }): Promise<MembershipReceipt> {
+  if (!isUuidV7(input.workspace_id)) throw new Error('A UUIDv7 Workspace ID is required.')
+  if (operation === 'invite') {
+    if (!input.email || !input.role) throw new Error('Invite requires email and role.')
+    input = { ...input, email: canonicalizeEmail(input.email) }
+  } else if (!input.membership_id || !isUuidV7(input.membership_id)) {
+    throw new Error(`${operation} requires a UUIDv7 Membership ID.`)
+  }
+  if ((operation === 'invite' || operation === 'set-role') && input.role !== 'admin' && input.role !== 'contributor') throw new Error(`${operation} requires role admin or contributor.`)
   const functionName = `birdnerd_private.${operation.replace('-', '_')}_membership`
   const result = await database.query(`select ${functionName}($1::uuid, $2::uuid, $3, $4, $5) as receipt`, [input.workspace_id, input.membership_id ?? null, input.email ?? null, input.role ?? null, input.provisioner_id ?? 'phase-31-operator'])
   const value = result.rows[0]?.receipt
   if (!isRecord(value) || !isUuidV7(value.workspace_id) || !isUuidV7(value.membership_id) || !isUuidV7(value.command_id) || !Array.isArray(value.events)) throw new Error('Provisioner received an invalid membership audit receipt.')
-  return { workspace_id: value.workspace_id, membership_id: value.membership_id, command_id: value.command_id, events: value.events.map(upcastEvent) }
+  const events = value.events.map(upcastEvent)
+  if (events.length !== 1 || events[0]?.workspace_id !== value.workspace_id) throw new Error('Provisioner received an invalid membership audit receipt.')
+  return { workspace_id: value.workspace_id, membership_id: value.membership_id, command_id: value.command_id, events }
 }
 
 function assertReceipt(value: unknown): BootstrapReceipt {
