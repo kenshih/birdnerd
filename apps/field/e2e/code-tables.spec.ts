@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { openNewRecordForm, openAddBandsForm } from './helpers'
+import { fieldSelect, openNewRecordForm, openBandInventory } from './helpers'
 
 /**
  * Regression guard for the Phase 24 commit-1 code-table edits. These lists are
@@ -10,21 +10,23 @@ import { openNewRecordForm, openAddBandsForm } from './helpers'
  */
 
 test('band size options include 4A, 5, 6', async ({ page }) => {
-  await openAddBandsForm(page)
-  const size = page.locator('select', { has: page.locator('option', { hasText: '— Select size —' }) })
+  await openBandInventory(page)
+  // Product-red until the event-backed Band contract retains inventory size.
+  const size = page.getByLabel('Band Size', { exact: true })
+  await expect(size).toBeVisible()
   const opts = await size.locator('option').allTextContents()
   for (const v of ['4A', '5', '6']) expect(opts).toContain(v)
 })
 
 test('skull adds "8 — Invisible" and drops "X — Not checked"', async ({ page }) => {
   await openNewRecordForm(page)
-  const skull = await page.locator('select[name="skull"] option').allTextContents()
+  const skull = await fieldSelect(page, 'Skull').locator('option').allTextContents()
   expect(skull).toContain('8 — Invisible')
   expect(skull.some(t => /not checked/i.test(t))).toBe(false)
 })
 
 test('disposition adds "X — Ectoparasite"', async ({ page }) => {
   await openNewRecordForm(page)
-  const disp = await page.locator('select[name="disposition"] option').allTextContents()
+  const disp = await fieldSelect(page, 'Disposition').locator('option').allTextContents()
   expect(disp).toContain('X — Ectoparasite')
 })

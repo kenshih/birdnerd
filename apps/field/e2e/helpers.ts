@@ -1,147 +1,184 @@
-import { type Page, expect } from '@playwright/test'
+import { type Locator, type Page, expect } from '@playwright/test'
 
-/**
- * Centralized navigation so Phase 24's form/view reorg only breaks one place.
- * Each fresh Playwright context starts with an empty IndexedDB; the app seeds
- * public/data/seed.json on first launch (2 locations, 5 banders, 10 nets), so
- * a location exists and the session "Create" button is enabled by default.
- */
-
+/** Phase 31's authenticated, event-backed Field surface. */
 export async function gotoHome(page: Page) {
   await page.goto('/birdnerd/')
-  await expect(page.getByText('Session Data')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'BirdNerd', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: /Field Data/ })).toBeVisible()
 }
 
-/** Home → Session Data → New Session (auto-located) → New Bird Record form. */
-export async function openNewRecordForm(page: Page) {
+/** Home → Field Data. */
+export async function openFieldData(page: Page) {
   await gotoHome(page)
-  await page.getByText('Session Data').first().click()
-  await page.getByRole('button', { name: /New Session/i }).click()
-  await page.getByRole('button', { name: /^Create$/ }).click()
-  await page.getByRole('button', { name: /New Bird Record/i }).click()
-  await expect(page.getByRole('button', { name: /Save Record/i }).first()).toBeVisible()
+  await page.getByRole('button', { name: /Field Data/ }).click()
+  await expect(page.getByRole('heading', { name: 'Field Data', exact: true })).toBeVisible()
+  await expect(page.getByText('Playwright Field Workspace')).toBeVisible()
 }
 
-/** Home → Session Data (the Banding Sessions list). */
-export async function openSessionList(page: Page) {
-  await gotoHome(page)
-  await page.getByText('Session Data').first().click()
-  await expect(page.getByRole('button', { name: /New Session/i })).toBeVisible()
-}
-
-/** Home → Band Inventory → Add Bands form. */
-export async function openAddBandsForm(page: Page) {
-  await gotoHome(page)
-  await page.getByText('Band Inventory').first().click()
-  await page.getByRole('button', { name: /Add Bands/i }).click()
-  await expect(page.getByText('— Select size —')).toBeAttached()
-}
-
-/** From the Band Inventory overview: add a batch of bands (leaves you on the overview). */
-export async function addBandBatch(
-  page: Page, prefix: string, start: string, end: string, size: string, type = 'Standard',
+/** Field Data → a named operational tab. */
+export async function openFieldTab(
+  page: Page,
+  tab: 'sessions' | 'records' | 'inventory' | 'configuration',
 ) {
-  await page.getByRole('button', { name: /Add Bands/i }).click()
-  await page.getByPlaceholder('e.g. 1154').fill(prefix)
-  await page.getByPlaceholder('e.g. 81501').fill(start)
-  await page.getByPlaceholder('e.g. 81550').fill(end)
-  await page.locator('select', { has: page.locator('option', { hasText: '— Select size —' }) }).selectOption(size)
-  await page.locator('select', { has: page.locator('option', { hasText: 'Lock-on' }) }).selectOption(type)
-  await page.getByRole('button', { name: /^Add \d+ Band/ }).click()
-  await expect(page.getByText('By Size & Type')).toBeVisible()
+  await openFieldData(page)
+  await page.getByRole('button', { name: tab, exact: true }).click()
 }
 
-/** In an open record form, pick a band in the BandSearchSelect by its number. */
-export async function selectBand(page: Page, bandNumber: string) {
-  await page.getByPlaceholder('Search band # or UNBANDED').fill(bandNumber)
-  await page.getByText(bandNumber, { exact: true }).click() // dropdown option
+/** Home → Field Data → Sessions. */
+export async function openSessionList(page: Page) {
+  await openFieldTab(page, 'sessions')
+  await expect(page.getByRole('heading', { name: 'New Session', exact: true })).toBeVisible()
 }
 
-/** Home → Band Inventory → View All Bands (the full band list). */
-export async function openBandList(page: Page) {
-  await gotoHome(page)
-  await page.getByText('Band Inventory').first().click()
-  await page.getByRole('button', { name: /View All Bands/i }).click()
+/** Create an event-backed Session and wait until its projection is visible. */
+export async function createSession(
+  page: Page,
+  fields: { date?: string; protocol?: string; mapsPeriod?: string } = {},
+) {
+  const date = fields.date ?? '2026-08-21'
+  await page.getByLabel('Date', { exact: true }).fill(date)
+  if (fields.protocol) await fieldSelect(page, 'Protocol').selectOption(fields.protocol)
+  if (fields.mapsPeriod) await page.getByLabel('MAPS Period', { exact: true }).fill(fields.mapsPeriod)
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(entitySection(page, 'Sessions')).toContainText(date)
+  return date
 }
 
-/**
- * Add a band to inventory and record a new banding on it, leaving it "deployed"
- * and the page on the saved-record view. Returns the band number for follow-on
- * assertions. Setup for specs that test what happens *after* deployment
- * (recapture, FK-aware delete) — band-deployment.spec.ts keeps these steps
- * inline since deployment is its system under test.
- */
-export async function deployBand(page: Page, prefix = '1154', num = '00001', size = '1B') {
-  const bandNumber = `${prefix}-${num}`
-  await gotoHome(page)
-  await page.getByText('Band Inventory').first().click()
-  await addBandBatch(page, prefix, num, num, size, 'Standard')
-  await openNewRecordForm(page)
-  await selectBand(page, bandNumber)
-  await page.locator('select[name="bbpCode"]').selectOption('1') // new banding
-  await page.getByRole('button', { name: /Save Record/i }).first().click()
-  await expect(page.getByRole('button', { name: /^View$/ }).first()).toBeVisible()
+/** Home → Field Data → create Session → New Banding Record form. */
+export async function openNewRecordForm(page: Page) {
+  await openSessionList(page)
+  await createSession(page)
+  await page.getByRole('button', { name: 'records', exact: true }).click()
+  await chooseFirstSession(page)
+  await expect(page.getByRole('heading', { name: 'New Banding Record', exact: true })).toBeVisible()
+}
+
+/** Select the first active Session from the Records tab. */
+export async function chooseFirstSession(page: Page) {
+  const session = page.locator('select').filter({ has: page.locator('option', { hasText: 'Choose a Session' }) })
+  await expect(session.locator('option')).not.toHaveCount(1)
+  await session.selectOption({ index: 1 })
+}
+
+/** Home → Field Data → Inventory. */
+export async function openBandInventory(page: Page) {
+  await openFieldTab(page, 'inventory')
+  await expect(page.getByRole('heading', { name: 'Receive Band', exact: true })).toBeVisible()
+}
+
+/** Receive one Band through the current immutable Event flow. */
+export async function receiveBand(page: Page, bandNumber: string) {
+  await page.getByLabel('Band number', { exact: true }).fill(bandNumber)
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(entitySection(page, 'Inventory')).toContainText(bandNumber)
+}
+
+/** Receive a Band, create a Session, and leave its new-record form open. */
+export async function openRecordFormWithBand(page: Page, bandNumber = '1154-00001') {
+  await openBandInventory(page)
+  await receiveBand(page, bandNumber)
+  await page.getByRole('button', { name: 'sessions', exact: true }).click()
+  await createSession(page)
+  await page.getByRole('button', { name: 'records', exact: true }).click()
+  await chooseFirstSession(page)
   return bandNumber
 }
 
+/** Select a managed inventory Band in the event-backed Record form. */
+export async function selectManagedBand(page: Page, bandNumber: string) {
+  await fieldSelect(page, 'Band selection').selectOption('managed')
+  const managedBand = fieldSelect(page, 'Managed Band')
+  const value = await managedBand.locator('option').filter({ hasText: bandNumber }).getAttribute('value')
+  if (!value) throw new Error(`Managed Band option ${bandNumber} has no value.`)
+  await managedBand.selectOption(value)
+}
+
+/** Create a foreign-band Record in the currently selected Session. */
+export async function createForeignRecord(page: Page, species: string, bandNumber: string) {
+  await page.getByLabel('Species code', { exact: true }).fill(species)
+  await fieldSelect(page, 'Band selection').selectOption('foreign')
+  await page.getByLabel('Foreign band number', { exact: true }).fill(bandNumber)
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(entitySection(page, 'Banding Records')).toContainText(species)
+  await expect(entitySection(page, 'Banding Records')).toContainText(bandNumber)
+}
+
+/** Add a managed Band and make a new deployment Record on it. */
+export async function deployBand(page: Page, bandNumber = '1154-00001') {
+  await openRecordFormWithBand(page, bandNumber)
+  await selectManagedBand(page, bandNumber)
+  await expect(fieldSelect(page, 'Capture code')).toHaveValue('1')
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(entitySection(page, 'Banding Records')).toContainText(bandNumber)
+  return bandNumber
+}
+
+/** Start amending the first projected Banding Record. */
+export async function editFirstRecord(page: Page) {
+  const record = page.locator('label').filter({ hasText: 'Edit existing Record' }).locator('select')
+  await record.selectOption({ index: 1 })
+  await expect(page.getByRole('heading', { name: 'Amend Banding Record', exact: true })).toBeVisible()
+}
+
+/** A projected operational-entity section and one of its direct entity rows. */
+export function entitySection(page: Page, title: string): Locator {
+  return page.getByRole('heading', { name: title, exact: true }).locator('..')
+}
+
+export function entityRow(page: Page, title: string, detail: string): Locator {
+  return entitySection(page, title).locator(':scope > div').filter({ hasText: detail })
+}
+
+/** SelectField renders a caption span inside a wrapping label. */
+export function fieldSelect(page: Page, label: string): Locator {
+  return page.getByText(label, { exact: true }).locator('..').locator('select')
+}
+
 /**
- * A "rich" banding record fixture — values across every form section — used to
- * guard data round-trips (form save→reopen, bundle export→import). It targets
- * the `ALL_FIELDS`/register-completeness class of bug (e.g. the Alula load gap):
- * if a field stops persisting/reloading, the round-trip assertion fails.
- *
- * Excludes species (custom autocomplete) and band (needs inventory) by design;
- * numbers avoid trailing zeros so they reload as the same string. Fields are
- * addressed by their `name` (react-hook-form `register` sets it).
+ * A rich Phase 31 Banding Record fixture. Keys are accessible Field labels,
+ * keeping this guard independent of the retired react-hook-form `name`s.
  */
 export const richRecord = {
   selects: {
-    bbpCode: '1', age: '1', sex: 'F', howAged: 'SK', howSexed: 'CC',
-    skull: '6', cp: '2', bp: '3', fat: '4',
-    bodyMolt: '2', ffMolt: 'S', ffWear: '3', juvBodyPlumage: '1',
-    moltLimitsPCovs: 'F', moltLimitsSCovs: 'B', moltLimitsAlula: 'F',
-    moltLimitsPP: 'R', moltLimitsSS: 'M', moltLimitsTert: 'L',
-    moltLimitsRec: 'N', moltLimitsBodyPlum: 'J', moltLimitsNonFeather: 'U',
-    status: '300', disposition: 'X', captureTime: '07:30',
+    'Capture code': '1', Age: '1', Sex: 'F', 'How Aged': 'SK', 'How Sexed': 'CC',
+    Skull: '6', CP: '2', BP: '3', Fat: '4',
+    'Body Molt': '2', 'FF Molt': 'S', 'FF Wear': '3', 'Juv Body Plumage': '1',
+    'P Covs': 'F', 'G Covs': 'B', Alula: 'F', PP: 'R', SS: 'M', Tert: 'L',
+    Rec: 'N', 'Body Plum': 'J', 'Non-Feather': 'U', Status: '300', Disposition: 'X',
   } as Record<string, string>,
   inputs: {
-    releaseTime: '08:00',
-    wing: '67', tail: '55', tarsus: '22.5', exposedCulmen: '11.2', bodyMass: '18.3',
+    'Capture Time': '07:30', 'Release Time': '08:00',
+    'Wing (mm)': '67', 'Tail (mm)': '55', 'Tarsus (mm)': '22.5',
+    'Exp. Culmen (mm)': '11.2', 'Body Mass (g)': '18.3',
   } as Record<string, string>,
   notes: 'round-trip fixture',
-  checkboxes: ['featherPull', 'bloodSample'],
+  checkboxes: ['Feather Pull', 'Blood Sample'],
 }
 
-/** Fill the open New Bird Record form with the rich fixture. */
+/** Fill the open New Banding Record form with the rich fixture. */
 export async function fillRichRecord(page: Page) {
-  for (const [name, value] of Object.entries(richRecord.selects)) {
-    await recordSelect(page, name).selectOption(value)
+  for (const [label, value] of Object.entries(richRecord.selects)) {
+    await fieldSelect(page, label).selectOption(value)
   }
-  for (const [name, value] of Object.entries(richRecord.inputs)) {
-    await page.locator(`input[name="${name}"]`).fill(value)
+  for (const [label, value] of Object.entries(richRecord.inputs)) {
+    await page.getByLabel(label, { exact: true }).fill(value)
   }
-  await page.locator('textarea[name="notes"]').fill(richRecord.notes)
-  for (const name of richRecord.checkboxes) {
-    await page.locator(`input[name="${name}"]`).check()
+  await page.getByText('Notes', { exact: true }).locator('..').locator('textarea').fill(richRecord.notes)
+  for (const label of richRecord.checkboxes) {
+    await page.getByLabel(label, { exact: true }).check()
   }
 }
 
-/** Assert the rich fixture's values are present (works on an editable or disabled form). */
+/** Assert the rich fixture's values are present after an Event amendment load. */
 export async function assertRichRecord(page: Page) {
-  for (const [name, value] of Object.entries(richRecord.selects)) {
-    await expect(recordSelect(page, name)).toHaveValue(value)
+  for (const [label, value] of Object.entries(richRecord.selects)) {
+    await expect(fieldSelect(page, label)).toHaveValue(value)
   }
-  for (const [name, value] of Object.entries(richRecord.inputs)) {
-    await expect(page.locator(`input[name="${name}"]`)).toHaveValue(value)
+  for (const [label, value] of Object.entries(richRecord.inputs)) {
+    await expect(page.getByLabel(label, { exact: true })).toHaveValue(value)
   }
-  await expect(page.locator('textarea[name="notes"]')).toHaveValue(richRecord.notes)
-  for (const name of richRecord.checkboxes) {
-    await expect(page.locator(`input[name="${name}"]`)).toBeChecked()
+  await expect(page.getByText('Notes', { exact: true }).locator('..').locator('textarea')).toHaveValue(richRecord.notes)
+  for (const label of richRecord.checkboxes) {
+    await expect(page.getByLabel(label, { exact: true })).toBeChecked()
   }
-}
-
-function recordSelect(page: Page, name: string) {
-  return name === 'status'
-    ? page.getByRole('combobox', { name: 'Status' })
-    : page.locator(`select[name="${name}"]`)
 }

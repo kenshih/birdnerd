@@ -1,5 +1,5 @@
-import { test, expect, type Page } from '@playwright/test'
-import { gotoHome } from './helpers'
+import { test, expect } from '@playwright/test'
+import { openBandInventory } from './helpers'
 
 /**
  * Phase 24 commit 4a: band inventory by size & type summary, string ranges
@@ -7,22 +7,19 @@ import { gotoHome } from './helpers'
  * logic is unit-tested in bandInventory.test.ts; this covers the add→persist→
  * summarize→list flow end-to-end.
  */
-async function addBatch(page: Page, prefix: string, start: string, end: string, size: string, type: string) {
-  await page.getByRole('button', { name: /Add Bands/i }).click()
-  await page.getByPlaceholder('e.g. 1154').fill(prefix)
-  await page.getByPlaceholder('e.g. 81501').fill(start)
-  await page.getByPlaceholder('e.g. 81550').fill(end)
-  await page.locator('select', { has: page.locator('option', { hasText: '— Select size —' }) }).selectOption(size)
-  await page.locator('select', { has: page.locator('option', { hasText: 'Lock-on' }) }).selectOption(type)
-  await page.getByRole('button', { name: /^Add \d+ Band/ }).click()
-  await expect(page.getByText('By Size & Type')).toBeVisible()
-}
-
 test('added bands appear by size+type, list in full, and group into strings', async ({ page }) => {
-  await gotoHome(page)
-  await page.getByText('Band Inventory').first().click()
-  await addBatch(page, '1154', '00001', '00005', '1B', 'Lock-on')
+  await openBandInventory(page)
 
+  // Product-red: Phase 31 receiving must retain batch range, size, and type.
+  const prefix = page.getByLabel('Prefix', { exact: true })
+  await expect(prefix).toBeVisible()
+  await prefix.fill('1154')
+  await page.getByLabel('Start', { exact: true }).fill('00001')
+  await page.getByLabel('End', { exact: true }).fill('00005')
+  await page.getByLabel('Band Size', { exact: true }).selectOption('1B')
+  await page.getByLabel('Band type', { exact: true }).selectOption('Lock-on')
+  await page.getByRole('button', { name: /^Add 5 Bands$/ }).click()
+  await expect(page.getByText('By Size & Type')).toBeVisible()
   await expect(page.getByText('Lock-on')).toBeVisible()
   await expect(page.getByText('Export Inventory (CSV)')).toBeVisible()
 

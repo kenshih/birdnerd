@@ -1,5 +1,5 @@
-import { test, expect } from '@playwright/test'
-import { openNewRecordForm, fillRichRecord, assertRichRecord } from './helpers'
+import { test } from '@playwright/test'
+import { openNewRecordForm, fillRichRecord, assertRichRecord, editFirstRecord } from './helpers'
 
 /**
  * Data round-trip #1: a fully-populated record survives save and re-open for
@@ -10,9 +10,8 @@ import { openNewRecordForm, fillRichRecord, assertRichRecord } from './helpers'
 test('a fully-filled record survives save and re-open for edit', async ({ page }) => {
   await openNewRecordForm(page)
   await fillRichRecord(page)
-  await page.getByRole('button', { name: /Save Record/i }).first().click()
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
 
-  await page.getByRole('button', { name: /^Edit$/ }).first().click()
-  await expect(page.getByRole('heading', { name: /Edit Record/i })).toBeVisible()
+  await editFirstRecord(page)
   await assertRichRecord(page)
 })
