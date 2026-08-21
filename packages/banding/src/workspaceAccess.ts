@@ -173,7 +173,8 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     return { accepted: true }
   }
 
-  if (candidate.event_type === 'session.created' || candidate.event_type === 'banding-record.created' || candidate.event_type === 'banding-record.fields-amended') {
+  const minimumRole = operationalMinimumRole(candidate.event_type)
+  if (minimumRole) {
     if (candidate.actor.kind !== 'user-account') return deny('An active Workspace Member must author operational Events.')
     const actorUserAccountId = candidate.actor.user_account_id
     const activeMembership = [...projection.workspace_memberships.values()].find(workspaceMembership => (
@@ -181,7 +182,9 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
       && workspaceMembership.status === 'active'
       && workspaceMembership.user_account_id === actorUserAccountId
     ))
-    return activeMembership ? { accepted: true } : deny('The Event actor is not an active Member of the target Workspace.')
+    if (!activeMembership) return deny('The Event actor is not an active Member of the target Workspace.')
+    if (minimumRole === 'admin' && activeMembership.role !== 'admin') return deny('Admin role is required for Workspace configuration.')
+    return { accepted: true }
   }
 
   if (candidate.event_type !== 'membership.activated') return deny('This Event is not part of the Workspace-access catalog.')
@@ -191,6 +194,12 @@ export function admitWorkspaceEvent(candidate: DomainEvent, existingEvents: read
     return deny('A Membership activation must target the Membership Workspace.')
   }
   return { accepted: true }
+}
+
+function operationalMinimumRole(eventType: DomainEvent['event_type']): 'admin' | 'contributor' | undefined {
+  if (['station.created','station.fields-amended','station.deactivated','station.reactivated','net.created','net.fields-amended','net.deactivated','net.reactivated','person.created','person.fields-amended','person.deactivated','person.reactivated','bander.created','bander.fields-amended','bander.deactivated','bander.reactivated','user-account.person-linked','user-account.person-unlinked'].includes(eventType)) return 'admin'
+  if (['band.received','band.fields-amended','band.deactivated','band.reactivated','session.created','session.fields-amended','session.deactivated','session.reactivated','session-crew-member.added','session-crew-member.removed','banding-record.created','banding-record.fields-amended','banding-record.deactivated','banding-record.reactivated'].includes(eventType)) return 'contributor'
+  return undefined
 }
 
 /** Resolve an external identity to current Workspace access without changing the Event Log. */
