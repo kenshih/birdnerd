@@ -60,9 +60,17 @@ export function projectOperationalEvents(events: readonly DomainEvent[]): Operat
   for (const event of events) {
     const type = event.event_type
     const created = creationKind(type)
-    if (created) { const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[created]]) as UuidV7; apply(created, id, fieldsFrom(event), true, event); continue }
+    if (created) {
+      const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[created]]) as UuidV7
+      const reference = created === 'net' ? ['station_id', 'station'] as const : created === 'bander' ? ['person_id', 'person'] as const : created === 'banding-record' ? ['session_id', 'session'] as const : undefined
+      if (reference) {
+        const referenceId = String((event.payload as Record<string, unknown>)[reference[0]]) as UuidV7
+        if (!entities.has(referenceId)) unresolved.push({ event_id: event.event_id, reference_id: referenceId, expected_kind: reference[1] })
+      }
+      apply(created, id, fieldsFrom(event), true, event); continue
+    }
     const lifecycle = lifecycleKind(type)
-    if (lifecycle) { const { kind, action } = lifecycle; const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[kind]]) as UuidV7; const existing = entities.get(id); if (!existing) { unresolved.push({ event_id: event.event_id, reference_id: id, expected_kind: kind }); continue }; if (action === 'amend') apply(kind, id, fieldsFrom(event), existing.active, event); else if (isLater(event, (existing as OperationalEntity & { lifecycle_event?: DomainEvent }).lifecycle_event)) { entities.set(id, { ...existing, active: action === 'reactivate', lifecycle_event: event } as OperationalEntity); } ; continue }
+    if (lifecycle) { const { kind, action } = lifecycle; const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[kind]]) as UuidV7; const existing = entities.get(id); if (!existing) { unresolved.push({ event_id: event.event_id, reference_id: id, expected_kind: kind }); if (action === 'amend') apply(kind, id, fieldsFrom(event), false, event); continue }; if (action === 'amend') apply(kind, id, fieldsFrom(event), existing.active, event); else if (isLater(event, (existing as OperationalEntity & { lifecycle_event?: DomainEvent }).lifecycle_event)) { entities.set(id, { ...existing, active: action === 'reactivate', lifecycle_event: event } as OperationalEntity); } ; continue }
     if (type === 'session-crew-member.added' || type === 'session-crew-member.removed') { const p = event.payload as { session_id: string; bander_id: string }; const key = `${p.session_id}:${p.bander_id}`; if (isLater(event, crew.get(key))) crew.set(key, event); continue }
     if (type === 'user-account.person-linked' || type === 'user-account.person-unlinked') { const p = event.payload as { user_account_id: UuidV7; person_id?: UuidV7 }; const existing = links.get(p.user_account_id); if (!existing || isLater(event, existing.event)) links.set(p.user_account_id, { person_id: p.person_id, event }); }
   }
