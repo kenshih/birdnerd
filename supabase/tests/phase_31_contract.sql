@@ -1,5 +1,5 @@
 begin;
-select plan(17);
+select plan(25);
 
 select has_table('birdnerd_private', 'entity_reference_index', 'private entity-reference admission index exists');
 select ok((select relrowsecurity from pg_class where oid = 'birdnerd_private.entity_reference_index'::regclass), 'entity-reference index uses RLS defense in depth');
@@ -81,6 +81,57 @@ select ok(
 create temp table phase31_fixture as
 select (receipt ->> 'workspace_id')::uuid as workspace_id
 from (select birdnerd_private.bootstrap_workspace('Phase 31 test Workspace', '[{"email":"phase31-admin@example.com","role":"admin"}]'::jsonb, 'pgtap') as receipt) bootstrap;
+
+alter table phase31_fixture add column user_account_id uuid;
+grant select on phase31_fixture to authenticated;
+insert into auth.users (id, email, raw_app_meta_data, raw_user_meta_data, is_sso_user, is_anonymous)
+values ('10000000-0000-4000-8000-000000000031', 'phase31-account@example.com', '{"provider":"google"}', '{}', false, false);
+insert into auth.identities (provider_id, user_id, identity_data, provider)
+values ('google-phase31-admin', '10000000-0000-4000-8000-000000000031', '{"sub":"google-phase31-admin","email":"phase31-admin@example.com"}', 'google');
+set local role authenticated;
+set local "request.jwt.claim.sub" = '10000000-0000-4000-8000-000000000031';
+select is((select count(*)::integer from public.birdnerd_claim_initial_access()), 4, 'fixture Admin claims canonical Workspace access');
+reset role;
+update phase31_fixture fixture set user_account_id = membership.user_account_id from birdnerd_private.membership_index membership where membership.workspace_id = fixture.workspace_id;
+
+set local role authenticated;
+set local "request.jwt.claim.sub" = '10000000-0000-4000-8000-000000000031';
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000231','event_type','station.created','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000232','occurred_at','2026-08-21T12:00:00.000Z','hlc',jsonb_build_object('physical_ms',1787313600000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('station_id','018f8c7b-0000-7000-8000-000000000233','fields',jsonb_build_object('name','North'))
+)))), 'accepted', 'browser admission accepts a reviewed Station create field');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000234','event_type','station.fields-amended','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000235','occurred_at','2026-08-21T12:00:01.000Z','hlc',jsonb_build_object('physical_ms',1787313601000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('station_id','018f8c7b-0000-7000-8000-000000000233','fields',jsonb_build_object('name','South'))
+)))), 'accepted', 'browser admission accepts a reviewed Station amendment');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000236','event_type','net.created','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000237','occurred_at','2026-08-21T12:00:02.000Z','hlc',jsonb_build_object('physical_ms',1787313602000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('net_id','018f8c7b-0000-7000-8000-000000000238','station_id','018f8c7b-0000-7000-8000-000000000239','fields',jsonb_build_object('label','N1'))
+)))), 'deferred', 'unknown structural parent produces a durable deferred receipt');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000240','event_type','band.fields-amended','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000241','occurred_at','2026-08-21T12:00:03.000Z','hlc',jsonb_build_object('physical_ms',1787313603000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('band_id','018f8c7b-0000-7000-8000-000000000233','fields',jsonb_build_object('band_number','1234'))
+)))), 'rejected', 'known wrong-kind amendment target is permanently rejected');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000242','event_type','person.created','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000243','occurred_at','2026-08-21T12:00:04.000Z','hlc',jsonb_build_object('physical_ms',1787313604000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('person_id','018f8c7b-0000-7000-8000-000000000244','fields',jsonb_build_object('name','A Bander','initials','AB'))
+)))), 'accepted', 'browser admission accepts a reviewed Person create field');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000245','event_type','user-account.person-linked','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000246','occurred_at','2026-08-21T12:00:05.000Z','hlc',jsonb_build_object('physical_ms',1787313605000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('user_account_id',(select user_account_id from phase31_fixture),'person_id','018f8c7b-0000-7000-8000-000000000244')
+)))), 'accepted', 'Account link requires and accepts an active target-Workspace Member');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000247','event_type','user-account.person-unlinked','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000248','occurred_at','2026-08-21T12:00:06.000Z','hlc',jsonb_build_object('physical_ms',1787313606000,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('user_account_id','018f8c7b-0000-7000-8000-000000000249')
+)))), 'rejected', 'phantom Account link targets are permanently rejected');
+reset role;
 
 select is(
   jsonb_array_length(birdnerd_private.invite_membership((select workspace_id from phase31_fixture), null, 'phase31-member@example.com', 'contributor', 'pgtap') -> 'events'),

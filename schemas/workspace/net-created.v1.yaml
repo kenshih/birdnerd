@@ -2,5 +2,8 @@ $schema: https://json-schema.org/draft/2020-12/schema
 title: net.created v1
 type: object
 required: [net_id, station_id]
-properties: { net_id: { type: string }, station_id: { type: string }, fields: { type: object, additionalProperties: true } }
+properties:
+  net_id: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
+  station_id: { type: string, format: uuid, pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$' }
+  fields: { type: object, properties: { label: { oneOf: [{ type: string }, { const: null }] } }, additionalProperties: false }
 additionalProperties: false

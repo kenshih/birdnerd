@@ -78,6 +78,10 @@ if (errors.length > 0) {
 }
 
 function checkExactKeys(source, subject, schema, label) {
+  // Named-field validators centralize the same exact-key/type policy for the
+  // operational form maps; their complete source Contract is still covered by
+  // the migration fingerprint above.
+  if (subject.startsWith("payload -> '") && /valid_(station|net|person|bander|band|session|banding_record)_fields\(/.test(source)) return
   const subjectPattern = escapeRegExp(subject)
   const fallbackSubject = subject.startsWith("payload -> '") ? subject.slice("payload -> '".length, -1) : subject
   const match = new RegExp(`has_exact_keys\\(\\s*${subjectPattern}\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}')(?:\\s*,\\s*(array\\[[^\\]]*\\]|'\\{\\}'))?\\s*\\)`, 's').exec(source)

@@ -1,4 +1,4 @@
--- event-contract-sha256: 71b7b8852c6f67582a6bff3efe138734f4e1d6d4179621e1a2c86f2aa0f8294c
+-- event-contract-sha256: 50ca9f27943ab05b7b5c9dd9e1355a9f594a95499e0699138ac1ef1358ba8c07
 -- Phase 31 keeps these admission aids private: they are not a business
 -- projection and receive no Data API/browser table grants.
 create table birdnerd_private.entity_reference_index (
@@ -86,6 +86,21 @@ create or replace function birdnerd_private.valid_session_fields(fields jsonb) r
     array['maps_period','weather_open_temp','weather_open_wind','weather_open_cloud','weather_close_temp','weather_close_wind','weather_close_cloud'],
     array[]::text[], array['station_id','master_bander_id']);
 $$;
+create or replace function birdnerd_private.valid_station_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
+  select birdnerd_private.valid_optional_fields(fields, array['name'], array['name'], array[]::text[], array[]::text[], array[]::text[]);
+$$;
+create or replace function birdnerd_private.valid_net_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
+  select birdnerd_private.valid_optional_fields(fields, array['label','station_id'], array['label'], array[]::text[], array[]::text[], array['station_id']);
+$$;
+create or replace function birdnerd_private.valid_person_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
+  select birdnerd_private.valid_optional_fields(fields, array['name','initials'], array['name','initials'], array[]::text[], array[]::text[], array[]::text[]);
+$$;
+create or replace function birdnerd_private.valid_bander_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
+  select birdnerd_private.valid_optional_fields(fields, array['role','person_id'], array['role'], array[]::text[], array[]::text[], array['person_id']);
+$$;
+create or replace function birdnerd_private.valid_band_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
+  select birdnerd_private.valid_optional_fields(fields, array['band_number'], array['band_number'], array[]::text[], array[]::text[], array[]::text[]);
+$$;
 create or replace function birdnerd_private.valid_banding_record_fields(fields jsonb) returns boolean language sql immutable set search_path='' as $$
   select birdnerd_private.valid_optional_fields(fields,
     array['species_code','band_number','capture_code','wrp','age','how_aged','how_aged_2','sex','how_sexed','how_sexed_2','skull','cp','bp','fat','body_molt','ff_molt','ff_wear','juv_body_plumage','molt_limits_p_covs','molt_limits_s_covs','molt_limits_alula','molt_limits_pp','molt_limits_ss','molt_limits_tert','molt_limits_rec','molt_limits_body_plum','molt_limits_non_feather','wing','tail','tarsus','exposed_culmen','other_measurement','body_mass','status','disposition','capture_time','release_time','net_id','bander_id','present_condition','replaced_band_number','notes','feather_pull','blood_sample','band_selection'],
@@ -108,24 +123,24 @@ begin
     if not birdnerd_private.has_exact_keys(actor, array['kind','identity']) or not birdnerd_private.has_exact_keys(actor -> 'identity', array['provider','subject','email']) or actor -> 'identity' ->> 'provider' <> 'google' or coalesce(actor -> 'identity' ->> 'subject','') = '' or actor -> 'identity' ->> 'email' <> lower(btrim(actor -> 'identity' ->> 'email')) then return 'External identity actor is invalid.'; end if;
   else return 'Event actor kind is unsupported.'; end if;
   if (event_type in ('session.created','banding-record.created','banding-record.fields-amended') and event ->> 'event_schema_version' not in ('1','2')) or (event_type not in ('session.created','banding-record.created','banding-record.fields-amended') and event -> 'event_schema_version' <> '1'::jsonb) then return 'Event schema version is unsupported.'; end if;
-  if event_type = 'station.created' then if not birdnerd_private.has_exact_keys(payload,array['station_id'],array['fields']) then return 'station.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'station fields invalid.'; end if;
-  elsif event_type = 'station.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['station_id','fields']) then return 'station.fields-amended payload is invalid.'; end if; if not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'station fields invalid.'; end if;
+  if event_type = 'station.created' then if not birdnerd_private.has_exact_keys(payload,array['station_id'],array['fields']) then return 'station.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_station_fields(payload -> 'fields') then return 'station fields invalid.'; end if;
+  elsif event_type = 'station.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['station_id','fields']) or not birdnerd_private.valid_station_fields(payload -> 'fields') then return 'station.fields-amended payload is invalid.'; end if;
   elsif event_type = 'station.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['station_id']) then return 'station.deactivated payload is invalid.'; end if;
   elsif event_type = 'station.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['station_id']) then return 'station.reactivated payload is invalid.'; end if;
-  elsif event_type = 'net.created' then if not birdnerd_private.has_exact_keys(payload,array['net_id','station_id'],array['fields']) then return 'net.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'net fields invalid.'; end if;
-  elsif event_type = 'net.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['net_id','fields']) then return 'net.fields-amended payload is invalid.'; end if; if not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'net fields invalid.'; end if;
+  elsif event_type = 'net.created' then if not birdnerd_private.has_exact_keys(payload,array['net_id','station_id'],array['fields']) then return 'net.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_net_fields(payload -> 'fields') then return 'net fields invalid.'; end if;
+  elsif event_type = 'net.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['net_id','fields']) or not birdnerd_private.valid_net_fields(payload -> 'fields') then return 'net.fields-amended payload is invalid.'; end if;
   elsif event_type = 'net.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['net_id']) then return 'net.deactivated payload is invalid.'; end if;
   elsif event_type = 'net.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['net_id']) then return 'net.reactivated payload is invalid.'; end if;
-  elsif event_type = 'person.created' then if not birdnerd_private.has_exact_keys(payload,array['person_id'],array['fields']) then return 'person.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'person fields invalid.'; end if;
-  elsif event_type = 'person.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['person_id','fields']) then return 'person.fields-amended payload is invalid.'; end if; if not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'person fields invalid.'; end if;
+  elsif event_type = 'person.created' then if not birdnerd_private.has_exact_keys(payload,array['person_id'],array['fields']) then return 'person.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_person_fields(payload -> 'fields') then return 'person fields invalid.'; end if;
+  elsif event_type = 'person.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['person_id','fields']) or not birdnerd_private.valid_person_fields(payload -> 'fields') then return 'person.fields-amended payload is invalid.'; end if;
   elsif event_type = 'person.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['person_id']) then return 'person.deactivated payload is invalid.'; end if;
   elsif event_type = 'person.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['person_id']) then return 'person.reactivated payload is invalid.'; end if;
-  elsif event_type = 'bander.created' then if not birdnerd_private.has_exact_keys(payload,array['bander_id','person_id'],array['fields']) then return 'bander.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'bander fields invalid.'; end if;
-  elsif event_type = 'bander.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['bander_id','fields']) then return 'bander.fields-amended payload is invalid.'; end if; if not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'bander fields invalid.'; end if;
+  elsif event_type = 'bander.created' then if not birdnerd_private.has_exact_keys(payload,array['bander_id','person_id'],array['fields']) then return 'bander.created payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_bander_fields(payload -> 'fields') then return 'bander fields invalid.'; end if;
+  elsif event_type = 'bander.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['bander_id','fields']) or not birdnerd_private.valid_bander_fields(payload -> 'fields') then return 'bander.fields-amended payload is invalid.'; end if;
   elsif event_type = 'bander.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['bander_id']) then return 'bander.deactivated payload is invalid.'; end if;
   elsif event_type = 'bander.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['bander_id']) then return 'bander.reactivated payload is invalid.'; end if;
-  elsif event_type = 'band.received' then if not birdnerd_private.has_exact_keys(payload,array['band_id','band_number'],array['fields']) then return 'band.received payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'band fields invalid.'; end if;
-  elsif event_type = 'band.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['band_id','fields']) then return 'band.fields-amended payload is invalid.'; end if; if not birdnerd_private.has_exact_keys(payload -> 'fields','{}') then return 'band fields invalid.'; end if;
+  elsif event_type = 'band.received' then if not birdnerd_private.has_exact_keys(payload,array['band_id','band_number'],array['fields']) then return 'band.received payload is invalid.'; end if; if payload ? 'fields' and not birdnerd_private.valid_band_fields(payload -> 'fields') then return 'band fields invalid.'; end if;
+  elsif event_type = 'band.fields-amended' then if not birdnerd_private.has_exact_keys(payload,array['band_id','fields']) or not birdnerd_private.valid_band_fields(payload -> 'fields') then return 'band.fields-amended payload is invalid.'; end if;
   elsif event_type = 'band.deactivated' then if not birdnerd_private.has_exact_keys(payload,array['band_id']) then return 'band.deactivated payload is invalid.'; end if;
   elsif event_type = 'band.reactivated' then if not birdnerd_private.has_exact_keys(payload,array['band_id']) then return 'band.reactivated payload is invalid.'; end if;
   elsif event_type = 'session.created' then
@@ -186,6 +201,8 @@ begin
         result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Actor is not an active Member of the target Workspace.','permanent',true);
       elsif required_role='admin' and membership.role <> 'admin' then
         result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Admin role is required for this Workspace configuration Event.','permanent',true);
+      elsif event_type in ('user-account.person-linked','user-account.person-unlinked') and not exists (select 1 from birdnerd_private.membership_index where workspace_id=(event ->> 'workspace_id')::uuid and user_account_id=(event -> 'payload' ->> 'user_account_id')::uuid and status='active') then
+        result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','User Account is not an active Member of the target Workspace.','permanent',true);
       else
         entity_kind := case event_type when 'station.created' then 'station' when 'net.created' then 'net' when 'person.created' then 'person' when 'bander.created' then 'bander' when 'band.received' then 'band' when 'session.created' then 'session' when 'banding-record.created' then 'banding-record' end;
         entity_id_text := case entity_kind when 'station' then event -> 'payload' ->> 'station_id' when 'net' then event -> 'payload' ->> 'net_id' when 'person' then event -> 'payload' ->> 'person_id' when 'bander' then event -> 'payload' ->> 'bander_id' when 'band' then event -> 'payload' ->> 'band_id' when 'session' then event -> 'payload' ->> 'session_id' when 'banding-record' then event -> 'payload' ->> 'record_id' end;
