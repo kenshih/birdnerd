@@ -1,6 +1,6 @@
 # BirdNerd — Plan
 
-See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v2.md](archives/plan.v2.md) | [archives/plan.v1.md](archives/plan.v1.md)
+See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-collaboration-architecture.md) | [ADR 0016 diagrams](adr/0016-event-sourced-collaboration-architecture-diagrams.md) | [ADR 0017 — operational Workspace authority](adr/0017-operational-workspace-authority.md) | [apps/field/product-specifications.md](apps/field/product-specifications.md) | [apps/field/tech-specifications.md](apps/field/tech-specifications.md) | [apps/field/ux-specifications.md](apps/field/ux-specifications.md) | [apps/field/entities.md](apps/field/entities.md) | [repo/monorepo.md](repo/monorepo.md) | [repo/deployment.md](repo/deployment.md) | [archives/plan.v2.md](archives/plan.v2.md) | [archives/plan.v1.md](archives/plan.v1.md)
 
 **Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
@@ -19,14 +19,21 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ## Current roadmap
 
-### Phase 31 — TBD (Field version TBD) — **Current**
+### Phase 31 — Event-backed operational Field (Field version TBD) — **Current**
 
-Define the next collaboration-architecture delivery scope from
-[ADR 0016](adr/0016-event-sourced-collaboration-architecture.md) and the
-Phase 30 pilot evidence. Phase 30 proves the Supabase event-exchange vertical
-slice and two-Station operation; it does not complete ADR 0016. Establish a
-new delivery contract before choosing the remaining capability, architecture
-decision, or Field version.
+Replace the collaboration pilot and legacy mutable replica with the default
+offline shared Field workflow: Workspace configuration, roster, Stations/Nets,
+baseline inventory, complete non-photo Session and Banding Record entry, and
+event-based correction/removal. The mutable `birdnerd` database and legacy
+DataBundle retire after a two-Station acceptance session; the deferred
+Session–Net effort model is not frozen here. [Delivery contract: #14](https://github.com/kenshih/birdnerd/issues/14)
+
+### Phase 32 — Event-backed Data Manager (Field version TBD)
+
+Build the shared browse, preview-first idempotent master-sheet CSV import, and
+BBL/IBP exports from Workspace Event projections. It proves historical intake
+and agency reporting without a legacy database; photo attachments and the
+reconsidered Net Hours model remain later cutover work.
 
 ---
 
@@ -34,11 +41,11 @@ decision, or Field version.
 
 Reconcile code tables against the 2025 MAPS manual ([research-banding-codes-reconciliation.md](resources/research-banding-codes-reconciliation.md)) — disposition missing F/R + M mislabeled, molt-limits M/X mislabeled, body-molt labels shifted, feather-pull boolean vs O/X/I/C, how-aged/sexed BBL-vs-MAPS letters.
 
-### Backlog: Net Hours (Field 0.32.0)
+### Backlog: Net Hours (Field)
 
 Per-net effort tracking and total net-hours at session close. Extends the Phase 11 SessionNetLog/net-hours groundwork.
 
-### Backlog: Smart Band Entry (Field 0.33.0)
+### Backlog: Smart Band Entry (Field)
 
 Speed up band record entry and help catch missing or mis-deployed bands through species-size suggestions and inventory-series sequencing.
 
