@@ -56,6 +56,9 @@ export class EventLog {
 export type ExchangeReceipt =
   | { kind: 'accepted'; event_id: string; server_sequence: number }
   | { kind: 'duplicate'; event_id: string; server_sequence: number }
+  /** A referenced entity is not known by the admission index yet. The Event
+   * remains locally effective and must be retried; this is not a rejection. */
+  | { kind: 'deferred'; event_id: string; reason: string; retryable: true }
   | { kind: 'rejected'; event_id: string; reason: string; permanent: true }
 
 export type ServerEvent = { event: DomainEvent; server_sequence: number }
@@ -85,6 +88,8 @@ export type SyncCommit = {
   receipts: readonly ExchangeReceipt[]
   pulled: readonly ServerEvent[]
   cursor: number
+  /** Persisted with deferred receipts so a restart does not retry tightly. */
+  deferred_retry_at?: number
 }
 
 /**
@@ -175,11 +180,15 @@ export function createSyncCoordinator(
       const receipts = input.pending_events.length > 0 ? await exchange.push(input.pending_events) : []
       let cursor = input.cursor
       let rejected = receipts.filter(receipt => receipt.kind === 'rejected').length
+      const deferred = receipts.filter(receipt => receipt.kind === 'deferred')
+      const deferredRetryAt = deferred.length > 0
+        ? startedAt + Math.min(retryMaxMs, retryBaseMs * (2 ** Math.max(0, input.failure_count)))
+        : undefined
       let firstPage = true
       do {
         const pulled = await exchange.pull(input.workspace_id, cursor, batchSize)
         const nextCursor = pulled.length > 0 ? pulled[pulled.length - 1].server_sequence : cursor
-        await replica.commit({ receipts: firstPage ? receipts : [], pulled, cursor: nextCursor })
+        await replica.commit({ receipts: firstPage ? receipts : [], pulled, cursor: nextCursor, deferred_retry_at: firstPage ? deferredRetryAt : undefined })
         firstPage = false
         cursor = nextCursor
         if (pulled.length < batchSize) break
@@ -190,6 +199,7 @@ export function createSyncCoordinator(
         ? publish({ kind: 'attention', rejected, last_synced_at: completedAt })
         : publish({ kind: 'idle', last_synced_at: completedAt })
       if (input.has_more_pending) scheduleAt(completedAt)
+      if (deferredRetryAt !== undefined) scheduleAt(deferredRetryAt)
       return completed
     } catch (error) {
       consecutiveFailures = Math.max(consecutiveFailures, input?.failure_count ?? 0) + 1

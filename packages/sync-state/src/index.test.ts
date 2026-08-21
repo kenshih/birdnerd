@@ -133,6 +133,23 @@ describe('SyncCoordinator', () => {
     expect(commits).toEqual([{ receipts, pulled: [], cursor: 0 }])
   })
 
+  it('keeps deferred admission dependencies pending and schedules bounded retry', async () => {
+    const event = makeEvent()
+    const commits: SyncCommit[] = []
+    const scheduled: number[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() { return { workspace_id: event.workspace_id, cursor: 0, pending_events: [event], has_more_pending: false, failure_count: 2 } },
+      async commit(result) { commits.push(result) },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = async () => [{ kind: 'deferred', event_id: event.event_id, reason: 'Session is not indexed yet.', retryable: true }]
+    await expect(createSyncCoordinator(replica, exchange, { now: () => 1_000, retry_base_ms: 500, schedule: (_run, delay) => scheduled.push(delay) }).synchronize())
+      .resolves.toEqual({ kind: 'idle', last_synced_at: 1_000 })
+    expect(commits[0]).toMatchObject({ deferred_retry_at: 3_000 })
+    expect(scheduled).toEqual([2_000])
+  })
+
   it('re-pulls a page after an interrupted durable commit instead of skipping its cursor', async () => {
     const remote = makeEvent('018f8c7b-0000-7000-8000-000000000011')
     const exchange = new InMemoryEventExchange([remote])
