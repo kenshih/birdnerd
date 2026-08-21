@@ -98,3 +98,61 @@ begin
   else return null; end if;
   return null;
 end $$;
+
+create or replace function birdnerd_private.minimum_field_role(event_type text) returns text
+language sql immutable set search_path='' as $$
+  select case
+    when event_type in ('station.created','station.fields-amended','station.deactivated','station.reactivated','net.created','net.fields-amended','net.deactivated','net.reactivated','person.created','person.fields-amended','person.deactivated','person.reactivated','bander.created','bander.fields-amended','bander.deactivated','bander.reactivated','user-account.person-linked','user-account.person-unlinked') then 'admin'
+    when event_type in ('band.received','band.fields-amended','band.deactivated','band.reactivated','session.created','session.fields-amended','session.deactivated','session.reactivated','session-crew-member.added','session-crew-member.removed','banding-record.created','banding-record.fields-amended','banding-record.deactivated','banding-record.reactivated') then 'contributor'
+    else null end
+$$;
+
+-- Browser append remains an admission/exchange RPC, never a projector. A
+-- missing referenced parent is retryable so independently exchanged facts can
+-- converge; a known wrong kind or Workspace is permanent.
+create or replace function public.birdnerd_append_events(events jsonb)
+returns table (receipt jsonb) language plpgsql volatile security definer set search_path='' as $$
+declare
+  caller_id uuid := auth.uid(); event jsonb; event_type text; required_role text;
+  membership birdnerd_private.membership_index%rowtype; existing birdnerd_private.event_log%rowtype;
+  entity_id_text text; entity_kind text; reference_id_text text; expected_kind text; sequence bigint; result jsonb;
+begin
+  if caller_id is null then raise exception 'Authentication required.' using errcode='42501'; end if;
+  if jsonb_typeof(events) <> 'array' or jsonb_array_length(events) > 100 then raise exception 'Events must be an array of at most 100 items.'; end if;
+  for event in select value from jsonb_array_elements(events) loop
+    event_type := event ->> 'event_type'; required_role := birdnerd_private.minimum_field_role(event_type);
+    if birdnerd_private.validate_event(event) is not null or required_role is null then
+      result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason',coalesce(birdnerd_private.validate_event(event),'Event type is not accepted from Field.'),'permanent',true);
+    else
+      select * into membership from birdnerd_private.membership_index where workspace_id=(event ->> 'workspace_id')::uuid and auth_user_id=caller_id and status='active';
+      if not found or event -> 'actor' ->> 'kind' <> 'user-account' or event -> 'actor' ->> 'user_account_id' <> membership.user_account_id::text then
+        result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Actor is not an active Member of the target Workspace.','permanent',true);
+      elsif required_role='admin' and membership.role <> 'admin' then
+        result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Admin role is required for this Workspace configuration Event.','permanent',true);
+      else
+        entity_kind := case event_type when 'station.created' then 'station' when 'net.created' then 'net' when 'person.created' then 'person' when 'bander.created' then 'bander' when 'band.received' then 'band' when 'session.created' then 'session' when 'banding-record.created' then 'banding-record' end;
+        entity_id_text := case entity_kind when 'station' then event -> 'payload' ->> 'station_id' when 'net' then event -> 'payload' ->> 'net_id' when 'person' then event -> 'payload' ->> 'person_id' when 'bander' then event -> 'payload' ->> 'bander_id' when 'band' then event -> 'payload' ->> 'band_id' when 'session' then event -> 'payload' ->> 'session_id' when 'banding-record' then event -> 'payload' ->> 'record_id' end;
+        reference_id_text := case event_type when 'net.created' then event -> 'payload' ->> 'station_id' when 'bander.created' then event -> 'payload' ->> 'person_id' when 'session-crew-member.added' then event -> 'payload' ->> 'session_id' when 'session-crew-member.removed' then event -> 'payload' ->> 'session_id' when 'banding-record.created' then event -> 'payload' ->> 'session_id' else null end;
+        expected_kind := case event_type when 'net.created' then 'station' when 'bander.created' then 'person' when 'session-crew-member.added' then 'session' when 'session-crew-member.removed' then 'session' when 'banding-record.created' then 'session' else null end;
+        if entity_id_text is not null and not birdnerd_private.is_uuid_v7(entity_id_text) then
+          result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity identity is invalid.','permanent',true);
+        elsif reference_id_text is not null and not birdnerd_private.is_uuid_v7(reference_id_text) then
+          result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference is invalid.','permanent',true);
+        elsif reference_id_text is not null and not exists (select 1 from birdnerd_private.entity_reference_index where workspace_id=(event ->> 'workspace_id')::uuid and entity_id=reference_id_text::uuid and entity_kind=expected_kind) then
+          if exists (select 1 from birdnerd_private.entity_reference_index where entity_id=reference_id_text::uuid) then result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference has the wrong Workspace or kind.','permanent',true);
+          else result := jsonb_build_object('kind','deferred','event_id',event ->> 'event_id','reason','Referenced parent is not indexed yet.','retryable',true); end if;
+        else
+          select * into existing from birdnerd_private.event_log where event_id=(event ->> 'event_id')::uuid;
+          if found then result := case when existing.event_json=event then jsonb_build_object('kind','duplicate','event_id',event ->> 'event_id','server_sequence',existing.server_sequence) else jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Event ID conflicts with immutable content.','permanent',true) end;
+          else
+            sequence := birdnerd_private.insert_event(event);
+            if entity_kind is not null then insert into birdnerd_private.entity_reference_index(workspace_id,entity_id,entity_kind,created_event_id) values ((event ->> 'workspace_id')::uuid,entity_id_text::uuid,entity_kind,(event ->> 'event_id')::uuid) on conflict do nothing; end if;
+            result := jsonb_build_object('kind','accepted','event_id',event ->> 'event_id','server_sequence',sequence);
+          end if;
+        end if;
+      end if;
+    end if;
+    insert into birdnerd_private.event_receipts(auth_user_id,event_id,receipt) values(caller_id,coalesce(event ->> 'event_id','<missing>'),result) on conflict(auth_user_id,event_id) do update set receipt=excluded.receipt, recorded_at=clock_timestamp();
+    receipt := result; return next;
+  end loop;
+end $$;
