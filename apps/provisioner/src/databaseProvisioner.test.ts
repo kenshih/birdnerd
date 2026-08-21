@@ -68,6 +68,14 @@ describe('database Provisioner adapter', () => {
     expect(query).toHaveBeenCalledWith('select birdnerd_private.set_role_membership($1::uuid, $2::uuid, $3, $4, $5) as receipt', [workspace_id, membership_id, null, 'contributor', 'phase-31-operator'])
   })
 
+  it('accepts the empty-event audit receipt for an idempotent repeated invite', async () => {
+    const workspace_id = '018f8c7b-0000-7000-8000-000000000001'
+    const membership_id = '018f8c7b-0000-7000-8000-000000000003'
+    const command_id = '018f8c7b-0000-7000-8000-000000000002'
+    const query = vi.fn(async () => ({ rows: [{ receipt: { workspace_id, membership_id, command_id, events: [] } }], command: 'SELECT', rowCount: 1, oid: 0, fields: [] }))
+    await expect(changeMembership({ query }, 'invite', { workspace_id, email: 'member@example.com', role: 'contributor' })).resolves.toMatchObject({ workspace_id, membership_id, events: [] })
+  })
+
   it('rejects invalid lifecycle input before database access', async () => {
     const query = vi.fn()
     await expect(changeMembership({ query }, 'invite', { workspace_id: 'bad', email: 'x', role: 'admin' })).rejects.toThrow('Workspace ID')

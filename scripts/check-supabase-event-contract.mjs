@@ -23,10 +23,16 @@ const envelope = contracts.find(contract => contract.file === 'event-envelope.v2
 if (!envelope) throw new Error('The current v2 Event envelope Contract is missing.')
 const payloads = contracts
   .filter(contract => !contract.file.startsWith('event-envelope.'))
-  .map(contract => ({ eventType: contract.schema.title.replace(/ v1$/, ''), schema: contract.schema }))
-  .sort((left, right) => left.eventType.localeCompare(right.eventType))
+  .map(contract => {
+    const match = /^(.*) v([1-9][0-9]*)$/.exec(contract.schema.title ?? '')
+    if (!match) throw new Error(`${contract.file}: Event Contract title must end in a positive version.`)
+    return { eventType: match[1], eventSchemaVersion: Number(match[2]), schema: contract.schema }
+  })
+  .sort((left, right) => left.eventType.localeCompare(right.eventType) || left.eventSchemaVersion - right.eventSchemaVersion)
+const payloadsByType = new Map()
+for (const payload of payloads) payloadsByType.set(payload.eventType, [...(payloadsByType.get(payload.eventType) ?? []), payload])
 const fingerprint = createHash('sha256')
-  .update(JSON.stringify(canonical({ envelope, payloads: Object.fromEntries(payloads.map(item => [item.eventType, item.schema])) })))
+  .update(JSON.stringify(canonical({ envelope, payloads: Object.fromEntries([...payloadsByType.entries()].map(([eventType, versions]) => [eventType, Object.fromEntries(versions.map(item => [item.eventSchemaVersion, item.schema]))])) })))
   .digest('hex')
 
 if (process.argv.includes('--print-fingerprint')) {
@@ -44,18 +50,23 @@ if (marker !== fingerprint) errors.push(`SQL Event Contract fingerprint is stale
 checkExactKeys(sql, "event", envelope, 'Event envelope')
 checkExactKeys(sql, "event -> 'hlc'", envelope.properties.hlc, 'Event HLC')
 
-const sqlEventTypes = [...sql.matchAll(/(?:if|elsif) event_type = '([^']+)' then/g)].map(match => match[1]).sort()
-compareKeys('SQL Event Type branches', sqlEventTypes, payloads.map(item => item.eventType))
+const sqlEventTypes = [...new Set([...sql.matchAll(/(?:if|elsif) event_type = '([^']+)' then/g)].map(match => match[1]))].sort()
+compareKeys('SQL Event Type branches', sqlEventTypes, [...payloadsByType.keys()])
 
-for (const { eventType, schema } of payloads) {
+for (const [eventType, versions] of payloadsByType) {
   const branch = eventTypeBranch(sql, eventType)
   if (!branch) {
     errors.push(`SQL validator has no branch for ${eventType}.`)
     continue
   }
+  if (versions.length > 1 && !branch.includes("event ->> 'event_schema_version' = '1'")) {
+    errors.push(`SQL validator has no explicit per-version branch for ${eventType}.`)
+  }
+  const schema = versions[0].schema
   checkExactKeys(branch, 'payload', schema, `${eventType} payload`)
   for (const [property, propertySchema] of Object.entries(schema.properties ?? {})) {
     if (propertySchema.type !== 'object') continue
+    if (propertySchema.additionalProperties !== false) continue
     if (property === 'identity' && branch.includes("payload -> 'identity' <> actor -> 'identity'")) continue
     checkExactKeys(branch, `payload -> '${property}'`, propertySchema, `${eventType}.${property}`)
   }
@@ -83,7 +94,7 @@ function checkExactKeys(source, subject, schema, label) {
 }
 
 function eventTypeBranch(source, eventType) {
-  const start = source.indexOf(`event_type = '${eventType}' then`)
+  const start = source.lastIndexOf(`event_type = '${eventType}' then`)
   if (start < 0) return undefined
   const possibleEnds = [
     source.indexOf('\n  elsif event_type =', start + 1),

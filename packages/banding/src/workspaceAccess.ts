@@ -26,7 +26,7 @@ export type WorkspaceMembership = {
   workspace_id: UuidV7
   email: string
   role: WorkspaceMembershipRole
-  status: 'pending' | 'active'
+  status: 'pending' | 'active' | 'inactive'
   user_account_id?: UuidV7
 }
 
@@ -118,6 +118,21 @@ export function projectWorkspaceEvents(events: readonly DomainEvent[]): Workspac
       status: 'active',
       user_account_id: account.user_account_id,
     })
+  }
+
+  // Lifecycle facts are server-constructed but still replayed locally so an
+  // offline Field replica never continues to authorize a revoked Member.
+  // They run after activation to make a later deactivation effective even if
+  // events were received in a different transport order.
+  for (const event of events) {
+    if (event.event_type !== 'membership.role-changed' && event.event_type !== 'membership.deactivated' && event.event_type !== 'membership.reactivated') continue
+    const membership = workspaceMemberships.get(event.payload.membership_id)
+    if (!membership || membership.workspace_id !== event.workspace_id) continue
+    if (event.event_type === 'membership.role-changed') {
+      workspaceMemberships.set(membership.membership_id, { ...membership, role: event.payload.role })
+    } else {
+      workspaceMemberships.set(membership.membership_id, { ...membership, status: event.event_type === 'membership.reactivated' ? 'active' : 'inactive' })
+    }
   }
 
   return { workspaces, workspace_memberships: workspaceMemberships, user_accounts: userAccounts }

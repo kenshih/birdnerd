@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: session.created v2
+type: object
+required: [session_id, fields]
+properties:
+  session_id:
+    type: string
+    format: uuid
+    pattern: ^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$
+  fields:
+    type: object
+    additionalProperties: true
+additionalProperties: false

@@ -58,11 +58,28 @@ describe('@birdnerd/events', () => {
       workspace_id: workspaceId,
       command_id: '018f8c7b-0000-7000-8000-000000000002',
       actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
-      payload: { session_id: '018f8c7b-0000-7000-8000-000000000004' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', fields: {} },
     })
     const { event_envelope_version: _version, hlc: _hlc, ...legacy } = current
 
     expect(() => upcastEvent(legacy)).toThrow('introduced with Event envelope version 2')
+  })
+
+  it('upcasts Phase 30 payloads to the explicit current v2 shapes', () => {
+    const session = createEvent({
+      event_schema_version: 1,
+      event_type: 'session.created', workspace_id: workspaceId, command_id: '018f8c7b-0000-7000-8000-000000000002',
+      actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', session_date: '2026-08-20', notes: 'Windy' },
+    })
+    const record = createEvent({
+      event_schema_version: 1,
+      event_type: 'banding-record.created', workspace_id: workspaceId, command_id: session.command_id,
+      actor: session.actor,
+      payload: { record_id: '018f8c7b-0000-7000-8000-000000000005', session_id: '018f8c7b-0000-7000-8000-000000000004', species_code: 'AMRO' },
+    })
+    expect(upcastEvent(session)).toMatchObject({ event_schema_version: 2, payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', fields: { session_date: '2026-08-20', notes: 'Windy' } } })
+    expect(upcastEvent(record)).toMatchObject({ event_schema_version: 2, payload: { record_id: '018f8c7b-0000-7000-8000-000000000005', session_id: '018f8c7b-0000-7000-8000-000000000004', fields: { species_code: 'AMRO' } } })
   })
 
   it('compares immutable Event content independently of object property order', () => {

@@ -39,10 +39,10 @@ const envelope = contracts.find(({ file }) => file === 'event-envelope.v2.yaml')
 if (!legacyEnvelope || !envelope) throw new Error('Both v1 and v2 Event envelope contracts are required.')
 const payloadContracts = contracts
   .filter(({ file }) => !file.startsWith('event-envelope.'))
-  .map(({ file, schema }) => ({ file, schema, eventType: eventTypeFromTitle(schema.title, file) }))
+  .map(({ file, schema }) => ({ file, schema, ...eventContractFromTitle(schema.title, file) }))
 
-const duplicateType = payloadContracts.find((contract, index) => payloadContracts.findIndex((other) => other.eventType === contract.eventType) !== index)
-if (duplicateType) throw new Error(`Duplicate Event Contract type: ${duplicateType.eventType}`)
+const duplicateContract = payloadContracts.find((contract, index) => payloadContracts.findIndex((other) => other.eventType === contract.eventType && other.eventSchemaVersion === contract.eventSchemaVersion) !== index)
+if (duplicateContract) throw new Error(`Duplicate Event Contract type/version: ${duplicateContract.eventType} v${duplicateContract.eventSchemaVersion}`)
 
 const generated = render({ legacyEnvelope: legacyEnvelope.schema, envelope: envelope.schema, payloadContracts, files })
 if (checkOnly) {
@@ -55,15 +55,16 @@ if (checkOnly) {
   await writeFile(outputPath, generated)
 }
 
-function eventTypeFromTitle(title, file) {
-  if (typeof title !== 'string' || !title.endsWith(' v1')) {
-    throw new Error(`${file}: title must be an Event Type followed by " v1".`)
+function eventContractFromTitle(title, file) {
+  const match = typeof title === 'string' && /^(.*) v([1-9][0-9]*)$/.exec(title)
+  if (!match) {
+    throw new Error(`${file}: title must be an Event Type followed by " v<positive integer>".`)
   }
-  const eventType = title.slice(0, -3)
+  const [, eventType, versionText] = match
   if (!/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/.test(eventType)) {
     throw new Error(`${file}: "${eventType}" is not a dotted lower-case Event Type.`)
   }
-  return eventType
+  return { eventType, eventSchemaVersion: Number(versionText) }
 }
 
 function assertSupportedSchema(schema, source) {
@@ -91,13 +92,17 @@ function assertSupportedSchema(schema, source) {
 }
 
 function render({ legacyEnvelope, envelope, payloadContracts, files }) {
-  const payloadTypes = payloadContracts.map(({ eventType, schema }) => `${JSON.stringify(eventType)}: ${typeFor(schema)}`).join('\n  ')
-  const eventTypes = payloadContracts.map(({ eventType }) => JSON.stringify(eventType)).join(' | ')
-  const eventCases = payloadContracts.map(({ eventType }) => (
+  const byType = new Map()
+  for (const contract of payloadContracts) byType.set(contract.eventType, [...(byType.get(contract.eventType) ?? []), contract].sort((left, right) => left.eventSchemaVersion - right.eventSchemaVersion))
+  const eventTypes = [...byType.keys()].map(JSON.stringify).join(' | ')
+  const payloadTypes = [...byType.entries()].map(([eventType, versions]) => `${JSON.stringify(eventType)}: ${typeFor(versions.at(-1).schema)}`).join('\n  ')
+  const payloadTypesByVersion = [...byType.entries()].map(([eventType, versions]) => `${JSON.stringify(eventType)}: { ${versions.map(({ eventSchemaVersion, schema }) => `${eventSchemaVersion}: ${typeFor(schema)}`).join('; ')} }`).join('\n  ')
+  const currentVersions = [...byType.entries()].map(([eventType, versions]) => `${JSON.stringify(eventType)}: ${versions.at(-1).eventSchemaVersion}`).join(',\n  ')
+  const eventCases = [...byType.keys()].map((eventType) => (
     `  ${JSON.stringify(eventType)}: ${JSON.stringify(eventType)},`
   )).join('\n')
-  const payloadSchemas = payloadContracts.map(({ eventType, schema }) => (
-    `  ${JSON.stringify(eventType)}: ${JSON.stringify(schema)},`
+  const payloadSchemas = [...byType.entries()].map(([eventType, versions]) => (
+    `  ${JSON.stringify(eventType)}: { ${versions.map(({ eventSchemaVersion, schema }) => `${eventSchemaVersion}: ${JSON.stringify(schema)}`).join(', ')} },`
   )).join('\n')
   const sourceFiles = files.map((file) => ` * - schemas/workspace/${file}`).join('\n')
   const envelopeFields = typeFor(envelope)
@@ -106,20 +111,23 @@ function render({ legacyEnvelope, envelope, payloadContracts, files }) {
   return `/*\n * GENERATED FILE — do not edit by hand.\n * Run \`npm run generate:event-bindings\` after changing these contract sources:\n${sourceFiles}\n */\n\n` +
 `export type EventType = ${eventTypes}\n\n` +
 `export type EventPayloadByType = {\n  ${payloadTypes}\n}\n\n` +
+`export type EventPayloadByTypeAndVersion = {\n  ${payloadTypesByVersion}\n}\n\n` +
+`export type EventSchemaVersionByType = {\n  ${currentVersions}\n}\n\n` +
 `type EventEnvelope = ${envelopeFields}\n\n` +
 `type LegacyEventEnvelope = ${legacyEnvelopeFields}\n\n` +
 `export type EventActor = EventEnvelope['actor']\n\n` +
 `export type DomainEvent<T extends EventType = EventType> = T extends EventType\n` +
-`  ? Omit<EventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }\n` +
+`  ? { [V in keyof EventPayloadByTypeAndVersion[T] & number]: Omit<EventEnvelope, 'event_type' | 'event_schema_version' | 'payload'> & { event_type: T; event_schema_version: V; payload: EventPayloadByTypeAndVersion[T][V] } }[keyof EventPayloadByTypeAndVersion[T] & number]\n` +
 `  : never\n\n` +
 `export type LegacyDomainEvent<T extends EventType = EventType> = T extends EventType\n` +
-`  ? Omit<LegacyEventEnvelope, 'event_type' | 'payload'> & { event_type: T; payload: EventPayloadByType[T] }\n` +
+`  ? Omit<LegacyEventEnvelope, 'event_type' | 'event_schema_version' | 'payload'> & { event_type: T; event_schema_version: 1; payload: EventPayloadByTypeAndVersion[T][1] }\n` +
 `  : never\n\n` +
-`export const EVENT_TYPES: readonly EventType[] = [${payloadContracts.map(({ eventType }) => JSON.stringify(eventType)).join(', ')}]\n\n` +
+`export const EVENT_TYPES: readonly EventType[] = [${[...byType.keys()].map(JSON.stringify).join(', ')}]\n\n` +
+`export const CURRENT_EVENT_SCHEMA_VERSION: Readonly<EventSchemaVersionByType> = {\n  ${currentVersions}\n}\n\n` +
 `const EVENT_TYPE_BY_NAME: Readonly<Record<EventType, EventType>> = {\n${eventCases}\n}\n\n` +
 `const EVENT_ENVELOPE_SCHEMA = ${JSON.stringify(envelope, null, 2)} as const\n\n` +
 `const LEGACY_EVENT_ENVELOPE_SCHEMA = ${JSON.stringify(legacyEnvelope, null, 2)} as const\n\n` +
-`const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, unknown>> = {\n${payloadSchemas}\n}\n\n` +
+`const EVENT_PAYLOAD_SCHEMAS: Readonly<Record<EventType, Readonly<Record<number, unknown>>>> = {\n${payloadSchemas}\n}\n\n` +
 `/** Returns a structural Contract error, or undefined for a valid v1 or v2 Event. */\n` +
 `export function validateGeneratedEvent(value: unknown): string | undefined {\n` +
 `  const envelopeSchema = isRecord(value) && value.event_envelope_version === 2\n` +
@@ -131,7 +139,11 @@ function render({ legacyEnvelope, envelope, payloadContracts, files }) {
 `  if (typeof event.event_type !== 'string' || !(event.event_type in EVENT_TYPE_BY_NAME)) {\n` +
 `    return '$.event_type must name a supported Event Contract.'\n` +
 `  }\n` +
-`  return validateSchema(event.payload, EVENT_PAYLOAD_SCHEMAS[event.event_type as EventType], '$.payload')\n` +
+`  const schemaVersion = (value as { event_schema_version?: unknown }).event_schema_version\n` +
+`  if (typeof schemaVersion !== 'number' || !Number.isInteger(schemaVersion) || schemaVersion < 1) return '$.event_schema_version must be a positive integer.'\n` +
+`  const payloadSchema = EVENT_PAYLOAD_SCHEMAS[event.event_type as EventType][schemaVersion]\n` +
+`  if (!payloadSchema) return '$.event_schema_version is not supported for this Event type.'\n` +
+`  return validateSchema(event.payload, payloadSchema, '$.payload')\n` +
 `}\n\n` +
 `function validateSchema(value: unknown, schema: unknown, path: string): string | undefined {\n` +
 `  if (!isRecord(schema)) return undefined\n` +

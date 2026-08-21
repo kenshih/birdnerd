@@ -53,7 +53,9 @@ export async function changeMembership(database: ProvisioningDatabase, operation
   const value = result.rows[0]?.receipt
   if (!isRecord(value) || !isUuidV7(value.workspace_id) || !isUuidV7(value.membership_id) || !isUuidV7(value.command_id) || !Array.isArray(value.events)) throw new Error('Provisioner received an invalid membership audit receipt.')
   const events = value.events.map(upcastEvent)
-  if (events.length !== 1 || events[0]?.workspace_id !== value.workspace_id) throw new Error('Provisioner received an invalid membership audit receipt.')
+  // Repeating an invite for an existing exact Membership is idempotent. The
+  // private function returns the same target receipt with no second Event.
+  if (events.length > 1 || events.some(event => event.workspace_id !== value.workspace_id)) throw new Error('Provisioner received an invalid membership audit receipt.')
   return { workspace_id: value.workspace_id, membership_id: value.membership_id, command_id: value.command_id, events }
 }
 

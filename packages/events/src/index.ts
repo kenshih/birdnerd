@@ -5,19 +5,22 @@
  * upcast boundary. Projectors and domain decisions intentionally live outside
  * this package.
  */
-import { validateGeneratedEvent } from './generated/eventBindings.js'
+import { CURRENT_EVENT_SCHEMA_VERSION, validateGeneratedEvent } from './generated/eventBindings.js'
 
 export {
   EVENT_TYPES,
+  CURRENT_EVENT_SCHEMA_VERSION,
   validateGeneratedEvent,
   type DomainEvent,
   type EventActor,
   type EventPayloadByType,
+  type EventPayloadByTypeAndVersion,
+  type EventSchemaVersionByType,
   type EventType,
   type LegacyDomainEvent,
 } from './generated/eventBindings.js'
 
-import type { DomainEvent, EventActor, EventPayloadByType, EventType, LegacyDomainEvent } from './generated/eventBindings.js'
+import type { DomainEvent, EventActor, EventPayloadByType, EventPayloadByTypeAndVersion, EventType, LegacyDomainEvent } from './generated/eventBindings.js'
 
 /** A canonical lower-case UUIDv7 string used by every Workspace-owned identifier. */
 export type UuidV7 = string
@@ -33,6 +36,7 @@ export type HybridLogicalClock = DomainEvent['hlc']
 
 /** Input for an event create command. IDs and time default locally; schema version is contract-owned. */
 export type CreateEventInput<T extends EventType> = Omit<DomainEvent<T>, 'event_id' | 'event_schema_version' | 'event_envelope_version' | 'occurred_at' | 'hlc'> & {
+  event_schema_version?: DomainEvent<T>['event_schema_version']
   event_id?: UuidV7
   occurred_at?: string
   hlc?: HybridLogicalClock
@@ -45,13 +49,6 @@ const LEGACY_EVENT_TYPES = new Set<EventType>([
   'user-account.linked',
   'membership.activated',
 ])
-
-/** Current write version is selected per Event type, not by the envelope. */
-const CURRENT_SCHEMA_VERSION: Partial<Record<EventType, number>> = {
-  'session.created': 2,
-  'banding-record.created': 2,
-  'banding-record.fields-amended': 2,
-}
 
 function fillRandom(bytes: Uint8Array): Uint8Array {
   globalThis.crypto.getRandomValues(bytes as Uint8Array<ArrayBuffer>)
@@ -93,7 +90,7 @@ export function createEvent<T extends EventType>(input: CreateEventInput<T>): Do
   const event = {
     ...input,
     event_id: input.event_id ?? createUuidV7(),
-    event_schema_version: CURRENT_SCHEMA_VERSION[input.event_type] ?? 1,
+    event_schema_version: input.event_schema_version ?? CURRENT_EVENT_SCHEMA_VERSION[input.event_type],
     event_envelope_version: 2,
     occurred_at: occurredAt,
     hlc: input.hlc ?? { physical_ms: parseRfc3339Milliseconds(occurredAt), logical: 0 },
@@ -136,10 +133,10 @@ export function encodeEventLog(events: readonly DomainEvent[]): string {
 export function upcastEvent(value: unknown): DomainEvent {
   if (isRecord(value) && value.event_envelope_version === 2) {
     assertEvent(value)
-    const currentVersion = CURRENT_SCHEMA_VERSION[value.event_type as EventType] ?? 1
+    const currentVersion = CURRENT_EVENT_SCHEMA_VERSION[value.event_type as EventType]
     return value.event_schema_version === currentVersion
       ? value as DomainEvent
-      : ({ ...value, event_schema_version: currentVersion } as DomainEvent)
+      : upcastCurrentEvent(value as DomainEvent, currentVersion)
   }
 
   // Give the compatibility error its domain meaning before the historical
@@ -162,6 +159,22 @@ export function upcastEvent(value: unknown): DomainEvent {
   }
   assertEvent(event)
   return event
+}
+
+/** Transform an earlier payload into its current per-type Contract shape. */
+function upcastCurrentEvent(event: DomainEvent, currentVersion: number): DomainEvent {
+  if (event.event_schema_version === 1 && event.event_type === 'session.created') {
+    const { session_id, ...fields } = event.payload as EventPayloadByTypeAndVersion['session.created'][1]
+    return { ...event, event_schema_version: currentVersion, payload: { session_id, fields } } as DomainEvent
+  }
+  if (event.event_schema_version === 1 && event.event_type === 'banding-record.created') {
+    const { record_id, session_id, ...fields } = event.payload as EventPayloadByTypeAndVersion['banding-record.created'][1]
+    return { ...event, event_schema_version: currentVersion, payload: { record_id, session_id, fields } } as DomainEvent
+  }
+  if (event.event_schema_version === 1 && event.event_type === 'banding-record.fields-amended') {
+    return { ...event, event_schema_version: currentVersion, payload: event.payload } as DomainEvent
+  }
+  throw new Error(`${event.event_type} schema v${event.event_schema_version} has no upcaster to v${currentVersion}.`)
 }
 
 /** Compare immutable Event JSON by value, independent of object property order. */

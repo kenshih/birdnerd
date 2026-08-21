@@ -17,7 +17,10 @@ export type OperationalProjection = {
 }
 
 export type OperationalCommand =
-  | { kind: 'create'; entity_kind: OperationalEntityKind; entity_id?: UuidV7; fields?: Record<string, unknown> }
+  | { kind: 'create'; entity_kind: Exclude<OperationalEntityKind, 'net' | 'bander' | 'banding-record'>; entity_id?: UuidV7; fields?: Record<string, unknown> }
+  | { kind: 'create'; entity_kind: 'net'; entity_id?: UuidV7; station_id: UuidV7; fields?: Record<string, unknown> }
+  | { kind: 'create'; entity_kind: 'bander'; entity_id?: UuidV7; person_id: UuidV7; fields?: Record<string, unknown> }
+  | { kind: 'create'; entity_kind: 'banding-record'; entity_id?: UuidV7; session_id: UuidV7; fields?: Record<string, unknown> }
   | { kind: 'amend'; entity_kind: OperationalEntityKind; entity_id: UuidV7; fields: Record<string, unknown> }
   | { kind: 'deactivate' | 'reactivate'; entity_kind: OperationalEntityKind; entity_id: UuidV7 }
   | { kind: 'receive-bands'; bands: readonly { band_id?: UuidV7; band_number: string; fields?: Record<string, unknown> }[] }
@@ -43,7 +46,14 @@ export function decideOperationalCommand(projection: OperationalProjection, cont
   if (command.kind !== 'create' && !projection.entities.has(id)) throw new Error(`${command.entity_kind} does not exist.`)
   if (command.kind === 'create') {
     const idKey = ENTITY_ID_KEY[command.entity_kind]
-    return { events: [createEvent({ ...eventContext, event_type: CREATE_TYPE[command.entity_kind], payload: { [idKey]: id, ...(command.entity_kind === 'band' ? { band_number: String(command.fields?.band_number ?? '') } : {}), ...(command.fields ? { fields: command.fields } : {}) } as never })], warnings: [] }
+    const references = command.entity_kind === 'net'
+      ? { station_id: command.station_id }
+      : command.entity_kind === 'bander'
+        ? { person_id: command.person_id }
+        : command.entity_kind === 'banding-record'
+          ? { session_id: command.session_id }
+          : {}
+    return { events: [createEvent({ ...eventContext, event_type: CREATE_TYPE[command.entity_kind], payload: { [idKey]: id, ...references, ...(command.entity_kind === 'band' ? { band_number: String(command.fields?.band_number ?? '') } : {}), ...(command.fields ? { fields: command.fields } : {}) } as never })], warnings: [] }
   }
   const suffix = command.kind === 'amend' ? 'fields-amended' : command.kind === 'deactivate' ? 'deactivated' : 'reactivated'
   const event_type = `${command.entity_kind}.${suffix}` as EventType
@@ -57,34 +67,88 @@ export function projectOperationalEvents(events: readonly DomainEvent[]): Operat
   const crew = new Map<string, DomainEvent>()
   const links = new Map<UuidV7, { person_id?: UuidV7; event: DomainEvent }>()
   const unresolved: { event_id: string; reference_id: string; expected_kind: OperationalEntityKind }[] = []
+  const lifecycle = new Map<UuidV7, DomainEvent>()
+
+  // Materialize identities first. A replica can receive child and parent in
+  // either order, so reference diagnostics are derived only after all facts
+  // have been seen rather than from the incidental replay order.
   for (const event of events) {
     const type = event.event_type
     const created = creationKind(type)
     if (created) {
       const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[created]]) as UuidV7
-      const reference = created === 'net' ? ['station_id', 'station'] as const : created === 'bander' ? ['person_id', 'person'] as const : created === 'banding-record' ? ['session_id', 'session'] as const : undefined
-      if (reference) {
-        const referenceId = String((event.payload as Record<string, unknown>)[reference[0]]) as UuidV7
-        if (!entities.has(referenceId)) unresolved.push({ event_id: event.event_id, reference_id: referenceId, expected_kind: reference[1] })
-      }
-      apply(created, id, fieldsFrom(event), true, event); continue
+      apply(created, id, fieldsFrom(event), true, event)
     }
-    const lifecycle = lifecycleKind(type)
-    if (lifecycle) { const { kind, action } = lifecycle; const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[kind]]) as UuidV7; const existing = entities.get(id); if (!existing) { unresolved.push({ event_id: event.event_id, reference_id: id, expected_kind: kind }); if (action === 'amend') apply(kind, id, fieldsFrom(event), false, event); continue }; if (action === 'amend') apply(kind, id, fieldsFrom(event), existing.active, event); else if (isLater(event, (existing as OperationalEntity & { lifecycle_event?: DomainEvent }).lifecycle_event)) { entities.set(id, { ...existing, active: action === 'reactivate', lifecycle_event: event } as OperationalEntity); } ; continue }
+  }
+
+  // Apply amendments independently of lifecycle, so an amendment never
+  // implicitly reactivates an entity. An amendment that has no identity yet
+  // remains a visible unresolved fact instead of being discarded.
+  for (const event of events) {
+    const type = event.event_type
+    const created = creationKind(type)
+    if (created) continue
+    const lifecycleFact = lifecycleKind(type)
+    if (lifecycleFact) {
+      const { kind, action } = lifecycleFact
+      const id = String((event.payload as Record<string, unknown>)[ENTITY_ID_KEY[kind]]) as UuidV7
+      const existing = entities.get(id)
+      if (!existing) {
+        unresolved.push({ event_id: event.event_id, reference_id: id, expected_kind: kind })
+      } else if (action === 'amend') {
+        apply(kind, id, fieldsFrom(event), existing.active, event)
+      } else if (isLater(event, lifecycle.get(id))) {
+        lifecycle.set(id, event)
+      }
+      continue
+    }
     if (type === 'session-crew-member.added' || type === 'session-crew-member.removed') { const p = event.payload as { session_id: string; bander_id: string }; const key = `${p.session_id}:${p.bander_id}`; if (isLater(event, crew.get(key))) crew.set(key, event); continue }
     if (type === 'user-account.person-linked' || type === 'user-account.person-unlinked') { const p = event.payload as { user_account_id: UuidV7; person_id?: UuidV7 }; const existing = links.get(p.user_account_id); if (!existing || isLater(event, existing.event)) links.set(p.user_account_id, { person_id: p.person_id, event }); }
+  }
+
+  for (const [id, event] of lifecycle) {
+    const entity = entities.get(id)
+    if (entity) entities.set(id, { ...entity, active: event.event_type.endsWith('.reactivated') })
+  }
+
+  for (const event of events) {
+    const type = event.event_type
+    const created = creationKind(type)
+    const reference = created === 'net' ? ['station_id', 'station'] as const
+      : created === 'bander' ? ['person_id', 'person'] as const
+        : created === 'banding-record' ? ['session_id', 'session'] as const
+          : undefined
+    if (reference) addUnresolvedIfMissing(event, String((event.payload as Record<string, unknown>)[reference[0]]) as UuidV7, reference[1])
+    if (type === 'session-crew-member.added' || type === 'session-crew-member.removed') {
+      const payload = event.payload as { session_id: UuidV7; bander_id: UuidV7 }
+      addUnresolvedIfMissing(event, payload.session_id, 'session')
+      addUnresolvedIfMissing(event, payload.bander_id, 'bander')
+    }
+    if (type === 'user-account.person-linked') addUnresolvedIfMissing(event, (event.payload as { person_id: UuidV7 }).person_id, 'person')
   }
   const byNumber = new Map<string, UuidV7[]>()
   for (const e of entities.values()) if (e.kind === 'band' && e.active && typeof e.fields.band_number === 'string') byNumber.set(normalizeBand(e.fields.band_number), [...(byNumber.get(normalizeBand(e.fields.band_number)) ?? []), e.id])
   const allocation = new Map<UuidV7, UuidV7[]>()
   for (const e of entities.values()) if (e.kind === 'banding-record' && e.active && e.fields.band_selection && typeof e.fields.band_selection === 'object') { const s = e.fields.band_selection as { kind?: string; band_id?: UuidV7 }; if (s.kind === 'managed' && s.band_id && isNewDeployment(e.fields.capture_code)) allocation.set(s.band_id, [...(allocation.get(s.band_id) ?? []), e.id]) }
   return { entities, session_crew: new Set([...crew].filter(([, event]) => event.event_type === 'session-crew-member.added').map(([key]) => key)), person_by_user_account: new Map([...links].filter(([, link]) => link.person_id).map(([id, link]) => [id, link.person_id!])), unresolved_references: unresolved, band_number_conflicts: [...byNumber].filter(([, ids]) => ids.length > 1).map(([band_number, band_ids]) => ({ band_number, band_ids })), band_allocation_conflicts: [...allocation].filter(([, ids]) => ids.length > 1).map(([band_id, record_ids]) => ({ band_id, record_ids })) }
+  function addUnresolvedIfMissing(event: DomainEvent, id: UuidV7, kind: OperationalEntityKind) {
+    const entity = entities.get(id)
+    if (!entity || entity.kind !== kind) unresolved.push({ event_id: event.event_id, reference_id: id, expected_kind: kind })
+  }
   function apply(kind: OperationalEntityKind, id: UuidV7, fields: Record<string, unknown>, active: boolean, event: DomainEvent) { const existing = entities.get(id) ?? { id, kind, fields: {}, active, field_event_ids: {} }; const eventWinners = winners.get(id) ?? new Map<string, DomainEvent>(); const next = { ...existing, fields: { ...existing.fields }, field_event_ids: { ...existing.field_event_ids } }; for (const [field, value] of Object.entries(fields)) if (isLater(event, eventWinners.get(field))) { next.fields[field] = value; next.field_event_ids[field] = event.event_id; eventWinners.set(field, event) }; winners.set(id, eventWinners); entities.set(id, next) }
 }
 
 function creationKind(type: EventType): OperationalEntityKind | undefined { return type === 'station.created' ? 'station' : type === 'net.created' ? 'net' : type === 'person.created' ? 'person' : type === 'bander.created' ? 'bander' : type === 'band.received' ? 'band' : type === 'session.created' ? 'session' : type === 'banding-record.created' ? 'banding-record' : undefined }
 function lifecycleKind(type: EventType): { kind: OperationalEntityKind; action: 'amend' | 'deactivate' | 'reactivate' } | undefined { const match = /^(station|net|person|bander|band|session|banding-record)\.(fields-amended|deactivated|reactivated)$/.exec(type); return match ? { kind: match[1] as OperationalEntityKind, action: match[2] === 'fields-amended' ? 'amend' : match[2] === 'deactivated' ? 'deactivate' : 'reactivate' } : undefined }
-function fieldsFrom(event: DomainEvent): Record<string, unknown> { const p = event.payload as Record<string, unknown>; return typeof p.fields === 'object' && p.fields !== null ? p.fields as Record<string, unknown> : Object.fromEntries(Object.entries(p).filter(([key]) => !key.endsWith('_id') && key !== 'band_number')) }
+function fieldsFrom(event: DomainEvent): Record<string, unknown> {
+  const payload = event.payload as Record<string, unknown>
+  const fields = typeof payload.fields === 'object' && payload.fields !== null ? payload.fields as Record<string, unknown> : {}
+  // band_number is a structural field in band.received rather than a nested
+  // amendment map, but it remains a current-state fact for conflict checks.
+  return event.event_type === 'band.received'
+    ? { band_number: payload.band_number, ...fields }
+    : Object.keys(fields).length > 0 ? fields : Object.fromEntries(Object.entries(payload).filter(([key]) => !key.endsWith('_id')))
+}
 function isLater(candidate: DomainEvent, previous: DomainEvent | undefined): boolean { return !previous || compareEventOrder(candidate, previous) > 0 }
 function normalizeBand(value: string): string { return value.replace(/[^a-z0-9]/gi, '').toUpperCase() }
 function isNewDeployment(value: unknown): boolean { return value === '1' || value === 'N' }

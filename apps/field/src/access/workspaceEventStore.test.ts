@@ -73,7 +73,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const pending = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
     const conflicting = createEvent({
       ...pending,
-      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005', fields: {} },
     })
     await store.appendAll([pending])
 
@@ -87,7 +87,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const accepted = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
     const conflicting = createEvent({
       ...accepted,
-      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000005', fields: {} },
     })
     await store.appendAcceptedRemote([{ event: accepted, server_sequence: 1 }])
 
@@ -156,7 +156,7 @@ function sessionEvent(eventId: string) {
     workspace_id: workspaceId,
     command_id: commandId,
     actor: { kind: 'user-account', user_account_id: userId },
-    payload: { session_id: eventId },
+    payload: { session_id: eventId, fields: {} },
   })
 }
 
