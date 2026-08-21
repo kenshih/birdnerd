@@ -28,6 +28,10 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const [managedBandId, setManagedBandId] = useState('')
   const [stationName, setStationName] = useState('')
   const [netLabel, setNetLabel] = useState('')
+  const [personName, setPersonName] = useState('')
+  const [personInitials, setPersonInitials] = useState('')
+  const [banderPersonId, setBanderPersonId] = useState('')
+  const [banderRole, setBanderRole] = useState('Bander')
 
   const refresh = useCallback(async () => setProjection(projectOperationalEvents(await store.snapshot(access.workspace_id))), [access.workspace_id, store])
   const synchronize = useCallback(async () => { if (sync) await sync.synchronize(); await refresh() }, [refresh, sync])
@@ -46,6 +50,8 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const stations = active('station')
   const sessions = active('session')
   const bands = active('band')
+  const people = active('person')
+  const banders = active('bander')
   const records = active('banding-record').filter(record => !sessionId || record.fields.session_id === sessionId)
 
   async function perform(work: () => Promise<void>) {
@@ -92,6 +98,17 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   function receiveBand(event: FormEvent) {
     event.preventDefault(); void perform(async () => { await decide({ kind: 'receive-bands', bands: [{ band_number: bandNumber.trim() }] }); setBandNumber('') })
   }
+  function createPerson(event: FormEvent) {
+    event.preventDefault(); void perform(async () => {
+      await decide({ kind: 'create', entity_kind: 'person', fields: compact({ name: personName.trim(), initials: personInitials.trim().toUpperCase() }) })
+      setPersonName(''); setPersonInitials('')
+    })
+  }
+  function createBander(event: FormEvent) {
+    event.preventDefault(); if (!banderPersonId) return
+    void perform(async () => { await decide({ kind: 'create', entity_kind: 'bander', person_id: banderPersonId, fields: { role: banderRole } }); setBanderPersonId('') })
+  }
+  function linkSignedInPerson(person_id: string) { void perform(() => decide({ kind: 'link-user-account-person', user_account_id: access.user_account_id, person_id })) }
   function stationIdOrUndefined() { return stations[0]?.id }
 
   return <main style={styles.page}>
@@ -102,7 +119,7 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
     {tab === 'sessions' && <><form style={styles.card} onSubmit={createSession}><h2>New Session</h2><label>Date<input type="date" value={sessionDate} onChange={event => setSessionDate(event.target.value)} /></label><p>Station: {stations[0]?.fields.name as string ?? 'Configure a Station first'}</p><button disabled={saving || !stationIdOrUndefined()}>Create offline</button></form><EntityList title="Sessions" entities={sessions} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'session', entity_id: entity.id }))} /></>}
     {tab === 'records' && <><section style={styles.card}><h2>Session</h2><select value={sessionId} onChange={event => setSessionId(event.target.value)}><option value="">Choose a Session</option>{sessions.map(session => <option key={session.id} value={session.id}>{String(session.fields.session_date ?? session.id)}</option>)}</select></section>{sessionId && <form style={styles.card} onSubmit={createRecord}><h2>New Banding Record</h2><label>Species code<input value={speciesCode} onChange={event => setSpeciesCode(event.target.value)} /></label><label>Band selection<select value={bandMode} onChange={event => setBandMode(event.target.value as typeof bandMode)}><option value="unbanded">Unbanded</option><option value="foreign">Foreign</option><option value="managed">Managed inventory</option></select></label>{bandMode === 'foreign' && <label>Band number<input value={bandNumber} onChange={event => setBandNumber(event.target.value)} /></label>}{bandMode === 'managed' && <select value={managedBandId} onChange={event => setManagedBandId(event.target.value)}><option value="">Choose inventory Band</option>{bands.map(band => <option key={band.id} value={band.id}>{String(band.fields.band_number)}</option>)}</select>}<button disabled={saving || (bandMode === 'managed' && !managedBandId)}>Save offline</button></form>}<EntityList title="Banding Records" entities={records} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'banding-record', entity_id: entity.id }))} /></>}
     {tab === 'inventory' && <><form style={styles.card} onSubmit={receiveBand}><h2>Receive Band</h2><label>Band number<input value={bandNumber} onChange={event => setBandNumber(event.target.value)} required /></label><button disabled={saving}>Receive offline</button></form><EntityList title="Inventory" entities={bands} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'band', entity_id: entity.id }))} />{projection.band_number_conflicts.map(conflict => <p style={styles.warning} key={conflict.band_number}>Duplicate normalized Band number {conflict.band_number}; both facts remain until corrected.</p>)}</>}
-    {tab === 'configuration' && (access.role === 'admin' ? <><form style={styles.card} onSubmit={createStation}><h2>Station</h2><label>Name<input value={stationName} onChange={event => setStationName(event.target.value)} /></label><button disabled={saving}>Add Station</button></form><form style={styles.card} onSubmit={createNet}><h2>Net</h2><label>Label<input value={netLabel} onChange={event => setNetLabel(event.target.value)} /></label><button disabled={saving || !stationIdOrUndefined()}>Add Net</button></form><EntityList title="Stations" entities={stations} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'station', entity_id: entity.id }))} /><EntityList title="Nets" entities={active('net')} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'net', entity_id: entity.id }))} /></> : <p style={styles.warning}>An Admin configures Stations, Nets, and the roster. Membership changes remain in the Provisioner CLI.</p>)}
+    {tab === 'configuration' && (access.role === 'admin' ? <><form style={styles.card} onSubmit={createStation}><h2>Station</h2><label>Name<input value={stationName} onChange={event => setStationName(event.target.value)} /></label><button disabled={saving}>Add Station</button></form><form style={styles.card} onSubmit={createNet}><h2>Net</h2><label>Label<input value={netLabel} onChange={event => setNetLabel(event.target.value)} /></label><button disabled={saving || !stationIdOrUndefined()}>Add Net</button></form><form style={styles.card} onSubmit={createPerson}><h2>Roster Person</h2><label>Name<input value={personName} onChange={event => setPersonName(event.target.value)} /></label><label>Initials<input value={personInitials} onChange={event => setPersonInitials(event.target.value)} /></label><button disabled={saving}>Add Person</button></form><form style={styles.card} onSubmit={createBander}><h2>Bander role</h2><select value={banderPersonId} onChange={event => setBanderPersonId(event.target.value)}><option value="">Choose a Person</option>{people.map(person => <option key={person.id} value={person.id}>{String(person.fields.name ?? person.id)}</option>)}</select><select value={banderRole} onChange={event => setBanderRole(event.target.value)}>{['Master Bander','Sub-permittee','Bander','Trainee'].map(role => <option key={role}>{role}</option>)}</select><button disabled={saving || !banderPersonId}>Add Bander</button></form><EntityList title="Stations" entities={stations} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'station', entity_id: entity.id }))} /><EntityList title="Nets" entities={active('net')} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'net', entity_id: entity.id }))} /><section style={styles.card}><h2>Roster</h2>{people.length === 0 ? <p>None yet.</p> : people.map(person => <div key={person.id} style={styles.row}><span>{String(person.fields.name ?? person.id)} — {String(person.fields.initials ?? '')}</span><button type="button" onClick={() => linkSignedInPerson(person.id)}>Link my account</button></div>)}</section><EntityList title="Banders" entities={banders} onDeactivate={entity => void perform(() => decide({ kind: 'deactivate', entity_kind: 'bander', entity_id: entity.id }))} /></> : <p style={styles.warning}>An Admin configures Stations, Nets, and the roster. Membership changes remain in the Provisioner CLI.</p>)}
   </main>
 }
 
