@@ -563,6 +563,15 @@ imports that mutable format into the Event Log.
   active Admin invariant.
 - The active-Net picker remains available by Station. There is no Phase 31
   `SessionNetLog` Event family or automatic per-session Net initialization.
+- Home reaches Event Bundle recovery through a focused Event-replica adapter;
+  it never mounts the retained legacy mutable Data Manager. Restore validation,
+  unsynced-Event protection, rebuild, and authenticated catch-up stay behind
+  the existing collaboration boundary.
+- Operational UI reads only the rebuildable projection: Session summaries
+  derive protocol, MAPS period, and active Record counts; Record inspection is
+  a disabled view with no command path; and Capture Time choices come from the
+  selected Session through the pure `netCheckTimes` helper while retaining a
+  projected off-cadence value.
 
 See [ADR 0018](../../adr/0018-operational-event-catalog.md) for the
 catalog and admission decisions.

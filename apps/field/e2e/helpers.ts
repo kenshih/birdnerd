@@ -145,9 +145,10 @@ export const richRecord = {
     'Body Molt': '2', 'FF Molt': 'S', 'FF Wear': '3', 'Juv Body Plumage': '1',
     'P Covs': 'F', 'G Covs': 'B', Alula: 'F', PP: 'R', SS: 'M', Tert: 'L',
     Rec: 'N', 'Body Plum': 'J', 'Non-Feather': 'U', Status: '300', Disposition: 'X',
+    'Capture Time': '07:30',
   } as Record<string, string>,
   inputs: {
-    'Capture Time': '07:30', 'Release Time': '08:00',
+    'Release Time': '08:00',
     'Wing (mm)': '67', 'Tail (mm)': '55', 'Tarsus (mm)': '22.5',
     'Exp. Culmen (mm)': '11.2', 'Body Mass (g)': '18.3',
   } as Record<string, string>,

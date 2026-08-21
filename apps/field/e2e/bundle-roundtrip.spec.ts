@@ -22,8 +22,6 @@ test('Workspace Event Bundle restore catches up accepted remote Events through n
   await expect(page.getByText(/^Synced /)).toBeVisible()
 
   await page.getByRole('button', { name: 'Home' }).click()
-  // Product-red: Workspace Event Bundle recovery is still a Phase 31 outcome,
-  // but Data Manager is not currently reachable from the consolidated Home.
   const dataManager = page.getByRole('button', { name: /Data Manager/ })
   await expect(dataManager).toBeVisible()
   await dataManager.click()

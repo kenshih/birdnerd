@@ -22,7 +22,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   Event-backed Band Inventory now retains optional size/type across typed batch
   receipt and metadata corrections, and derives status, species, dates, and
   encounter history from active Record and Band-lifecycle facts instead of a
-  manually editable Band status.
+  manually editable Band status. Home once again reaches recovery-only
+  Workspace Event Bundle export/restore without exposing the legacy mutable
+  Data Manager. The operational projection also restores Session-derived
+  net-check Capture Time choices, read-only Record inspection, and Session
+  protocol/MAPS-period/active-Record summaries.
 - Field 0.30.0 — **Supabase Event Exchange & Collaboration Pilot.** Invited
   Google users can claim one Workspace, append immutable pilot Session and
   Banding Record Events while offline, and synchronize through authenticated

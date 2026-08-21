@@ -83,6 +83,11 @@ acceptance; they neither receive Event-backed writes nor provide a normal-path
 fallback. The acceptance result governs their later removal without a legacy
 data migration.
 
+Home also links to a focused **Data Manager** recovery screen for exporting or
+restoring the active Workspace's immutable Event Bundle. It does not expose the
+legacy mutable Data Manager; projection-backed browsing, import, and agency
+exports are Phase 33 work.
+
 All observational fields remain optional. Remove actions become role-aware
 deactivation with explicit reactivation, preserve historical references, and
 do not cascade-delete accepted Events. Managed, foreign, and unbanded Band
@@ -116,6 +121,8 @@ initialization below describe the legacy workflow and do not ship on the Phase
 │                                     │
 │  [Field Data]                       │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
+│  [Data Manager]                     │
+│  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Event Pipeline]  (development)    │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─                │
 │  [Report Bugs / Feedback]           │
@@ -125,14 +132,15 @@ initialization below describe the legacy workflow and do not ship on the Phase
 └─────────────────────────────────────┘
 ```
 
-Buttons are grouped with subtle dividers: **field activities** (Field Data),
-**diagnostics** (Event Pipeline in development builds), and **meta** (Feedback
-and About). Field Data itself contains the event-backed Session, Record,
-Inventory, and Admin configuration tabs.
+Buttons are grouped with subtle dividers: **field activities** (Field Data and
+recovery-only Data Manager), **diagnostics** (Event Pipeline in development
+builds), and **meta** (Feedback and About). Field Data itself contains the
+event-backed Session, Record, Inventory, and Admin configuration tabs.
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
 | **Field Data** | Create, correct, synchronize, and inspect shared Event-backed Sessions, Records, inventory, and configuration | Field Data |
+| **Data Manager** | Export or recovery-restore the active Workspace's immutable Event Bundle | Workspace Event Bundle |
 | **Event Pipeline** *(development only)* | Inspect local Events, projections, queue/cursor/retry state, receipts, and errors | Event Pipeline |
 | **Report Bugs / Feedback** | Send feedback via email | Email client |
 | **About** | App version, credits, links | About Page |
@@ -285,7 +293,7 @@ Validation warnings and errors display **inline below the relevant field**, appe
 │  ADDITIONAL INFORMATION             │
 │   ├─ Session ID [linked]            │
 │   ├─ Bander [dropdown]              │
-│   ├─ Capture Time [time picker]     │
+│   ├─ Capture Time [net-check select]│
 │   ├─ Release Time [time picker]     │
 │   │       [Tap to fill with now]    │
 │   ├─ Net [dropdown from session]    │
@@ -311,7 +319,7 @@ Validation warnings and errors display **inline below the relevant field**, appe
 | **Molt fields** | Select (single letters/numbers) | Coded values per molt tables in CodeTable. |
 | **Morphometrics** | Number inputs | Wing/Tail in whole mm. Tarsus/Culmen/Other in ##.## precision. Mass in ##.# g. Validation: soft warnings if outside species range. |
 | **Status** | Select | 300, 301, 318, 319, 333, 334, 380, 500, 700, "---" (Mortality), Other. 500 requires disposition + note. "---" requires note. |
-| **Capture Time** | Time picker w/ buttons | "Now" button populates current device time (HH:mm). "✕" button clears the field. |
+| **Capture Time** | Net-check select | Lists 30-minute slots from the selected Session's opening through closing time. A bounded field-day window is used when those times are absent, and an existing off-cadence projected value remains selectable for inspection or correction. |
 | **Release Time** | Time picker w/ buttons | "Now" button populates current device time (HH:mm). "✕" button clears the field. |
 | **Notes** | Text area | Auto-populates when validation rules trigger. User can add/edit. |
 | **Feather Pull** | Checkbox | Default: unchecked (false). |
@@ -651,28 +659,15 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-The Data Manager page includes **Agency Export** (IBP/BBL format exports with multi-select session scope) and **Workspace Event Bundle** recovery. The Event Bundle workflow preserves agency CSV exports. It validates the container integrity, every Event, and its Workspace before touching local data, requires active access to that Workspace, protects unsynced Events, then replaces/rebuilds and syncs.
+Phase 31's Home-reachable Data Manager is a focused **Workspace Event Bundle**
+recovery screen. It validates container integrity, every Event, and the target
+Workspace before touching local data; requires active access to that Workspace;
+protects unsynced Events; and only then replaces, rebuilds, and catches up
+through authenticated sync. It does not mount the legacy mutable Data Manager.
 
 ```
 ┌──────────────────────────────────────┐
 │  🏠 Data Manager                     │
-│                                      │
-│  3 sessions · 47 records             │
-│                                      │
-│  ── Agency Export ───────────────── │
-│                                      │
-│  Format:                             │
-│  ○ IBP (MAPS master list)           │
-│  ○ BBL Upload (new bandings)        │
-│  ○ BBL Recapture Upload             │
-│                                      │
-│  Sessions:                           │
-│  ☑ All Sessions                      │
-│  ☑ GCFS · 2026-03-19 (12 recs)     │
-│  ☑ GCFS · 2026-03-18 (20 recs)     │
-│  ☑ MICA · 2026-03-15 (15 recs)     │
-│                                      │
-│  [ ↓ Export 47 records ]             │
 │                                      │
 │  ── Workspace Event Bundle ───────── │
 │                                      │
@@ -689,13 +684,16 @@ The Data Manager page includes **Agency Export** (IBP/BBL format exports with mu
 
 ### 7.1 Data Manager Layout
 
-The Data Manager page shows a summary count (sessions, records) and two sections: Agency Export and Workspace Event Bundle. Restore exposes its validation, access, and unsynced-Event protection result before the destructive confirmation. There is no record browsing or filtering — record-level views are accessed through Session View.
+The Phase 31 Data Manager contains only Workspace Event Bundle recovery. Restore
+exposes its validation, access, and unsynced-Event protection result before the
+destructive confirmation. There is no record browsing or filtering;
+record-level views are accessed through the Session list.
 
 See § 7.0 wireframe above for the full layout.
 
-### 7.2 Agency Export Formats
+### 7.2 Agency Export Formats (Phase 33)
 
-The app stores data internally in **IBP format** and derives **BBL format** at export time via code mappings.
+The Event-backed replacement is deferred to Phase 33. The intended formats are:
 
 **IBP (MAPS master list)** — 50 columns matching Hallie's MASTER sheet. Includes both IBP and BBL code columns. All records (new bandings, recaptures, destroyed, unbanded).
 
@@ -703,7 +701,8 @@ The app stores data internally in **IBP format** and derives **BBL format** at e
 
 **BBL Recapture Upload** — 60 columns per BBL spec. Recaptures only (Code = R, F, 4, 5, 6, 8). Adds `How Obtained`, `Present Condition` columns. `how_obtained` defaults to "Mist net".
 
-Exports query live IndexedDB data (not the JSON bundle). Scoped by session or all sessions.
+The Phase 33 implementation will query Event-backed projections (not the Event
+Bundle) and support Session or all-Session scope.
 
 ---
 

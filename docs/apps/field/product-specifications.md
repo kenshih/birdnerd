@@ -26,7 +26,9 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Band Inventory** — Add, track, and manage band stock.
 
-**Data Manager** — Browse records, export session data (CSV, BBL, IBP), import master sheets, and perform recovery-only export/restore with immutable Workspace Event Bundles.
+**Data Manager** — Export and recovery-restore the active Workspace's immutable
+Event Log. Shared record browsing, import preview, and agency exports return in
+Phase 33 after they are rebuilt on Event-backed projections.
 
 ---
 
@@ -130,7 +132,10 @@ second status value, and Event conflict order determines competing winners.
 **Session Structure:** A session (date + Station + protocol) involves multiple
 banders and may reference active Nets from that Station on Banding Records.
 Session crew is shared in Phase 31. The legacy per-net effort model is deferred
-for reconsideration with Net Hours.
+for reconsideration with Net Hours. Session lists summarize protocol, MAPS
+period, and the number of active projected Records. Each listed Record can be
+opened in a projection-backed read-only view before entering the separate
+correction flow.
 
 **Validation Datasets (Future):** We will provide species-specific ranges for morphometrics (wing, tail, tarsus, etc.) and code consistency rules to flag unusual combinations (e.g., HY adult molt codes, season/sex mismatches).
 

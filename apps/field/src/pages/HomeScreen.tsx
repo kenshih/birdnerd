@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 
-type NavMode = 'pilot' | 'diagnostics' | 'feedback' | 'about'
+type NavMode = 'pilot' | 'event-bundle' | 'diagnostics' | 'feedback' | 'about'
 
 interface Props {
   onNavigate: (mode: NavMode) => void
@@ -16,6 +16,7 @@ interface NavItem {
 const NAV_GROUPS: NavItem[][] = [
   [
     { mode: 'pilot', label: 'Field Data', description: 'Offline-first shared sessions, records, and inventory', enabled: true },
+    { mode: 'event-bundle', label: 'Data Manager', description: 'Workspace Event Bundle backup and recovery', enabled: true },
   ],
   ...(import.meta.env.DEV
     ? [[{ mode: 'diagnostics' as const, label: 'Event Pipeline', description: 'Developer replica and sync evidence', enabled: true }]]
