@@ -94,7 +94,8 @@ function checkExactKeys(source, subject, schema, label) {
 }
 
 function eventTypeBranch(source, eventType) {
-  const start = source.lastIndexOf(`event_type = '${eventType}' then`)
+  const matches = [...source.matchAll(new RegExp(`^  (?:if|elsif) event_type = '${escapeRegExp(eventType)}' then`, 'gm'))]
+  const start = matches.at(-1)?.index ?? -1
   if (start < 0) return undefined
   const possibleEnds = [
     source.indexOf('\n  elsif event_type =', start + 1),

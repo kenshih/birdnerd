@@ -27,6 +27,9 @@ declare
   physical_ms bigint := floor(extract(epoch from clock_timestamp()) * 1000);
 begin
   if operation not in ('invite','set-role','deactivate','reactivate') or nullif(btrim(provisioner_id),'') is null then raise exception 'Invalid membership operation.'; end if;
+  -- Serialize Membership changes per Workspace so two concurrent demotions or
+  -- deactivations cannot both observe the same last active Admin.
+  perform pg_advisory_xact_lock(hashtext(target_workspace_id::text));
   if operation = 'invite' then
     if lower(btrim(coalesce(target_email,''))) !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$' or next_role not in ('admin','contributor') then raise exception 'Invite requires normalized email and role.'; end if;
     select * into membership from birdnerd_private.membership_index where workspace_id=target_workspace_id and email=lower(btrim(target_email)) for update;
@@ -34,6 +37,7 @@ begin
     target_membership_id := birdnerd_private.uuid_v7(); event_type := 'membership.preauthorized';
     insert into birdnerd_private.membership_index (membership_id,workspace_id,email,role,status) values (target_membership_id,target_workspace_id,lower(btrim(target_email)),next_role,'pending');
   else
+    if operation = 'set-role' and next_role not in ('admin','contributor') then raise exception 'set-role requires admin or contributor.'; end if;
     select * into membership from birdnerd_private.membership_index where membership_id=target_membership_id and workspace_id=target_workspace_id for update;
     if not found then raise exception 'Membership does not belong to Workspace.'; end if;
     if operation in ('set-role','deactivate') and membership.role='admin' and membership.status='active'
@@ -137,7 +141,7 @@ returns table (receipt jsonb) language plpgsql volatile security definer set sea
 declare
   caller_id uuid := auth.uid(); event jsonb; event_type text; required_role text;
   membership birdnerd_private.membership_index%rowtype; existing birdnerd_private.event_log%rowtype;
-  entity_id_text text; entity_kind text; reference_id_text text; expected_kind text; sequence bigint; result jsonb;
+  entity_id_text text; entity_kind text; reference_ids text[]; expected_kinds text[]; sequence bigint; result jsonb;
 begin
   if caller_id is null then raise exception 'Authentication required.' using errcode='42501'; end if;
   if jsonb_typeof(events) <> 'array' or jsonb_array_length(events) > 100 then raise exception 'Events must be an array of at most 100 items.'; end if;
@@ -154,15 +158,28 @@ begin
       else
         entity_kind := case event_type when 'station.created' then 'station' when 'net.created' then 'net' when 'person.created' then 'person' when 'bander.created' then 'bander' when 'band.received' then 'band' when 'session.created' then 'session' when 'banding-record.created' then 'banding-record' end;
         entity_id_text := case entity_kind when 'station' then event -> 'payload' ->> 'station_id' when 'net' then event -> 'payload' ->> 'net_id' when 'person' then event -> 'payload' ->> 'person_id' when 'bander' then event -> 'payload' ->> 'bander_id' when 'band' then event -> 'payload' ->> 'band_id' when 'session' then event -> 'payload' ->> 'session_id' when 'banding-record' then event -> 'payload' ->> 'record_id' end;
-        reference_id_text := case event_type when 'net.created' then event -> 'payload' ->> 'station_id' when 'bander.created' then event -> 'payload' ->> 'person_id' when 'session-crew-member.added' then event -> 'payload' ->> 'session_id' when 'session-crew-member.removed' then event -> 'payload' ->> 'session_id' when 'banding-record.created' then event -> 'payload' ->> 'session_id' else null end;
-        expected_kind := case event_type when 'net.created' then 'station' when 'bander.created' then 'person' when 'session-crew-member.added' then 'session' when 'session-crew-member.removed' then 'session' when 'banding-record.created' then 'session' else null end;
+        reference_ids := case
+          when event_type = 'net.created' then array[event -> 'payload' ->> 'station_id']
+          when event_type = 'bander.created' then array[event -> 'payload' ->> 'person_id']
+          when event_type in ('session-crew-member.added','session-crew-member.removed') then array[event -> 'payload' ->> 'session_id', event -> 'payload' ->> 'bander_id']
+          when event_type = 'user-account.person-linked' then array[event -> 'payload' ->> 'person_id']
+          when event_type = 'banding-record.created' then array[event -> 'payload' ->> 'session_id', case when event -> 'payload' -> 'fields' -> 'band_selection' ->> 'kind' = 'managed' then event -> 'payload' -> 'fields' -> 'band_selection' ->> 'band_id' end]
+          else array[]::text[] end;
+        expected_kinds := case
+          when event_type = 'net.created' then array['station']
+          when event_type = 'bander.created' then array['person']
+          when event_type in ('session-crew-member.added','session-crew-member.removed') then array['session','bander']
+          when event_type = 'user-account.person-linked' then array['person']
+          when event_type = 'banding-record.created' then array['session','band']
+          else array[]::text[] end;
         if entity_id_text is not null and not birdnerd_private.is_uuid_v7(entity_id_text) then
           result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity identity is invalid.','permanent',true);
-        elsif reference_id_text is not null and not birdnerd_private.is_uuid_v7(reference_id_text) then
+        elsif exists (select 1 from unnest(reference_ids) as refs(reference_id) where reference_id is not null and not birdnerd_private.is_uuid_v7(reference_id)) then
           result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference is invalid.','permanent',true);
-        elsif reference_id_text is not null and not exists (select 1 from birdnerd_private.entity_reference_index where workspace_id=(event ->> 'workspace_id')::uuid and entity_id=reference_id_text::uuid and entity_kind=expected_kind) then
-          if exists (select 1 from birdnerd_private.entity_reference_index where entity_id=reference_id_text::uuid) then result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference has the wrong Workspace or kind.','permanent',true);
-          else result := jsonb_build_object('kind','deferred','event_id',event ->> 'event_id','reason','Referenced parent is not indexed yet.','retryable',true); end if;
+        elsif exists (select 1 from unnest(reference_ids) with ordinality reference_id(id, position) where id is not null and exists (select 1 from birdnerd_private.entity_reference_index where entity_id=id::uuid) and not exists (select 1 from birdnerd_private.entity_reference_index where workspace_id=(event ->> 'workspace_id')::uuid and entity_id=id::uuid and entity_kind=expected_kinds[position])) then
+          result := jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Entity reference has the wrong Workspace or kind.','permanent',true);
+        elsif exists (select 1 from unnest(reference_ids) as refs(reference_id) where reference_id is not null and not exists (select 1 from birdnerd_private.entity_reference_index where entity_id=reference_id::uuid)) then
+          result := jsonb_build_object('kind','deferred','event_id',event ->> 'event_id','reason','Referenced parent is not indexed yet.','retryable',true);
         else
           select * into existing from birdnerd_private.event_log where event_id=(event ->> 'event_id')::uuid;
           if found then result := case when existing.event_json=event then jsonb_build_object('kind','duplicate','event_id',event ->> 'event_id','server_sequence',existing.server_sequence) else jsonb_build_object('kind','rejected','event_id',event ->> 'event_id','reason','Event ID conflicts with immutable content.','permanent',true) end;
