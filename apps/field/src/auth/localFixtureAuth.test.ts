@@ -74,7 +74,7 @@ describe('local fixture Auth adapter', () => {
     })
 
     await auth.signOut()
-    expect(port.auth.signOut).toHaveBeenCalledOnce()
+    expect(port.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
   })
 
   it('rejects an unknown action without sending an arbitrary password request', async () => {

@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.3 — **Visible identity and local sign-out.** Active Field screens
+  now identify the signed-in person and provide a provider-neutral **Sign
+  out** action for both fixture-member local Auth and hosted Google Auth. The
+  action ends only the current browser session, leaving other browser profiles
+  and devices signed in.
 - Field 0.32.2 — **Fixture-member local sign-in.** After loading the
   disposable operational fixture, local `npm run dev` offers **Continue as
   Fixture Admin** and **Continue as Fixture Contributor**. Each choice starts

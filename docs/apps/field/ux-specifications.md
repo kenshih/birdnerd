@@ -26,13 +26,19 @@ present only **Continue with Google**.
 | --- | --- | --- |
 | Not signed in | Configured sign-in screen | Continue with Google, or local fixture Admin/Contributor actions on the verified local target |
 | Resolving access | “Checking access…” screen | Wait; no workspace content is visible |
-| No BirdNerd account or eligible Membership | “You don’t have access to BirdNerd yet” screen, including the signed-in email | Sign out or use another Google account |
+| No BirdNerd account or eligible Membership | “You don’t have access to BirdNerd yet” screen, including the signed-in email | Sign out |
 | Pending Membership with matching pre-authorized email | Activation/linking progress, then the Workspace | Wait; activation is automatic and idempotent |
-| Active Workspace Membership | Normal Field UI for the selected Workspace | Use capabilities permitted by the Membership role |
+| Active Workspace Membership | Normal Field UI for the selected Workspace, with the signed-in display name and email when available | Use capabilities permitted by the Membership role; sign out of this browser session |
 
 The access-denied screen must not create an account automatically, display
 workspace data, or offer an in-app request/join flow. Its purpose is to make a
-successful Google login understandable without implying BirdNerd access.
+successful sign-in understandable without implying BirdNerd access.
+
+After active access, a compact account bar remains above Field screens. It
+identifies the current person without exposing provider/session details and
+offers **Sign out**. Sign out returns the browser to the configured sign-in
+screen; it is intentionally local to this browser session, so it does not sign
+out a developer's other fixture profile or the person's other devices.
 
 **Phase 29 scope:** The UI implements all of these outcomes, and a matching
 pending Membership activates automatically, idempotently, and durably in the

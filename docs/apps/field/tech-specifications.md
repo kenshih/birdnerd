@@ -442,7 +442,7 @@ It replaces mutable authoritative entities with a local-first event model:
   Events, replaces/rebuilds the replica, and synchronizes. History
   merge/adoption is deferred.
 
-### Field Authentication Module (Field 0.32.2)
+### Field Authentication Module (Field 0.32.2–0.32.3)
 
 Field UI depends on the provider-neutral `AuthModule` interface, which exposes
 current authentication state, state subscription, labelled sign-in actions,
@@ -451,7 +451,10 @@ an external authenticated identity only; it is not a BirdNerd User Account and
 grants no Workspace authorization.
 
 The shared `SupabaseSessionAuth` Module owns Supabase session restoration,
-state changes, identity mapping, recoverable errors, and sign-out. Its
+state changes, identity mapping, recoverable errors, and sign-out. It passes
+the current-session (`local`) scope to Supabase sign-out, so a Field action
+does not revoke the user's sessions in a second browser profile or on another
+device. Its
 sign-in seam has two concrete production/development roles: the Google
 interaction Adapter owns scopes, redirect construction, and callback-fragment
 cleanup; the local fixture-session Adapter owns selection of one of the two
@@ -464,6 +467,12 @@ builds select the Google Adapter even if local fixture values are ambient. The
 unavailable-configuration adapter and in-memory test fake implement the same
 interface. Identity linkage and Workspace Membership remain separate Modules
 so the identity provider cannot become the authorization source.
+
+Once `WorkspaceAccessGate` resolves active access, its provider-neutral UI
+shell shows the authenticated display name and email when available and a
+sign-out button on every Field screen. The shell calls only `AuthModule`;
+callers never receive Supabase session data, local-fixture credentials, or
+provider-specific state.
 
 The approved rollout is Phases 27–30 in [docs/plan.md](../../plan.md). The
 first pilot covers two Stations and two to four members, including parallel

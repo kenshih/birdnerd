@@ -54,7 +54,7 @@ describe('shared Supabase session Module', () => {
     })
   })
 
-  it('uses the shared sign-out lifecycle when Supabase reports a signed-out session', async () => {
+  it('uses the shared local-session sign-out lifecycle when Supabase reports a signed-out session', async () => {
     const { port, emit } = makePort()
     const auth = createSupabaseSessionAuthModule(port, {
       signInActions: [{ id: 'chosen', label: 'Continue as Chosen' }],
@@ -65,7 +65,7 @@ describe('shared Supabase session Module', () => {
     await auth.signOut()
     emit('SIGNED_OUT')
 
-    expect(port.auth.signOut).toHaveBeenCalledOnce()
+    expect(port.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
     await expect(auth.getState()).resolves.toMatchObject({ kind: 'signed-out' })
   })
 })

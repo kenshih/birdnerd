@@ -101,8 +101,10 @@ describe('Supabase Google auth adapter', () => {
 
     await auth.getState()
     emit('SIGNED_IN', session)
+    await auth.signOut()
     emit('SIGNED_OUT', null)
 
+    expect(port.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
     expect(states).toEqual(['signed-out', 'signed-in', 'signed-out'])
   })
 })

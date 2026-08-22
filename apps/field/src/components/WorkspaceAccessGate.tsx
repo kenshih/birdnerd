@@ -56,7 +56,11 @@ export default function WorkspaceAccessGate({ auth, workspaceAccess, children }:
     if (accessState.kind === 'checking') return <CheckingAccess />
     if (accessState.kind === 'error') return <AccessProblem message={accessState.message} onSignOut={() => void auth.signOut()} />
     if (accessState.result.kind === 'active') {
-      return <WorkspaceAccessContext.Provider value={accessState.result.access}>{children}</WorkspaceAccessContext.Provider>
+      return (
+        <WorkspaceAccessContext.Provider value={accessState.result.access}>
+          <ActiveWorkspaceShell identity={authState.identity} onSignOut={() => void auth.signOut()}>{children}</ActiveWorkspaceShell>
+        </WorkspaceAccessContext.Provider>
+      )
     }
     return <NoAccess identity={authState.identity} onSignOut={() => void auth.signOut()} />
   }
@@ -91,9 +95,9 @@ function NoAccess({ identity, onSignOut }: { identity: ExternalIdentity; onSignO
   return (
     <Screen>
       <h1>You don’t have access to BirdNerd yet</h1>
-      <p>{identity.email ?? identity.displayName ?? 'This Google account'} has not been pre-authorized for a BirdNerd Workspace.</p>
-      <p>Ask a Workspace Admin to pre-authorize the exact Google email address you use here.</p>
-      <button style={styles.secondaryButton} type="button" onClick={onSignOut}>Use another Google account</button>
+      <p>{identity.email ?? identity.displayName ?? 'This account'} has not been pre-authorized for a BirdNerd Workspace.</p>
+      <p>Ask a Workspace Admin to pre-authorize the exact email address you use here.</p>
+      <button style={styles.secondaryButton} type="button" onClick={onSignOut}>Sign out</button>
     </Screen>
   )
 }
@@ -108,6 +112,21 @@ function AccessProblem({ message, onSignOut }: { message: string; onSignOut?: ()
   )
 }
 
+/** Keeps the authenticated person and current-session sign-out available on every active Workspace screen. */
+function ActiveWorkspaceShell({ identity, onSignOut, children }: { identity: ExternalIdentity; onSignOut: () => void; children: ReactNode }) {
+  const identityLabel = [identity.displayName, identity.email].filter((value): value is string => Boolean(value)).join(' · ') || 'Signed-in user'
+
+  return (
+    <div>
+      <header aria-label="Signed-in account" style={styles.identityBar}>
+        <span><strong>Signed in as</strong> {identityLabel}</span>
+        <button style={styles.identityButton} type="button" onClick={onSignOut}>Sign out</button>
+      </header>
+      {children}
+    </div>
+  )
+}
+
 function Screen({ children }: { children: ReactNode }) {
   return <main style={styles.page}>{children}</main>
 }
@@ -118,4 +137,6 @@ const styles: Record<string, CSSProperties> = {
   },
   primaryButton: { minHeight: '44px', width: 'min(100%, 320px)', border: 'none', borderRadius: '8px', background: '#fff', color: '#1b4332', fontWeight: 700, cursor: 'pointer' },
   secondaryButton: { minHeight: '44px', width: 'min(100%, 320px)', border: '1px solid rgba(255,255,255,0.55)', borderRadius: '8px', background: 'transparent', color: '#fff', fontWeight: 700, cursor: 'pointer' },
+  identityBar: { minHeight: '52px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '0.5rem 0.75rem', background: '#1b4332', color: '#fff', fontSize: '0.85rem', flexWrap: 'wrap' },
+  identityButton: { minHeight: '36px', padding: '0.35rem 0.7rem', border: '1px solid rgba(255,255,255,0.6)', borderRadius: '6px', background: 'transparent', color: '#fff', fontWeight: 700, cursor: 'pointer' },
 }

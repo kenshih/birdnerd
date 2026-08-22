@@ -74,18 +74,33 @@ describe('WorkspaceAccessGate', () => {
     expect(await screen.findByText('You don’t have access to BirdNerd yet')).toBeVisible()
     expect(screen.getByText(/outside@example.com/)).toBeVisible()
     expect(screen.queryByText('Workspace data')).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Use another Google account' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(auth.signOut).toHaveBeenCalledOnce()
   })
 
-  it('renders Workspace content only after active access resolves', async () => {
-    renderGate(
-      { kind: 'signed-in', identity: { provider: 'google', subject: 'authorized', email: 'bander@example.com' } },
+  it('shows the active hosted identity and delegates sign-out through the Auth Module', async () => {
+    const auth = renderGate(
+      { kind: 'signed-in', identity: { provider: 'google', subject: 'authorized', email: 'bander@example.com', displayName: 'Bander Example' } },
       { resolve: vi.fn().mockResolvedValue({ kind: 'active', access: {
         workspace_id: 'workspace', workspace_name: 'Cedar Creek', membership_id: 'membership', role: 'admin', user_account_id: 'user',
       } }) },
     )
 
     expect(await screen.findByText('Workspace data')).toBeVisible()
+    expect(screen.getByLabelText('Signed-in account')).toHaveTextContent('Bander Example · bander@example.com')
+    fireEvent.click(screen.getByRole('button', { name: 'Sign out' }))
+    expect(auth.signOut).toHaveBeenCalledOnce()
+  })
+
+  it('shows a fixture identity without exposing fixture credentials', async () => {
+    renderGate(
+      { kind: 'signed-in', identity: { provider: 'google', subject: 'fixture-contributor', email: 'fixture-contributor@birdnerd.test' } },
+      { resolve: vi.fn().mockResolvedValue({ kind: 'active', access: {
+        workspace_id: 'workspace', workspace_name: 'Fixture Workspace', membership_id: 'membership', role: 'contributor', user_account_id: 'user',
+      } }) },
+    )
+
+    expect(await screen.findByLabelText('Signed-in account')).toHaveTextContent('fixture-contributor@birdnerd.test')
+    expect(screen.queryByText('fixture-contributor-local-only')).not.toBeInTheDocument()
   })
 })
