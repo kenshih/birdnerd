@@ -14,6 +14,32 @@ Membership and entity-reference admission indexes, durable receipts, restricted
 Provisioner Membership operations, and the authenticated browser exchange
 RPCs. Terraform is not the schema manager.
 
+## Disposable local fixture
+
+The only supported fixture command is:
+
+```bash
+npm run fixtures:load -- operational-workspace
+```
+
+It accepts no database URL, SQL, user credential, or fixture path. The Loader
+starts the checkout's CLI-local stack if it is stopped; before it resets or
+writes data, it requires `supabase status --output env` to identify loopback
+API and override-free PostgreSQL endpoints. It restarts a verified running stack to apply its
+local Auth configuration, uses `supabase db reset --local --no-seed`, then
+rechecks the same target before creating synthetic local Auth users. The secret
+key remains inside the Node Loader, never in Field or Vite.
+Public self-service Auth registration stays disabled; only the Loader's trusted
+local Admin API bootstrap creates the two synthetic fixture users.
+
+The versioned declaration in `data/fixtures/operational-workspace.yaml` creates
+one Workspace with an Admin and Contributor. The restricted Provisioner writes
+the Workspace/pending-Membership facts; authenticated local sessions claim
+access and append the Admin configuration and Contributor Session/Record
+facts through the ordinary RPCs. Both users then pull and replay the same
+declared history. This is a development fixture, not generic SQL seeding or a
+hosted reset/load mechanism.
+
 Local verification:
 
 ```bash

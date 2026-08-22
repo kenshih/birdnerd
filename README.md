@@ -31,6 +31,24 @@ values in `apps/field/.env.local`.
 
 The dev server starts at `http://localhost:5173`.
 
+### Disposable local operational fixture
+
+To replace local Supabase data with the first selected development fixture:
+
+```bash
+npm run fixtures:load -- operational-workspace
+```
+
+This intentionally stops and restarts the repository's local Supabase stack,
+verifies its API and override-free database URL are loopback-only, then resets
+it without a generic SQL seed. It creates only synthetic local Auth users and the declared
+Workspace Event history—never a hosted project, pilot data, or browser secret.
+Self-service Auth registration remains disabled.
+The receipt confirms that fixture Admin and Contributor sessions independently
+claimed access, appended their representative data, and replayed the same
+history. This release does not yet add a browser fixture-member sign-in
+selector; that is the 0.32.2 slice.
+
 ### Hosted pilot development
 
 Hosted testing is intentionally separate from routine development. Put the
