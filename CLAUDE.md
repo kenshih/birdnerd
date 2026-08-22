@@ -65,8 +65,10 @@ nogit/          — Hallie's source docs (not committed)
 ## Commands
 
 ```bash
-npm run dev               # local dev server
-npm run dev:host          # dev server accessible on LAN
+npm run dev               # starts/verifies local Supabase, then Field
+npm run dev:host          # expose local Field server on LAN (Supabase remains loopback)
+npm run dev:pilot         # explicit hosted-pilot Field server
+npm run dev:pilot:host    # explicit hosted-pilot server accessible on LAN
 npm run dev:ocr           # OCR app dev server
 npm run build             # production build
 npm run build:ocr         # OCR production build

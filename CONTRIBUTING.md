@@ -4,17 +4,23 @@
 
 ```bash
 npm install
-npm run dev          # start dev server at localhost:5173
-npm run dev:host     # also expose on local network
+npm run dev          # starts/verifies local Supabase, then Field at localhost:5173
+npm run dev:host     # expose the local Field server on the local network
 npm run dev:ocr      # start the OCR app dev server
 ```
+
+The default Field workflow requires Docker Desktop (or another Docker-compatible
+runtime). It uses the checked-in Supabase CLI configuration and local Docker
+stack only; it never reads a hosted target from `apps/field/.env.local`.
 
 ## Commands
 
 | Command | Description |
 |---|---|
 | `npm run dev` | Start the field app dev server from the repo root |
-| `npm run dev:host` | Expose the field app on the local network (iPhone testing) |
+| `npm run dev:host` | Expose the local Field dev server on the local network; Field still uses its loopback local Supabase target |
+| `npm run dev:pilot` | Explicitly start Field against the hosted pilot configured in uncommitted `apps/field/.env.pilot.local` |
+| `npm run dev:pilot:host` | Expose the explicit hosted-pilot server on the local network for iPhone/iPad testing |
 | `npm run dev:ocr` | Start the OCR app dev server |
 | `npm run dev:ocr:host` | Expose the OCR app on the local network |
 | `npm run build` | TypeScript check + production build for the field app |
@@ -31,10 +37,16 @@ npm run dev:ocr      # start the OCR app dev server
 ## iPhone / iPad Testing (Without Deploying)
 
 1. Make sure your Mac and phone are on the same WiFi
-2. Run `npm run dev:host`
+2. Put the hosted pilot's two publishable `VITE_SUPABASE_*` settings in the
+   uncommitted `apps/field/.env.pilot.local` file, then run
+   `npm run dev:pilot:host`
 3. Copy the `Network:` URL from the terminal output
 4. Open it in Safari on your iPhone
 5. To install as an app: Share → Add to Home Screen
+
+`npm run dev:host` exposes Vite but keeps the verified local Supabase endpoint
+on loopback, which another device cannot use. Do not work around that with a
+hosted URL in `.env.local`; use the explicit hosted-pilot command instead.
 
 ## Code Organization
 

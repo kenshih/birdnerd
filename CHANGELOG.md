@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.0 — **Local-first Field development.** `npm run dev` now starts
+  or verifies the pinned Supabase CLI's local Docker stack and launches Field
+  only with its verified loopback endpoint and current publishable key. Hosted
+  pilot testing is an explicit `npm run dev:pilot` command using an
+  uncommitted, HTTPS-only `.env.pilot.local` file; neither path resets, links,
+  or silently targets hosted data.
 - Field 0.31.1 — **Historical Event compatibility.** Existing Phase 30
   Session and Banding Record Events now remain intact through local replay,
   later commits, and reloads; the immutable stored Event remains historical

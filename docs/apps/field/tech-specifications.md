@@ -731,6 +731,32 @@ path.
 - Database migrations via Supabase CLI or custom scripts
 - Optional: CI/CD pipeline (GitHub Actions) for testing and deployment
 
+### Local Field development Module (Field 0.32.0)
+
+The repository-level local-environment Module is implemented by
+`scripts/field-dev.mjs`. Its small Interface is `npm run dev` (or
+`npm run dev:host`) for local Field development and the separately named
+`npm run dev:pilot` (or `npm run dev:pilot:host`) for an intentional hosted
+pilot session. It keeps Docker/CLI lifecycle, target selection, and temporary
+browser configuration out of Field callers.
+
+For the default Interface, the Module invokes only the pinned project-local
+Supabase CLI's `status` and, when necessary, `start` commands from this
+checkout. It reads `status --output env`, requires the returned API URL to be
+an HTTP loopback URL, and supplies that URL plus the current publishable key
+(or CLI compatibility `ANON_KEY`) as process environment with precedence over
+Vite files. A non-loopback, missing, or malformed status value is a safe error;
+the default command never links, resets, or writes to a hosted project.
+
+Hosted pilot selection is deliberately not an argument to `npm run dev`.
+`npm run dev:pilot` reads only the uncommitted
+`apps/field/.env.pilot.local` file, requires a non-loopback HTTPS URL, and
+never starts or manages a CLI stack. The release/build path still receives its
+publishable values from GitHub Actions, as documented in the deployment notes.
+This slice leaves fixture loading, local fixture Auth, and browser regression
+infrastructure to later Phase 32 releases; with a fresh local stack Field
+therefore retains its current Google-only signed-out/access behavior.
+
 ### Error Handling
 
 - **ErrorBoundary** class component wraps the entire app in App.tsx

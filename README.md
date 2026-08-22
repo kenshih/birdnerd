@@ -13,16 +13,38 @@ This repository is an npm workspaces monorepo. The production field app lives in
 ### Prerequisites
 - Node.js 22 LTS (or 23+)
 - npm
+- Docker Desktop (or another Docker-compatible local container runtime) for
+  the default Field development workflow
 
 ### Local development
 
 ```bash
 npm install
-npm run dev
+npm run dev       # starts/verifies local Supabase, then starts Field
 npm run dev:ocr
 ```
 
+`npm run dev` uses only the Supabase CLI's local Docker stack. It starts the
+stack when needed, verifies that its API URL is loopback-only, and passes its
+current local browser key directly to Vite. It therefore ignores any hosted
+values in `apps/field/.env.local`.
+
 The dev server starts at `http://localhost:5173`.
+
+### Hosted pilot development
+
+Hosted testing is intentionally separate from routine development. Put the
+pilot's publishable settings in the uncommitted
+`apps/field/.env.pilot.local` file, then run:
+
+```bash
+npm run dev:pilot
+```
+
+That command requires a non-loopback HTTPS URL and never starts, resets, or
+links a Supabase project. It is the only supported local development command
+that can target the hosted pilot. Use `npm run dev:pilot:host` when testing the
+hosted pilot on another device on the same network.
 
 If a previous Field development server is still using that port, inspect it and
 then stop it with the narrowly scoped command below. It refuses to signal a
@@ -34,7 +56,7 @@ npm run kill:dev
 ```
 
 **To test on your iPhone (same WiFi network):**
-1. Run `npm run dev:host`
+1. Run `npm run dev:pilot:host`
 2. Your terminal will show a network URL like `http://192.168.x.x:5173`
 3. Open that URL in Safari on your iPhone
 4. Tap the Share button → "Add to Home Screen" to install as an app

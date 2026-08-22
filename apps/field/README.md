@@ -11,14 +11,30 @@ Run from the repo root:
 ```bash
 npm run dev
 npm run dev:host
+npm run dev:pilot
+npm run dev:pilot:host
 npm run build
 npm run test
 ```
+
+`npm run dev` is the safe, local-first workflow. It requires Docker Desktop
+(or another Docker-compatible runtime), starts or verifies the local Supabase
+CLI stack, and overrides any hosted Vite settings with the stack's verified
+loopback API URL and current publishable key. It does not reset data.
+
+Hosted pilot testing is opt-in: create the uncommitted
+`apps/field/.env.pilot.local` file containing only
+`VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, then run
+`npm run dev:pilot`. The command rejects loopback or non-HTTPS targets and
+never starts, resets, or links Supabase. Use `npm run dev:pilot:host` for a
+real-device hosted-pilot test; a local Supabase URL cannot be used by another
+device via `npm run dev:host`.
 
 Run directly in this workspace:
 
 ```bash
 npm --workspace @birdnerd/field run dev
+npm --workspace @birdnerd/field run dev:pilot
 npm --workspace @birdnerd/field run build
 npm --workspace @birdnerd/field run test
 ```
