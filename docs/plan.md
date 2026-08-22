@@ -13,23 +13,13 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 | Archive | Phase span | Record |
 |---------|------------|--------|
 | v1 | 1–20 | [Completed phase summaries](archives/plan.v1.md) |
-| v2 | 21–40 (through 30) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
+| v2 | 21–40 (through 31) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
 
 ---
 
 ## Current roadmap
 
-### Phase 31 — Event-backed operational Field (Field 0.31.0) — **Current**
-
-Replace the collaboration pilot and legacy mutable replica with the default
-offline shared Field workflow: Workspace configuration, roster, Stations/Nets,
-baseline inventory, complete non-photo Session and Banding Record entry, and
-event-based correction/removal. Membership administration remains out of Field
-through narrow trusted Provisioner CLI operations. The mutable `birdnerd`
-database and legacy DataBundle retire after a two-Station acceptance session; the deferred
-Session–Net effort model is not frozen here. [Delivery contract: #14](https://github.com/kenshih/birdnerd/issues/14)
-
-### Phase 32 — Local Field development environment (Field version TBD)
+### Phase 32 — Local Field development environment (Field version TBD) — **Current**
 
 Make `npm run dev` the safe, local-first Field workflow: Supabase CLI owns the
 local Docker stack and an explicit fixture loader rebuilds selected disposable
