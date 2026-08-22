@@ -60,6 +60,15 @@ beside the applicable controls. Direct module tests and end-to-end rendering
 tests prevent a later form replacement from retaining rules while silently
 dropping their visible feedback. [Delivery contract: #19](https://github.com/kenshih/birdnerd/issues/19)
 
+### Phase 35 — Field offline asset resilience (Field patch version TBD)
+
+Ensure an installed or previously loaded Field PWA retains its home and app
+images while navigating offline, including from non-root routes and under both
+the GitHub Pages and local development base paths. Establish a deterministic
+offline-navigation browser regression check before correcting the asset URL or
+cache behavior. This is intentionally separate from Phase 32 local-auth work.
+[Tracking issue: #25](https://github.com/kenshih/birdnerd/issues/25)
+
 ---
 
 ### Backlog: Net Reconciliation, cleanup
