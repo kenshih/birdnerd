@@ -137,15 +137,16 @@ describe('WorkspaceEventStore replica exchange', () => {
   it('replays raw Phase 30 Events canonically through a later commit and reload', async () => {
     // This is the stored v1 shape from the released Phase 30 replica, not a
     // v1 Event inserted into a fresh Phase 31 projection fixture.
+    const historicSessionId = '018f8c7b-0000-7000-8000-000000000042'
     const historicSession = createEvent({
       event_id: '018f8c7b-0000-7000-8000-000000000041', event_type: 'session.created', event_schema_version: 1,
       workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
-      payload: { session_id: '018f8c7b-0000-7000-8000-000000000042', session_date: '2026-08-13' },
+      payload: { session_id: historicSessionId, session_date: '2026-08-13' },
     })
     const historicRecord = createEvent({
       event_id: '018f8c7b-0000-7000-8000-000000000043', event_type: 'banding-record.created', event_schema_version: 1,
       workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
-      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSession.payload.session_id, species_code: 'AMRO' },
+      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSessionId, species_code: 'AMRO' },
     })
 
     const initializingStore = new WorkspaceEventStore()
