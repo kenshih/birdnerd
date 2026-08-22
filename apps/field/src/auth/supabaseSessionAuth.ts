@@ -71,13 +71,10 @@ export function createSupabaseSessionAuthModule(
     if (started) return
     started = true
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => applySession(session))
+    supabase.auth.onAuthStateChange((_event, session) => applySession(session))
 
     const { data, error } = await supabase.auth.getSession()
     if (error) {
-      subscription.unsubscribe()
       publish(errorState(error.message))
       return
     }

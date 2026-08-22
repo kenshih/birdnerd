@@ -57,9 +57,15 @@ For the ER diagram, complete field definitions, and entity relationships, see [t
 ### 4.2 Collaboration Pilot (Phase 30)
 
 Phase 26 replaces the standalone ChangeLog and mutable authoritative entities
-with a Workspace-scoped Event Log plus rebuildable projections. User Accounts
-authenticate through Google OAuth but BirdNerd Workspace Membership supplies
-authorization; operational roles remain separate. See
+with a Workspace-scoped Event Log plus rebuildable projections. Production and
+hosted-pilot User Accounts authenticate through Google OAuth, but BirdNerd
+Workspace Membership supplies authorization; operational roles remain separate.
+The verified, disposable local-development fixture is an explicit exception:
+its fixed Admin and Contributor actions create real local Supabase
+email/password sessions, then use that fixture user's synthetic Google identity
+for the established Workspace-access claim. It adds neither signup nor
+arbitrary credential entry, and is unavailable outside verified local
+development. See
 [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
 
 Field 0.29.0 retains that access boundary and persists its clean,
