@@ -536,8 +536,12 @@ imports that mutable format into the Event Log.
 - The deploy-only Provisioner connects with a database login inheriting only
   `birdnerd_provisioner`. Its one private bootstrap function appends canonical
   Workspace/pending-Membership Events and returns an audit receipt.
-- IndexedDB schema version 2 separates `event_log`, `projection_cache`,
-  `outbound_queue`, `sync_metadata`, and `receipts`. The provider-neutral Event
+- IndexedDB schema version 3 separates `event_log`, `projection_cache`,
+  `outbound_queue`, `sync_metadata`, and `receipts`. Its v3 upgrade marks a
+  legacy v2 pending queue Event as deferred only when its durable latest receipt
+  is the retryable `deferred` union member; all other legacy rows are durably
+  marked non-deferred, so offline retry metadata is never inferred as an
+  admission dependency. The provider-neutral Event
   Pipeline diagnostics view reads those stores only in development builds;
   rejected Events remain grouped by `command_id` with their queue and receipt
   evidence even though they are omitted from the effective projection.

@@ -23,7 +23,7 @@ import {
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 const DATABASE_NAME = 'birdnerd-event-core'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 const PROJECTION_CACHE_KEY = 'workspace-current-state'
 
 type QueueEntry = {
@@ -365,7 +365,7 @@ export function resetWorkspaceEventStore(): void {
 
 async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
   if (database) return database
-  database = await openDB<WorkspaceEventDatabase>(DATABASE_NAME, DATABASE_VERSION, {
+  const opened = await openDB<WorkspaceEventDatabase>(DATABASE_NAME, DATABASE_VERSION, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         const eventLog = db.createObjectStore('event_log', { keyPath: 'event_id' })
@@ -381,7 +381,54 @@ async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
       }
     },
   })
-  return database
+  // Version 3 adds the explicit queue flag after v2 had already persisted
+  // retryable admission receipts. This idempotent data migration deliberately
+  // trusts only that receipt kind: a retry deadline or failure text alone
+  // cannot distinguish an admission dependency from an offline retry.
+  await migrateDeferredQueueFlags(opened)
+  database = opened
+  return opened
+}
+
+async function migrateDeferredQueueFlags(db: IDBPDatabase<WorkspaceEventDatabase>): Promise<void> {
+  const tx = db.transaction(['outbound_queue', 'receipts', 'sync_metadata'], 'readwrite')
+  const queueStore = tx.objectStore('outbound_queue')
+  const metadataStore = tx.objectStore('sync_metadata')
+  const [queue, receipts, metadata] = await Promise.all([
+    queueStore.getAll(),
+    tx.objectStore('receipts').getAll(),
+    metadataStore.getAll(),
+  ])
+  const receiptByEventId = new Map(receipts.map(item => [item.event_id, item.receipt]))
+  const metadataByWorkspace = new Map(metadata.map(item => [item.workspace_id, item]))
+  const migrated = queue.map(entry => {
+    if (typeof entry.deferred === 'boolean') return entry
+    const receipt = receiptByEventId.get(entry.event_id)
+    const deferred = entry.status === 'pending' && receipt?.kind === 'deferred'
+    return {
+      ...entry,
+      deferred,
+      last_error: deferred ? entry.last_error ?? receipt.reason : entry.last_error,
+    }
+  })
+  const changed = migrated.filter((entry, index) => entry !== queue[index])
+  if (changed.length === 0) {
+    await tx.done
+    return
+  }
+  for (const entry of changed) await queueStore.put(entry)
+  for (const workspaceId of new Set(changed.map(entry => entry.workspace_id))) {
+    const deferred = migrated.filter(entry => entry.workspace_id === workspaceId && entry.status === 'pending' && entry.deferred)
+    const retryAt = deferred.reduce<number | undefined>((earliest, entry) => earliest === undefined ? entry.retry_at : Math.min(earliest, entry.retry_at), undefined)
+    const existing = metadataByWorkspace.get(workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
+    await metadataStore.put({
+      ...existing,
+      deferred_count: deferred.length,
+      last_failure: deferred[0]?.last_error ?? existing.last_failure,
+      retry_at: retryAt ?? existing.retry_at,
+    })
+  }
+  await tx.done
 }
 
 function projectionCache(events: readonly DomainEvent[]): StoredProjection {

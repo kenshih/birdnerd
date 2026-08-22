@@ -117,7 +117,7 @@ describe('Supabase Event exchange adapter', () => {
     store.activateWorkspace(event.workspace_id)
     await store.commit({ receipts: [], pulled, cursor: 2 })
 
-    const database = await openDB('birdnerd-event-core', 2)
+    const database = await openDB('birdnerd-event-core', 3)
     expect(await database.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
     database.close()
     expect((await store.diagnostics(event.workspace_id)).projection.banding_records

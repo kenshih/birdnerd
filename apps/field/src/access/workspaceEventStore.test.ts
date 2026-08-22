@@ -147,6 +147,72 @@ describe('WorkspaceEventStore replica exchange', () => {
     })
   })
 
+  it('upgrades a released v2 deferred queue without misclassifying an offline retry', async () => {
+    const deferred = sessionEvent('018f8c7b-0000-7000-8000-000000000047')
+    const offline = sessionEvent('018f8c7b-0000-7000-8000-000000000048')
+    const legacy = await openDB('birdnerd-event-core', 2, {
+      upgrade(database, oldVersion) {
+        if (oldVersion < 1) {
+          const eventLog = database.createObjectStore('event_log', { keyPath: 'event_id' })
+          eventLog.createIndex('by-workspace', 'workspace_id')
+          database.createObjectStore('projection_cache', { keyPath: 'cache_key' })
+        }
+        if (oldVersion < 2) {
+          const queue = database.createObjectStore('outbound_queue', { keyPath: 'event_id' })
+          queue.createIndex('by-workspace', 'workspace_id')
+          queue.createIndex('by-status', 'status')
+          database.createObjectStore('sync_metadata', { keyPath: 'workspace_id' })
+          database.createObjectStore('receipts', { keyPath: 'event_id' })
+        }
+      },
+    })
+    await legacy.put('event_log', deferred)
+    await legacy.put('event_log', offline)
+    await legacy.put('outbound_queue', {
+      event_id: deferred.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 1, retry_at: 5_000,
+      last_error: 'Session is not indexed yet.',
+    })
+    await legacy.put('outbound_queue', {
+      event_id: offline.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 1, retry_at: 5_000,
+      last_error: 'network unavailable',
+    })
+    await legacy.put('receipts', {
+      event_id: deferred.event_id,
+      receipt: { kind: 'deferred', event_id: deferred.event_id, reason: 'Session is not indexed yet.', retryable: true },
+      recorded_at: 1_000,
+    })
+    await legacy.put('sync_metadata', {
+      workspace_id: workspaceId, cursor: 0, last_failure: 'Session is not indexed yet.', retry_at: 5_000, failure_count: 1, deferred_count: 1,
+    })
+    await legacy.put('projection_cache', {
+      cache_key: 'workspace-current-state', event_ids: ['stale-cache-entry'],
+      workspace_access: { projection_version: 1, workspaces: [], workspace_memberships: [], user_accounts: [] },
+      sessions: [], banding_records: [], band_allocation_conflicts: [], operational_entities: [], operational_session_crew: [], operational_unresolved_references: [], band_number_conflicts: [],
+    })
+    legacy.close()
+
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await store.snapshot() // v3 opens, upgrades queue metadata, then rebuilds the stale cache.
+
+    expect(await store.readSyncInput(100, 1_000)).toMatchObject({
+      deferred_count: 1,
+      deferred_event_ids: [deferred.event_id],
+      last_failure: 'Session is not indexed yet.',
+      retry_at: 5_000,
+    })
+    expect((await store.diagnostics(workspaceId)).queue).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_id: deferred.event_id, deferred: true, last_error: 'Session is not indexed yet.' }),
+      expect.objectContaining({ event_id: offline.event_id, deferred: false, last_error: 'network unavailable' }),
+    ]))
+    expect((await store.diagnostics(workspaceId)).projection.event_ids).toEqual(expect.arrayContaining([deferred.event_id, offline.event_id]))
+
+    const coordinator = createSyncCoordinator(store, new InMemoryEventExchange(), { now: () => 1_000, schedule: () => {} })
+    await expect(coordinator.synchronize()).resolves.toEqual({
+      kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 5_000,
+    })
+  })
+
   it('sends a raw Phase 30 Event unchanged through a lost-receipt retry and server duplicate', async () => {
     const raw = createEvent({
       event_id: createUuidV7(Date.now() + 10_000), event_type: 'session.created', event_schema_version: 1,
@@ -157,7 +223,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     store.activateWorkspace(workspaceId)
     await seedAccess(store)
 
-    const database = await openDB('birdnerd-event-core', 2)
+    const database = await openDB('birdnerd-event-core', 3)
     await database.put('event_log', raw)
     await database.put('outbound_queue', {
       event_id: raw.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 1, retry_at: 0,
@@ -177,7 +243,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     expect((await store.diagnostics(workspaceId)).receipts).toEqual(expect.arrayContaining([
       expect.objectContaining({ event_id: raw.event_id, receipt: expect.objectContaining({ kind: 'duplicate' }) }),
     ]))
-    const reloaded = await openDB('birdnerd-event-core', 2)
+    const reloaded = await openDB('birdnerd-event-core', 3)
     expect(await reloaded.get('event_log', raw.event_id)).toEqual(raw)
     reloaded.close()
   })
@@ -198,7 +264,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     await store.commit({ receipts: [], pulled: [{ event: canonical, server_sequence: 1 }], cursor: 1 })
     await store.restoreWorkspace(workspaceId, [canonical])
 
-    const database = await openDB('birdnerd-event-core', 2)
+    const database = await openDB('birdnerd-event-core', 3)
     expect(await database.get('event_log', raw.event_id)).toEqual(raw)
     database.close()
     expect(await store.snapshot()).toContainEqual(canonical)
@@ -249,7 +315,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     initializingStore.activateWorkspace(workspaceId)
     await initializingStore.commit({ receipts: [], pulled: [], cursor: 0 })
     resetWorkspaceEventStore()
-    const database = await openDB('birdnerd-event-core', 2)
+    const database = await openDB('birdnerd-event-core', 3)
     await database.put('event_log', historicSession)
     await database.put('event_log', historicRecord)
     await database.put('projection_cache', {
@@ -269,7 +335,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const store = new WorkspaceEventStore()
     store.activateWorkspace(workspaceId)
     await store.snapshot() // hydrate/replay the raw Phase 30 state first
-    const hydratedDatabase = await openDB('birdnerd-event-core', 2)
+    const hydratedDatabase = await openDB('birdnerd-event-core', 3)
     expect(await hydratedDatabase.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
     expect((await hydratedDatabase.get('projection_cache', 'workspace-current-state'))?.banding_records)
       .toEqual(expect.arrayContaining([expect.objectContaining({ record_id: '018f8c7b-0000-7000-8000-000000000044', species_code: 'AMRO' })]))
@@ -318,7 +384,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     restored.activateWorkspace(workspaceId)
     await restored.restoreWorkspace(workspaceId, parsed.events)
 
-    const database = await openDB('birdnerd-event-core', 2)
+    const database = await openDB('birdnerd-event-core', 3)
     expect(await database.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
     database.close()
     expect((await restored.diagnostics(workspaceId)).projection.banding_records
@@ -349,7 +415,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     store.activateWorkspace(workspaceId)
     await store.restoreWorkspace(workspaceId, parsed.events)
 
-    const database = await openDB('birdnerd-event-core', 2)
+    const database = await openDB('birdnerd-event-core', 3)
     expect(await database.get('event_log', current.event_id)).toEqual(historic)
     database.close()
     expect(await store.snapshot()).toContainEqual(current)

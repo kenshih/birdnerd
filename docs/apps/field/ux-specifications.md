@@ -69,6 +69,10 @@ even when its automatic backoff deadline is still in the future. While that
 deadline has not arrived, the visible state remains **Waiting to retry** rather
 than Offline or Synced.
 
+**Waiting to retry** includes the deferred Event count, admission reason, and
+the persisted next retry time, so a contributor can tell when automatic
+backoff will make the Event eligible again.
+
 If a manual retry itself cannot reach the exchange, the status remains
 **Waiting to retry** with the original dependency reason and count, then shows
 its new backoff time. A successful unrelated batch also cannot show Synced

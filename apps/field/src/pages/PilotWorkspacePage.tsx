@@ -11,6 +11,7 @@ import type { SyncStatus } from '@birdnerd/sync-state'
 import PageHeader from '../components/PageHeader'
 import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
 import { getFieldCollaboration } from '../sync/fieldCollaboration'
+import { formatSyncStatus } from '../sync/syncStatusText'
 
 export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
   const access = useWorkspaceAccess()
@@ -130,7 +131,7 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
       <PageHeader title="Collaboration Pilot" onHome={onHome} />
       <section style={styles.status} aria-live="polite">
         <strong>{access.workspace_name}</strong>
-        <span>{statusText(syncStatus)}</span>
+        <span>{formatSyncStatus(syncStatus)}</span>
         <button type="button" style={styles.smallButton} onClick={() => void synchronize(true)}>Sync now</button>
       </section>
       {error && <p style={styles.error}>{error}</p>}
@@ -188,14 +189,6 @@ function value(input: string): string | undefined {
 function ensureAccepted(results: readonly { kind: string; reason?: string }[]): void {
   const rejected = results.find(result => result.kind === 'rejected')
   if (rejected) throw new Error(rejected.reason ?? 'Local Event was rejected.')
-}
-
-function statusText(status: SyncStatus): string {
-  if (status.kind === 'syncing') return 'Syncing…'
-  if (status.kind === 'offline') return `Offline — changes stay on this device (${status.message})`
-  if (status.kind === 'deferred') return `Waiting to retry ${status.deferred} Event${status.deferred === 1 ? '' : 's'} (${status.message})`
-  if (status.kind === 'attention') return `${status.rejected} Event${status.rejected === 1 ? '' : 's'} need attention`
-  return status.last_synced_at ? `Synced ${new Date(status.last_synced_at).toLocaleTimeString()}` : 'Ready to sync'
 }
 
 const styles: Record<string, React.CSSProperties> = {
