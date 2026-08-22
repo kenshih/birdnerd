@@ -5,7 +5,7 @@
  * The default interface is local-only: it starts (or verifies) the CLI-managed
  * Docker stack, reads that stack's own published browser settings, and gives
  * those settings precedence over any uncommitted Vite env files. The separate
- * `--pilot` interface requires an explicitly named local env file and never
+ * `dev:pilot` interface requires an explicitly named local env file and never
  * manages a Supabase stack.
  */
 import { spawnSync } from 'node:child_process'
