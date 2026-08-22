@@ -10,7 +10,7 @@ import {
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
 } from '@birdnerd/banding'
-import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock } from '@birdnerd/events'
+import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock, type PersistedEvent } from '@birdnerd/events'
 import {
   EventLog,
   type AppendResult,
@@ -19,11 +19,12 @@ import {
   type ServerEvent,
   type SyncCommit,
   type SyncInput,
+  type SyncReadOptions,
 } from '@birdnerd/sync-state'
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
 const DATABASE_NAME = 'birdnerd-event-core'
-const DATABASE_VERSION = 2
+const DATABASE_VERSION = 3
 const PROJECTION_CACHE_KEY = 'workspace-current-state'
 
 type QueueEntry = {
@@ -33,6 +34,8 @@ type QueueEntry = {
   attempt_count: number
   retry_at: number
   last_error?: string
+  /** True only for a retryable admission dependency, never a transport failure. */
+  deferred?: boolean
 }
 
 type SyncMetadata = {
@@ -42,6 +45,7 @@ type SyncMetadata = {
   last_failure?: string
   retry_at?: number
   failure_count?: number
+  deferred_count?: number
 }
 
 type StoredReceipt = { event_id: string; receipt: ExchangeReceipt; recorded_at: number }
@@ -60,7 +64,7 @@ type StoredProjection = {
 }
 
 interface WorkspaceEventDatabase extends DBSchema {
-  event_log: { key: string; value: DomainEvent; indexes: { 'by-workspace': string } }
+  event_log: { key: string; value: PersistedEvent; indexes: { 'by-workspace': string } }
   projection_cache: { key: string; value: StoredProjection }
   outbound_queue: { key: string; value: QueueEntry; indexes: { 'by-workspace': string; 'by-status': string } }
   sync_metadata: { key: string; value: SyncMetadata }
@@ -96,10 +100,11 @@ export class WorkspaceEventStore implements DurableReplica {
     return this.exclusive(async () => {
       const current = await this.snapshot()
       const candidateLog = new EventLog(current, admitWorkspaceEvent)
-      const results = candidateLog.appendAll(events)
+      const rawById = new Map(events.map(event => [event.event_id, event]))
+      const results = candidateLog.appendAll(events.map(upcastEvent))
       const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')
       if (accepted.length === 0) return results
-      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => result.event))
+      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => rawById.get(result.event.event_id) ?? result.event))
       this.log = new EventLog(candidateLog.snapshot(), () => ({ accepted: true }))
       return results
     })
@@ -107,19 +112,27 @@ export class WorkspaceEventStore implements DurableReplica {
 
   async appendAcceptedRemote(items: readonly ServerEvent[]): Promise<void> {
     await this.exclusive(async () => {
-      const current = [...await this.snapshot()]
-      const byId = new Map(current.map(event => [event.event_id, event]))
-      for (const item of items) {
-        const event = upcastEvent(item.event)
-        const existing = byId.get(event.event_id)
-        if (existing && !sameEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
-        byId.set(event.event_id, event)
-      }
-      const events = [...byId.values()]
       const db = await getDatabase()
+      const current = await db.getAll('event_log')
+      const byId = new Map(current.map(event => [event.event_id, event]))
+      const newItems: ServerEvent[] = []
+      for (const item of items) {
+        const event = item.event
+        upcastEvent(event)
+        const existing = byId.get(event.event_id)
+        if (existing && !sameCanonicalEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
+        // The first durable representation is immutable history. A later
+        // canonical interpretation can prove identity, but must not rewrite
+        // stored historical bytes (for example, Phase 30 v1 into v2).
+        if (!existing) {
+          byId.set(event.event_id, event)
+          newItems.push(item)
+        }
+      }
+      const events = canonicalEventLog([...byId.values()])
       const tx = db.transaction(['event_log', 'projection_cache', 'sync_metadata'], 'readwrite')
-      for (const item of items) await tx.objectStore('event_log').put(upcastEvent(item.event))
-      await updateHighWater(tx.objectStore('sync_metadata'), items.map(item => item.event))
+      for (const item of newItems) await tx.objectStore('event_log').put(item.event)
+      await updateHighWater(tx.objectStore('sync_metadata'), newItems.map(item => item.event))
       await tx.objectStore('projection_cache').put(projectionCache(events))
       await tx.done
       this.log = new EventLog(events, () => ({ accepted: true }))
@@ -136,20 +149,30 @@ export class WorkspaceEventStore implements DurableReplica {
     })
   }
 
-  async readSyncInput(limit: number, _now: number): Promise<SyncInput | undefined> {
+  async readSyncInput(limit: number, _now: number, options: SyncReadOptions = {}): Promise<SyncInput | undefined> {
     if (!this.activeWorkspaceId) return undefined
     const db = await getDatabase()
     const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
     const pending = (await db.getAllFromIndex('outbound_queue', 'by-workspace', this.activeWorkspaceId))
       .filter(item => item.status === 'pending')
-    const queue = pending.slice(0, limit)
+    const deferred = pending.filter(item => item.deferred)
+    const ordinary = pending.filter(item => !item.deferred)
+    // Automatic batches favor immediately exchangeable work. An explicit Sync
+    // Now must instead make every active-Workspace dependency eligible now,
+    // even when ordinary work fills the nominal batch limit.
+    const queue = options.force
+      ? [...deferred, ...ordinary.slice(0, Math.max(0, limit - deferred.length))]
+      : [...ordinary, ...deferred].slice(0, limit)
     const events = await Promise.all(queue.map(item => db.get('event_log', item.event_id)))
     return {
       workspace_id: this.activeWorkspaceId,
       cursor: metadata.cursor,
-      pending_events: events.filter((event): event is DomainEvent => event !== undefined),
+      pending_events: events.filter((event): event is PersistedEvent => event !== undefined),
       has_more_pending: pending.length > queue.length,
       failure_count: metadata.failure_count ?? 0,
+      deferred_count: deferred.length > 0 ? deferred.length : metadata.deferred_count ?? 0,
+      deferred_event_ids: deferred.map(item => item.event_id),
+      deferred_events: deferred.map(item => ({ event_id: item.event_id, retry_at: item.retry_at, reason: item.last_error })),
       retry_at: metadata.retry_at,
       last_failure: metadata.last_failure,
     }
@@ -162,46 +185,58 @@ export class WorkspaceEventStore implements DurableReplica {
       const queues = await db.getAll('outbound_queue')
       const queueById = new Map(queues.map(item => [item.event_id, { ...item }]))
       const eventsById = new Map(currentEvents.map(event => [event.event_id, event]))
+      const workspaceId = this.activeWorkspaceId ?? result.pulled[0]?.event.workspace_id
+      if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) {
           // A deferred receipt is an admission-order dependency, not a
           // failure of the immutable fact. Keep it effective and pending.
           queue.status = receipt.kind === 'rejected' ? 'rejected' : receipt.kind === 'deferred' ? 'pending' : 'accepted'
+          queue.deferred = receipt.kind === 'deferred'
           queue.last_error = receipt.kind === 'rejected' || receipt.kind === 'deferred' ? receipt.reason : undefined
           queue.attempt_count += 1
           if (receipt.kind === 'deferred' && result.deferred_retry_at !== undefined) queue.retry_at = result.deferred_retry_at
         }
       }
+      const newPulled: ServerEvent[] = []
       for (const item of result.pulled) {
-        const event = upcastEvent(item.event)
+        const event = item.event
+        upcastEvent(event)
         const existing = eventsById.get(event.event_id)
-        if (existing && !sameEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
-        eventsById.set(event.event_id, event)
+        if (existing && !sameCanonicalEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
+        if (!existing) {
+          eventsById.set(event.event_id, event)
+          newPulled.push(item)
+        }
       }
       const rejectedIds = new Set([...queueById.values()].filter(item => item.status === 'rejected').map(item => item.event_id))
-      const effectiveEvents = [...eventsById.values()].filter(event => !rejectedIds.has(event.event_id))
-      const workspaceId = this.activeWorkspaceId ?? result.pulled[0]?.event.workspace_id
-      if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
+      const effectiveEvents = canonicalEventLog([...eventsById.values()].filter(event => !rejectedIds.has(event.event_id)))
       const metadata = await db.get('sync_metadata', workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
       let highWater = metadata.high_water
-      for (const item of result.pulled) highWater = highWater ? observeHlc(highWater, item.event.hlc, Date.now()) : item.event.hlc
+      for (const item of newPulled) {
+        const canonical = upcastEvent(item.event)
+        highWater = highWater ? observeHlc(highWater, canonical.hlc, Date.now()) : canonical.hlc
+      }
 
       const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
-      for (const item of result.pulled) await tx.objectStore('event_log').put(upcastEvent(item.event))
+      for (const item of newPulled) await tx.objectStore('event_log').put(item.event)
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) await tx.objectStore('outbound_queue').put(queue)
         await tx.objectStore('receipts').put({ event_id: receipt.event_id, receipt, recorded_at: Date.now() })
       }
-      const hasDeferred = result.receipts.some(receipt => receipt.kind === 'deferred')
+      const deferredQueue = [...queueById.values()]
+        .filter(item => item.workspace_id === workspaceId && item.status === 'pending' && item.deferred)
+      const deferredRetryAt = deferredQueue.reduce<number | undefined>((earliest, item) => earliest === undefined ? item.retry_at : Math.min(earliest, item.retry_at), undefined)
       await tx.objectStore('sync_metadata').put({
         ...metadata,
         cursor: result.cursor,
         high_water: highWater,
-        last_failure: hasDeferred ? result.receipts.find(receipt => receipt.kind === 'deferred')?.reason : undefined,
-        retry_at: hasDeferred ? result.deferred_retry_at : undefined,
-        failure_count: hasDeferred ? (metadata.failure_count ?? 0) + 1 : 0,
+        last_failure: deferredQueue[0]?.last_error,
+        retry_at: deferredRetryAt,
+        failure_count: deferredQueue.length > 0 ? (metadata.failure_count ?? 0) + (result.receipts.some(receipt => receipt.kind === 'deferred') ? 1 : 0) : 0,
+        deferred_count: deferredQueue.length,
       })
       await tx.objectStore('projection_cache').put(projectionCache(effectiveEvents))
       await tx.done
@@ -214,15 +249,29 @@ export class WorkspaceEventStore implements DurableReplica {
     const db = await getDatabase()
     const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
     const tx = db.transaction(['sync_metadata', 'outbound_queue'], 'readwrite')
-    await tx.objectStore('sync_metadata').put({ ...metadata, last_failure: message, retry_at: retryAt, failure_count: (metadata.failure_count ?? 0) + 1 })
     const queue = await tx.objectStore('outbound_queue').index('by-workspace').getAll(this.activeWorkspaceId)
+    const deferred = queue.filter(item => item.status === 'pending' && item.deferred)
+    const deferredCount = deferred.length > 0 ? deferred.length : metadata.deferred_count ?? 0
+    const deferredReason = deferred[0]?.last_error ?? metadata.last_failure ?? 'Referenced Event is not indexed yet.'
+    await tx.objectStore('sync_metadata').put({
+      ...metadata,
+      last_failure: deferredCount > 0 ? deferredReason : message,
+      retry_at: retryAt,
+      failure_count: (metadata.failure_count ?? 0) + 1,
+      deferred_count: deferredCount,
+    })
     for (const entry of queue.filter(item => item.status === 'pending')) {
-      await tx.objectStore('outbound_queue').put({ ...entry, attempt_count: entry.attempt_count + 1, retry_at: retryAt, last_error: message })
+      await tx.objectStore('outbound_queue').put({
+        ...entry,
+        attempt_count: entry.attempt_count + 1,
+        retry_at: retryAt,
+        last_error: entry.deferred ? entry.last_error : message,
+      })
     }
     await tx.done
   }
 
-  async exportWorkspaceEvents(workspaceId: string): Promise<readonly DomainEvent[]> {
+  async exportWorkspaceEvents(workspaceId: string): Promise<readonly PersistedEvent[]> {
     const db = await getDatabase()
     const events = await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)
     const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
@@ -230,22 +279,28 @@ export class WorkspaceEventStore implements DurableReplica {
     return sortEvents(events.filter(event => !rejected.has(event.event_id)))
   }
 
-  async restoreWorkspace(workspaceId: string, bundleEvents: readonly DomainEvent[]): Promise<{ protected_pending: number }> {
+  async restoreWorkspace(workspaceId: string, bundleEvents: readonly PersistedEvent[]): Promise<{ protected_pending: number }> {
     return this.exclusive(async () => {
       const db = await getDatabase()
       const currentEvents = await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)
       const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
       const pendingIds = new Set(queue.filter(item => item.status === 'pending').map(item => item.event_id))
       const pending = currentEvents.filter(event => pendingIds.has(event.event_id))
-      const replacement = new Map(bundleEvents.map(event => [event.event_id, upcastEvent(event)]))
+      const replacement = new Map(bundleEvents.map(event => [event.event_id, event]))
       for (const event of currentEvents) {
         const bundled = replacement.get(event.event_id)
-        if (bundled && !sameEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+        if (!bundled) continue
+        if (!sameCanonicalEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+        // Keep already-durable raw history when its canonical interpretation
+        // matches a Bundle duplicate. Recovery may replace absent history, but
+        // it never rewrites immutable historical Event representation.
+        replacement.set(event.event_id, event)
       }
       for (const event of pending) {
         replacement.set(event.event_id, event)
       }
       const events = [...replacement.values()]
+      const canonicalEvents = canonicalEventLog(events)
       const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
       for (const event of currentEvents) await tx.objectStore('event_log').delete(event.event_id)
       for (const entry of queue) await tx.objectStore('outbound_queue').delete(entry.event_id)
@@ -253,9 +308,9 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const event of events) await tx.objectStore('event_log').put(event)
       for (const event of pending) await tx.objectStore('outbound_queue').put({ event_id: event.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 0, retry_at: 0 })
       await tx.objectStore('sync_metadata').put({ workspace_id: workspaceId, cursor: 0, high_water: maxClock(events) })
-      await tx.objectStore('projection_cache').put(projectionCache(events))
+      await tx.objectStore('projection_cache').put(projectionCache(canonicalEvents))
       await tx.done
-      this.log = new EventLog(events, () => ({ accepted: true }))
+      this.log = new EventLog(canonicalEvents, () => ({ accepted: true }))
       return { protected_pending: pending.length }
     })
   }
@@ -315,7 +370,7 @@ export function resetWorkspaceEventStore(): void {
 
 async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
   if (database) return database
-  database = await openDB<WorkspaceEventDatabase>(DATABASE_NAME, DATABASE_VERSION, {
+  const opened = await openDB<WorkspaceEventDatabase>(DATABASE_NAME, DATABASE_VERSION, {
     upgrade(db, oldVersion) {
       if (oldVersion < 1) {
         const eventLog = db.createObjectStore('event_log', { keyPath: 'event_id' })
@@ -331,16 +386,64 @@ async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
       }
     },
   })
-  return database
+  // Version 3 adds the explicit queue flag after v2 had already persisted
+  // retryable admission receipts. This idempotent data migration deliberately
+  // trusts only that receipt kind: a retry deadline or failure text alone
+  // cannot distinguish an admission dependency from an offline retry.
+  await migrateDeferredQueueFlags(opened)
+  database = opened
+  return opened
+}
+
+async function migrateDeferredQueueFlags(db: IDBPDatabase<WorkspaceEventDatabase>): Promise<void> {
+  const tx = db.transaction(['outbound_queue', 'receipts', 'sync_metadata'], 'readwrite')
+  const queueStore = tx.objectStore('outbound_queue')
+  const metadataStore = tx.objectStore('sync_metadata')
+  const [queue, receipts, metadata] = await Promise.all([
+    queueStore.getAll(),
+    tx.objectStore('receipts').getAll(),
+    metadataStore.getAll(),
+  ])
+  const receiptByEventId = new Map(receipts.map(item => [item.event_id, item.receipt]))
+  const metadataByWorkspace = new Map(metadata.map(item => [item.workspace_id, item]))
+  const migrated = queue.map(entry => {
+    if (typeof entry.deferred === 'boolean') return entry
+    const receipt = receiptByEventId.get(entry.event_id)
+    const deferred = entry.status === 'pending' && receipt?.kind === 'deferred'
+    return {
+      ...entry,
+      deferred,
+      last_error: deferred ? entry.last_error ?? receipt.reason : entry.last_error,
+    }
+  })
+  const changed = migrated.filter((entry, index) => entry !== queue[index])
+  if (changed.length === 0) {
+    await tx.done
+    return
+  }
+  for (const entry of changed) await queueStore.put(entry)
+  for (const workspaceId of new Set(changed.map(entry => entry.workspace_id))) {
+    const deferred = migrated.filter(entry => entry.workspace_id === workspaceId && entry.status === 'pending' && entry.deferred)
+    const retryAt = deferred.reduce<number | undefined>((earliest, entry) => earliest === undefined ? entry.retry_at : Math.min(earliest, entry.retry_at), undefined)
+    const existing = metadataByWorkspace.get(workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
+    await metadataStore.put({
+      ...existing,
+      deferred_count: deferred.length,
+      last_failure: deferred[0]?.last_error ?? existing.last_failure,
+      retry_at: retryAt ?? existing.retry_at,
+    })
+  }
+  await tx.done
 }
 
 function projectionCache(events: readonly DomainEvent[]): StoredProjection {
-  const pilot = projectPilotBanding(events)
-  const operational = projectOperationalEvents(events)
+  const canonicalEvents = canonicalEventLog(events)
+  const pilot = projectPilotBanding(canonicalEvents)
+  const operational = projectOperationalEvents(canonicalEvents)
   return {
     cache_key: PROJECTION_CACHE_KEY,
-    event_ids: events.map(event => event.event_id),
-    workspace_access: snapshotWorkspaceProjection(projectWorkspaceEvents(events)),
+    event_ids: canonicalEvents.map(event => event.event_id),
+    workspace_access: snapshotWorkspaceProjection(projectWorkspaceEvents(canonicalEvents)),
     sessions: [...pilot.sessions.values()],
     banding_records: [...pilot.banding_records.values()],
     band_allocation_conflicts: pilot.band_allocation_conflicts,
@@ -356,24 +459,40 @@ type SyncMetadataStore = {
   put(value: SyncMetadata): Promise<unknown>
 }
 
-async function updateHighWater(store: SyncMetadataStore, events: readonly DomainEvent[]): Promise<void> {
-  const byWorkspace = new Map<string, DomainEvent[]>()
+async function updateHighWater(store: SyncMetadataStore, events: readonly PersistedEvent[]): Promise<void> {
+  const byWorkspace = new Map<string, PersistedEvent[]>()
   events.forEach(event => byWorkspace.set(event.workspace_id, [...(byWorkspace.get(event.workspace_id) ?? []), event]))
   for (const [workspaceId, workspaceEvents] of byWorkspace) {
     const metadata = await store.get(workspaceId)
     let highWater = metadata?.high_water
-    for (const event of workspaceEvents) highWater = highWater ? observeHlc(highWater, event.hlc, Date.now()) : event.hlc
+    for (const event of workspaceEvents) {
+      const canonical = upcastEvent(event)
+      highWater = highWater ? observeHlc(highWater, canonical.hlc, Date.now()) : canonical.hlc
+    }
     await store.put({ ...(metadata ?? { workspace_id: workspaceId, cursor: 0 }), high_water: highWater })
   }
 }
 
-function maxClock(events: readonly DomainEvent[]): HybridLogicalClock | undefined {
-  return events.reduce<HybridLogicalClock | undefined>((winner, event) => {
+function maxClock(events: readonly PersistedEvent[]): HybridLogicalClock | undefined {
+  return events.map(upcastEvent).reduce<HybridLogicalClock | undefined>((winner, event) => {
     if (!winner || event.hlc.physical_ms > winner.physical_ms || (event.hlc.physical_ms === winner.physical_ms && event.hlc.logical > winner.logical)) return event.hlc
     return winner
   }, undefined)
 }
 
-function sortEvents(events: readonly DomainEvent[]): DomainEvent[] {
+function sortEvents<T extends Pick<PersistedEvent, 'event_id'>>(events: readonly T[]): T[] {
   return [...events].sort((left, right) => left.event_id.localeCompare(right.event_id))
+}
+
+/**
+ * The durable Event Log retains its original immutable bytes. Every consumer
+ * of that log crosses this seam, which interprets supported history as the
+ * canonical current Event shape before replay or projection.
+ */
+function canonicalEventLog(events: readonly PersistedEvent[]): DomainEvent[] {
+  return sortEvents(events.map(upcastEvent))
+}
+
+function sameCanonicalEventContent(left: PersistedEvent, right: PersistedEvent): boolean {
+  return sameEventContent(upcastEvent(left), upcastEvent(right))
 }

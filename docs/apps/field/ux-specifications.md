@@ -61,8 +61,23 @@ or Admin correction. The legacy Session screen remains separate and is not
 dual-written.
 
 The status states are: Ready to sync, Syncing, last-synced time, Offline with
-locally retained changes, and Events needing attention after permanent server
-rejection. **Sync now** remains available without blocking data entry.
+locally retained changes, **Waiting to retry** with a deferred Event count and
+admission reason, and Events needing attention after permanent server
+rejection. Deferred work never appears as synced. **Sync now** remains
+available without blocking data entry and immediately retries every deferred
+Event in the active Workspace, including ones behind a full ordinary sync
+batch, even when its automatic backoff deadline is still in the future. While
+that deadline has not arrived, the visible state remains **Waiting to retry**
+rather than Offline or Synced.
+
+**Waiting to retry** includes the deferred Event count, admission reason, and
+the persisted next retry time, so a contributor can tell when automatic
+backoff will make the Event eligible again.
+
+If a manual retry itself cannot reach the exchange, the status remains
+**Waiting to retry** with the original dependency reason and count, then shows
+its new backoff time. A successful unrelated batch also cannot show Synced
+while another Event in the active Workspace remains deferred.
 
 In development builds only, Home includes **Event Pipeline**. It groups local
 Events by `command_id` and shows the rebuildable projection, outbound
@@ -663,7 +678,10 @@ Phase 31's Home-reachable Data Manager is a focused **Workspace Event Bundle**
 recovery screen. It validates container integrity, every Event, and the target
 Workspace before touching local data; requires active access to that Workspace;
 protects unsynced Events; and only then replaces, rebuilds, and catches up
-through authenticated sync. It does not mount the legacy mutable Data Manager.
+through authenticated sync. Event Bundle export and restore retain compatible
+historical Event JSON exactly as received; canonical replay is an internal
+interpretation step, not a history rewrite. It does not mount the legacy
+mutable Data Manager.
 
 ```
 ┌──────────────────────────────────────┐

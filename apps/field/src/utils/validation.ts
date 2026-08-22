@@ -4,7 +4,7 @@
  * All warnings are soft (never block saving).
  */
 import { isNewBanding, isBandFate } from '../data/codes'
-import { isUuidV7, parseRfc3339Milliseconds, upcastEvent, type DomainEvent } from '@birdnerd/events'
+import { isUuidV7, parseRfc3339Milliseconds, upcastEvent, type PersistedEvent } from '@birdnerd/events'
 import bandSizesData from '../data/band-sizes.json'
 import measurementRangesData from '../data/measurement-ranges.json'
 
@@ -27,7 +27,7 @@ export type WorkspaceEventBundle = {
     event_ids: string[]
     content_sha256: string
   }
-  events: DomainEvent[]
+  events: PersistedEvent[]
 }
 
 /** Validate the full recovery container and every Event before IndexedDB writes. */
@@ -40,7 +40,12 @@ export async function parseWorkspaceEventBundle(serialized: string): Promise<Wor
   if (typeof value.manifest.content_sha256 !== 'string' || value.manifest.content_sha256 !== await workspaceEventContentSha256(value.events)) {
     throw new Error('Bundle Event Log integrity check failed.')
   }
-  const events = value.events.map(upcastEvent)
+  // Decode validates all supported history, but the bundle continues to carry
+  // the original immutable Event JSON into durable local storage.
+  const events = value.events.map(event => {
+    upcastEvent(event)
+    return event as PersistedEvent
+  })
   validateWorkspaceEventScope(workspaceId, events)
   const ids = events.map(event => event.event_id)
   if (value.manifest.event_count !== events.length || !Array.isArray(value.manifest.event_ids)
@@ -52,7 +57,7 @@ export async function parseWorkspaceEventBundle(serialized: string): Promise<Wor
   return { ...value, events } as unknown as WorkspaceEventBundle
 }
 
-export function validateWorkspaceEventScope(workspaceId: string, events: readonly DomainEvent[]): void {
+export function validateWorkspaceEventScope(workspaceId: string, events: readonly PersistedEvent[]): void {
   if (!isUuidV7(workspaceId)) throw new Error('Workspace ID is invalid.')
   const ids = new Set<string>()
   for (const event of events) {

@@ -3,7 +3,7 @@
  * never banding decisions, projections, IndexedDB, Supabase, or Field UI.
  */
 
-import { assertEvent, sameEventContent, type DomainEvent } from '@birdnerd/events'
+import { assertEvent, sameEventContent, upcastEvent, type DomainEvent, type PersistedEvent } from '@birdnerd/events'
 
 export type EventAdmission = (candidate: DomainEvent, existingEvents: readonly DomainEvent[]) =>
   | { accepted: true }
@@ -61,7 +61,8 @@ export type ExchangeReceipt =
   | { kind: 'deferred'; event_id: string; reason: string; retryable: true }
   | { kind: 'rejected'; event_id: string; reason: string; permanent: true }
 
-export type ServerEvent = { event: DomainEvent; server_sequence: number }
+/** Raw validated server history; the durable replica owns interpretation. */
+export type ServerEvent = { event: PersistedEvent; server_sequence: number }
 
 export type InitialAccessResult =
   | { kind: 'active'; events: readonly ServerEvent[] }
@@ -70,16 +71,25 @@ export type InitialAccessResult =
 /** Internal provider seam. Adapters translate transport only. */
 export interface EventExchange {
   claimInitialAccess(): Promise<InitialAccessResult>
-  push(events: readonly DomainEvent[]): Promise<readonly ExchangeReceipt[]>
+  /** Exchange retains validated immutable Event JSON exactly as queued. */
+  push(events: readonly PersistedEvent[]): Promise<readonly ExchangeReceipt[]>
   pull(workspaceId: string, afterServerSequence: number, limit: number): Promise<readonly ServerEvent[]>
 }
 
 export type SyncInput = {
   workspace_id: string
   cursor: number
-  pending_events: readonly DomainEvent[]
+  /** Raw immutable Event JSON ready for outbound exchange. */
+  pending_events: readonly PersistedEvent[]
   has_more_pending: boolean
   failure_count: number
+  /** Number of retryable admission dependencies durably waiting in the queue. */
+  deferred_count?: number
+  /** Durable IDs make deferred state accurate when a batch omits some queue work. */
+  deferred_event_ids?: readonly string[]
+  /** Per-Event deadlines distinguish a freshly retried dependency from an
+   * untouched queued dependency when deriving the next visible retry time. */
+  deferred_events?: readonly { event_id: string; retry_at: number; reason?: string }[]
   retry_at?: number
   last_failure?: string
 }
@@ -92,13 +102,17 @@ export type SyncCommit = {
   deferred_retry_at?: number
 }
 
+/** An explicit user retry may include deferred queue work that an automatic
+ * bounded batch would otherwise leave behind ordinary pending Events. */
+export type SyncReadOptions = { force?: boolean }
+
 /**
  * Durable replica seam owned by Field. `commit` must make received Events,
  * receipts, projection state, HLC high-water, and cursor durable atomically;
  * a cursor is never advanced for Events that could be lost after a crash.
  */
 export interface DurableReplica {
-  readSyncInput(limit: number, now: number): Promise<SyncInput | undefined>
+  readSyncInput(limit: number, now: number, options?: SyncReadOptions): Promise<SyncInput | undefined>
   commit(result: SyncCommit): Promise<void>
   recordFailure(message: string, retryAt: number): Promise<void>
 }
@@ -107,6 +121,8 @@ export type SyncStatus =
   | { kind: 'idle'; last_synced_at?: number }
   | { kind: 'syncing' }
   | { kind: 'offline'; message: string; retry_at: number }
+  /** A retryable admission dependency remains queued locally. It is not synced. */
+  | { kind: 'deferred'; deferred: number; message: string; retry_at: number }
   | { kind: 'attention'; rejected: number; last_synced_at: number }
 
 export type SyncListener = (status: SyncStatus) => void
@@ -114,7 +130,8 @@ export type SyncListener = (status: SyncStatus) => void
 export interface SyncCoordinator {
   getState(): SyncStatus
   subscribe(listener: SyncListener): () => void
-  synchronize(): Promise<SyncStatus>
+  /** Force bypasses a persisted retry deadline for an explicit user Sync Now. */
+  synchronize(options?: { force?: boolean }): Promise<SyncStatus>
 }
 
 /**
@@ -151,36 +168,55 @@ export function createSyncCoordinator(
       listener(state)
       return () => listeners.delete(listener)
     },
-    synchronize() {
+    synchronize(options = {}) {
       if (running) return running
-      running = run().finally(() => { running = undefined })
+      running = run(options.force === true).finally(() => { running = undefined })
       return running
     },
   }
   return coordinator
 
-  async function run(): Promise<SyncStatus> {
+  async function run(force: boolean): Promise<SyncStatus> {
     publish({ kind: 'syncing' })
     let input: SyncInput | undefined
     try {
       const startedAt = now()
-      input = await replica.readSyncInput(batchSize, startedAt)
+      input = await replica.readSyncInput(batchSize, startedAt, { force })
       if (!input) {
         consecutiveFailures = 0
         return publish({ kind: 'idle', last_synced_at: now() })
       }
-      if (input.retry_at !== undefined && input.retry_at > startedAt) {
-        scheduleAt(input.retry_at)
-        return publish({
-          kind: 'offline',
-          message: input.last_failure ?? 'Waiting to retry Event exchange.',
-          retry_at: input.retry_at,
-        })
+      const deferredEventIds = new Set(input.deferred_event_ids ?? [])
+      const retryAt = input.retry_at
+      const waitingForRetry = !force && retryAt !== undefined && retryAt > startedAt
+      const waitingForDeferredRetry = waitingForRetry && (input.deferred_count ?? 0) > 0
+      // A deferred retry deadline applies only to the known deferred Events.
+      // Keep unrelated queue work moving; count-only legacy adapters remain
+      // conservative because they cannot identify an eligible Event safely.
+      const eventsToPush = waitingForDeferredRetry
+        ? input.deferred_event_ids === undefined
+          ? []
+          : input.pending_events.filter(event => !deferredEventIds.has(event.event_id))
+        : input.pending_events
+      if (waitingForRetry && (!waitingForDeferredRetry || eventsToPush.length === 0)) {
+        scheduleAt(retryAt!)
+        return waitingForDeferredRetry
+          ? publish({ kind: 'deferred', deferred: input.deferred_count!, message: input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: retryAt! })
+          : publish({ kind: 'offline', message: input.last_failure ?? 'Waiting to retry Event exchange.', retry_at: retryAt! })
       }
-      const receipts = input.pending_events.length > 0 ? await exchange.push(input.pending_events) : []
+      const receipts = eventsToPush.length > 0 ? await exchange.push(eventsToPush) : []
       let cursor = input.cursor
       let rejected = receipts.filter(receipt => receipt.kind === 'rejected').length
       const deferred = receipts.filter(receipt => receipt.kind === 'deferred')
+      let outstandingDeferred = input.deferred_count ?? deferredEventIds.size
+      for (const receipt of receipts) {
+        if (receipt.kind === 'deferred') {
+          if (!deferredEventIds.has(receipt.event_id)) outstandingDeferred += 1
+          deferredEventIds.add(receipt.event_id)
+        } else if (deferredEventIds.delete(receipt.event_id)) {
+          outstandingDeferred = Math.max(0, outstandingDeferred - 1)
+        }
+      }
       const deferredRetryAt = deferred.length > 0
         ? startedAt + Math.min(retryMaxMs, retryBaseMs * (2 ** Math.max(0, input.failure_count)))
         : undefined
@@ -195,11 +231,26 @@ export function createSyncCoordinator(
       } while (true)
       consecutiveFailures = 0
       const completedAt = now()
+      const retriedDeferredEventIds = new Set(deferred.map(receipt => receipt.event_id))
+      const deferredRetryAtByEventId = new Map(input.deferred_events?.map(item => [item.event_id, item.retry_at]))
+      const untouchedDeferredEventIds = [...deferredEventIds]
+        .filter(eventId => !retriedDeferredEventIds.has(eventId))
+      const hasUnidentifiedUntouchedDeferred = outstandingDeferred > deferredEventIds.size
+        || untouchedDeferredEventIds.some(eventId => !deferredRetryAtByEventId.has(eventId))
+      // A fresh deferred receipt replaces that Event's prior deadline. Only
+      // distinct, untouched dependencies retain their existing earliest time.
+      const outstandingRetryAt = earliestRetryAt(
+        deferredRetryAt,
+        ...untouchedDeferredEventIds.map(eventId => deferredRetryAtByEventId.get(eventId)),
+        hasUnidentifiedUntouchedDeferred ? input.retry_at : undefined,
+      )
       const completed = rejected > 0
         ? publish({ kind: 'attention', rejected, last_synced_at: completedAt })
-        : publish({ kind: 'idle', last_synced_at: completedAt })
+        : outstandingDeferred > 0
+          ? publish({ kind: 'deferred', deferred: outstandingDeferred, message: deferred[0]?.reason ?? input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: outstandingRetryAt ?? completedAt })
+          : publish({ kind: 'idle', last_synced_at: completedAt })
       if (input.has_more_pending) scheduleAt(completedAt)
-      if (deferredRetryAt !== undefined) scheduleAt(deferredRetryAt)
+      if (outstandingRetryAt !== undefined) scheduleAt(outstandingRetryAt)
       return completed
     } catch (error) {
       consecutiveFailures = Math.max(consecutiveFailures, input?.failure_count ?? 0) + 1
@@ -207,7 +258,9 @@ export function createSyncCoordinator(
       const retryAt = now() + Math.min(retryMaxMs, retryBaseMs * (2 ** (consecutiveFailures - 1)))
       await replica.recordFailure(message, retryAt)
       scheduleAt(retryAt)
-      return publish({ kind: 'offline', message, retry_at: retryAt })
+      return input?.deferred_count && input.deferred_count > 0
+        ? publish({ kind: 'deferred', deferred: input.deferred_count, message: input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: retryAt })
+        : publish({ kind: 'offline', message, retry_at: retryAt })
     }
   }
 
@@ -225,7 +278,7 @@ export function createSyncCoordinator(
 export class InMemoryEventExchange implements EventExchange {
   private readonly events: ServerEvent[] = []
 
-  constructor(initialEvents: readonly DomainEvent[] = [], private initialAccess: InitialAccessResult = { kind: 'no-access' }) {
+  constructor(initialEvents: readonly PersistedEvent[] = [], private initialAccess: InitialAccessResult = { kind: 'no-access' }) {
     initialEvents.forEach(event => this.append(event))
   }
 
@@ -237,7 +290,7 @@ export class InMemoryEventExchange implements EventExchange {
     return this.initialAccess
   }
 
-  async push(events: readonly DomainEvent[]): Promise<readonly ExchangeReceipt[]> {
+  async push(events: readonly PersistedEvent[]): Promise<readonly ExchangeReceipt[]> {
     return events.map(event => {
       const existing = this.events.find(candidate => candidate.event.event_id === event.event_id)
       if (existing) {
@@ -255,10 +308,14 @@ export class InMemoryEventExchange implements EventExchange {
       .slice(0, limit)
   }
 
-  private append(event: DomainEvent): ServerEvent {
-    assertEvent(event)
+  private append(event: PersistedEvent): ServerEvent {
+    upcastEvent(event)
     const item = { event, server_sequence: this.events.length + 1 }
     this.events.push(item)
     return item
   }
+}
+
+function earliestRetryAt(...values: Array<number | undefined>): number | undefined {
+  return values.reduce<number | undefined>((earliest, value) => value === undefined ? earliest : earliest === undefined ? value : Math.min(earliest, value), undefined)
 }

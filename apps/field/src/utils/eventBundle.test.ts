@@ -48,7 +48,7 @@ describe('Workspace Event Bundle', () => {
     await expect(parseWorkspaceEventBundle(JSON.stringify(crossed))).rejects.toThrow('another Workspace')
   })
 
-  it('upcasts a historical v1 Event and rejects v1 pilot Events', async () => {
+  it('validates a historical v1 Event without rewriting it and rejects v1 pilot Events', async () => {
     const historical = createEvent({
       event_type: 'workspace.created',
       workspace_id: workspaceId,
@@ -67,8 +67,8 @@ describe('Workspace Event Bundle', () => {
       events: [legacy],
     }
     const parsed = await parseWorkspaceEventBundle(JSON.stringify(legacyBundle))
-    expect(parsed.events[0].event_envelope_version).toBe(2)
-    expect(parsed.events[0].hlc.logical).toBe(0)
+    expect(parsed.events[0]).not.toHaveProperty('event_envelope_version')
+    expect(parsed.events[0]).not.toHaveProperty('hlc')
 
     const { event_envelope_version: _pilotVersion, hlc: _pilotHlc, ...legacyPilot } = event
     const legacyPilotBundle = {

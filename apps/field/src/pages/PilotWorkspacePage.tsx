@@ -11,6 +11,7 @@ import type { SyncStatus } from '@birdnerd/sync-state'
 import PageHeader from '../components/PageHeader'
 import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
 import { getFieldCollaboration } from '../sync/fieldCollaboration'
+import { formatSyncStatus } from '../sync/syncStatusText'
 
 export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
   const access = useWorkspaceAccess()
@@ -27,9 +28,9 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
   const [editing, setEditing] = useState<PilotBandingRecord>()
 
   const refresh = useCallback(async () => setProjection(projectPilotBanding(await store.snapshot(access.workspace_id))), [access.workspace_id, store])
-  const synchronize = useCallback(async () => {
+  const synchronize = useCallback(async (force = false) => {
     if (!sync) return
-    await sync.synchronize()
+    await sync.synchronize({ force })
     await refresh()
   }, [refresh, sync])
 
@@ -130,8 +131,8 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
       <PageHeader title="Collaboration Pilot" onHome={onHome} />
       <section style={styles.status} aria-live="polite">
         <strong>{access.workspace_name}</strong>
-        <span>{statusText(syncStatus)}</span>
-        <button type="button" style={styles.smallButton} onClick={() => void synchronize()}>Sync now</button>
+        <span>{formatSyncStatus(syncStatus)}</span>
+        <button type="button" style={styles.syncButton} onClick={() => void synchronize(true)}>Sync now</button>
       </section>
       {error && <p style={styles.error}>{error}</p>}
 
@@ -190,13 +191,6 @@ function ensureAccepted(results: readonly { kind: string; reason?: string }[]): 
   if (rejected) throw new Error(rejected.reason ?? 'Local Event was rejected.')
 }
 
-function statusText(status: SyncStatus): string {
-  if (status.kind === 'syncing') return 'Syncing…'
-  if (status.kind === 'offline') return `Offline — changes stay on this device (${status.message})`
-  if (status.kind === 'attention') return `${status.rejected} Event${status.rejected === 1 ? '' : 's'} need attention`
-  return status.last_synced_at ? `Synced ${new Date(status.last_synced_at).toLocaleTimeString()}` : 'Ready to sync'
-}
-
 const styles: Record<string, React.CSSProperties> = {
   page: { minHeight: '100dvh', padding: '1rem 1.25rem 3rem', background: '#f5f5f5', color: '#1b4332', display: 'flex', flexDirection: 'column', gap: '1rem' },
   status: { display: 'grid', gridTemplateColumns: '1fr auto', gap: '0.35rem 1rem', alignItems: 'center', background: '#e8f5e9', borderRadius: 10, padding: '0.8rem' },
@@ -204,6 +198,7 @@ const styles: Record<string, React.CSSProperties> = {
   heading: { margin: 0, fontSize: '1.05rem' },
   input: { display: 'block', width: '100%', minHeight: 44, marginTop: 4, padding: '0.55rem', border: '1px solid #aaa', borderRadius: 7 },
   primary: { minHeight: 44, border: 0, borderRadius: 8, background: '#2d6a4f', color: '#fff', fontWeight: 700 },
+  syncButton: { minWidth: 44, minHeight: 44, padding: '0.35rem 0.7rem', border: '1px solid #2d6a4f', borderRadius: 7, background: '#fff', color: '#2d6a4f' },
   smallButton: { minHeight: 38, padding: '0.35rem 0.7rem', border: '1px solid #2d6a4f', borderRadius: 7, background: '#fff', color: '#2d6a4f' },
   row: { display: 'flex', justifyContent: 'space-between', gap: '1rem', minHeight: 44, alignItems: 'center', padding: '0.65rem', border: '1px solid #d6ddd9', borderRadius: 7, background: '#fff', color: '#1b4332', textAlign: 'left' },
   selected: { display: 'flex', justifyContent: 'space-between', gap: '1rem', minHeight: 44, alignItems: 'center', padding: '0.65rem', border: '2px solid #2d6a4f', borderRadius: 7, background: '#e8f5e9', color: '#1b4332', textAlign: 'left' },

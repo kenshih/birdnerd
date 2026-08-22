@@ -1,4 +1,4 @@
-import { upcastEvent, type DomainEvent } from '@birdnerd/events'
+import type { PersistedEvent } from '@birdnerd/events'
 import {
   EVENT_BUNDLE_FORMAT_VERSION,
   validateWorkspaceEventScope,
@@ -8,9 +8,11 @@ import {
 
 export { EVENT_BUNDLE_FORMAT_VERSION, parseWorkspaceEventBundle, type WorkspaceEventBundle } from './validation'
 
-export async function createWorkspaceEventBundle(workspaceId: string, events: readonly DomainEvent[]): Promise<WorkspaceEventBundle> {
+export async function createWorkspaceEventBundle(workspaceId: string, events: readonly PersistedEvent[]): Promise<WorkspaceEventBundle> {
   validateWorkspaceEventScope(workspaceId, events)
-  const copied = events.map(event => upcastEvent(structuredClone(event)))
+  // Bundles are portable immutable history, not a projection cache. Preserve
+  // each supported raw Event representation; restore/replay interprets it.
+  const copied = events.map(event => structuredClone(event))
   return {
     format: 'birdnerd-workspace-event-bundle',
     format_version: EVENT_BUNDLE_FORMAT_VERSION,
