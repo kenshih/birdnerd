@@ -138,5 +138,5 @@ const styles: Record<string, CSSProperties> = {
   primaryButton: { minHeight: '44px', width: 'min(100%, 320px)', border: 'none', borderRadius: '8px', background: '#fff', color: '#1b4332', fontWeight: 700, cursor: 'pointer' },
   secondaryButton: { minHeight: '44px', width: 'min(100%, 320px)', border: '1px solid rgba(255,255,255,0.55)', borderRadius: '8px', background: 'transparent', color: '#fff', fontWeight: 700, cursor: 'pointer' },
   identityBar: { minHeight: '52px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '0.5rem 0.75rem', background: '#1b4332', color: '#fff', fontSize: '0.85rem', flexWrap: 'wrap' },
-  identityButton: { minHeight: '36px', padding: '0.35rem 0.7rem', border: '1px solid rgba(255,255,255,0.6)', borderRadius: '6px', background: 'transparent', color: '#fff', fontWeight: 700, cursor: 'pointer' },
+  identityButton: { minHeight: '44px', padding: '0.35rem 0.7rem', border: '1px solid rgba(255,255,255,0.6)', borderRadius: '6px', background: 'transparent', color: '#fff', fontWeight: 700, cursor: 'pointer' },
 }
