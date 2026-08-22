@@ -19,6 +19,7 @@ import {
   type ServerEvent,
   type SyncCommit,
   type SyncInput,
+  type SyncReadOptions,
 } from '@birdnerd/sync-state'
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
 
@@ -148,17 +149,20 @@ export class WorkspaceEventStore implements DurableReplica {
     })
   }
 
-  async readSyncInput(limit: number, _now: number): Promise<SyncInput | undefined> {
+  async readSyncInput(limit: number, _now: number, options: SyncReadOptions = {}): Promise<SyncInput | undefined> {
     if (!this.activeWorkspaceId) return undefined
     const db = await getDatabase()
     const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
     const pending = (await db.getAllFromIndex('outbound_queue', 'by-workspace', this.activeWorkspaceId))
       .filter(item => item.status === 'pending')
     const deferred = pending.filter(item => item.deferred)
-    // A waiting dependency must not crowd immediately exchangeable Events out
-    // of a bounded batch. Its raw Event stays included after those Events so a
-    // user-forced Sync Now can still retry it without reconstructing history.
-    const queue = [...pending.filter(item => !item.deferred), ...deferred].slice(0, limit)
+    const ordinary = pending.filter(item => !item.deferred)
+    // Automatic batches favor immediately exchangeable work. An explicit Sync
+    // Now must instead make every active-Workspace dependency eligible now,
+    // even when ordinary work fills the nominal batch limit.
+    const queue = options.force
+      ? [...deferred, ...ordinary.slice(0, Math.max(0, limit - deferred.length))]
+      : [...ordinary, ...deferred].slice(0, limit)
     const events = await Promise.all(queue.map(item => db.get('event_log', item.event_id)))
     return {
       workspace_id: this.activeWorkspaceId,
@@ -168,6 +172,7 @@ export class WorkspaceEventStore implements DurableReplica {
       failure_count: metadata.failure_count ?? 0,
       deferred_count: deferred.length > 0 ? deferred.length : metadata.deferred_count ?? 0,
       deferred_event_ids: deferred.map(item => item.event_id),
+      deferred_events: deferred.map(item => ({ event_id: item.event_id, retry_at: item.retry_at, reason: item.last_error })),
       retry_at: metadata.retry_at,
       last_failure: metadata.last_failure,
     }

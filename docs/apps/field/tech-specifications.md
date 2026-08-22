@@ -422,9 +422,12 @@ It replaces mutable authoritative entities with a local-first event model:
   P2P. A retryable admission dependency has a distinct `deferred` status with
   reason, count, and retry time, never `Synced`; the count is derived from the
   active Workspace's full durable deferred queue, not only the bounded batch
-  currently being exchanged. An explicit **Sync now** bypasses the persisted
-  retry deadline once while automatic retries remain bounded. If that forced
-  exchange fails, the visible deferred reason and count are retained.
+  currently being exchanged. An explicit **Sync now** passes force intent to
+  the durable-replica read seam: it includes every deferred Event for the
+  active Workspace ahead of bounded ordinary work, while automatic retries
+  remain bounded. If that forced exchange fails, the visible deferred reason
+  and count are retained. A fresh deferred receipt replaces that Event's retry
+  deadline; only distinct untouched deferred Events retain an earlier one.
 - Shared Supabase tables, functions, explicit grants, and RLS policies are
   versioned together as reviewed Supabase CLI SQL migrations in the repository.
   The Event Log has unique `event_id` and indexed `(workspace_id,

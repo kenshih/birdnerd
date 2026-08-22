@@ -248,6 +248,31 @@ describe('WorkspaceEventStore replica exchange', () => {
     reloaded.close()
   })
 
+  it('makes every deferred raw Event eligible for Sync Now ahead of a full normal batch', async () => {
+    const normal = sessionEvent('018f8c7b-0000-7000-8000-000000000050')
+    const deferred = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000051', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000052', session_date: '2026-08-13' },
+    })
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    await store.appendAll([normal, deferred])
+    await store.commit({
+      receipts: [{ kind: 'deferred', event_id: deferred.event_id, reason: 'Session is not indexed yet.', retryable: true }],
+      pulled: [], cursor: 0, deferred_retry_at: 5_000,
+    })
+
+    expect((await store.readSyncInput(1, 1_000))?.pending_events).toEqual([normal])
+    const exchange = new InMemoryEventExchange()
+    const push = vi.spyOn(exchange, 'push')
+    const coordinator = createSyncCoordinator(store, exchange, { batch_size: 1, now: () => 1_000, schedule: () => {} })
+
+    await coordinator.synchronize({ force: true })
+    expect(push).toHaveBeenCalledWith([deferred])
+  })
+
   it('keeps the first durable raw Event representation through equivalent local, remote, pull, and Bundle duplicates', async () => {
     const raw = createEvent({
       event_id: createUuidV7(Date.now() + 10_000), event_type: 'session.created', event_schema_version: 1,

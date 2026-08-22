@@ -183,8 +183,10 @@ function upcastCurrentEvent(event: DomainEvent, currentVersion: number): DomainE
   throw new Error(`${event.event_type} schema v${event.event_schema_version} has no upcaster to v${currentVersion}.`)
 }
 
-/** Compare immutable Event JSON by value, independent of object property order. */
-export function sameEventContent(left: DomainEvent, right: DomainEvent): boolean {
+/** Compare immutable persisted Event JSON by value, independent of object
+ * property order. Compatibility upcasts are deliberately not part of this
+ * identity comparison. */
+export function sameEventContent(left: PersistedEvent, right: PersistedEvent): boolean {
   return canonicalJson(left) === canonicalJson(right)
 }
 

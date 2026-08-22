@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { createEvent } from '@birdnerd/events'
+import { createEvent, upcastEvent } from '@birdnerd/events'
 import { createSyncCoordinator, EventLog, InMemoryEventExchange, type DurableReplica, type SyncCommit } from './index.js'
 
 describe('EventLog', () => {
@@ -207,6 +207,70 @@ describe('SyncCoordinator', () => {
     expect(exchange.push).toHaveBeenCalledWith([event])
   })
 
+  it('replaces a force-retried deferred Event deadline with its new receipt deadline', async () => {
+    const event = makeEvent()
+    const commits: SyncCommit[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: event.workspace_id,
+          cursor: 0,
+          pending_events: [event],
+          has_more_pending: false,
+          failure_count: 0,
+          deferred_count: 1,
+          deferred_event_ids: [event.event_id],
+          deferred_events: [{ event_id: event.event_id, retry_at: 1_500, reason: 'Session is not indexed yet.' }],
+          retry_at: 1_500,
+          last_failure: 'Session is not indexed yet.',
+        }
+      },
+      async commit(result) { commits.push(result) },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = async () => [{ kind: 'deferred', event_id: event.event_id, reason: 'Session is not indexed yet.', retryable: true }]
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 1_000, retry_base_ms: 1_000, schedule: () => {} })
+
+    await expect(coordinator.synchronize({ force: true })).resolves.toEqual({
+      kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 2_000,
+    })
+    expect(commits[0]).toMatchObject({ deferred_retry_at: 2_000 })
+  })
+
+  it('keeps an untouched deferred Event’s earlier deadline after another force retry', async () => {
+    const retried = makeEvent('018f8c7b-0000-7000-8000-000000000014')
+    const untouched = makeEvent('018f8c7b-0000-7000-8000-000000000015')
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: retried.workspace_id,
+          cursor: 0,
+          pending_events: [retried],
+          has_more_pending: false,
+          failure_count: 0,
+          deferred_count: 2,
+          deferred_event_ids: [retried.event_id, untouched.event_id],
+          deferred_events: [
+            { event_id: retried.event_id, retry_at: 1_500, reason: 'Session is not indexed yet.' },
+            { event_id: untouched.event_id, retry_at: 1_250, reason: 'Station is not indexed yet.' },
+          ],
+          retry_at: 1_250,
+          last_failure: 'Station is not indexed yet.',
+        }
+      },
+      async commit() {},
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = async () => [{ kind: 'deferred', event_id: retried.event_id, reason: 'Session is not indexed yet.', retryable: true }]
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 1_000, retry_base_ms: 1_000, schedule: () => {} })
+
+    await expect(coordinator.synchronize({ force: true })).resolves.toEqual({
+      kind: 'deferred', deferred: 2, message: 'Session is not indexed yet.', retry_at: 1_250,
+    })
+  })
+
   it('keeps the original deferred reason visible when a forced retry exchange fails', async () => {
     const event = makeEvent()
     let now = 1_000
@@ -337,6 +401,25 @@ describe('SyncCoordinator', () => {
     expect(cursor).toBe(1)
     expect(pull).toHaveBeenNthCalledWith(1, remote.workspace_id, 0, 100)
     expect(pull).toHaveBeenNthCalledWith(2, remote.workspace_id, 0, 100)
+  })
+})
+
+describe('InMemoryEventExchange', () => {
+  it('rejects a canonical alternate for an existing raw immutable Event', async () => {
+    const raw = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000016',
+      event_type: 'session.created',
+      event_schema_version: 1,
+      workspace_id: '018f8c7b-0000-7000-8000-000000000001',
+      command_id: '018f8c7b-0000-7000-8000-000000000002',
+      actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000017', session_date: '2026-08-13' },
+    })
+    const exchange = new InMemoryEventExchange([raw])
+
+    await expect(exchange.push([upcastEvent(raw)])).resolves.toEqual([
+      expect.objectContaining({ kind: 'rejected', event_id: raw.event_id, permanent: true }),
+    ])
   })
 })
 

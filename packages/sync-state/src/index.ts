@@ -87,6 +87,9 @@ export type SyncInput = {
   deferred_count?: number
   /** Durable IDs make deferred state accurate when a batch omits some queue work. */
   deferred_event_ids?: readonly string[]
+  /** Per-Event deadlines distinguish a freshly retried dependency from an
+   * untouched queued dependency when deriving the next visible retry time. */
+  deferred_events?: readonly { event_id: string; retry_at: number; reason?: string }[]
   retry_at?: number
   last_failure?: string
 }
@@ -99,13 +102,17 @@ export type SyncCommit = {
   deferred_retry_at?: number
 }
 
+/** An explicit user retry may include deferred queue work that an automatic
+ * bounded batch would otherwise leave behind ordinary pending Events. */
+export type SyncReadOptions = { force?: boolean }
+
 /**
  * Durable replica seam owned by Field. `commit` must make received Events,
  * receipts, projection state, HLC high-water, and cursor durable atomically;
  * a cursor is never advanced for Events that could be lost after a crash.
  */
 export interface DurableReplica {
-  readSyncInput(limit: number, now: number): Promise<SyncInput | undefined>
+  readSyncInput(limit: number, now: number, options?: SyncReadOptions): Promise<SyncInput | undefined>
   commit(result: SyncCommit): Promise<void>
   recordFailure(message: string, retryAt: number): Promise<void>
 }
@@ -174,7 +181,7 @@ export function createSyncCoordinator(
     let input: SyncInput | undefined
     try {
       const startedAt = now()
-      input = await replica.readSyncInput(batchSize, startedAt)
+      input = await replica.readSyncInput(batchSize, startedAt, { force })
       if (!input) {
         consecutiveFailures = 0
         return publish({ kind: 'idle', last_synced_at: now() })
@@ -224,7 +231,19 @@ export function createSyncCoordinator(
       } while (true)
       consecutiveFailures = 0
       const completedAt = now()
-      const outstandingRetryAt = earliestRetryAt(deferredRetryAt, outstandingDeferred > 0 ? input.retry_at : undefined)
+      const retriedDeferredEventIds = new Set(deferred.map(receipt => receipt.event_id))
+      const deferredRetryAtByEventId = new Map(input.deferred_events?.map(item => [item.event_id, item.retry_at]))
+      const untouchedDeferredEventIds = [...deferredEventIds]
+        .filter(eventId => !retriedDeferredEventIds.has(eventId))
+      const hasUnidentifiedUntouchedDeferred = outstandingDeferred > deferredEventIds.size
+        || untouchedDeferredEventIds.some(eventId => !deferredRetryAtByEventId.has(eventId))
+      // A fresh deferred receipt replaces that Event's prior deadline. Only
+      // distinct, untouched dependencies retain their existing earliest time.
+      const outstandingRetryAt = earliestRetryAt(
+        deferredRetryAt,
+        ...untouchedDeferredEventIds.map(eventId => deferredRetryAtByEventId.get(eventId)),
+        hasUnidentifiedUntouchedDeferred ? input.retry_at : undefined,
+      )
       const completed = rejected > 0
         ? publish({ kind: 'attention', rejected, last_synced_at: completedAt })
         : outstandingDeferred > 0
@@ -275,7 +294,7 @@ export class InMemoryEventExchange implements EventExchange {
     return events.map(event => {
       const existing = this.events.find(candidate => candidate.event.event_id === event.event_id)
       if (existing) {
-        return sameEventContent(upcastEvent(existing.event), upcastEvent(event))
+        return sameEventContent(existing.event, event)
           ? { kind: 'duplicate' as const, event_id: event.event_id, server_sequence: existing.server_sequence }
           : { kind: 'rejected' as const, event_id: event.event_id, reason: 'Event ID conflicts with immutable content.', permanent: true as const }
       }

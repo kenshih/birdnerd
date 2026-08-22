@@ -64,10 +64,11 @@ The status states are: Ready to sync, Syncing, last-synced time, Offline with
 locally retained changes, **Waiting to retry** with a deferred Event count and
 admission reason, and Events needing attention after permanent server
 rejection. Deferred work never appears as synced. **Sync now** remains
-available without blocking data entry and immediately retries deferred work
-even when its automatic backoff deadline is still in the future. While that
-deadline has not arrived, the visible state remains **Waiting to retry** rather
-than Offline or Synced.
+available without blocking data entry and immediately retries every deferred
+Event in the active Workspace, including ones behind a full ordinary sync
+batch, even when its automatic backoff deadline is still in the future. While
+that deadline has not arrived, the visible state remains **Waiting to retry**
+rather than Offline or Synced.
 
 **Waiting to retry** includes the deferred Event count, admission reason, and
 the persisted next retry time, so a contributor can tell when automatic
