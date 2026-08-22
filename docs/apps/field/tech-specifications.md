@@ -323,10 +323,15 @@ Seed data ships as a JSON file (`apps/field/public/data/seed.json`) in the same 
 
 ### Local Storage (IndexedDB)
 
-**Current implementation:** Field keeps the legacy mutable stores for existing
-screens while Phase 30's Collaboration Pilot uses the separate
-`birdnerd-event-core` replica. Pilot writes append immutable Events and project
-them locally before network exchange; no dual write occurs.
+**Current implementation:** Field's default operational workflow uses the
+separate `birdnerd-event-core` durable replica. It retains immutable Event
+JSON, outbound queue/receipt/cursor metadata, and a rebuildable projection
+cache separately; no legacy mutable store is read, migrated, or dual-written.
+Stored historical Events retain their original representation. The
+`WorkspaceEventStore` is the local-replica Adapter seam: every read, replay,
+projection, and sync commit interprets supported historical Events through
+`upcastEvent` before it reaches the Banding projection Module, without
+rewriting Event identity or history.
 
 - All entities cached locally in IndexedDB
 - Supports offline operation in field
@@ -407,7 +412,10 @@ It replaces mutable authoritative entities with a local-first event model:
   receives only the initial-access claim, append-receipt, and server-sequenced
   pull interfaces—never DML grants on Event Log or Membership tables.
   `@birdnerd/sync-state` keeps this provider behind an adapter seam for future
-  P2P.
+  P2P. A retryable admission dependency has a distinct `deferred` status with
+  reason, count, and retry time, never `Synced`; an explicit **Sync now**
+  bypasses the persisted retry deadline once while automatic retries remain
+  bounded.
 - Shared Supabase tables, functions, explicit grants, and RLS policies are
   versioned together as reviewed Supabase CLI SQL migrations in the repository.
   The Event Log has unique `event_id` and indexed `(workspace_id,
@@ -608,7 +616,10 @@ Phase 31 keeps those browser RPCs and extends append validation with the
 reviewed Event-type role table and entity-reference index. Membership
 administration is separate: the trusted Provisioner runtime may execute only
 narrow private invite/role/deactivate/reactivate functions and receives audit
-receipts, never table DML.
+receipts, never table DML. The follow-up versioned migration rebuilds that
+private admission index idempotently from all applicable immutable historical
+creation/receipt Events; it changes derived state only and never rewrites the
+Event Log.
 
 ### OpenAPI / GraphQL (Future)
 

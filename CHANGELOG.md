@@ -8,6 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.31.1 — **Historical Event compatibility.** Existing Phase 30
+  Session and Banding Record Events now remain intact through local replay,
+  later commits, and reloads; the immutable stored Event remains historical
+  while the replica projects its current upcast interpretation. The Supabase
+  schema adds an idempotent derived entity-reference-index backfill for
+  previously accepted creation/receipt Events. A deferred dependency is now
+  visibly waiting to retry rather than shown as synced, and **Sync now** makes
+  it immediately eligible without dropping or duplicating its Event.
 - Field 0.31.0 — **Event-backed operational Field.** Field Data is now the
   default offline shared workflow: Admins configure Stations, Nets, roster and
   Account-to-Person links; Contributors create, correct, deactivate, and

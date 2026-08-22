@@ -96,10 +96,11 @@ export class WorkspaceEventStore implements DurableReplica {
     return this.exclusive(async () => {
       const current = await this.snapshot()
       const candidateLog = new EventLog(current, admitWorkspaceEvent)
-      const results = candidateLog.appendAll(events)
+      const rawById = new Map(events.map(event => [event.event_id, event]))
+      const results = candidateLog.appendAll(events.map(upcastEvent))
       const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')
       if (accepted.length === 0) return results
-      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => result.event))
+      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => rawById.get(result.event.event_id) ?? result.event))
       this.log = new EventLog(candidateLog.snapshot(), () => ({ accepted: true }))
       return results
     })
@@ -107,18 +108,19 @@ export class WorkspaceEventStore implements DurableReplica {
 
   async appendAcceptedRemote(items: readonly ServerEvent[]): Promise<void> {
     await this.exclusive(async () => {
-      const current = [...await this.snapshot()]
+      const db = await getDatabase()
+      const current = await db.getAll('event_log')
       const byId = new Map(current.map(event => [event.event_id, event]))
       for (const item of items) {
-        const event = upcastEvent(item.event)
+        const event = item.event
+        upcastEvent(event)
         const existing = byId.get(event.event_id)
-        if (existing && !sameEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
+        if (existing && !sameCanonicalEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
         byId.set(event.event_id, event)
       }
-      const events = [...byId.values()]
-      const db = await getDatabase()
+      const events = canonicalEventLog([...byId.values()])
       const tx = db.transaction(['event_log', 'projection_cache', 'sync_metadata'], 'readwrite')
-      for (const item of items) await tx.objectStore('event_log').put(upcastEvent(item.event))
+      for (const item of items) await tx.objectStore('event_log').put(item.event)
       await updateHighWater(tx.objectStore('sync_metadata'), items.map(item => item.event))
       await tx.objectStore('projection_cache').put(projectionCache(events))
       await tx.done
@@ -174,13 +176,14 @@ export class WorkspaceEventStore implements DurableReplica {
         }
       }
       for (const item of result.pulled) {
-        const event = upcastEvent(item.event)
+        const event = item.event
+        upcastEvent(event)
         const existing = eventsById.get(event.event_id)
-        if (existing && !sameEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
+        if (existing && !sameCanonicalEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
         eventsById.set(event.event_id, event)
       }
       const rejectedIds = new Set([...queueById.values()].filter(item => item.status === 'rejected').map(item => item.event_id))
-      const effectiveEvents = [...eventsById.values()].filter(event => !rejectedIds.has(event.event_id))
+      const effectiveEvents = canonicalEventLog([...eventsById.values()].filter(event => !rejectedIds.has(event.event_id)))
       const workspaceId = this.activeWorkspaceId ?? result.pulled[0]?.event.workspace_id
       if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
       const metadata = await db.get('sync_metadata', workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
@@ -188,7 +191,7 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const item of result.pulled) highWater = highWater ? observeHlc(highWater, item.event.hlc, Date.now()) : item.event.hlc
 
       const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
-      for (const item of result.pulled) await tx.objectStore('event_log').put(upcastEvent(item.event))
+      for (const item of result.pulled) await tx.objectStore('event_log').put(item.event)
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) await tx.objectStore('outbound_queue').put(queue)
@@ -237,15 +240,16 @@ export class WorkspaceEventStore implements DurableReplica {
       const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
       const pendingIds = new Set(queue.filter(item => item.status === 'pending').map(item => item.event_id))
       const pending = currentEvents.filter(event => pendingIds.has(event.event_id))
-      const replacement = new Map(bundleEvents.map(event => [event.event_id, upcastEvent(event)]))
+      const replacement = new Map(bundleEvents.map(event => [event.event_id, event]))
       for (const event of currentEvents) {
         const bundled = replacement.get(event.event_id)
-        if (bundled && !sameEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+        if (bundled && !sameCanonicalEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
       }
       for (const event of pending) {
         replacement.set(event.event_id, event)
       }
       const events = [...replacement.values()]
+      const canonicalEvents = canonicalEventLog(events)
       const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
       for (const event of currentEvents) await tx.objectStore('event_log').delete(event.event_id)
       for (const entry of queue) await tx.objectStore('outbound_queue').delete(entry.event_id)
@@ -253,9 +257,9 @@ export class WorkspaceEventStore implements DurableReplica {
       for (const event of events) await tx.objectStore('event_log').put(event)
       for (const event of pending) await tx.objectStore('outbound_queue').put({ event_id: event.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 0, retry_at: 0 })
       await tx.objectStore('sync_metadata').put({ workspace_id: workspaceId, cursor: 0, high_water: maxClock(events) })
-      await tx.objectStore('projection_cache').put(projectionCache(events))
+      await tx.objectStore('projection_cache').put(projectionCache(canonicalEvents))
       await tx.done
-      this.log = new EventLog(events, () => ({ accepted: true }))
+      this.log = new EventLog(canonicalEvents, () => ({ accepted: true }))
       return { protected_pending: pending.length }
     })
   }
@@ -335,12 +339,13 @@ async function getDatabase(): Promise<IDBPDatabase<WorkspaceEventDatabase>> {
 }
 
 function projectionCache(events: readonly DomainEvent[]): StoredProjection {
-  const pilot = projectPilotBanding(events)
-  const operational = projectOperationalEvents(events)
+  const canonicalEvents = canonicalEventLog(events)
+  const pilot = projectPilotBanding(canonicalEvents)
+  const operational = projectOperationalEvents(canonicalEvents)
   return {
     cache_key: PROJECTION_CACHE_KEY,
-    event_ids: events.map(event => event.event_id),
-    workspace_access: snapshotWorkspaceProjection(projectWorkspaceEvents(events)),
+    event_ids: canonicalEvents.map(event => event.event_id),
+    workspace_access: snapshotWorkspaceProjection(projectWorkspaceEvents(canonicalEvents)),
     sessions: [...pilot.sessions.values()],
     banding_records: [...pilot.banding_records.values()],
     band_allocation_conflicts: pilot.band_allocation_conflicts,
@@ -376,4 +381,17 @@ function maxClock(events: readonly DomainEvent[]): HybridLogicalClock | undefine
 
 function sortEvents(events: readonly DomainEvent[]): DomainEvent[] {
   return [...events].sort((left, right) => left.event_id.localeCompare(right.event_id))
+}
+
+/**
+ * The durable Event Log retains its original immutable bytes. Every consumer
+ * of that log crosses this seam, which interprets supported history as the
+ * canonical current Event shape before replay or projection.
+ */
+function canonicalEventLog(events: readonly DomainEvent[]): DomainEvent[] {
+  return sortEvents(events.map(upcastEvent))
+}
+
+function sameCanonicalEventContent(left: DomainEvent, right: DomainEvent): boolean {
+  return sameEventContent(upcastEvent(left), upcastEvent(right))
 }

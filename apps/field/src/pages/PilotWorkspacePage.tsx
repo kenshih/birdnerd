@@ -27,9 +27,9 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
   const [editing, setEditing] = useState<PilotBandingRecord>()
 
   const refresh = useCallback(async () => setProjection(projectPilotBanding(await store.snapshot(access.workspace_id))), [access.workspace_id, store])
-  const synchronize = useCallback(async () => {
+  const synchronize = useCallback(async (force = false) => {
     if (!sync) return
-    await sync.synchronize()
+    await sync.synchronize({ force })
     await refresh()
   }, [refresh, sync])
 
@@ -131,7 +131,7 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
       <section style={styles.status} aria-live="polite">
         <strong>{access.workspace_name}</strong>
         <span>{statusText(syncStatus)}</span>
-        <button type="button" style={styles.smallButton} onClick={() => void synchronize()}>Sync now</button>
+        <button type="button" style={styles.smallButton} onClick={() => void synchronize(true)}>Sync now</button>
       </section>
       {error && <p style={styles.error}>{error}</p>}
 
@@ -193,6 +193,7 @@ function ensureAccepted(results: readonly { kind: string; reason?: string }[]): 
 function statusText(status: SyncStatus): string {
   if (status.kind === 'syncing') return 'Syncing…'
   if (status.kind === 'offline') return `Offline — changes stay on this device (${status.message})`
+  if (status.kind === 'deferred') return `Waiting to retry ${status.deferred} Event${status.deferred === 1 ? '' : 's'} (${status.message})`
   if (status.kind === 'attention') return `${status.rejected} Event${status.rejected === 1 ? '' : 's'} need attention`
   return status.last_synced_at ? `Synced ${new Date(status.last_synced_at).toLocaleTimeString()}` : 'Ready to sync'
 }

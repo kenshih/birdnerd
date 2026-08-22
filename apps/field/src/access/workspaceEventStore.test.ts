@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createEvent } from '@birdnerd/events'
+import { openDB } from 'idb'
 import { resetWorkspaceEventStore, WorkspaceEventStore } from './workspaceEventStore'
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
@@ -131,6 +132,46 @@ describe('WorkspaceEventStore replica exchange', () => {
     expect(await store.snapshot()).toContainEqual(local)
     expect((await store.readSyncInput(100, 1000))?.pending_events).toEqual([local])
     expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'pending', attempt_count: 1, retry_at: 5000 })
+  })
+
+  it('replays raw Phase 30 Events canonically through a later commit and reload', async () => {
+    // This is the stored v1 shape from the released Phase 30 replica, not a
+    // v1 Event inserted into a fresh Phase 31 projection fixture.
+    const historicSession = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000041', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000042', session_date: '2026-08-13' },
+    })
+    const historicRecord = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000043', event_type: 'banding-record.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSession.payload.session_id, species_code: 'AMRO' },
+    })
+
+    const initializingStore = new WorkspaceEventStore()
+    initializingStore.activateWorkspace(workspaceId)
+    await initializingStore.commit({ receipts: [], pulled: [], cursor: 0 })
+    resetWorkspaceEventStore()
+    const database = await openDB('birdnerd-event-core', 2)
+    await database.put('event_log', historicSession)
+    await database.put('event_log', historicRecord)
+    database.close()
+
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await store.snapshot() // hydrate/replay the raw Phase 30 state first
+    const newer = sessionEvent('018f8c7b-0000-7000-8000-000000000045')
+    await store.commit({ receipts: [], pulled: [{ event: newer, server_sequence: 1 }], cursor: 1 })
+    expect(await store.snapshot()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO' }) }) }),
+    ]))
+
+    resetWorkspaceEventStore()
+    const reopened = new WorkspaceEventStore()
+    reopened.activateWorkspace(workspaceId)
+    expect(await reopened.snapshot()).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO' }) }) }),
+    ]))
   })
 
   it('scopes a replica snapshot to one Workspace', async () => {

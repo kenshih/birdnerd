@@ -107,6 +107,8 @@ export type SyncStatus =
   | { kind: 'idle'; last_synced_at?: number }
   | { kind: 'syncing' }
   | { kind: 'offline'; message: string; retry_at: number }
+  /** A retryable admission dependency remains queued locally. It is not synced. */
+  | { kind: 'deferred'; deferred: number; message: string; retry_at: number }
   | { kind: 'attention'; rejected: number; last_synced_at: number }
 
 export type SyncListener = (status: SyncStatus) => void
@@ -114,7 +116,8 @@ export type SyncListener = (status: SyncStatus) => void
 export interface SyncCoordinator {
   getState(): SyncStatus
   subscribe(listener: SyncListener): () => void
-  synchronize(): Promise<SyncStatus>
+  /** Force bypasses a persisted retry deadline for an explicit user Sync Now. */
+  synchronize(options?: { force?: boolean }): Promise<SyncStatus>
 }
 
 /**
@@ -151,15 +154,15 @@ export function createSyncCoordinator(
       listener(state)
       return () => listeners.delete(listener)
     },
-    synchronize() {
+    synchronize(options = {}) {
       if (running) return running
-      running = run().finally(() => { running = undefined })
+      running = run(options.force === true).finally(() => { running = undefined })
       return running
     },
   }
   return coordinator
 
-  async function run(): Promise<SyncStatus> {
+  async function run(force: boolean): Promise<SyncStatus> {
     publish({ kind: 'syncing' })
     let input: SyncInput | undefined
     try {
@@ -169,7 +172,7 @@ export function createSyncCoordinator(
         consecutiveFailures = 0
         return publish({ kind: 'idle', last_synced_at: now() })
       }
-      if (input.retry_at !== undefined && input.retry_at > startedAt) {
+      if (!force && input.retry_at !== undefined && input.retry_at > startedAt) {
         scheduleAt(input.retry_at)
         return publish({
           kind: 'offline',
@@ -197,6 +200,8 @@ export function createSyncCoordinator(
       const completedAt = now()
       const completed = rejected > 0
         ? publish({ kind: 'attention', rejected, last_synced_at: completedAt })
+        : deferred.length > 0
+          ? publish({ kind: 'deferred', deferred: deferred.length, message: deferred[0]!.reason, retry_at: deferredRetryAt! })
         : publish({ kind: 'idle', last_synced_at: completedAt })
       if (input.has_more_pending) scheduleAt(completedAt)
       if (deferredRetryAt !== undefined) scheduleAt(deferredRetryAt)

@@ -61,8 +61,11 @@ or Admin correction. The legacy Session screen remains separate and is not
 dual-written.
 
 The status states are: Ready to sync, Syncing, last-synced time, Offline with
-locally retained changes, and Events needing attention after permanent server
-rejection. **Sync now** remains available without blocking data entry.
+locally retained changes, **Waiting to retry** with a deferred Event count and
+admission reason, and Events needing attention after permanent server
+rejection. Deferred work never appears as synced. **Sync now** remains
+available without blocking data entry and immediately retries deferred work
+even when its automatic backoff deadline is still in the future.
 
 In development builds only, Home includes **Event Pipeline**. It groups local
 Events by `command_id` and shows the rebuildable projection, outbound
