@@ -132,7 +132,7 @@ export default function PilotWorkspacePage({ onHome }: { onHome: () => void }) {
       <section style={styles.status} aria-live="polite">
         <strong>{access.workspace_name}</strong>
         <span>{formatSyncStatus(syncStatus)}</span>
-        <button type="button" style={styles.smallButton} onClick={() => void synchronize(true)}>Sync now</button>
+        <button type="button" style={styles.syncButton} onClick={() => void synchronize(true)}>Sync now</button>
       </section>
       {error && <p style={styles.error}>{error}</p>}
 
@@ -198,6 +198,7 @@ const styles: Record<string, React.CSSProperties> = {
   heading: { margin: 0, fontSize: '1.05rem' },
   input: { display: 'block', width: '100%', minHeight: 44, marginTop: 4, padding: '0.55rem', border: '1px solid #aaa', borderRadius: 7 },
   primary: { minHeight: 44, border: 0, borderRadius: 8, background: '#2d6a4f', color: '#fff', fontWeight: 700 },
+  syncButton: { minWidth: 44, minHeight: 44, padding: '0.35rem 0.7rem', border: '1px solid #2d6a4f', borderRadius: 7, background: '#fff', color: '#2d6a4f' },
   smallButton: { minHeight: 38, padding: '0.35rem 0.7rem', border: '1px solid #2d6a4f', borderRadius: 7, background: '#fff', color: '#2d6a4f' },
   row: { display: 'flex', justifyContent: 'space-between', gap: '1rem', minHeight: 44, alignItems: 'center', padding: '0.65rem', border: '1px solid #d6ddd9', borderRadius: 7, background: '#fff', color: '#1b4332', textAlign: 'left' },
   selected: { display: 'flex', justifyContent: 'space-between', gap: '1rem', minHeight: 44, alignItems: 'center', padding: '0.65rem', border: '2px solid #2d6a4f', borderRadius: 7, background: '#e8f5e9', color: '#1b4332', textAlign: 'left' },
