@@ -772,7 +772,8 @@ It refuses a malformed or non-local result. It uses `db reset
 --local --no-seed`, then rechecks the same endpoint before it touches Auth or
 the Event Log. A committed local-only Auth configuration permits the synthetic
 email/password sessions used by the Loader; restarting the CLI-local stack
-applies that configuration. The secret/legacy service key is read only inside
+applies that configuration, while self-service signup remains disabled. The
+secret/legacy service key is read only inside
 the trusted Node process to create local synthetic users and is never passed
 to Vite, Field, or a browser.
 

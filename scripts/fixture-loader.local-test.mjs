@@ -7,6 +7,7 @@
  */
 import assert from 'node:assert/strict'
 import { Client } from 'pg'
+import { createClient } from '@supabase/supabase-js'
 import { loadFixture, selectedFixtureName } from './fixture-loader.mjs'
 import { commandSucceeded, localSupabaseSettings, runLocalSupabase } from './local-supabase.mjs'
 
@@ -26,12 +27,21 @@ try {
   const status = runLocalSupabase(['status', '--output', 'env'], { capture: true })
   if (!commandSucceeded(status)) throw new Error('The local Supabase stack was unavailable after fixture loading.')
   const settings = localSupabaseSettings(status.stdout, { requireDatabase: true })
+  const browser = createClient(settings.url, settings.publishableKey, {
+    auth: { autoRefreshToken: false, persistSession: false, detectSessionInUrl: false },
+  })
+  const { error: signupError } = await browser.auth.signUp({
+    email: 'fixture-self-service-signup@birdnerd.test',
+    password: 'not-a-fixture-account',
+  })
+  assert.ok(signupError, 'Local Auth must reject self-service signup.')
   const database = new Client({ connectionString: settings.databaseUrl })
   await database.connect()
   try {
     const { rows: [row] } = await database.query(`
       select
         (select count(*)::integer from auth.users where email = any($1::text[])) as auth_users,
+        (select count(*)::integer from auth.users) as all_auth_users,
         (select count(*)::integer from auth.identities where provider = 'google' and provider_id = any($2::text[])) as google_identities,
         (select count(*)::integer from birdnerd_private.event_log) as events,
         (select count(distinct workspace_id)::integer from birdnerd_private.event_log) as workspaces,
@@ -41,6 +51,7 @@ try {
     `, [emails, providerIds])
     assert.deepEqual(row, {
       auth_users: 2,
+      all_auth_users: 2,
       google_identities: 2,
       events: 14,
       workspaces: 1,
@@ -51,7 +62,7 @@ try {
   } finally {
     await database.end()
   }
-  console.log('Fixture local integration passed: two public loads left one declared Workspace history with two Auth identities, two active Members, seven receipts, and two authenticated appenders.')
+  console.log('Fixture local integration passed: two public loads left one declared Workspace history with two Auth identities, two active Members, seven receipts, two authenticated appenders, and no self-service signup.')
 } catch (error) {
   console.error(error instanceof Error ? error.stack ?? error.message : String(error))
   process.exitCode = 1

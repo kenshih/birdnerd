@@ -106,7 +106,7 @@ export async function loadFixture(name, dependencies = {}) {
   // Parsing is deliberately before reset: an edited/invalid fixture must not
   // disturb even the verified local database.
   const run = dependencies.runSupabase ?? runLocalSupabase
-  const settings = dependencies.settings ?? resetVerifiedLocalStack(run)
+  const settings = resetVerifiedLocalStack(run)
   const runtime = dependencies.runtime ?? await loadRuntime()
 
   const database = new runtime.Client({ connectionString: settings.databaseUrl })

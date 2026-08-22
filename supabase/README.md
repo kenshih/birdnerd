@@ -29,6 +29,8 @@ API and override-free PostgreSQL endpoints. It restarts a verified running stack
 local Auth configuration, uses `supabase db reset --local --no-seed`, then
 rechecks the same target before creating synthetic local Auth users. The secret
 key remains inside the Node Loader, never in Field or Vite.
+Public self-service Auth registration stays disabled; only the Loader's trusted
+local Admin API bootstrap creates the two synthetic fixture users.
 
 The versioned declaration in `data/fixtures/operational-workspace.yaml` creates
 one Workspace with an Admin and Contributor. The restricted Provisioner writes

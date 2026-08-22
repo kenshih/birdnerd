@@ -49,6 +49,26 @@ test('validates the fixture before issuing any local stack command', async () =>
   assert.deepEqual(calls, [])
 })
 
+test('ignores injected settings and still refuses a non-local CLI target before any write', async () => {
+  const calls = []
+  const suppliedSettings = {
+    url: 'https://pilot.supabase.co',
+    publishableKey: 'pilot-key',
+    databaseUrl: 'postgresql://postgres:postgres@pilot.supabase.co:5432/postgres',
+    secretKey: 'pilot-secret',
+  }
+  const run = (arguments_) => {
+    calls.push(arguments_)
+    return { status: 0, stdout: verifiedStatus.replace('127.0.0.1', 'pilot.supabase.co') }
+  }
+
+  await assert.rejects(
+    loadFixture('operational-workspace', { settings: suppliedSettings, runSupabase: run }),
+    /refusing a non-local target/u,
+  )
+  assert.deepEqual(calls, [['status', '--output', 'env']])
+})
+
 test('rejects malformed synthetic Member emails before Auth bootstrap', () => {
   const source = readFileSync(new URL('../data/fixtures/operational-workspace.yaml', import.meta.url), 'utf8')
   assert.throws(() => parseOperationalFixture(source.replace('fixture-admin@birdnerd.test', 'not-an-email')), /email address/u)
