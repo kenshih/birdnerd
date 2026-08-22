@@ -63,20 +63,26 @@ export default function WorkspaceAccessGate({ auth, workspaceAccess, children }:
 
   if (authState.kind === 'checking') return <CheckingAccess />
   if (authState.kind === 'unavailable') return <AccessProblem message={authState.message} />
-  if (authState.kind === 'error') return <SignInScreen message={authState.message} onSignIn={() => void auth.beginSignIn()} />
-  return <SignInScreen onSignIn={() => void auth.beginSignIn()} />
+  if (authState.kind === 'error') return <SignInScreen message={authState.message} signInActions={authState.signInActions} onSignIn={actionId => void auth.beginSignIn(actionId)} />
+  return <SignInScreen signInActions={authState.signInActions} onSignIn={actionId => void auth.beginSignIn(actionId)} />
 }
 
 function CheckingAccess() {
   return <Screen><h1>Checking access…</h1><p>BirdNerd is confirming your sign-in and Workspace access.</p></Screen>
 }
 
-function SignInScreen({ message, onSignIn }: { message?: string; onSignIn: () => void }) {
+function SignInScreen({ message, signInActions, onSignIn }: {
+  message?: string
+  signInActions: readonly { id: string; label: string }[]
+  onSignIn: (actionId: string) => void
+}) {
   return (
     <Screen>
       <h1>BirdNerd</h1>
-      <p>{message ?? 'Sign in with your pre-authorized Google account to continue.'}</p>
-      <button style={styles.primaryButton} type="button" onClick={onSignIn}>Continue with Google</button>
+      <p>{message ?? 'Choose a sign-in method to continue.'}</p>
+      {signInActions.map(action => (
+        <button key={action.id} style={styles.primaryButton} type="button" onClick={() => onSignIn(action.id)}>{action.label}</button>
+      ))}
     </Screen>
   )
 }

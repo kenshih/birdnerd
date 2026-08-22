@@ -56,21 +56,57 @@ test('uses a Vite mode that does not conflict with the .env.local convention', (
   assert.equal(viteModeForTarget('pilot'), 'pilot')
 })
 
-test('local runtime settings override an inherited hosted setting and clear the E2E fixture flag', () => {
+test('local runtime settings override ambient auth values with the declared fixture profiles', () => {
   const environment = fieldViteEnvironment({
     VITE_E2E_ACCESS: 'true',
+    VITE_FIELD_DEVELOPMENT_TARGET: 'pilot',
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: 'ambient-fixture-profiles',
     VITE_SUPABASE_URL: 'https://project.supabase.co',
     VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_remote',
     OTHER_SETTING: 'unchanged',
   }, {
     url: 'http://127.0.0.1:54321',
     publishableKey: 'sb_publishable_local',
-  })
+  }, 'local')
 
-  assert.deepEqual(environment, {
+  const { VITE_LOCAL_FIXTURE_AUTH_PROFILES: fixtureProfiles, ...withoutFixtureProfiles } = environment
+  assert.deepEqual(withoutFixtureProfiles, {
     VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
     VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local',
     OTHER_SETTING: 'unchanged',
     VITE_E2E_ACCESS: 'false',
+    VITE_FIELD_DEVELOPMENT_TARGET: 'local',
+  })
+  assert.deepEqual(JSON.parse(fixtureProfiles), [
+    {
+      id: 'fixture-admin',
+      label: 'Continue as Fixture Admin',
+      email: 'fixture-admin@birdnerd.test',
+      password: 'fixture-admin-local-only',
+    },
+    {
+      id: 'fixture-contributor',
+      label: 'Continue as Fixture Contributor',
+      email: 'fixture-contributor@birdnerd.test',
+      password: 'fixture-contributor-local-only',
+    },
+  ])
+})
+
+test('hosted pilot settings clear ambient local fixture selection', () => {
+  const environment = fieldViteEnvironment({
+    VITE_FIELD_DEVELOPMENT_TARGET: 'local',
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: 'ambient-fixture-profiles',
+  }, {
+    url: 'https://project.supabase.co',
+    publishableKey: 'sb_publishable_pilot',
+  }, 'pilot')
+
+  assert.deepEqual(environment, {
+    VITE_SUPABASE_URL: 'https://project.supabase.co',
+    VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_pilot',
+    VITE_E2E_ACCESS: 'false',
+    VITE_FIELD_DEVELOPMENT_TARGET: 'pilot',
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: '',
   })
 })

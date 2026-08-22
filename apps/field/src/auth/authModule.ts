@@ -17,12 +17,18 @@ export type ExternalIdentity = {
   displayName?: string
 }
 
+/** A labelled sign-in choice that a signed-out caller may pass back by ID. */
+export type AuthSignInAction = {
+  id: string
+  label: string
+}
+
 export type AuthState =
   | { kind: 'checking' }
-  | { kind: 'signed-out' }
+  | { kind: 'signed-out'; signInActions: readonly AuthSignInAction[] }
   | { kind: 'signed-in'; identity: ExternalIdentity }
   | { kind: 'unavailable'; message: string }
-  | { kind: 'error'; message: string }
+  | { kind: 'error'; message: string; signInActions: readonly AuthSignInAction[] }
 
 export type AuthStateListener = (state: AuthState) => void
 
@@ -34,7 +40,7 @@ export type AuthStateListener = (state: AuthState) => void
 export interface AuthModule {
   getState(): Promise<AuthState>
   subscribe(listener: AuthStateListener): () => void
-  beginSignIn(): Promise<void>
+  beginSignIn(actionId: string): Promise<void>
   signOut(): Promise<void>
 }
 
@@ -44,7 +50,7 @@ export function createUnavailableAuthModule(message: string): AuthModule {
   return {
     async getState() { return state },
     subscribe() { return () => {} },
-    async beginSignIn() {},
+    async beginSignIn(_actionId: string) {},
     async signOut() {},
   }
 }

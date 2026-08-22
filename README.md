@@ -46,8 +46,12 @@ Workspace Event history—never a hosted project, pilot data, or browser secret.
 Self-service Auth registration remains disabled.
 The receipt confirms that fixture Admin and Contributor sessions independently
 claimed access, appended their representative data, and replayed the same
-history. This release does not yet add a browser fixture-member sign-in
-selector; that is the 0.32.2 slice.
+history. With the fixture loaded, `npm run dev` offers **Continue as Fixture
+Admin** and **Continue as Fixture Contributor** instead of a Google redirect.
+Open one normal browser profile and one private/separate browser profile to
+exercise the two Members concurrently; each holds its own real local Supabase
+session. Those two known disposable fixture passwords are the only credential
+the local browser receives—never a secret key or database URL.
 
 ### Hosted pilot development
 

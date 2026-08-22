@@ -82,7 +82,7 @@ describe('Supabase Google auth adapter', () => {
     const { port } = makePort()
     const auth = createSupabaseGoogleAuthModule(port, makeBrowser())
 
-    await auth.beginSignIn()
+    await auth.beginSignIn('google')
 
     expect(port.auth.signInWithOAuth).toHaveBeenCalledWith({
       provider: 'google',
