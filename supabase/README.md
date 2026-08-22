@@ -1,5 +1,14 @@
 # Supabase schema workflow
 
+## Routine Field development
+
+From the repository root, use `npm run dev`. It owns the safe local path:
+the pinned project-local Supabase CLI starts or verifies the Docker stack,
+`status --output env` supplies the browser's current local endpoint/key, and
+the launcher refuses a non-loopback endpoint before Vite starts. It does not
+run `db reset`, `link`, or any hosted command. See the root README for the
+separate explicit `npm run dev:pilot` path.
+
 The reviewed Phase 30–31 SQL migrations own the private Event Log, derived
 Membership and entity-reference admission indexes, durable receipts, restricted
 Provisioner Membership operations, and the authenticated browser exchange

@@ -18,6 +18,8 @@
     "vers": "npm pkg get name version --workspaces --include-workspace-root=false | jq -r 'to_entries[] | [.value.name, .value.version] | @tsv' | column -t",
     "dev": "npm --workspace @birdnerd/field run dev",
     "dev:host": "npm --workspace @birdnerd/field run dev -- --host",
+    "dev:pilot": "npm --workspace @birdnerd/field run dev:pilot",
+    "dev:pilot:host": "npm --workspace @birdnerd/field run dev:pilot -- --host",
     "kill:dev": "node scripts/stop-field-dev.mjs",
     "dev:ocr": "npm --workspace @birdnerd/ocr run dev",
     "dev:ocr:host": "npm --workspace @birdnerd/ocr run dev -- --host",
@@ -42,10 +44,12 @@
     "preview:sync-db:host": "npm --workspace @birdnerd/sync-db run preview -- --host",
     "preview:combined": "npm run build:combined && python3 -m http.server 4173 -d .combined-site",
     "lint": "npm --workspace @birdnerd/field run lint",
-    "test": "npm --workspace @birdnerd/field run test",
+    "test:local-dev": "node --test scripts/field-dev.test.mjs",
+    "test": "npm run test:local-dev && npm --workspace @birdnerd/field run test",
     "test:e2e": "npm --workspace @birdnerd/field run test:e2e"
   },
   "devDependencies": {
+    "supabase": "2.115.0",
     "yaml": "^2.4.2"
   }
 }
