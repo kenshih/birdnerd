@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { developmentTarget, fieldViteEnvironment, hostedPilotSettings, localFieldSettings, parseEnvVariables } from './field-dev.mjs'
+import { developmentTarget, fieldViteEnvironment, hostedPilotSettings, localFieldSettings, parseEnvVariables, viteModeForTarget } from './field-dev.mjs'
 
 test('parses quoted Supabase status values without evaluating shell content', () => {
   assert.deepEqual(parseEnvVariables('API_URL="http://127.0.0.1:54321"\nPUBLISHABLE_KEY=sb_publishable_local\n'), {
@@ -48,6 +48,12 @@ test('requires the package-script target and rejects an appended target override
     () => developmentTarget(['--target=local', '--target=pilot']),
     /Exactly one development target/u,
   )
+})
+
+test('uses a Vite mode that does not conflict with the .env.local convention', () => {
+  assert.equal(viteModeForTarget('local'), 'field-local')
+  assert.notEqual(viteModeForTarget('local'), 'local')
+  assert.equal(viteModeForTarget('pilot'), 'pilot')
 })
 
 test('local runtime settings override an inherited hosted setting and clear the E2E fixture flag', () => {

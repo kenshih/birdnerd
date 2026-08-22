@@ -109,6 +109,17 @@ export function developmentTarget(arguments_) {
   return target
 }
 
+/**
+ * Maps a Field development target to a Vite mode.
+ *
+ * `local` is a valid Field target but an invalid Vite mode: Vite reserves it
+ * for its `.env.local` convention. Keep the caller-facing target compact while
+ * giving Vite a distinct, valid mode name.
+ */
+export function viteModeForTarget(target) {
+  return target === 'pilot' ? 'pilot' : 'field-local'
+}
+
 function unquote(value) {
   if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
     return value.slice(1, -1)
@@ -190,7 +201,7 @@ function main() {
   const target = developmentTarget(arguments_)
   const viteArgs = arguments_.filter(argument => !argument.startsWith('--target='))
   const settings = target === 'pilot' ? pilotSettingsFromFile() : localSettingsFromRunningStack()
-  const mode = target === 'pilot' ? 'pilot' : 'local'
+  const mode = viteModeForTarget(target)
 
   console.log(target === 'pilot'
     ? 'Starting Field against the explicitly configured hosted pilot.'
