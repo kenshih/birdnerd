@@ -68,6 +68,13 @@ arbitrary credential entry, and is unavailable outside verified local
 development. See
 [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
 
+After access becomes active, Field keeps the authenticated person's display
+name and email visible when available and offers a user-initiated sign-out
+action. The action ends only the current Field browser session, so a
+developer's second fixture browser profile and a bander's other devices remain
+signed in. This is an authentication convenience, not a Workspace role or
+authorization control.
+
 Field 0.29.0 retains that access boundary and persists its clean,
 Workspace-scoped Event Log separately from the legacy mutable database.
 Projection caches are rebuilt from Event Log entries on startup; no legacy

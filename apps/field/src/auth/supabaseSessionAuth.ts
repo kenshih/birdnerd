@@ -8,14 +8,14 @@ export type SupabaseSessionPort = {
     onAuthStateChange(listener: (event: AuthChangeEvent, session: Session | null) => void): {
       data: { subscription: { unsubscribe(): void } }
     }
-    signOut(): Promise<{ error: Error | null }>
+    signOut(options: { scope: 'local' }): Promise<{ error: Error | null }>
   }
 }
 
 /**
  * A concrete Supabase sign-in role. The session Module owns restoration,
- * session changes, identity mapping, error state, and sign-out; this Adapter
- * owns only its labelled interaction.
+ * session changes, identity mapping, error state, and current-browser-session
+ * sign-out; this Adapter owns only its labelled interaction.
  */
 export type SupabaseSignInAdapter = {
   signInActions: readonly AuthSignInAction[]
@@ -105,7 +105,9 @@ export function createSupabaseSessionAuthModule(
     },
     async signOut() {
       await start()
-      const { error } = await supabase.auth.signOut()
+      // A Field user chooses this action for the current browser session; do
+      // not invalidate their other device or browser-profile sessions.
+      const { error } = await supabase.auth.signOut({ scope: 'local' })
       if (error) publish(errorState(error.message))
     },
   }
