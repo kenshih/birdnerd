@@ -7,12 +7,11 @@
  * credentials through the command line.
  */
 import { randomBytes } from 'node:crypto'
-import { spawnSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import YAML from 'yaml'
-import { localSupabaseSettings } from './local-supabase.mjs'
+import { commandSucceeded, localSupabaseSettings, runLocalSupabase } from './local-supabase.mjs'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fixtureFiles = new Map([
@@ -103,9 +102,11 @@ export async function loadFixture(name, dependencies = {}) {
   const file = fixtureFiles.get(name)
   if (!file) throw new Error(`Unknown fixture: ${name}`)
   const read = dependencies.readFile ?? readFileSync
-  const run = dependencies.runSupabase ?? runSupabase
-  const settings = dependencies.settings ?? resetVerifiedLocalStack(run)
   const fixture = dependencies.fixture ?? parseOperationalFixture(read(file, 'utf8'), name)
+  // Parsing is deliberately before reset: an edited/invalid fixture must not
+  // disturb even the verified local database.
+  const run = dependencies.runSupabase ?? runLocalSupabase
+  const settings = dependencies.settings ?? resetVerifiedLocalStack(run)
   const runtime = dependencies.runtime ?? await loadRuntime()
 
   const database = new runtime.Client({ connectionString: settings.databaseUrl })
@@ -358,18 +359,6 @@ async function pullAll(client, workspaceId) {
 
 function eventCounts(events) {
   return events.reduce((counts, event) => ({ ...counts, [event.event_type]: (counts[event.event_type] ?? 0) + 1 }), {})
-}
-
-function runSupabase(arguments_, { capture = false } = {}) {
-  return spawnSync('npx', ['--no-install', 'supabase', ...arguments_], {
-    cwd: rootDirectory,
-    encoding: 'utf8',
-    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
-  })
-}
-
-function commandSucceeded(command) {
-  return command.error === undefined && command.status === 0
 }
 
 function assertRecord(value, label) {

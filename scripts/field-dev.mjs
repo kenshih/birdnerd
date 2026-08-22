@@ -12,7 +12,7 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { isLoopbackHost, localSupabaseSettings, parseEnvVariables } from './local-supabase.mjs'
+import { commandSucceeded, isLoopbackHost, localSupabaseSettings, parseEnvVariables, runLocalSupabase } from './local-supabase.mjs'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fieldDirectory = resolve(rootDirectory, 'apps/field')
@@ -103,25 +103,13 @@ export function viteModeForTarget(target) {
   return target === 'pilot' ? 'pilot' : 'field-local'
 }
 
-function commandSucceeded(command) {
-  return command.error === undefined && command.status === 0
-}
-
-function runSupabase(arguments_, options = {}) {
-  return spawnSync('npx', ['--no-install', 'supabase', ...arguments_], {
-    cwd: rootDirectory,
-    encoding: 'utf8',
-    stdio: options.capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
-  })
-}
-
 function localSettingsFromRunningStack() {
-  let status = runSupabase(['status', '--output', 'env'], { capture: true })
+  let status = runLocalSupabase(['status', '--output', 'env'], { capture: true })
   if (!commandSucceeded(status)) {
     console.log('Local Supabase is not running; starting the CLI-managed Docker stack…')
-    const start = runSupabase(['start'])
+    const start = runLocalSupabase(['start'])
     if (!commandSucceeded(start)) process.exit(start.status ?? 1)
-    status = runSupabase(['status', '--output', 'env'], { capture: true })
+    status = runLocalSupabase(['status', '--output', 'env'], { capture: true })
   }
 
   if (!commandSucceeded(status)) {

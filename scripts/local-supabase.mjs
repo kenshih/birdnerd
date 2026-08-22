@@ -1,3 +1,9 @@
+import { spawnSync } from 'node:child_process'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+
 /**
  * Parses the CLI-managed local Supabase stack's status output.  Both Field's
  * browser launcher and trusted local tooling use this Module so neither can
@@ -62,13 +68,29 @@ export function assertLoopbackDatabaseUrl(value, description) {
     throw new Error(`${description} must be a valid PostgreSQL URL.`)
   }
 
-  if (!['postgres:', 'postgresql:'].includes(parsed.protocol) || !isLoopbackHost(parsed.hostname)) {
+  // `pg` permits URI query settings such as `?host=...`, which can override
+  // the apparent authority. The CLI's own DB_URL needs none, so reject every
+  // query/fragment rather than attempting to maintain a partial allow-list.
+  if (!['postgres:', 'postgresql:'].includes(parsed.protocol) || !isLoopbackHost(parsed.hostname) || parsed.search || parsed.hash) {
     throw new Error(`${description} must be a postgresql:// loopback endpoint; refusing a non-local target.`)
   }
 }
 
 export function isLoopbackHost(hostname) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1'
+}
+
+/** Runs a repository-local Supabase CLI command at the one shared boundary. */
+export function runLocalSupabase(arguments_, { capture = false } = {}) {
+  return spawnSync('npx', ['--no-install', 'supabase', ...arguments_], {
+    cwd: rootDirectory,
+    encoding: 'utf8',
+    stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
+  })
+}
+
+export function commandSucceeded(command) {
+  return command.error === undefined && command.status === 0
 }
 
 function unquote(value) {

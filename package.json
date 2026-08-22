@@ -47,6 +47,7 @@
     "lint": "npm --workspace @birdnerd/field run lint",
     "test:local-dev": "node --test scripts/field-dev.test.mjs",
     "test:fixtures": "node --test scripts/fixture-loader.test.mjs",
+    "test:fixtures:local": "npm run build:collaboration && node scripts/fixture-loader.local-test.mjs",
     "test": "npm run test:local-dev && npm run test:fixtures && npm --workspace @birdnerd/field run test",
     "test:e2e": "npm --workspace @birdnerd/field run test:e2e"
   },

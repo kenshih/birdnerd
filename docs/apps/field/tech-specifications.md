@@ -766,8 +766,9 @@ Callers cannot supply a database URL, user credential, SQL fragment, or fixture
 path.
 
 Before it resets or writes data, the Module requires the project-local CLI's
-`status --output env` API and PostgreSQL URLs to be loopback. It refuses a
-malformed or non-local result. It uses `db reset
+`status --output env` API and PostgreSQL URLs to be loopback, and rejects a
+PostgreSQL URI query or fragment that could override that verified endpoint.
+It refuses a malformed or non-local result. It uses `db reset
 --local --no-seed`, then rechecks the same endpoint before it touches Auth or
 the Event Log. A committed local-only Auth configuration permits the synthetic
 email/password sessions used by the Loader; restarting the CLI-local stack

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
-import { parseOperationalFixture, resetVerifiedLocalStack, selectedFixtureName } from './fixture-loader.mjs'
+import { loadFixture, parseOperationalFixture, resetVerifiedLocalStack, selectedFixtureName } from './fixture-loader.mjs'
 
 const verifiedStatus = [
   'API_URL=http://127.0.0.1:54321',
@@ -23,7 +23,7 @@ test('parses the versioned operational declaration with exactly the declared Mem
   assert.deepEqual(fixture.operational.band, { number: '1154-81501', size: '1B', type: 'Standard' })
 })
 
-test('rejects an unversioned or generic fixture field before any local stack command', () => {
+test('rejects an unversioned or generic fixture field', () => {
   assert.throws(() => parseOperationalFixture(`
 version: 1
 fixture: operational-workspace
@@ -32,6 +32,21 @@ members: []
 operational: {}
 sql: drop database pilot
 `), /unsupported or missing/u)
+})
+
+test('validates the fixture before issuing any local stack command', async () => {
+  const calls = []
+  await assert.rejects(
+    loadFixture('operational-workspace', {
+      readFile: () => 'fixture: operational-workspace',
+      runSupabase: arguments_ => {
+        calls.push(arguments_)
+        return { status: 0, stdout: verifiedStatus }
+      },
+    }),
+    /unsupported or missing/u,
+  )
+  assert.deepEqual(calls, [])
 })
 
 test('rejects malformed synthetic Member emails before Auth bootstrap', () => {
@@ -78,6 +93,17 @@ test('refuses a non-loopback database URL even when the API endpoint appears loc
   const run = (arguments_) => {
     calls.push(arguments_)
     return { status: 0, stdout: verifiedStatus.replace('127.0.0.1:54322', 'db.pilot.supabase.co:54322') }
+  }
+
+  assert.throws(() => resetVerifiedLocalStack(run), /refusing a non-local target/u)
+  assert.deepEqual(calls, [['status', '--output', 'env']])
+})
+
+test('refuses a database URI host override even when its authority appears local', () => {
+  const calls = []
+  const run = (arguments_) => {
+    calls.push(arguments_)
+    return { status: 0, stdout: verifiedStatus.replace('/postgres', '/postgres?host=pilot.supabase.co') }
   }
 
   assert.throws(() => resetVerifiedLocalStack(run), /refusing a non-local target/u)

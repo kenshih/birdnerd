@@ -25,7 +25,7 @@ npm run fixtures:load -- operational-workspace
 It accepts no database URL, SQL, user credential, or fixture path. The Loader
 starts the checkout's CLI-local stack if it is stopped; before it resets or
 writes data, it requires `supabase status --output env` to identify loopback
-API and PostgreSQL endpoints. It restarts a verified running stack to apply its
+API and override-free PostgreSQL endpoints. It restarts a verified running stack to apply its
 local Auth configuration, uses `supabase db reset --local --no-seed`, then
 rechecks the same target before creating synthetic local Auth users. The secret
 key remains inside the Node Loader, never in Field or Vite.
