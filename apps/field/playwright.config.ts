@@ -22,7 +22,10 @@ export default defineConfig({
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
-    command: 'VITE_E2E_ACCESS=true npm run dev -- --strictPort',
+    // The E2E server intentionally bypasses the local-environment Module: it
+    // supplies its own in-memory Auth/access/exchange fixture and must neither
+    // start Docker nor inherit a developer's local/hosted target selection.
+    command: 'VITE_E2E_ACCESS=true npx --no-install vite --mode e2e --strictPort',
     url: 'http://localhost:5173/birdnerd/',
     // The access fixture is supplied only to this server; a normal `npm run dev`
     // process must never be reused for these tests.
