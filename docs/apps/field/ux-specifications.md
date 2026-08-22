@@ -13,9 +13,18 @@ workspace data or operational UI. This is a closed pilot: there is no
 self-service account creation or Workspace joining. An Admin or restricted
 Provisioner must pre-authorize the person's exact Google email address.
 
-| Result after Google login | What Field shows | Available actions |
+For the launcher-marked local development target only, after loading the
+disposable operational fixture, the signed-out screen instead presents
+**Continue as Fixture Admin** and **Continue as Fixture Contributor**. Each
+action signs into its fixed local synthetic Member through Supabase
+email/password Auth; the existing synthetic Google identity remains the one
+resolved for Workspace access. A developer uses separate browser profiles to
+exercise the two Members concurrently. Hosted pilot and production continue to
+present only **Continue with Google**.
+
+| Authentication state | What Field shows | Available actions |
 | --- | --- | --- |
-| Not signed in | Google sign-in screen | Continue with Google |
+| Not signed in | Configured sign-in screen | Continue with Google, or local fixture Admin/Contributor actions on the verified local target |
 | Resolving access | “Checking access…” screen | Wait; no workspace content is visible |
 | No BirdNerd account or eligible Membership | “You don’t have access to BirdNerd yet” screen, including the signed-in email | Sign out or use another Google account |
 | Pending Membership with matching pre-authorized email | Activation/linking progress, then the Workspace | Wait; activation is automatic and idempotent |

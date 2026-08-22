@@ -1,17 +1,12 @@
-import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
-import type { AuthModule, AuthState, AuthStateListener, ExternalIdentity } from './authModule'
+import type { AuthModule, AuthSignInAction } from './authModule'
+import { createSupabaseSessionAuthModule, type SupabaseSessionPort, type SupabaseSignInAdapter } from './supabaseSessionAuth'
 
-type SupabaseAuthPort = {
-  auth: {
-    getSession(): Promise<{ data: { session: Session | null }; error: Error | null }>
-    onAuthStateChange(listener: (event: AuthChangeEvent, session: Session | null) => void): {
-      data: { subscription: { unsubscribe(): void } }
-    }
+type SupabaseGoogleAuthPort = SupabaseSessionPort & {
+  auth: SupabaseSessionPort['auth'] & {
     signInWithOAuth(options: {
       provider: 'google'
       options: { redirectTo: string; scopes: string }
     }): Promise<{ error: Error | null }>
-    signOut(): Promise<{ error: Error | null }>
   }
 }
 
@@ -31,23 +26,6 @@ function browserPort(): BrowserPort {
   }
 }
 
-function identityFrom(session: Session): ExternalIdentity {
-  const googleIdentity = session.user.identities?.find(candidate => candidate.provider === 'google')
-  const provider = googleIdentity?.provider ?? (typeof session.user.app_metadata.provider === 'string'
-    ? session.user.app_metadata.provider
-    : 'google')
-  const identityData = googleIdentity?.identity_data as Record<string, unknown> | undefined
-
-  return {
-    provider,
-    subject: typeof identityData?.sub === 'string' ? identityData.sub : session.user.id,
-    email: session.user.email ?? undefined,
-    displayName: typeof session.user.user_metadata.full_name === 'string'
-      ? session.user.user_metadata.full_name
-      : undefined,
-  }
-}
-
 function clearOAuthCallbackFragment(browser: BrowserPort) {
   const callback = new URLSearchParams(browser.location.hash.slice(1))
   if (!callback.has('access_token') || !callback.has('refresh_token')) return
@@ -59,62 +37,33 @@ function clearOAuthCallbackFragment(browser: BrowserPort) {
   )
 }
 
-/** Supabase/Google adapter for Field's provider-neutral AuthModule interface. */
-export function createSupabaseGoogleAuthModule(
-  supabase: SupabaseAuthPort,
+const googleSignInActions: readonly AuthSignInAction[] = [{ id: 'google', label: 'Continue with Google' }]
+
+/** Google interaction Adapter for the shared Supabase-session Module. */
+export function createGoogleSignInAdapter(
+  supabase: SupabaseGoogleAuthPort,
   browser = browserPort(),
-): AuthModule {
-  let state: AuthState = { kind: 'checking' }
-  let started = false
-  const listeners = new Set<AuthStateListener>()
-
-  function publish(nextState: AuthState) {
-    state = nextState
-    listeners.forEach(listener => listener(state))
-  }
-
-  function applySession(session: Session | null) {
-    publish(session ? { kind: 'signed-in', identity: identityFrom(session) } : { kind: 'signed-out' })
-    if (session) clearOAuthCallbackFragment(browser)
-  }
-
-  async function start() {
-    if (started) return
-    started = true
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => applySession(session))
-
-    const { data, error } = await supabase.auth.getSession()
-    if (error) {
-      subscription.unsubscribe()
-      publish({ kind: 'error', message: error.message })
-      return
-    }
-    applySession(data.session)
-  }
-
+): SupabaseSignInAdapter {
   return {
-    async getState() {
-      await start()
-      return state
-    },
-    subscribe(listener) {
-      listeners.add(listener)
-      return () => listeners.delete(listener)
-    },
-    async beginSignIn() {
+    signInActions: googleSignInActions,
+    async beginSignIn(actionId) {
+      if (actionId !== 'google') return { error: new Error('The selected sign-in method is unavailable.') }
       const redirectTo = new URL(browser.basePath, browser.location.origin).toString()
-      const { error } = await supabase.auth.signInWithOAuth({
+      return supabase.auth.signInWithOAuth({
         provider: 'google',
         options: { redirectTo, scopes: 'openid email profile' },
       })
-      if (error) publish({ kind: 'error', message: error.message })
     },
-    async signOut() {
-      const { error } = await supabase.auth.signOut()
-      if (error) publish({ kind: 'error', message: error.message })
+    onSignedIn() {
+      clearOAuthCallbackFragment(browser)
     },
   }
+}
+
+/** Supabase/Google Adapter for Field's provider-neutral Auth Module Interface. */
+export function createSupabaseGoogleAuthModule(
+  supabase: SupabaseGoogleAuthPort,
+  browser = browserPort(),
+): AuthModule {
+  return createSupabaseSessionAuthModule(supabase, createGoogleSignInAdapter(supabase, browser))
 }

@@ -15,7 +15,7 @@ export function createE2EAuthModule(): AuthModule {
   return {
     async getState() { return state },
     subscribe(_listener: AuthStateListener) { return () => {} },
-    async beginSignIn() {},
+    async beginSignIn(_actionId: string) {},
     async signOut() {},
   }
 }

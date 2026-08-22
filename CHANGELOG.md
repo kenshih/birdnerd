@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.2 — **Fixture-member local sign-in.** After loading the
+  disposable operational fixture, local `npm run dev` offers **Continue as
+  Fixture Admin** and **Continue as Fixture Contributor**. Each choice starts
+  a real local Supabase email/password session while retaining the fixture's
+  synthetic Google identity for normal Workspace claim, RLS, Event admission,
+  exchange, and sync. The local adapter is restricted to the launcher-marked
+  loopback development target; hosted pilot and production remain Google-only.
 - Field 0.32.1 — **Disposable local operational fixture.** `npm run
   fixtures:load -- operational-workspace` safely replaces only the
   CLI-verified loopback Supabase data with a versioned Workspace, synthetic

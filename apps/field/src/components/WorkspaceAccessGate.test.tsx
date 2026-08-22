@@ -9,7 +9,7 @@ afterEach(cleanup)
 
 class FakeAuthModule implements AuthModule {
   private listeners = new Set<AuthStateListener>()
-  beginSignIn = vi.fn(async () => {})
+  beginSignIn = vi.fn(async (_actionId: string) => {})
   signOut = vi.fn(async () => {})
 
   constructor(private state: AuthState) {}
@@ -29,11 +29,40 @@ function renderGate(authState: AuthState, workspaceAccess: WorkspaceAccessModule
 
 describe('WorkspaceAccessGate', () => {
   it('offers Google sign-in before showing any Workspace content', async () => {
-    const auth = renderGate({ kind: 'signed-out' }, { resolve: vi.fn() })
+    const auth = renderGate({ kind: 'signed-out', signInActions: [{ id: 'google', label: 'Continue with Google' }] }, { resolve: vi.fn() })
 
     fireEvent.click(await screen.findByRole('button', { name: 'Continue with Google' }))
-    expect(auth.beginSignIn).toHaveBeenCalledOnce()
+    expect(auth.beginSignIn).toHaveBeenCalledWith('google')
     expect(screen.queryByText('Workspace data')).not.toBeInTheDocument()
+  })
+
+  it('offers both local fixture actions and keeps provider IDs out of the caller', async () => {
+    const auth = renderGate({
+      kind: 'signed-out',
+      signInActions: [
+        { id: 'fixture-admin', label: 'Continue as Fixture Admin' },
+        { id: 'fixture-contributor', label: 'Continue as Fixture Contributor' },
+      ],
+    }, { resolve: vi.fn() })
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Continue as Fixture Admin' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Continue as Fixture Contributor' }))
+
+    expect(auth.beginSignIn).toHaveBeenNthCalledWith(1, 'fixture-admin')
+    expect(auth.beginSignIn).toHaveBeenNthCalledWith(2, 'fixture-contributor')
+    expect(screen.queryByText('Workspace data')).not.toBeInTheDocument()
+  })
+
+  it('keeps a recoverable sign-in error alongside its available actions', async () => {
+    const auth = renderGate({
+      kind: 'error',
+      message: 'Fixture session expired.',
+      signInActions: [{ id: 'fixture-admin', label: 'Continue as Fixture Admin' }],
+    }, { resolve: vi.fn() })
+
+    expect(await screen.findByText('Fixture session expired.')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Continue as Fixture Admin' }))
+    expect(auth.beginSignIn).toHaveBeenCalledWith('fixture-admin')
   })
 
   it('shows the signed-in email on the no-access screen without rendering Workspace content', async () => {

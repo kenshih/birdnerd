@@ -442,19 +442,28 @@ It replaces mutable authoritative entities with a local-first event model:
   Events, replaces/rebuilds the replica, and synchronizes. History
   merge/adoption is deferred.
 
-### Field Authentication Module (Field 0.27.3)
+### Field Authentication Module (Field 0.32.2)
 
 Field UI depends on the provider-neutral `AuthModule` interface, which exposes
-current authentication state, state subscription, sign-in initiation, and
-sign-out. Its `ExternalIdentity` represents an external authenticated identity
-only; it is not a BirdNerd User Account and grants no Workspace authorization.
+current authentication state, state subscription, labelled sign-in actions,
+action-ID sign-in initiation, and sign-out. Its `ExternalIdentity` represents
+an external authenticated identity only; it is not a BirdNerd User Account and
+grants no Workspace authorization.
 
-`SupabaseGoogleAuth` is the current adapter. It owns Vite configuration,
-Supabase client construction, Google OAuth scopes and redirect construction,
-session restoration, and post-persistence OAuth-fragment cleanup. The
+The shared `SupabaseSessionAuth` Module owns Supabase session restoration,
+state changes, identity mapping, recoverable errors, and sign-out. Its
+sign-in seam has two concrete production/development roles: the Google
+interaction Adapter owns scopes, redirect construction, and callback-fragment
+cleanup; the local fixture-session Adapter owns selection of one of the two
+launcher-provided disposable email/password profiles. The local adapter is
+available only to a Vite development build marked as the verified loopback
+`local` target. It maps the local session through the fixture's synthetic
+Google identity, so the existing initial-access claim and Workspace access
+continue to use their established identity form. Hosted-pilot and production
+builds select the Google Adapter even if local fixture values are ambient. The
 unavailable-configuration adapter and in-memory test fake implement the same
-interface. Future identity linkage and Workspace Membership remain separate
-modules so the identity provider cannot become the authorization source.
+interface. Identity linkage and Workspace Membership remain separate Modules
+so the identity provider cannot become the authorization source.
 
 The approved rollout is Phases 27–30 in [docs/plan.md](../../plan.md). The
 first pilot covers two Stations and two to four members, including parallel
@@ -731,7 +740,7 @@ path.
 - Database migrations via Supabase CLI or custom scripts
 - Optional: CI/CD pipeline (GitHub Actions) for testing and deployment
 
-### Local Field development and fixture Module (Field 0.32.0–0.32.1)
+### Local Field development and fixture Module (Field 0.32.0–0.32.2)
 
 The repository-level local-environment Module is implemented by
 `scripts/field-dev.mjs`. Its small Interface is `npm run dev` (or
@@ -790,10 +799,21 @@ Banding Record. A pull by each Member must produce exactly the same declared
 only direct database writes are disposable local Auth/bootstrap-role mechanics;
 all BirdNerd facts follow their normal Provisioner or admission paths.
 
-This slice deliberately does not add a browser fixture-Member selector or
-sign-in UI; Field therefore retains its current Google-only signed-out/access
-behavior until the local Auth adapter in 0.32.2. It also does not configure
-local Google OAuth, load/reset a hosted project, or define generic SQL seeds.
+For the local target only, the same launcher reads the one declared fixture
+and injects the two fixed sign-in profiles with precedence over ambient Vite
+values. It injects only the known disposable passwords, email addresses, and
+labels; browser code never receives the local secret key, database URL, or an
+arbitrary account selector. The signed-out Field screen then offers **Continue
+as Fixture Admin** and **Continue as Fixture Contributor**, which create real
+local email/password sessions. The fixture's synthetic Google identity remains
+the identity used by the existing claim and Workspace-access path. The hosted
+pilot target explicitly clears local-profile values and stays Google-only.
+Separate browser profiles can therefore exercise the Admin and Contributor
+concurrently against real local RLS, Event admission, exchange, and sync.
+
+This slice does not add local Google OAuth, load/reset a hosted project,
+define generic SQL seeds, permit self-service signup, or add a hosted profile
+selector.
 
 ### Error Handling
 
@@ -822,11 +842,12 @@ local Google OAuth, load/reset a hosted project, or define generic SQL seeds.
 ### Disposable local fixture exception
 
 The committed Supabase CLI configuration enables email/password only for its
-Docker-local Auth service so the trusted Fixture Loader can obtain real local
-sessions for synthetic Members. It neither changes hosted Supabase Auth nor
-adds a Field email/password screen. Fixture passwords and the local secret key
-remain confined to the local Loader process; Field receives only its
-publishable key.
+Docker-local Auth service so the trusted Fixture Loader and the two fixed local
+fixture actions can obtain real sessions for synthetic Members. It neither
+changes hosted Supabase Auth nor adds a generic Field email/password screen.
+The local launcher exposes only the two known disposable fixture passwords;
+the local secret key remains confined to the trusted Loader process and Field
+never receives a database URL.
 
 ### Compliance
 

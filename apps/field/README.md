@@ -20,7 +20,12 @@ npm run test
 `npm run dev` is the safe, local-first workflow. It requires Docker Desktop
 (or another Docker-compatible runtime), starts or verifies the local Supabase
 CLI stack, and overrides any hosted Vite settings with the stack's verified
-loopback API URL and current publishable key. It does not reset data.
+loopback API URL and current publishable key. It does not reset data. After
+`npm run fixtures:load -- operational-workspace`, the signed-out screen offers
+**Continue as Fixture Admin** and **Continue as Fixture Contributor**. Use
+separate browser profiles to test the two Members concurrently; these buttons
+create real local email/password sessions and retain the fixture's synthetic
+Google identity for the normal Workspace claim and sync path.
 
 Hosted pilot testing is opt-in: create the uncommitted
 `apps/field/.env.pilot.local` file containing only

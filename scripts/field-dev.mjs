@@ -13,6 +13,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { commandSucceeded, isLoopbackHost, localSupabaseSettings, parseEnvVariables, runLocalSupabase } from './local-supabase.mjs'
+import { localFixtureAuthProfiles } from './local-fixture-profiles.mjs'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fieldDirectory = resolve(rootDirectory, 'apps/field')
@@ -61,16 +62,28 @@ export function hostedPilotSettings(envSource) {
   return { url, publishableKey }
 }
 
-/** Builds the Vite environment for either supported non-E2E Field command. */
-export function fieldViteEnvironment(environment, settings) {
-  const { VITE_E2E_ACCESS: _e2eAccess, ...withoutE2EAccess } = environment
+/**
+ * Builds the Vite environment for either supported non-E2E Field command.
+ * The local path replaces ambient profile settings with the one declared
+ * fixture; the pilot path clears them so it can select only Google Auth.
+ */
+export function fieldViteEnvironment(environment, settings, target) {
+  const {
+    VITE_E2E_ACCESS: _e2eAccess,
+    VITE_FIELD_DEVELOPMENT_TARGET: _developmentTarget,
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: _fixtureProfiles,
+    ...withoutDevelopmentAuthSettings
+  } = environment
+  const fixtureProfiles = target === 'local' ? JSON.stringify(localFixtureAuthProfiles()) : ''
   return {
-    ...withoutE2EAccess,
+    ...withoutDevelopmentAuthSettings,
     VITE_SUPABASE_URL: settings.url,
     VITE_SUPABASE_PUBLISHABLE_KEY: settings.publishableKey,
     // Vite gives inherited process variables priority over env files. Pin this
-    // to the non-fixture value for both normal command interfaces.
+    // to an explicit non-E2E value for both normal command interfaces.
     VITE_E2E_ACCESS: 'false',
+    VITE_FIELD_DEVELOPMENT_TARGET: target,
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: fixtureProfiles,
   }
 }
 
@@ -153,7 +166,7 @@ function main() {
   console.log(target === 'pilot'
     ? 'Starting Field against the explicitly configured hosted pilot.'
     : `Starting Field against verified local Supabase at ${settings.url}.`)
-  runVite(viteArguments(viteArgs, mode), fieldViteEnvironment(process.env, settings))
+  runVite(viteArguments(viteArgs, mode), fieldViteEnvironment(process.env, settings, target))
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
