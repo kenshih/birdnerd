@@ -56,6 +56,7 @@ nogit/          — Hallie's source docs (not committed)
 - **Update `CHANGELOG.md` for shipped user-visible, app-version, or repo-structure changes.**
 - **Bundle schema versioning.** Bump `BUNDLE_VERSION` in `bundle-schema.ts` when adding/removing/renaming fields on bundled entities. Write a migration function.
 - **IndexedDB versioning.** Bump version in `db/index.ts` upgrade handler when adding stores or indexes.
+- **Event evolution.** Design the desired current Event behavior first, then follow [docs/agents/event-evolution.md](docs/agents/event-evolution.md) for the required historical compatibility, backfill/upcast, and prior-state replay pass.
 - **Code tables** live in `apps/field/src/data/codes.ts`. Species list in `apps/field/src/data/species.ts`.
 - **Pure validation functions** in `apps/field/src/utils/validation.ts` — no DB or React deps.
 - **Tests** via vitest + fake-indexeddb. Run: `npm test`

@@ -73,7 +73,10 @@ checkpoints so an interrupted local session can resume safely.
    need.
 3. Keep bundled-entity and IndexedDB versioning, migrations, code tables, and
    other project invariants in sync with the change. Follow the repo's named
-   policies rather than recreating them here.
+   policies rather than recreating them here. For Event additions or changes
+   to Event schemas, envelopes, meaning, replay, projections, admission, or
+   derived stores, follow `docs/agents/event-evolution.md`: implement the
+   desired current design, then the agreed historical compatibility work.
 
 ### Document interfaces where readers need a contract
 
@@ -103,6 +106,11 @@ behavior, not implementation details or a coverage percentage.
   and edge cases.
 - Add integration tests for persistence, migrations, import/export, adapters,
   and boundaries that can fail only when parts work together.
+- For Event evolution, start applicable integration tests from representative
+  prior released Event Logs, IndexedDB state, server schema/data, and Event
+  Bundles. Prove replay followed by a new commit and reload, plus any required
+  backfill or mixed-version exchange; fresh-schema fixtures alone are not
+  sufficient.
 - Add focused browser/E2E coverage for a high-value user journey or a
   regression that requires UI interaction. Do not add brittle UI tests when a
   lower-level test proves the behavior better.

@@ -42,6 +42,14 @@ When the delivery creates or reshapes a Module, Interface, Seam, or Adapter, use
 
 Do not create a hypothetical provider seam merely to be generic. When an established ADR already settles the decision, follow it and link it; do not reopen it without evidence. Capture a consequential, durable decision in the appropriate ADR or specification and link it from the contract.
 
+When the delivery adds an Event type or changes an Event schema, envelope,
+meaning, reducer, projection, admission rule, or replay-dependent derived
+store, design the desired current behavior first. Then apply
+`docs/agents/event-evolution.md` as a separate compatibility pass. Inventory
+prior released Events and persisted states, choose each required upcaster,
+backfill, migration, or rebuild, and name prior-state replay evidence. Do not
+declare the contract ready based only on a fresh-schema path.
+
 ## 4. Write the Issue contract
 
 Create or update a `## Delivery contract` section in the Issue. Keep it concise and decision-useful:
@@ -58,6 +66,7 @@ Create or update a `## Delivery contract` section in the Issue. Keep it concise 
 ### Changed surface
 - Modules / Interfaces / Seams / Adapters:
 - Persistent-data or public-contract compatibility:
+- Event evolution (when applicable): desired current design; supported prior versions/states; upcast/backfill/migration/rebuild; replay evidence
 
 ### Decisions and open questions
 - Settled: ADR/spec link — decision

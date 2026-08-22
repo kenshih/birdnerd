@@ -38,16 +38,37 @@ Auth adapter signs known fixture Members into local Supabase without a Google
 redirect, while real local RPC, RLS, Event admission, synchronization, and
 two-profile manual testing remain in use. Hosted pilot testing stays explicit;
 the fixture format may later support a separately approved pilot reset without
-making hosted data writes part of routine development. [Delivery contract: #17](https://github.com/kenshih/birdnerd/issues/17)
+making hosted data writes part of routine development. Field also makes the
+active signed-in identity visible and provides a user-initiated sign-out path,
+which work consistently with local fixture and hosted Google Auth. Phase 32
+also removes the obsolete `apps/sync-db` experiment and its commands, build
+paths, and documentation references. It establishes a repeatable UX-regression
+gate: document the critical user-visible workflows, map them to representative
+component and browser assertions, and make failures visible before a route or
+form replacement can silently drop behavior. [Delivery contract:
+#17](https://github.com/kenshih/birdnerd/issues/17)
 
 ### Phase 33 — Event-backed Data Manager (Field version TBD)
 
-Build the shared browse, preview-first idempotent master-sheet CSV import, and
-BBL/IBP exports from Workspace Event projections. It proves historical intake
-and agency reporting without a legacy database; photo attachments and the
-reconsidered Net Hours model remain later cutover work. Restore the deferred
-Data Manager Browse Records/read-only path and unskip its Phase 33 Playwright
-coverage as part of this work.
+Build shared browse, preview-first idempotent import of one supported
+master-sheet CSV format, and all three established agency CSV outputs (IBP
+MAPS Master List, BBL new-banding upload, and BBL recapture upload) from
+Workspace Event projections. It proves historical intake and agency reporting
+without a legacy database. Preview makes unmatched source banders, inventory,
+and other references explicit for reviewed reconciliation rather than silently
+inventing a match. Photo attachments and the reconsidered Net Hours model
+remain later cutover work. Restore the deferred Data Manager Browse
+Records/read-only path and unskip its Phase 33 Playwright coverage as part of
+this work. [Delivery contract: #18](https://github.com/kenshih/birdnerd/issues/18)
+
+### Phase 34 — Field record-quality warnings (Field version TBD)
+
+Restore every non-blocking Banding Record quality warning on the event-backed
+Field path. A shared warning Module owns rule evaluation and stable field
+targets; a consistent Field presentation Module renders accessible warnings
+beside the applicable controls. Direct module tests and end-to-end rendering
+tests prevent a later form replacement from retaining rules while silently
+dropping their visible feedback. [Delivery contract: #19](https://github.com/kenshih/birdnerd/issues/19)
 
 ---
 
@@ -62,6 +83,17 @@ Per-net effort tracking and total net-hours at session close. Extends the Phase 
 ### Backlog: Smart Band Entry (Field)
 
 Speed up band record entry and help catch missing or mis-deployed bands through species-size suggestions and inventory-series sequencing.
+
+### Backlog: Event Log compaction and support windows
+
+Research checkpoints, snapshots, or archives that could reduce replay volume
+and eventually bound supported Event versions. This requires a separate ADR
+covering audit/history retention, offline and long-stale replicas, Event
+Bundles, checkpoint validation, recovery and rollback, and an explicit
+version-support boundary. Until that decision is accepted, Events remain the
+durable history and normal Event changes follow the separate desired-design
+and historical-compatibility passes in
+[Event Evolution](agents/event-evolution.md).
 
 ## Backlog: Bandsheet OCR
 
