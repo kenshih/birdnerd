@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEvent, createUuidV7, upcastEvent, type PersistedEvent } from '@birdnerd/events'
 import { createSyncCoordinator, InMemoryEventExchange } from '@birdnerd/sync-state'
 import { openDB } from 'idb'
@@ -128,8 +128,58 @@ describe('WorkspaceEventStore replica exchange', () => {
     await store.appendAll([local])
     await store.commit({ receipts: [{ kind: 'deferred', event_id: local.event_id, reason: 'Station is not indexed yet.', retryable: true }], pulled: [], cursor: 0, deferred_retry_at: 5000 })
     expect(await store.snapshot()).toContainEqual(local)
-    expect(await store.readSyncInput(100, 1000)).toMatchObject({ pending_events: [local], deferred_count: 1, retry_at: 5000 })
+    expect(await store.readSyncInput(100, 1000)).toMatchObject({
+      pending_events: [local], deferred_count: 1, deferred_event_ids: [local.event_id], retry_at: 5000,
+    })
     expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'pending', attempt_count: 1, retry_at: 5000 })
+
+    await store.recordFailure('temporary exchange failure', 7_000)
+    expect(await store.readSyncInput(100, 1_000)).toMatchObject({
+      deferred_count: 1,
+      deferred_event_ids: [local.event_id],
+      last_failure: 'Station is not indexed yet.',
+      retry_at: 7_000,
+    })
+    expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({
+      deferred: true,
+      last_error: 'Station is not indexed yet.',
+      retry_at: 7_000,
+    })
+  })
+
+  it('sends a raw Phase 30 Event unchanged through a lost-receipt retry and server duplicate', async () => {
+    const raw = createEvent({
+      event_id: createUuidV7(Date.now() + 10_000), event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000042', session_date: '2026-08-13' },
+    })
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+
+    const database = await openDB('birdnerd-event-core', 2)
+    await database.put('event_log', raw)
+    await database.put('outbound_queue', {
+      event_id: raw.event_id, workspace_id: workspaceId, status: 'pending', attempt_count: 1, retry_at: 0,
+    })
+    database.close()
+
+    // A previous request was accepted remotely but its receipt was lost.
+    // Retrying the original raw v1 JSON must receive an idempotent duplicate.
+    await store.recordFailure('lost receipt', 5_000)
+    expect((await store.readSyncInput(100, 1_000))?.pending_events).toEqual([raw])
+    const exchange = new InMemoryEventExchange([raw])
+    const push = vi.spyOn(exchange, 'push')
+    const coordinator = createSyncCoordinator(store, exchange, { now: () => 1_000, schedule: () => {} })
+
+    await expect(coordinator.synchronize({ force: true })).resolves.toEqual({ kind: 'idle', last_synced_at: 1_000 })
+    expect(push).toHaveBeenCalledWith([raw])
+    expect((await store.diagnostics(workspaceId)).receipts).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_id: raw.event_id, receipt: expect.objectContaining({ kind: 'duplicate' }) }),
+    ]))
+    const reloaded = await openDB('birdnerd-event-core', 2)
+    expect(await reloaded.get('event_log', raw.event_id)).toEqual(raw)
+    reloaded.close()
   })
 
   it('keeps the first durable raw Event representation through equivalent local, remote, pull, and Bundle duplicates', async () => {
@@ -171,7 +221,9 @@ describe('WorkspaceEventStore replica exchange', () => {
     })
     await store.commit({ receipts: [], pulled: [{ event: remoteB, server_sequence: 1 }], cursor: 1 })
 
-    expect(await store.readSyncInput(100, 1000)).toMatchObject({ workspace_id: workspaceB, cursor: 1, deferred_count: 0 })
+    expect(await store.readSyncInput(100, 1000)).toMatchObject({
+      workspace_id: workspaceB, cursor: 1, deferred_count: 0, deferred_event_ids: [],
+    })
     expect((await store.diagnostics(workspaceId)).metadata).toMatchObject({ deferred_count: 1, retry_at: 5000 })
     expect((await store.diagnostics(workspaceId)).queue).toEqual(expect.arrayContaining([
       expect.objectContaining({ event_id: pendingA.event_id, workspace_id: workspaceId, status: 'pending', deferred: true }),

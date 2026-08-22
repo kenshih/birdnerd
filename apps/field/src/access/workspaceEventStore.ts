@@ -154,15 +154,20 @@ export class WorkspaceEventStore implements DurableReplica {
     const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
     const pending = (await db.getAllFromIndex('outbound_queue', 'by-workspace', this.activeWorkspaceId))
       .filter(item => item.status === 'pending')
-    const queue = pending.slice(0, limit)
+    const deferred = pending.filter(item => item.deferred)
+    // A waiting dependency must not crowd immediately exchangeable Events out
+    // of a bounded batch. Its raw Event stays included after those Events so a
+    // user-forced Sync Now can still retry it without reconstructing history.
+    const queue = [...pending.filter(item => !item.deferred), ...deferred].slice(0, limit)
     const events = await Promise.all(queue.map(item => db.get('event_log', item.event_id)))
     return {
       workspace_id: this.activeWorkspaceId,
       cursor: metadata.cursor,
-      pending_events: events.filter((event): event is PersistedEvent => event !== undefined).map(upcastEvent),
+      pending_events: events.filter((event): event is PersistedEvent => event !== undefined),
       has_more_pending: pending.length > queue.length,
       failure_count: metadata.failure_count ?? 0,
-      deferred_count: metadata.deferred_count ?? 0,
+      deferred_count: deferred.length > 0 ? deferred.length : metadata.deferred_count ?? 0,
+      deferred_event_ids: deferred.map(item => item.event_id),
       retry_at: metadata.retry_at,
       last_failure: metadata.last_failure,
     }
@@ -239,10 +244,24 @@ export class WorkspaceEventStore implements DurableReplica {
     const db = await getDatabase()
     const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
     const tx = db.transaction(['sync_metadata', 'outbound_queue'], 'readwrite')
-    await tx.objectStore('sync_metadata').put({ ...metadata, last_failure: message, retry_at: retryAt, failure_count: (metadata.failure_count ?? 0) + 1, deferred_count: 0 })
     const queue = await tx.objectStore('outbound_queue').index('by-workspace').getAll(this.activeWorkspaceId)
+    const deferred = queue.filter(item => item.status === 'pending' && item.deferred)
+    const deferredCount = deferred.length > 0 ? deferred.length : metadata.deferred_count ?? 0
+    const deferredReason = deferred[0]?.last_error ?? metadata.last_failure ?? 'Referenced Event is not indexed yet.'
+    await tx.objectStore('sync_metadata').put({
+      ...metadata,
+      last_failure: deferredCount > 0 ? deferredReason : message,
+      retry_at: retryAt,
+      failure_count: (metadata.failure_count ?? 0) + 1,
+      deferred_count: deferredCount,
+    })
     for (const entry of queue.filter(item => item.status === 'pending')) {
-      await tx.objectStore('outbound_queue').put({ ...entry, attempt_count: entry.attempt_count + 1, retry_at: retryAt, last_error: message })
+      await tx.objectStore('outbound_queue').put({
+        ...entry,
+        attempt_count: entry.attempt_count + 1,
+        retry_at: retryAt,
+        last_error: entry.deferred ? entry.last_error : message,
+      })
     }
     await tx.done
   }

@@ -333,7 +333,9 @@ projection, and sync commit interprets supported historical Events through
 `upcastEvent` before it reaches the Banding projection Module, without
 rewriting Event identity or history. The Supabase exchange Adapter validates a
 received Event at transport ingress but passes that raw JSON to this store; it
-does not upcast before persistence. Workspace Event Bundle export, validation,
+does not upcast before persistence. It also sends each pending Event from the
+durable outbound queue in that same raw representation, including retries.
+Workspace Event Bundle export, validation,
 and restore follow the same rule: validation decodes for compatibility, while
 the portable history and IndexedDB replica retain the original supported Event
 representation.
@@ -418,9 +420,11 @@ It replaces mutable authoritative entities with a local-first event model:
   pull interfaces—never DML grants on Event Log or Membership tables.
   `@birdnerd/sync-state` keeps this provider behind an adapter seam for future
   P2P. A retryable admission dependency has a distinct `deferred` status with
-  reason, count, and retry time, never `Synced`; an explicit **Sync now**
-  bypasses the persisted retry deadline once while automatic retries remain
-  bounded.
+  reason, count, and retry time, never `Synced`; the count is derived from the
+  active Workspace's full durable deferred queue, not only the bounded batch
+  currently being exchanged. An explicit **Sync now** bypasses the persisted
+  retry deadline once while automatic retries remain bounded. If that forced
+  exchange fails, the visible deferred reason and count are retained.
 - Shared Supabase tables, functions, explicit grants, and RLS policies are
   versioned together as reviewed Supabase CLI SQL migrations in the repository.
   The Event Log has unique `event_id` and indexed `(workspace_id,
@@ -525,9 +529,10 @@ imports that mutable format into the Event Log.
   fingerprint, so CI fails if the provider validator drifts.
 - The exchange and recovery seams validate supported historical Events before
   accepting them, then preserve their raw JSON through server receive,
-  IndexedDB, Event Bundle export, and Bundle restore. The one interpretation
-  boundary is `WorkspaceEventStore`: canonical upcasting occurs only for
-  replay, projection, admission comparison, and new command decisions.
+  IndexedDB, outbound queue/retry transport, Event Bundle export, and Bundle
+  restore. The one interpretation boundary is `WorkspaceEventStore`:
+  canonical upcasting occurs only for replay, projection, admission comparison,
+  and new command decisions.
 - The deploy-only Provisioner connects with a database login inheriting only
   `birdnerd_provisioner`. Its one private bootstrap function appends canonical
   Workspace/pending-Membership Events and returns an audit receipt.

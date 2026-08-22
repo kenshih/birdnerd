@@ -186,7 +186,17 @@ describe('SyncCoordinator', () => {
     exchange.push = vi.fn(async () => [{ kind: 'deferred' as const, event_id: event.event_id, reason: 'Session is not indexed yet.', retryable: true as const }])
     const replica: DurableReplica = {
       async readSyncInput() {
-        return { workspace_id: event.workspace_id, cursor: 0, pending_events: [event], has_more_pending: false, failure_count: 1, deferred_count: 1, retry_at: 5_000, last_failure: 'Session is not indexed yet.' }
+        return {
+          workspace_id: event.workspace_id,
+          cursor: 0,
+          pending_events: [event],
+          has_more_pending: false,
+          failure_count: 1,
+          deferred_count: 1,
+          deferred_event_ids: [event.event_id],
+          retry_at: 5_000,
+          last_failure: 'Session is not indexed yet.',
+        }
       },
       async commit() {},
       async recordFailure() { throw new Error('unexpected') },
@@ -195,6 +205,85 @@ describe('SyncCoordinator', () => {
 
     await expect(coordinator.synchronize({ force: true })).resolves.toEqual({ kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 2_000 })
     expect(exchange.push).toHaveBeenCalledWith([event])
+  })
+
+  it('keeps the original deferred reason visible when a forced retry exchange fails', async () => {
+    const event = makeEvent()
+    let now = 1_000
+    let retryAt = 5_000
+    const failures: Array<{ message: string; retryAt: number }> = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: event.workspace_id,
+          cursor: 0,
+          pending_events: [event],
+          has_more_pending: false,
+          failure_count: 1,
+          deferred_count: 1,
+          deferred_event_ids: [event.event_id],
+          retry_at: retryAt,
+          last_failure: 'Session is not indexed yet.',
+        }
+      },
+      async commit() { throw new Error('unexpected') },
+      async recordFailure(message, nextRetryAt) {
+        failures.push({ message, retryAt: nextRetryAt })
+        retryAt = nextRetryAt
+      },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = async () => { throw new Error('temporary exchange failure') }
+    const scheduled: number[] = []
+    const coordinator = createSyncCoordinator(replica, exchange, {
+      now: () => now,
+      retry_base_ms: 500,
+      schedule: (_run, delay) => scheduled.push(delay),
+    })
+
+    await expect(coordinator.synchronize({ force: true })).resolves.toEqual({
+      kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 2_000,
+    })
+    expect(failures).toEqual([{ message: 'temporary exchange failure', retryAt: 2_000 }])
+    expect(scheduled).toEqual([1_000])
+
+    now = 1_500
+    await expect(coordinator.synchronize()).resolves.toEqual({
+      kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 2_000,
+    })
+    expect(failures).toHaveLength(1)
+  })
+
+  it('does not report Synced when a different queued Event remains deferred', async () => {
+    const deferred = makeEvent('018f8c7b-0000-7000-8000-000000000012')
+    const ordinary = makeEvent('018f8c7b-0000-7000-8000-000000000013')
+    const commits: SyncCommit[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: ordinary.workspace_id,
+          cursor: 0,
+          pending_events: [ordinary],
+          has_more_pending: true,
+          failure_count: 1,
+          deferred_count: 1,
+          deferred_event_ids: [deferred.event_id],
+          retry_at: 5_000,
+          last_failure: 'Session is not indexed yet.',
+        }
+      },
+      async commit(result) { commits.push(result) },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    const push = vi.spyOn(exchange, 'push')
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 1_000, schedule: () => {} })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({
+      kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 5_000,
+    })
+    expect(push).toHaveBeenCalledWith([ordinary])
+    expect(commits[0]?.receipts).toEqual([expect.objectContaining({ kind: 'accepted', event_id: ordinary.event_id })])
   })
 
   it('re-pulls a page after an interrupted durable commit instead of skipping its cursor', async () => {

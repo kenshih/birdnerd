@@ -71,18 +71,22 @@ export type InitialAccessResult =
 /** Internal provider seam. Adapters translate transport only. */
 export interface EventExchange {
   claimInitialAccess(): Promise<InitialAccessResult>
-  push(events: readonly DomainEvent[]): Promise<readonly ExchangeReceipt[]>
+  /** Exchange retains validated immutable Event JSON exactly as queued. */
+  push(events: readonly PersistedEvent[]): Promise<readonly ExchangeReceipt[]>
   pull(workspaceId: string, afterServerSequence: number, limit: number): Promise<readonly ServerEvent[]>
 }
 
 export type SyncInput = {
   workspace_id: string
   cursor: number
-  pending_events: readonly DomainEvent[]
+  /** Raw immutable Event JSON ready for outbound exchange. */
+  pending_events: readonly PersistedEvent[]
   has_more_pending: boolean
   failure_count: number
   /** Number of retryable admission dependencies durably waiting in the queue. */
   deferred_count?: number
+  /** Durable IDs make deferred state accurate when a batch omits some queue work. */
+  deferred_event_ids?: readonly string[]
   retry_at?: number
   last_failure?: string
 }
@@ -175,16 +179,37 @@ export function createSyncCoordinator(
         consecutiveFailures = 0
         return publish({ kind: 'idle', last_synced_at: now() })
       }
-      if (!force && input.retry_at !== undefined && input.retry_at > startedAt) {
-        scheduleAt(input.retry_at)
-        return input.deferred_count && input.deferred_count > 0
-          ? publish({ kind: 'deferred', deferred: input.deferred_count, message: input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: input.retry_at })
-          : publish({ kind: 'offline', message: input.last_failure ?? 'Waiting to retry Event exchange.', retry_at: input.retry_at })
+      const deferredEventIds = new Set(input.deferred_event_ids ?? [])
+      const retryAt = input.retry_at
+      const waitingForRetry = !force && retryAt !== undefined && retryAt > startedAt
+      const waitingForDeferredRetry = waitingForRetry && (input.deferred_count ?? 0) > 0
+      // A deferred retry deadline applies only to the known deferred Events.
+      // Keep unrelated queue work moving; count-only legacy adapters remain
+      // conservative because they cannot identify an eligible Event safely.
+      const eventsToPush = waitingForDeferredRetry
+        ? input.deferred_event_ids === undefined
+          ? []
+          : input.pending_events.filter(event => !deferredEventIds.has(event.event_id))
+        : input.pending_events
+      if (waitingForRetry && (!waitingForDeferredRetry || eventsToPush.length === 0)) {
+        scheduleAt(retryAt!)
+        return waitingForDeferredRetry
+          ? publish({ kind: 'deferred', deferred: input.deferred_count!, message: input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: retryAt! })
+          : publish({ kind: 'offline', message: input.last_failure ?? 'Waiting to retry Event exchange.', retry_at: retryAt! })
       }
-      const receipts = input.pending_events.length > 0 ? await exchange.push(input.pending_events) : []
+      const receipts = eventsToPush.length > 0 ? await exchange.push(eventsToPush) : []
       let cursor = input.cursor
       let rejected = receipts.filter(receipt => receipt.kind === 'rejected').length
       const deferred = receipts.filter(receipt => receipt.kind === 'deferred')
+      let outstandingDeferred = input.deferred_count ?? deferredEventIds.size
+      for (const receipt of receipts) {
+        if (receipt.kind === 'deferred') {
+          if (!deferredEventIds.has(receipt.event_id)) outstandingDeferred += 1
+          deferredEventIds.add(receipt.event_id)
+        } else if (deferredEventIds.delete(receipt.event_id)) {
+          outstandingDeferred = Math.max(0, outstandingDeferred - 1)
+        }
+      }
       const deferredRetryAt = deferred.length > 0
         ? startedAt + Math.min(retryMaxMs, retryBaseMs * (2 ** Math.max(0, input.failure_count)))
         : undefined
@@ -199,13 +224,14 @@ export function createSyncCoordinator(
       } while (true)
       consecutiveFailures = 0
       const completedAt = now()
+      const outstandingRetryAt = earliestRetryAt(deferredRetryAt, outstandingDeferred > 0 ? input.retry_at : undefined)
       const completed = rejected > 0
         ? publish({ kind: 'attention', rejected, last_synced_at: completedAt })
-        : deferred.length > 0
-          ? publish({ kind: 'deferred', deferred: Math.max(input.deferred_count ?? 0, deferred.length), message: deferred[0]!.reason, retry_at: deferredRetryAt! })
-        : publish({ kind: 'idle', last_synced_at: completedAt })
+        : outstandingDeferred > 0
+          ? publish({ kind: 'deferred', deferred: outstandingDeferred, message: deferred[0]?.reason ?? input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: outstandingRetryAt ?? completedAt })
+          : publish({ kind: 'idle', last_synced_at: completedAt })
       if (input.has_more_pending) scheduleAt(completedAt)
-      if (deferredRetryAt !== undefined) scheduleAt(deferredRetryAt)
+      if (outstandingRetryAt !== undefined) scheduleAt(outstandingRetryAt)
       return completed
     } catch (error) {
       consecutiveFailures = Math.max(consecutiveFailures, input?.failure_count ?? 0) + 1
@@ -213,7 +239,9 @@ export function createSyncCoordinator(
       const retryAt = now() + Math.min(retryMaxMs, retryBaseMs * (2 ** (consecutiveFailures - 1)))
       await replica.recordFailure(message, retryAt)
       scheduleAt(retryAt)
-      return publish({ kind: 'offline', message, retry_at: retryAt })
+      return input?.deferred_count && input.deferred_count > 0
+        ? publish({ kind: 'deferred', deferred: input.deferred_count, message: input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: retryAt })
+        : publish({ kind: 'offline', message, retry_at: retryAt })
     }
   }
 
@@ -231,7 +259,7 @@ export function createSyncCoordinator(
 export class InMemoryEventExchange implements EventExchange {
   private readonly events: ServerEvent[] = []
 
-  constructor(initialEvents: readonly DomainEvent[] = [], private initialAccess: InitialAccessResult = { kind: 'no-access' }) {
+  constructor(initialEvents: readonly PersistedEvent[] = [], private initialAccess: InitialAccessResult = { kind: 'no-access' }) {
     initialEvents.forEach(event => this.append(event))
   }
 
@@ -243,11 +271,11 @@ export class InMemoryEventExchange implements EventExchange {
     return this.initialAccess
   }
 
-  async push(events: readonly DomainEvent[]): Promise<readonly ExchangeReceipt[]> {
+  async push(events: readonly PersistedEvent[]): Promise<readonly ExchangeReceipt[]> {
     return events.map(event => {
       const existing = this.events.find(candidate => candidate.event.event_id === event.event_id)
       if (existing) {
-        return sameEventContent(upcastEvent(existing.event), event)
+        return sameEventContent(upcastEvent(existing.event), upcastEvent(event))
           ? { kind: 'duplicate' as const, event_id: event.event_id, server_sequence: existing.server_sequence }
           : { kind: 'rejected' as const, event_id: event.event_id, reason: 'Event ID conflicts with immutable content.', permanent: true as const }
       }
@@ -261,10 +289,14 @@ export class InMemoryEventExchange implements EventExchange {
       .slice(0, limit)
   }
 
-  private append(event: DomainEvent): ServerEvent {
-    assertEvent(event)
+  private append(event: PersistedEvent): ServerEvent {
+    upcastEvent(event)
     const item = { event, server_sequence: this.events.length + 1 }
     this.events.push(item)
     return item
   }
+}
+
+function earliestRetryAt(...values: Array<number | undefined>): number | undefined {
+  return values.reduce<number | undefined>((earliest, value) => value === undefined ? earliest : earliest === undefined ? value : Math.min(earliest, value), undefined)
 }

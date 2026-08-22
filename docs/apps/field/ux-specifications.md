@@ -69,6 +69,11 @@ even when its automatic backoff deadline is still in the future. While that
 deadline has not arrived, the visible state remains **Waiting to retry** rather
 than Offline or Synced.
 
+If a manual retry itself cannot reach the exchange, the status remains
+**Waiting to retry** with the original dependency reason and count, then shows
+its new backoff time. A successful unrelated batch also cannot show Synced
+while another Event in the active Workspace remains deferred.
+
 In development builds only, Home includes **Event Pipeline**. It groups local
 Events by `command_id` and shows the rebuildable projection, outbound
 queue/retry/cursor state, server receipts/rejections, and sync errors. It is not

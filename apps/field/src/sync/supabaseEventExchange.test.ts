@@ -67,6 +67,23 @@ describe('Supabase Event exchange adapter', () => {
     await expect(crossWorkspace.pull(event.workspace_id, 0, 100)).rejects.toThrow('Workspace scope')
   })
 
+  it('sends a raw compatible historical Event to the append RPC unchanged', async () => {
+    const raw = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000041', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: event.workspace_id, command_id: event.command_id, actor: event.actor,
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000042', session_date: '2026-08-13' },
+    })
+    const rpc = vi.fn(async () => ({
+      data: [{ receipt: { kind: 'duplicate', event_id: raw.event_id, server_sequence: 1 } }], error: null,
+    }))
+    const exchange = createSupabaseEventExchange({ rpc })
+
+    await expect(exchange.push([raw])).resolves.toEqual([
+      { kind: 'duplicate', event_id: raw.event_id, server_sequence: 1 },
+    ])
+    expect(rpc).toHaveBeenCalledWith('birdnerd_append_events', { events: [raw] })
+  })
+
   it('persists raw Phase 30 Event JSON received through a normal server pull while replaying it canonically', async () => {
     const historicSessionId = '018f8c7b-0000-7000-8000-000000000042'
     const historicRecordId = '018f8c7b-0000-7000-8000-000000000044'

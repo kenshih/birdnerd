@@ -1,4 +1,4 @@
-import { upcastEvent, type DomainEvent, type PersistedEvent } from '@birdnerd/events'
+import { upcastEvent, type PersistedEvent } from '@birdnerd/events'
 import type { EventExchange, ExchangeReceipt, InitialAccessResult, ServerEvent } from '@birdnerd/sync-state'
 
 type RpcResult = { data: unknown; error: { message: string } | null }
@@ -14,7 +14,7 @@ export function createSupabaseEventExchange(supabase: SupabaseRpcPort): EventExc
       if (events.some(item => item.event.workspace_id !== events[0].event.workspace_id)) throw new Error('Initial-access response crossed Workspace scope.')
       return { kind: 'active', events }
     },
-    async push(events: readonly DomainEvent[]): Promise<readonly ExchangeReceipt[]> {
+    async push(events: readonly PersistedEvent[]): Promise<readonly ExchangeReceipt[]> {
       const rows = await rpcRows(supabase, 'birdnerd_append_events', { events })
       const receipts = rows.map(row => receipt(row.receipt))
       const expected = new Set(events.map(event => event.event_id))
