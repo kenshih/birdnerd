@@ -737,8 +737,10 @@ The repository-level local-environment Module is implemented by
 `scripts/field-dev.mjs`. Its small Interface is `npm run dev` (or
 `npm run dev:host`) for local Field development and the separately named
 `npm run dev:pilot` (or `npm run dev:pilot:host`) for an intentional hosted
-pilot session. It keeps Docker/CLI lifecycle, target selection, and temporary
-browser configuration out of Field callers.
+pilot session. Package scripts supply exactly one fixed target marker, so an
+appended argument cannot turn `npm run dev` into a hosted session. It keeps
+Docker/CLI lifecycle, target selection, and temporary browser configuration
+out of Field callers.
 
 For the default Interface, the Module invokes only the pinned project-local
 Supabase CLI's `status` and, when necessary, `start` commands from this

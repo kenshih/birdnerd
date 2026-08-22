@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "prebuild": "npm --prefix ../.. run build:collaboration",
-    "dev": "node ../../scripts/field-dev.mjs",
-    "dev:pilot": "node ../../scripts/field-dev.mjs --pilot",
+    "dev": "node ../../scripts/field-dev.mjs --target=local",
+    "dev:pilot": "node ../../scripts/field-dev.mjs --target=pilot",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint src",

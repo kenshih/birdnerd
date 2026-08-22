@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { hostedPilotSettings, localFieldSettings, localViteEnvironment, parseEnvVariables } from './field-dev.mjs'
+import { developmentTarget, fieldViteEnvironment, hostedPilotSettings, localFieldSettings, parseEnvVariables } from './field-dev.mjs'
 
 test('parses quoted Supabase status values without evaluating shell content', () => {
   assert.deepEqual(parseEnvVariables('API_URL="http://127.0.0.1:54321"\nPUBLISHABLE_KEY=sb_publishable_local\n'), {
@@ -41,8 +41,17 @@ test('requires a non-loopback HTTPS target for the explicit hosted pilot command
   )
 })
 
+test('requires the package-script target and rejects an appended target override', () => {
+  assert.equal(developmentTarget(['--target=local']), 'local')
+  assert.equal(developmentTarget(['--target=pilot']), 'pilot')
+  assert.throws(
+    () => developmentTarget(['--target=local', '--target=pilot']),
+    /Exactly one development target/u,
+  )
+})
+
 test('local runtime settings override an inherited hosted setting and clear the E2E fixture flag', () => {
-  const environment = localViteEnvironment({
+  const environment = fieldViteEnvironment({
     VITE_E2E_ACCESS: 'true',
     VITE_SUPABASE_URL: 'https://project.supabase.co',
     VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_remote',

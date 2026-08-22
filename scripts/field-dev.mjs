@@ -78,7 +78,8 @@ export function hostedPilotSettings(envSource) {
   return { url, publishableKey }
 }
 
-export function localViteEnvironment(environment, settings) {
+/** Builds the Vite environment for either supported non-E2E Field command. */
+export function fieldViteEnvironment(environment, settings) {
   const { VITE_E2E_ACCESS: _e2eAccess, ...withoutE2EAccess } = environment
   return {
     ...withoutE2EAccess,
@@ -88,6 +89,24 @@ export function localViteEnvironment(environment, settings) {
     // to the non-fixture value for both normal command interfaces.
     VITE_E2E_ACCESS: 'false',
   }
+}
+
+/**
+ * Selects the command's fixed target before any stack or Vite work begins.
+ * Keeping this marker in package scripts means an appended `--target=pilot`
+ * cannot turn the default `npm run dev` command into a hosted session.
+ */
+export function developmentTarget(arguments_) {
+  const targetArguments = arguments_.filter(argument => argument.startsWith('--target='))
+  if (targetArguments.length !== 1) {
+    throw new Error('Exactly one development target is required. Use `npm run dev` for local or `npm run dev:pilot` for hosted pilot testing.')
+  }
+
+  const target = targetArguments[0].slice('--target='.length)
+  if (target !== 'local' && target !== 'pilot') {
+    throw new Error('Development target must be `local` or `pilot`.')
+  }
+  return target
 }
 
 function unquote(value) {
@@ -168,15 +187,15 @@ function runVite(arguments_, environment) {
 
 function main() {
   const arguments_ = process.argv.slice(2)
-  const pilot = arguments_.includes('--pilot')
-  const viteArgs = arguments_.filter(argument => argument !== '--pilot')
-  const settings = pilot ? pilotSettingsFromFile() : localSettingsFromRunningStack()
-  const mode = pilot ? 'pilot' : 'local'
+  const target = developmentTarget(arguments_)
+  const viteArgs = arguments_.filter(argument => !argument.startsWith('--target='))
+  const settings = target === 'pilot' ? pilotSettingsFromFile() : localSettingsFromRunningStack()
+  const mode = target === 'pilot' ? 'pilot' : 'local'
 
-  console.log(pilot
+  console.log(target === 'pilot'
     ? 'Starting Field against the explicitly configured hosted pilot.'
     : `Starting Field against verified local Supabase at ${settings.url}.`)
-  runVite(viteArguments(viteArgs, mode), localViteEnvironment(process.env, settings))
+  runVite(viteArguments(viteArgs, mode), fieldViteEnvironment(process.env, settings))
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
