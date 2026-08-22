@@ -12,23 +12,13 @@ import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { isLoopbackHost, localSupabaseSettings, parseEnvVariables } from './local-supabase.mjs'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fieldDirectory = resolve(rootDirectory, 'apps/field')
 const pilotEnvPath = resolve(fieldDirectory, '.env.pilot.local')
 
-export function parseEnvVariables(source) {
-  const values = {}
-
-  for (const line of source.split(/\r?\n/u)) {
-    const match = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/.exec(line)
-    if (!match) continue
-    const [, name, rawValue] = match
-    values[name] = unquote(rawValue)
-  }
-
-  return values
-}
+export { parseEnvVariables }
 
 /**
  * Converts `supabase status --output env` output into the only Field settings
@@ -37,14 +27,7 @@ export function parseEnvVariables(source) {
  * a hosted project.
  */
 export function localFieldSettings(statusOutput) {
-  const settings = parseEnvVariables(statusOutput)
-  const url = settings.API_URL
-  const publishableKey = settings.PUBLISHABLE_KEY ?? settings.ANON_KEY
-
-  if (!url) throw new Error('Local Supabase status did not provide API_URL.')
-  if (!publishableKey) throw new Error('Local Supabase status did not provide PUBLISHABLE_KEY or ANON_KEY.')
-  assertLoopbackHttpUrl(url, 'Local Supabase API_URL')
-
+  const { url, publishableKey } = localSupabaseSettings(statusOutput)
   return { url, publishableKey }
 }
 
@@ -118,30 +101,6 @@ export function developmentTarget(arguments_) {
  */
 export function viteModeForTarget(target) {
   return target === 'pilot' ? 'pilot' : 'field-local'
-}
-
-function unquote(value) {
-  if (value.length >= 2 && ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))) {
-    return value.slice(1, -1)
-  }
-  return value
-}
-
-function assertLoopbackHttpUrl(value, description) {
-  let parsed
-  try {
-    parsed = new URL(value)
-  } catch {
-    throw new Error(`${description} must be a valid URL.`)
-  }
-
-  if (parsed.protocol !== 'http:' || !isLoopbackHost(parsed.hostname)) {
-    throw new Error(`${description} must be an http://localhost, http://127.0.0.1, or http://[::1] endpoint; refusing a non-local target.`)
-  }
-}
-
-function isLoopbackHost(hostname) {
-  return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1'
 }
 
 function commandSucceeded(command) {

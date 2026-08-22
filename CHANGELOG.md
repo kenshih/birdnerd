@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.1 — **Disposable local operational fixture.** `npm run
+  fixtures:load -- operational-workspace` safely replaces only the
+  CLI-verified loopback Supabase data with a versioned Workspace, synthetic
+  Admin and Contributor, and representative operational Event history. The
+  Loader uses the restricted Provisioner plus real local Auth claim, Event
+  admission, receipts, and replay; it rejects non-local targets and never
+  sends a secret key to Field or a browser.
 - Field 0.32.0 — **Local-first Field development.** `npm run dev` now starts
   or verifies the pinned Supabase CLI's local Docker stack and launches Field
   only with its verified loopback endpoint and current publishable key. Hosted

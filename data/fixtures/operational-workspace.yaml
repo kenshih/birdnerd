@@ -1,0 +1,37 @@
+# Versioned, disposable local development data. The values below are synthetic
+# and may be recreated only by `npm run fixtures:load -- operational-workspace`.
+version: 1
+fixture: operational-workspace
+workspace:
+  name: Cedar Creek Local Fixture
+members:
+  - key: admin
+    email: fixture-admin@birdnerd.test
+    password: fixture-admin-local-only
+    role: admin
+  - key: contributor
+    email: fixture-contributor@birdnerd.test
+    password: fixture-contributor-local-only
+    role: contributor
+operational:
+  station:
+    name: Cedar Creek
+  net:
+    label: N1
+  person:
+    name: Avery Bander
+    initials: AB
+  bander:
+    role: Bander
+  band:
+    number: 1154-81501
+    size: 1B
+    type: Standard
+  session:
+    date: 2026-08-21
+    protocol: MAPS
+    maps_period: 6
+  banding_record:
+    species_code: AMRO
+    capture_code: '1'
+    status: '300'

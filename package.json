@@ -20,6 +20,7 @@
     "dev:host": "npm --workspace @birdnerd/field run dev -- --host",
     "dev:pilot": "npm --workspace @birdnerd/field run dev:pilot",
     "dev:pilot:host": "npm --workspace @birdnerd/field run dev:pilot -- --host",
+    "fixtures:load": "npm run build:collaboration && node scripts/fixture-loader.mjs",
     "kill:dev": "node scripts/stop-field-dev.mjs",
     "dev:ocr": "npm --workspace @birdnerd/ocr run dev",
     "dev:ocr:host": "npm --workspace @birdnerd/ocr run dev -- --host",
@@ -45,7 +46,8 @@
     "preview:combined": "npm run build:combined && python3 -m http.server 4173 -d .combined-site",
     "lint": "npm --workspace @birdnerd/field run lint",
     "test:local-dev": "node --test scripts/field-dev.test.mjs",
-    "test": "npm run test:local-dev && npm --workspace @birdnerd/field run test",
+    "test:fixtures": "node --test scripts/fixture-loader.test.mjs",
+    "test": "npm run test:local-dev && npm run test:fixtures && npm --workspace @birdnerd/field run test",
     "test:e2e": "npm --workspace @birdnerd/field run test:e2e"
   },
   "devDependencies": {

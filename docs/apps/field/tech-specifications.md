@@ -731,7 +731,7 @@ path.
 - Database migrations via Supabase CLI or custom scripts
 - Optional: CI/CD pipeline (GitHub Actions) for testing and deployment
 
-### Local Field development Module (Field 0.32.0)
+### Local Field development and fixture Module (Field 0.32.0–0.32.1)
 
 The repository-level local-environment Module is implemented by
 `scripts/field-dev.mjs`. Its small Interface is `npm run dev` (or
@@ -755,9 +755,43 @@ Hosted pilot selection is deliberately not an argument to `npm run dev`.
 `apps/field/.env.pilot.local` file, requires a non-loopback HTTPS URL, and
 never starts or manages a CLI stack. The release/build path still receives its
 publishable values from GitHub Actions, as documented in the deployment notes.
-This slice leaves fixture loading, local fixture Auth, and browser regression
-infrastructure to later Phase 32 releases; with a fresh local stack Field
-therefore retains its current Google-only signed-out/access behavior.
+`npm run fixtures:load -- operational-workspace` is the only Interface for
+the first versioned, disposable local fixture. Its Fixture Loader Module in
+`scripts/fixture-loader.mjs` accepts only that fixed name, validates
+`data/fixtures/operational-workspace.yaml`, and owns all of the privileged
+workflow: CLI configuration reload, loopback-only reset without an ambient SQL
+seed, synthetic local Auth setup, restricted Provisioner bootstrap,
+authenticated claim/append receipts, and server-ordered replay verification.
+Callers cannot supply a database URL, user credential, SQL fragment, or fixture
+path.
+
+Before it resets or writes data, the Module requires the project-local CLI's
+`status --output env` API and PostgreSQL URLs to be loopback. It refuses a
+malformed or non-local result. It uses `db reset
+--local --no-seed`, then rechecks the same endpoint before it touches Auth or
+the Event Log. A committed local-only Auth configuration permits the synthetic
+email/password sessions used by the Loader; restarting the CLI-local stack
+applies that configuration. The secret/legacy service key is read only inside
+the trusted Node process to create local synthetic users and is never passed
+to Vite, Field, or a browser.
+
+The loader creates its synthetic Auth users through the local Auth Admin
+interface and adds a local synthetic Google identity only because the existing
+initial-access claim deliberately accepts Google identities. It uses the
+restricted Provisioner role—not Event or Membership DML—to create one
+Workspace with pending Admin and Contributor Memberships. Both Members then
+obtain ordinary local sessions, independently call the existing claim RPC, and
+append through the existing authenticated admission RPC: the Admin creates a
+Station, Net, Person, Bander, and Band; the Contributor creates a Session and
+Banding Record. A pull by each Member must produce exactly the same declared
+14-Event history and a replayable seven-entity operational projection. The
+only direct database writes are disposable local Auth/bootstrap-role mechanics;
+all BirdNerd facts follow their normal Provisioner or admission paths.
+
+This slice deliberately does not add a browser fixture-Member selector or
+sign-in UI; Field therefore retains its current Google-only signed-out/access
+behavior until the local Auth adapter in 0.32.2. It also does not configure
+local Google OAuth, load/reset a hosted project, or define generic SQL seeds.
 
 ### Error Handling
 
@@ -782,6 +816,15 @@ therefore retains its current Google-only signed-out/access behavior.
 - HTTPS only
 - Data encryption in transit
 - PII considerations (Person, User records)
+
+### Disposable local fixture exception
+
+The committed Supabase CLI configuration enables email/password only for its
+Docker-local Auth service so the trusted Fixture Loader can obtain real local
+sessions for synthetic Members. It neither changes hosted Supabase Auth nor
+adds a Field email/password screen. Fixture passwords and the local secret key
+remain confined to the local Loader process; Field receives only its
+publishable key.
 
 ### Compliance
 
