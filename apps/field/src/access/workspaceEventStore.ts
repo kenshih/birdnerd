@@ -114,17 +114,24 @@ export class WorkspaceEventStore implements DurableReplica {
       const db = await getDatabase()
       const current = await db.getAll('event_log')
       const byId = new Map(current.map(event => [event.event_id, event]))
+      const newItems: ServerEvent[] = []
       for (const item of items) {
         const event = item.event
         upcastEvent(event)
         const existing = byId.get(event.event_id)
         if (existing && !sameCanonicalEventContent(existing, event)) throw new Error('Remote Event ID conflicts with immutable local content.')
-        byId.set(event.event_id, event)
+        // The first durable representation is immutable history. A later
+        // canonical interpretation can prove identity, but must not rewrite
+        // stored historical bytes (for example, Phase 30 v1 into v2).
+        if (!existing) {
+          byId.set(event.event_id, event)
+          newItems.push(item)
+        }
       }
       const events = canonicalEventLog([...byId.values()])
       const tx = db.transaction(['event_log', 'projection_cache', 'sync_metadata'], 'readwrite')
-      for (const item of items) await tx.objectStore('event_log').put(item.event)
-      await updateHighWater(tx.objectStore('sync_metadata'), items.map(item => item.event))
+      for (const item of newItems) await tx.objectStore('event_log').put(item.event)
+      await updateHighWater(tx.objectStore('sync_metadata'), newItems.map(item => item.event))
       await tx.objectStore('projection_cache').put(projectionCache(events))
       await tx.done
       this.log = new EventLog(events, () => ({ accepted: true }))
@@ -168,6 +175,8 @@ export class WorkspaceEventStore implements DurableReplica {
       const queues = await db.getAll('outbound_queue')
       const queueById = new Map(queues.map(item => [item.event_id, { ...item }]))
       const eventsById = new Map(currentEvents.map(event => [event.event_id, event]))
+      const workspaceId = this.activeWorkspaceId ?? result.pulled[0]?.event.workspace_id
+      if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) {
@@ -180,33 +189,35 @@ export class WorkspaceEventStore implements DurableReplica {
           if (receipt.kind === 'deferred' && result.deferred_retry_at !== undefined) queue.retry_at = result.deferred_retry_at
         }
       }
+      const newPulled: ServerEvent[] = []
       for (const item of result.pulled) {
         const event = item.event
         upcastEvent(event)
         const existing = eventsById.get(event.event_id)
         if (existing && !sameCanonicalEventContent(existing, event)) throw new Error('Pulled Event conflicts with immutable local content.')
-        eventsById.set(event.event_id, event)
+        if (!existing) {
+          eventsById.set(event.event_id, event)
+          newPulled.push(item)
+        }
       }
       const rejectedIds = new Set([...queueById.values()].filter(item => item.status === 'rejected').map(item => item.event_id))
       const effectiveEvents = canonicalEventLog([...eventsById.values()].filter(event => !rejectedIds.has(event.event_id)))
-      const workspaceId = this.activeWorkspaceId ?? result.pulled[0]?.event.workspace_id
-      if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
       const metadata = await db.get('sync_metadata', workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
       let highWater = metadata.high_water
-      for (const item of result.pulled) {
+      for (const item of newPulled) {
         const canonical = upcastEvent(item.event)
         highWater = highWater ? observeHlc(highWater, canonical.hlc, Date.now()) : canonical.hlc
       }
 
       const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
-      for (const item of result.pulled) await tx.objectStore('event_log').put(item.event)
+      for (const item of newPulled) await tx.objectStore('event_log').put(item.event)
       for (const receipt of result.receipts) {
         const queue = queueById.get(receipt.event_id)
         if (queue) await tx.objectStore('outbound_queue').put(queue)
         await tx.objectStore('receipts').put({ event_id: receipt.event_id, receipt, recorded_at: Date.now() })
       }
       const deferredQueue = [...queueById.values()]
-        .filter(item => item.status === 'pending' && item.deferred)
+        .filter(item => item.workspace_id === workspaceId && item.status === 'pending' && item.deferred)
       const deferredRetryAt = deferredQueue.reduce<number | undefined>((earliest, item) => earliest === undefined ? item.retry_at : Math.min(earliest, item.retry_at), undefined)
       await tx.objectStore('sync_metadata').put({
         ...metadata,
@@ -254,7 +265,12 @@ export class WorkspaceEventStore implements DurableReplica {
       const replacement = new Map(bundleEvents.map(event => [event.event_id, event]))
       for (const event of currentEvents) {
         const bundled = replacement.get(event.event_id)
-        if (bundled && !sameCanonicalEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+        if (!bundled) continue
+        if (!sameCanonicalEventContent(bundled, event)) throw new Error('Bundle Event conflicts with immutable local Event content.')
+        // Keep already-durable raw history when its canonical interpretation
+        // matches a Bundle duplicate. Recovery may replace absent history, but
+        // it never rewrites immutable historical Event representation.
+        replacement.set(event.event_id, event)
       }
       for (const event of pending) {
         replacement.set(event.event_id, event)

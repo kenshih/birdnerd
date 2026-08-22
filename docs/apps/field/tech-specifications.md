@@ -509,10 +509,12 @@ imports that mutable format into the Event Log.
   fact.
 - `@birdnerd/sync-state` exposes one coordinator Interface: synchronize and
   observe status. Its internal Event-exchange Seam handles initial access,
-  push receipts, and server-sequenced pull pages. Field's durable replica
-  Adapter atomically persists received Events, receipts, projection state,
-  HLC high-water, and cursor. Permanent rejections remain diagnostic evidence,
-  leave automatic retry, and are excluded from the effective projection.
+  push receipts, and server-sequenced pull pages. Push receipts are accepted,
+  duplicate, retryable `deferred` (with admission reason), or permanent
+  rejection. Field's durable replica Adapter atomically persists received
+  Events, receipts, projection state, HLC high-water, and cursor. Deferred
+  Events remain effective and pending; permanent rejections remain diagnostic
+  evidence and are excluded from the effective projection.
 - Supabase's Adapter calls only `birdnerd_claim_initial_access`,
   `birdnerd_append_events`, and `birdnerd_pull_events`. A versioned SQL
   migration keeps the Event Log and Membership admission index in the
@@ -618,7 +620,9 @@ Tables provided by domain experts for validation:
   access Events in server sequence.
 - `birdnerd_append_events(events)` validates active Membership, target
   Workspace, actor, envelope, schema, and immutable identity/content; it
-  returns accepted, duplicate, or permanent-rejection receipts.
+  returns accepted, duplicate, retryable-deferred, or permanent-rejection
+  receipts. A deferred receipt means a referenced parent has not reached the
+  private admission index yet; Field retains the immutable Event and retries.
 - `birdnerd_pull_events(workspace_id, after_server_sequence, page_size)` checks
   active Membership and returns at most 100 Events in server sequence.
 

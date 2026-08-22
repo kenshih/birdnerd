@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createEvent, type PersistedEvent } from '@birdnerd/events'
+import { createEvent, createUuidV7, upcastEvent, type PersistedEvent } from '@birdnerd/events'
 import { createSyncCoordinator, InMemoryEventExchange } from '@birdnerd/sync-state'
 import { openDB } from 'idb'
 import { createWorkspaceEventBundle, parseWorkspaceEventBundle } from '../utils/eventBundle'
@@ -132,6 +132,52 @@ describe('WorkspaceEventStore replica exchange', () => {
     expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'pending', attempt_count: 1, retry_at: 5000 })
   })
 
+  it('keeps the first durable raw Event representation through equivalent local, remote, pull, and Bundle duplicates', async () => {
+    const raw = createEvent({
+      event_id: createUuidV7(Date.now() + 10_000), event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000042', session_date: '2026-08-13' },
+    })
+    const canonical = upcastEvent(raw)
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    await store.appendAcceptedRemote([{ event: raw, server_sequence: 1 }])
+    await store.appendAll([canonical])
+    await store.appendAcceptedRemote([{ event: canonical, server_sequence: 1 }])
+    await store.commit({ receipts: [], pulled: [{ event: canonical, server_sequence: 1 }], cursor: 1 })
+    await store.restoreWorkspace(workspaceId, [canonical])
+
+    const database = await openDB('birdnerd-event-core', 2)
+    expect(await database.get('event_log', raw.event_id)).toEqual(raw)
+    database.close()
+    expect(await store.snapshot()).toContainEqual(canonical)
+  })
+
+  it('does not carry a deferred retry from Workspace A into Workspace B sync metadata', async () => {
+    const workspaceB = '018f8c7b-0000-7000-8000-000000000007'
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    const pendingA = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
+    await store.appendAll([pendingA])
+    await store.commit({ receipts: [{ kind: 'deferred', event_id: pendingA.event_id, reason: 'Station is not indexed yet.', retryable: true }], pulled: [], cursor: 0, deferred_retry_at: 5000 })
+
+    store.activateWorkspace(workspaceB)
+    const remoteB = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000045', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceB, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000046', session_date: '2026-08-14' },
+    })
+    await store.commit({ receipts: [], pulled: [{ event: remoteB, server_sequence: 1 }], cursor: 1 })
+
+    expect(await store.readSyncInput(100, 1000)).toMatchObject({ workspace_id: workspaceB, cursor: 1, deferred_count: 0 })
+    expect((await store.diagnostics(workspaceId)).metadata).toMatchObject({ deferred_count: 1, retry_at: 5000 })
+    expect((await store.diagnostics(workspaceId)).queue).toEqual(expect.arrayContaining([
+      expect.objectContaining({ event_id: pendingA.event_id, workspace_id: workspaceId, status: 'pending', deferred: true }),
+    ]))
+  })
+
   it('replays raw Phase 30 Events canonically through a later commit and reload', async () => {
     // This is the stored v1 shape from the released Phase 30 replica, not a
     // v1 Event inserted into a fresh Phase 31 projection fixture.
@@ -154,11 +200,28 @@ describe('WorkspaceEventStore replica exchange', () => {
     const database = await openDB('birdnerd-event-core', 2)
     await database.put('event_log', historicSession)
     await database.put('event_log', historicRecord)
+    await database.put('projection_cache', {
+      cache_key: 'workspace-current-state',
+      event_ids: ['018f8c7b-0000-7000-8000-000000000040'],
+      workspace_access: { projection_version: 1, workspaces: [], workspace_memberships: [], user_accounts: [] },
+      sessions: [{ session_id: historicSessionId, created_by: userId, session_date: '2026-08-13' }],
+      banding_records: [{ record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSessionId, created_by: userId, species_code: 'WIWA', field_event_ids: { species_code: '018f8c7b-0000-7000-8000-000000000040' } }],
+      band_allocation_conflicts: [],
+      operational_entities: [],
+      operational_session_crew: [],
+      operational_unresolved_references: [],
+      band_number_conflicts: [],
+    })
     database.close()
 
     const store = new WorkspaceEventStore()
     store.activateWorkspace(workspaceId)
     await store.snapshot() // hydrate/replay the raw Phase 30 state first
+    const hydratedDatabase = await openDB('birdnerd-event-core', 2)
+    expect(await hydratedDatabase.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
+    expect((await hydratedDatabase.get('projection_cache', 'workspace-current-state'))?.banding_records)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ record_id: '018f8c7b-0000-7000-8000-000000000044', species_code: 'AMRO' })]))
+    hydratedDatabase.close()
     const newer = sessionEvent('018f8c7b-0000-7000-8000-000000000045')
     await store.commit({ receipts: [], pulled: [{ event: newer, server_sequence: 1 }], cursor: 1 })
     expect(await store.snapshot()).toEqual(expect.arrayContaining([
