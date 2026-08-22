@@ -3,7 +3,7 @@
  * never banding decisions, projections, IndexedDB, Supabase, or Field UI.
  */
 
-import { assertEvent, sameEventContent, type DomainEvent } from '@birdnerd/events'
+import { assertEvent, sameEventContent, upcastEvent, type DomainEvent, type PersistedEvent } from '@birdnerd/events'
 
 export type EventAdmission = (candidate: DomainEvent, existingEvents: readonly DomainEvent[]) =>
   | { accepted: true }
@@ -61,7 +61,8 @@ export type ExchangeReceipt =
   | { kind: 'deferred'; event_id: string; reason: string; retryable: true }
   | { kind: 'rejected'; event_id: string; reason: string; permanent: true }
 
-export type ServerEvent = { event: DomainEvent; server_sequence: number }
+/** Raw validated server history; the durable replica owns interpretation. */
+export type ServerEvent = { event: PersistedEvent; server_sequence: number }
 
 export type InitialAccessResult =
   | { kind: 'active'; events: readonly ServerEvent[] }
@@ -80,6 +81,8 @@ export type SyncInput = {
   pending_events: readonly DomainEvent[]
   has_more_pending: boolean
   failure_count: number
+  /** Number of retryable admission dependencies durably waiting in the queue. */
+  deferred_count?: number
   retry_at?: number
   last_failure?: string
 }
@@ -174,11 +177,9 @@ export function createSyncCoordinator(
       }
       if (!force && input.retry_at !== undefined && input.retry_at > startedAt) {
         scheduleAt(input.retry_at)
-        return publish({
-          kind: 'offline',
-          message: input.last_failure ?? 'Waiting to retry Event exchange.',
-          retry_at: input.retry_at,
-        })
+        return input.deferred_count && input.deferred_count > 0
+          ? publish({ kind: 'deferred', deferred: input.deferred_count, message: input.last_failure ?? 'Referenced Event is not indexed yet.', retry_at: input.retry_at })
+          : publish({ kind: 'offline', message: input.last_failure ?? 'Waiting to retry Event exchange.', retry_at: input.retry_at })
       }
       const receipts = input.pending_events.length > 0 ? await exchange.push(input.pending_events) : []
       let cursor = input.cursor
@@ -201,7 +202,7 @@ export function createSyncCoordinator(
       const completed = rejected > 0
         ? publish({ kind: 'attention', rejected, last_synced_at: completedAt })
         : deferred.length > 0
-          ? publish({ kind: 'deferred', deferred: deferred.length, message: deferred[0]!.reason, retry_at: deferredRetryAt! })
+          ? publish({ kind: 'deferred', deferred: Math.max(input.deferred_count ?? 0, deferred.length), message: deferred[0]!.reason, retry_at: deferredRetryAt! })
         : publish({ kind: 'idle', last_synced_at: completedAt })
       if (input.has_more_pending) scheduleAt(completedAt)
       if (deferredRetryAt !== undefined) scheduleAt(deferredRetryAt)
@@ -246,7 +247,7 @@ export class InMemoryEventExchange implements EventExchange {
     return events.map(event => {
       const existing = this.events.find(candidate => candidate.event.event_id === event.event_id)
       if (existing) {
-        return sameEventContent(existing.event, event)
+        return sameEventContent(upcastEvent(existing.event), event)
           ? { kind: 'duplicate' as const, event_id: event.event_id, server_sequence: existing.server_sequence }
           : { kind: 'rejected' as const, event_id: event.event_id, reason: 'Event ID conflicts with immutable content.', permanent: true as const }
       }

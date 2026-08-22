@@ -1,4 +1,4 @@
-import { upcastEvent, type DomainEvent } from '@birdnerd/events'
+import { upcastEvent, type DomainEvent, type PersistedEvent } from '@birdnerd/events'
 import type { EventExchange, ExchangeReceipt, InitialAccessResult, ServerEvent } from '@birdnerd/sync-state'
 
 type RpcResult = { data: unknown; error: { message: string } | null }
@@ -49,7 +49,11 @@ async function rpcRows(supabase: SupabaseRpcPort, name: string, parameters?: Rec
 
 function serverEvent(row: Record<string, unknown>): ServerEvent {
   if (!Number.isSafeInteger(row.server_sequence) || (row.server_sequence as number) < 1) throw new Error('Server Event sequence is invalid.')
-  return { server_sequence: row.server_sequence as number, event: upcastEvent(row.event_json) }
+  // Validate supported historical JSON at transport ingress, but leave its
+  // immutable representation intact for the durable-replica persistence seam.
+  // WorkspaceEventStore upcasts only when interpreting/replaying it.
+  upcastEvent(row.event_json)
+  return { server_sequence: row.server_sequence as number, event: row.event_json as PersistedEvent }
 }
 
 function orderedServerEvents(rows: readonly Record<string, unknown>[], afterServerSequence: number): ServerEvent[] {

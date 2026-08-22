@@ -31,6 +31,12 @@ export type ExternalIdentity = Extract<EventActor, { kind: 'external-identity' }
 /** Authorization role assigned by a Workspace Membership, separate from banding roles. */
 export type WorkspaceMembershipRole = EventPayloadByType['membership.preauthorized']['role']
 
+/**
+ * Validated immutable Event JSON retained at a persistence or transport
+ * boundary. Consumers call `upcastEvent` before making domain decisions.
+ */
+export type PersistedEvent = DomainEvent | LegacyDomainEvent
+
 /** Hybrid Logical Clock carried by every current Event envelope. */
 export type HybridLogicalClock = DomainEvent['hlc']
 

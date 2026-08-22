@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { createEvent } from '@birdnerd/events'
+import { createEvent, type PersistedEvent } from '@birdnerd/events'
+import { createSyncCoordinator, InMemoryEventExchange } from '@birdnerd/sync-state'
 import { openDB } from 'idb'
+import { createWorkspaceEventBundle, parseWorkspaceEventBundle } from '../utils/eventBundle'
 import { resetWorkspaceEventStore, WorkspaceEventStore } from './workspaceEventStore'
 
 const workspaceId = '018f8c7b-0000-7000-8000-000000000001'
@@ -9,11 +11,7 @@ const userId = '018f8c7b-0000-7000-8000-000000000003'
 
 beforeEach(async () => {
   resetWorkspaceEventStore()
-  await new Promise<void>((resolve, reject) => {
-    const request = indexedDB.deleteDatabase('birdnerd-event-core')
-    request.onsuccess = () => resolve()
-    request.onerror = () => reject(request.error)
-  })
+  await deleteWorkspaceEventDatabase()
 })
 
 describe('WorkspaceEventStore replica exchange', () => {
@@ -130,7 +128,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     await store.appendAll([local])
     await store.commit({ receipts: [{ kind: 'deferred', event_id: local.event_id, reason: 'Station is not indexed yet.', retryable: true }], pulled: [], cursor: 0, deferred_retry_at: 5000 })
     expect(await store.snapshot()).toContainEqual(local)
-    expect((await store.readSyncInput(100, 1000))?.pending_events).toEqual([local])
+    expect(await store.readSyncInput(100, 1000)).toMatchObject({ pending_events: [local], deferred_count: 1, retry_at: 5000 })
     expect((await store.diagnostics(workspaceId)).queue[0]).toMatchObject({ status: 'pending', attempt_count: 1, retry_at: 5000 })
   })
 
@@ -175,6 +173,73 @@ describe('WorkspaceEventStore replica exchange', () => {
     ]))
   })
 
+  it('exports and restores raw Phase 30 Event JSON while canonical replay catches up safely', async () => {
+    const historicSessionId = '018f8c7b-0000-7000-8000-000000000042'
+    const historicRecordId = '018f8c7b-0000-7000-8000-000000000044'
+    const historicSession = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000041', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: historicSessionId, session_date: '2026-08-13' },
+    })
+    const historicRecord = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000043', event_type: 'banding-record.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { record_id: historicRecordId, session_id: historicSessionId, species_code: 'AMRO' },
+    })
+    const source = new WorkspaceEventStore()
+    source.activateWorkspace(workspaceId)
+    await source.appendAcceptedRemote([
+      { event: historicSession, server_sequence: 1 },
+      { event: historicRecord, server_sequence: 2 },
+    ])
+
+    const bundle = await createWorkspaceEventBundle(workspaceId, await source.exportWorkspaceEvents(workspaceId))
+    const parsed = await parseWorkspaceEventBundle(JSON.stringify(bundle))
+    expect(parsed.events.find(candidate => candidate.event_id === historicRecord.event_id)).toEqual(historicRecord)
+
+    resetWorkspaceEventStore()
+    await deleteWorkspaceEventDatabase()
+    const restored = new WorkspaceEventStore()
+    restored.activateWorkspace(workspaceId)
+    await restored.restoreWorkspace(workspaceId, parsed.events)
+
+    const database = await openDB('birdnerd-event-core', 2)
+    expect(await database.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
+    database.close()
+    expect((await restored.diagnostics(workspaceId)).projection.banding_records
+      .find(record => record.record_id === historicRecordId))
+      .toMatchObject({ species_code: 'AMRO' })
+
+    const coordinator = createSyncCoordinator(restored, new InMemoryEventExchange([historicSession, historicRecord]), {
+      now: () => 5_000,
+      schedule: () => {},
+    })
+    await expect(coordinator.synchronize()).resolves.toEqual({ kind: 'idle', last_synced_at: 5_000 })
+    expect((await restored.readSyncInput(100, 5_000))?.cursor).toBe(2)
+  })
+
+  it('restores a raw pre-envelope access Event without rewriting its stored history', async () => {
+    const current = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000041',
+      event_type: 'workspace.created',
+      workspace_id: workspaceId,
+      command_id: commandId,
+      actor: { kind: 'restricted-provisioner', provisioner_id: 'test' },
+      payload: { workspace_id: workspaceId, name: 'Cedar Creek' },
+    })
+    const { event_envelope_version: _version, hlc: _hlc, ...historic } = current
+    const bundle = await createWorkspaceEventBundle(workspaceId, [historic as PersistedEvent])
+    const parsed = await parseWorkspaceEventBundle(JSON.stringify(bundle))
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await store.restoreWorkspace(workspaceId, parsed.events)
+
+    const database = await openDB('birdnerd-event-core', 2)
+    expect(await database.get('event_log', current.event_id)).toEqual(historic)
+    database.close()
+    expect(await store.snapshot()).toContainEqual(current)
+  })
+
   it('scopes a replica snapshot to one Workspace', async () => {
     const store = new WorkspaceEventStore()
     const first = sessionEvent('018f8c7b-0000-7000-8000-000000000004')
@@ -212,4 +277,12 @@ async function seedAccess(store: WorkspaceEventStore) {
     createEvent({ event_type: 'membership.activated', workspace_id: workspaceId, command_id: commandId, actor: { kind: 'external-identity', identity }, payload: { membership_id: membershipId, user_account_id: userId } }),
   ]
   await store.appendAcceptedRemote(access.map((event, index) => ({ event, server_sequence: index + 1 })))
+}
+
+async function deleteWorkspaceEventDatabase(): Promise<void> {
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('birdnerd-event-core')
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
 }

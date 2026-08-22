@@ -93,6 +93,36 @@ describe('SyncCoordinator', () => {
     expect(scheduled).toEqual([1_000])
   })
 
+  it('reports a persisted deferred admission dependency while automatic retry waits', async () => {
+    const event = makeEvent()
+    const scheduled: number[] = []
+    const replica: DurableReplica = {
+      async readSyncInput() {
+        return {
+          workspace_id: event.workspace_id,
+          cursor: 0,
+          pending_events: [event],
+          has_more_pending: false,
+          failure_count: 1,
+          deferred_count: 1,
+          retry_at: 11_000,
+          last_failure: 'Session is not indexed yet.',
+        }
+      },
+      async commit() { throw new Error('unexpected') },
+      async recordFailure() { throw new Error('unexpected') },
+    }
+    const exchange = new InMemoryEventExchange()
+    exchange.push = vi.fn(async () => [])
+    const coordinator = createSyncCoordinator(replica, exchange, { now: () => 10_000, schedule: (_run, delay) => scheduled.push(delay) })
+
+    await expect(coordinator.synchronize()).resolves.toEqual({
+      kind: 'deferred', deferred: 1, message: 'Session is not indexed yet.', retry_at: 11_000,
+    })
+    expect(exchange.push).not.toHaveBeenCalled()
+    expect(scheduled).toEqual([1_000])
+  })
+
   it('schedules the next pending batch after a successful bounded push', async () => {
     const event = makeEvent()
     const scheduled: number[] = []
@@ -156,7 +186,7 @@ describe('SyncCoordinator', () => {
     exchange.push = vi.fn(async () => [{ kind: 'deferred' as const, event_id: event.event_id, reason: 'Session is not indexed yet.', retryable: true as const }])
     const replica: DurableReplica = {
       async readSyncInput() {
-        return { workspace_id: event.workspace_id, cursor: 0, pending_events: [event], has_more_pending: false, failure_count: 1, retry_at: 5_000, last_failure: 'Session is not indexed yet.' }
+        return { workspace_id: event.workspace_id, cursor: 0, pending_events: [event], has_more_pending: false, failure_count: 1, deferred_count: 1, retry_at: 5_000, last_failure: 'Session is not indexed yet.' }
       },
       async commit() {},
       async recordFailure() { throw new Error('unexpected') },

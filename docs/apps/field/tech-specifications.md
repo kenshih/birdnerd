@@ -331,7 +331,12 @@ Stored historical Events retain their original representation. The
 `WorkspaceEventStore` is the local-replica Adapter seam: every read, replay,
 projection, and sync commit interprets supported historical Events through
 `upcastEvent` before it reaches the Banding projection Module, without
-rewriting Event identity or history.
+rewriting Event identity or history. The Supabase exchange Adapter validates a
+received Event at transport ingress but passes that raw JSON to this store; it
+does not upcast before persistence. Workspace Event Bundle export, validation,
+and restore follow the same rule: validation decodes for compatibility, while
+the portable history and IndexedDB replica retain the original supported Event
+representation.
 
 - All entities cached locally in IndexedDB
 - Supports offline operation in field
@@ -424,10 +429,11 @@ It replaces mutable authoritative entities with a local-first event model:
   `PUBLIC` execution, and grant only their intended role. Terraform is not the
   schema-management mechanism for this phase.
 - Event Bundles replace the former mutable JSON bundle. Restore validates its
-  format, Event/upcast compatibility, and single manifest Workspace before any
-  IndexedDB write; it requires an active Membership for that Workspace, then
-  protects unsynced Events, replaces/rebuilds the replica, and synchronizes.
-  History merge/adoption is deferred.
+  format, Event compatibility, and single manifest Workspace before any
+  IndexedDB write, but does not rewrite valid historical Event JSON. It
+  requires an active Membership for that Workspace, then protects unsynced
+  Events, replaces/rebuilds the replica, and synchronizes. History
+  merge/adoption is deferred.
 
 ### Field Authentication Module (Field 0.27.3)
 
@@ -515,6 +521,11 @@ imports that mutable format into the Event Log.
   `npm run check:event-bindings` also compares the SQL Event Type branches and
   exact-key checks with the YAML Contracts and verifies a full Contract
   fingerprint, so CI fails if the provider validator drifts.
+- The exchange and recovery seams validate supported historical Events before
+  accepting them, then preserve their raw JSON through server receive,
+  IndexedDB, Event Bundle export, and Bundle restore. The one interpretation
+  boundary is `WorkspaceEventStore`: canonical upcasting occurs only for
+  replay, projection, admission comparison, and new command decisions.
 - The deploy-only Provisioner connects with a database login inheriting only
   `birdnerd_provisioner`. Its one private bootstrap function appends canonical
   Workspace/pending-Membership Events and returns an audit receipt.
@@ -524,10 +535,11 @@ imports that mutable format into the Event Log.
   rejected Events remain grouped by `command_id` with their queue and receipt
   evidence even though they are omitted from the effective projection.
 - Workspace Event Bundle v1 contains a manifest, integrity digest, and current
-  or historically upcast-compatible Workspace/access Events. Pilot Session and
-  Banding Record Events require envelope v2. Restore validates every Event and Workspace
-  before writing, preserves pending local Events, resets the pull cursor,
-  rebuilds, and catches up through normal authenticated sync.
+  or historically compatible Workspace/access Events in their original raw
+  representation. Pilot Session and Banding Record Events require envelope v2.
+  Restore validates every Event and Workspace before writing, preserves pending
+  local Events, resets the pull cursor, rebuilds canonically, and catches up
+  through normal authenticated sync.
 
 ### Phase 31 operational Event architecture
 
@@ -562,8 +574,9 @@ imports that mutable format into the Event Log.
   server business projection.
 - The provider-neutral receipt union adds `deferred` for that retryable
   dependency. Sync-State keeps the local Event effective and pending, persists
-  its reason/attempt, and schedules bounded backoff; only permanent rejection
-  removes it from the effective projection.
+  its reason/attempt, reports a visible deferred/waiting state throughout a
+  persisted retry deadline, and schedules bounded backoff; only permanent
+  rejection removes it from the effective projection.
 - Field contains no Membership-management UI. The trusted Provisioner CLI adds
   invite, role-change, deactivate, and reactivate commands backed by narrow
   private functions. Each constructs Membership Events and updates the
@@ -619,7 +632,10 @@ narrow private invite/role/deactivate/reactivate functions and receives audit
 receipts, never table DML. The follow-up versioned migration rebuilds that
 private admission index idempotently from all applicable immutable historical
 creation/receipt Events; it changes derived state only and never rewrites the
-Event Log.
+Event Log. After merge approval, a trusted schema deployer follows the
+[collaboration pilot runbook](collaboration-pilot-runbook.md#2-apply-and-verify-the-schema)
+for linked-project application and verification; Field and local tests never
+apply this migration to the hosted Workspace.
 
 ### OpenAPI / GraphQL (Future)
 
@@ -661,7 +677,8 @@ their transfer design is explicitly added.
 **Backup and restore:**
 
 - Export contains a Workspace Event Log. A projection snapshot may accompany
-  it as a non-authoritative startup cache.
+  it as a non-authoritative startup cache. Export preserves each compatible
+  Event's raw immutable JSON; replay/upcasting is not an export transform.
 - V1 restore is recovery-only: replace/rebuild the local replica, protect any
   unsynced local events, authenticate, then catch up through normal sync.
 - Event-ID deduplication makes restoring an older bundle before sync safe.

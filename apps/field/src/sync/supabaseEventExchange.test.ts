@@ -1,5 +1,7 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createEvent } from '@birdnerd/events'
+import { openDB } from 'idb'
+import { resetWorkspaceEventStore, WorkspaceEventStore } from '../access/workspaceEventStore'
 import { createSupabaseEventExchange } from './supabaseEventExchange'
 
 const event = createEvent({
@@ -8,6 +10,15 @@ const event = createEvent({
   command_id: '018f8c7b-0000-7000-8000-000000000002',
   actor: { kind: 'user-account', user_account_id: '018f8c7b-0000-7000-8000-000000000003' },
   payload: { session_id: '018f8c7b-0000-7000-8000-000000000004', fields: {} },
+})
+
+beforeEach(async () => {
+  resetWorkspaceEventStore()
+  await new Promise<void>((resolve, reject) => {
+    const request = indexedDB.deleteDatabase('birdnerd-event-core')
+    request.onsuccess = () => resolve()
+    request.onerror = () => reject(request.error)
+  })
 })
 
 describe('Supabase Event exchange adapter', () => {
@@ -54,5 +65,46 @@ describe('Supabase Event exchange adapter', () => {
       error: null,
     }) })
     await expect(crossWorkspace.pull(event.workspace_id, 0, 100)).rejects.toThrow('Workspace scope')
+  })
+
+  it('persists raw Phase 30 Event JSON received through a normal server pull while replaying it canonically', async () => {
+    const historicSessionId = '018f8c7b-0000-7000-8000-000000000042'
+    const historicRecordId = '018f8c7b-0000-7000-8000-000000000044'
+    const historicSession = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000041', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: event.workspace_id, command_id: event.command_id, actor: event.actor,
+      payload: { session_id: historicSessionId, session_date: '2026-08-13' },
+    })
+    const historicRecord = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000043', event_type: 'banding-record.created', event_schema_version: 1,
+      workspace_id: event.workspace_id, command_id: event.command_id, actor: event.actor,
+      payload: { record_id: historicRecordId, session_id: historicSessionId, species_code: 'AMRO' },
+    })
+    const exchange = createSupabaseEventExchange({
+      rpc: async name => {
+        expect(name).toBe('birdnerd_pull_events')
+        return {
+          data: [
+            { server_sequence: 1, event_json: historicSession },
+            { server_sequence: 2, event_json: historicRecord },
+          ],
+          error: null,
+        }
+      },
+    })
+
+    const pulled = await exchange.pull(event.workspace_id, 0, 100)
+    expect(pulled[1]?.event).toEqual(historicRecord)
+
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(event.workspace_id)
+    await store.commit({ receipts: [], pulled, cursor: 2 })
+
+    const database = await openDB('birdnerd-event-core', 2)
+    expect(await database.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
+    database.close()
+    expect((await store.diagnostics(event.workspace_id)).projection.banding_records
+      .find(record => record.record_id === historicRecordId))
+      .toMatchObject({ species_code: 'AMRO' })
   })
 })

@@ -10,7 +10,7 @@ import {
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
 } from '@birdnerd/banding'
-import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock } from '@birdnerd/events'
+import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock, type PersistedEvent } from '@birdnerd/events'
 import {
   EventLog,
   type AppendResult,
@@ -33,6 +33,8 @@ type QueueEntry = {
   attempt_count: number
   retry_at: number
   last_error?: string
+  /** True only for a retryable admission dependency, never a transport failure. */
+  deferred?: boolean
 }
 
 type SyncMetadata = {
@@ -42,6 +44,7 @@ type SyncMetadata = {
   last_failure?: string
   retry_at?: number
   failure_count?: number
+  deferred_count?: number
 }
 
 type StoredReceipt = { event_id: string; receipt: ExchangeReceipt; recorded_at: number }
@@ -60,7 +63,7 @@ type StoredProjection = {
 }
 
 interface WorkspaceEventDatabase extends DBSchema {
-  event_log: { key: string; value: DomainEvent; indexes: { 'by-workspace': string } }
+  event_log: { key: string; value: PersistedEvent; indexes: { 'by-workspace': string } }
   projection_cache: { key: string; value: StoredProjection }
   outbound_queue: { key: string; value: QueueEntry; indexes: { 'by-workspace': string; 'by-status': string } }
   sync_metadata: { key: string; value: SyncMetadata }
@@ -149,9 +152,10 @@ export class WorkspaceEventStore implements DurableReplica {
     return {
       workspace_id: this.activeWorkspaceId,
       cursor: metadata.cursor,
-      pending_events: events.filter((event): event is DomainEvent => event !== undefined),
+      pending_events: events.filter((event): event is PersistedEvent => event !== undefined).map(upcastEvent),
       has_more_pending: pending.length > queue.length,
       failure_count: metadata.failure_count ?? 0,
+      deferred_count: metadata.deferred_count ?? 0,
       retry_at: metadata.retry_at,
       last_failure: metadata.last_failure,
     }
@@ -170,6 +174,7 @@ export class WorkspaceEventStore implements DurableReplica {
           // A deferred receipt is an admission-order dependency, not a
           // failure of the immutable fact. Keep it effective and pending.
           queue.status = receipt.kind === 'rejected' ? 'rejected' : receipt.kind === 'deferred' ? 'pending' : 'accepted'
+          queue.deferred = receipt.kind === 'deferred'
           queue.last_error = receipt.kind === 'rejected' || receipt.kind === 'deferred' ? receipt.reason : undefined
           queue.attempt_count += 1
           if (receipt.kind === 'deferred' && result.deferred_retry_at !== undefined) queue.retry_at = result.deferred_retry_at
@@ -188,7 +193,10 @@ export class WorkspaceEventStore implements DurableReplica {
       if (!workspaceId) throw new Error('Cannot commit sync without an active Workspace.')
       const metadata = await db.get('sync_metadata', workspaceId) ?? { workspace_id: workspaceId, cursor: 0 }
       let highWater = metadata.high_water
-      for (const item of result.pulled) highWater = highWater ? observeHlc(highWater, item.event.hlc, Date.now()) : item.event.hlc
+      for (const item of result.pulled) {
+        const canonical = upcastEvent(item.event)
+        highWater = highWater ? observeHlc(highWater, canonical.hlc, Date.now()) : canonical.hlc
+      }
 
       const tx = db.transaction(['event_log', 'projection_cache', 'outbound_queue', 'sync_metadata', 'receipts'], 'readwrite')
       for (const item of result.pulled) await tx.objectStore('event_log').put(item.event)
@@ -197,14 +205,17 @@ export class WorkspaceEventStore implements DurableReplica {
         if (queue) await tx.objectStore('outbound_queue').put(queue)
         await tx.objectStore('receipts').put({ event_id: receipt.event_id, receipt, recorded_at: Date.now() })
       }
-      const hasDeferred = result.receipts.some(receipt => receipt.kind === 'deferred')
+      const deferredQueue = [...queueById.values()]
+        .filter(item => item.status === 'pending' && item.deferred)
+      const deferredRetryAt = deferredQueue.reduce<number | undefined>((earliest, item) => earliest === undefined ? item.retry_at : Math.min(earliest, item.retry_at), undefined)
       await tx.objectStore('sync_metadata').put({
         ...metadata,
         cursor: result.cursor,
         high_water: highWater,
-        last_failure: hasDeferred ? result.receipts.find(receipt => receipt.kind === 'deferred')?.reason : undefined,
-        retry_at: hasDeferred ? result.deferred_retry_at : undefined,
-        failure_count: hasDeferred ? (metadata.failure_count ?? 0) + 1 : 0,
+        last_failure: deferredQueue[0]?.last_error,
+        retry_at: deferredRetryAt,
+        failure_count: deferredQueue.length > 0 ? (metadata.failure_count ?? 0) + (result.receipts.some(receipt => receipt.kind === 'deferred') ? 1 : 0) : 0,
+        deferred_count: deferredQueue.length,
       })
       await tx.objectStore('projection_cache').put(projectionCache(effectiveEvents))
       await tx.done
@@ -217,7 +228,7 @@ export class WorkspaceEventStore implements DurableReplica {
     const db = await getDatabase()
     const metadata = await db.get('sync_metadata', this.activeWorkspaceId) ?? { workspace_id: this.activeWorkspaceId, cursor: 0 }
     const tx = db.transaction(['sync_metadata', 'outbound_queue'], 'readwrite')
-    await tx.objectStore('sync_metadata').put({ ...metadata, last_failure: message, retry_at: retryAt, failure_count: (metadata.failure_count ?? 0) + 1 })
+    await tx.objectStore('sync_metadata').put({ ...metadata, last_failure: message, retry_at: retryAt, failure_count: (metadata.failure_count ?? 0) + 1, deferred_count: 0 })
     const queue = await tx.objectStore('outbound_queue').index('by-workspace').getAll(this.activeWorkspaceId)
     for (const entry of queue.filter(item => item.status === 'pending')) {
       await tx.objectStore('outbound_queue').put({ ...entry, attempt_count: entry.attempt_count + 1, retry_at: retryAt, last_error: message })
@@ -225,7 +236,7 @@ export class WorkspaceEventStore implements DurableReplica {
     await tx.done
   }
 
-  async exportWorkspaceEvents(workspaceId: string): Promise<readonly DomainEvent[]> {
+  async exportWorkspaceEvents(workspaceId: string): Promise<readonly PersistedEvent[]> {
     const db = await getDatabase()
     const events = await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)
     const queue = await db.getAllFromIndex('outbound_queue', 'by-workspace', workspaceId)
@@ -233,7 +244,7 @@ export class WorkspaceEventStore implements DurableReplica {
     return sortEvents(events.filter(event => !rejected.has(event.event_id)))
   }
 
-  async restoreWorkspace(workspaceId: string, bundleEvents: readonly DomainEvent[]): Promise<{ protected_pending: number }> {
+  async restoreWorkspace(workspaceId: string, bundleEvents: readonly PersistedEvent[]): Promise<{ protected_pending: number }> {
     return this.exclusive(async () => {
       const db = await getDatabase()
       const currentEvents = await db.getAllFromIndex('event_log', 'by-workspace', workspaceId)
@@ -361,25 +372,28 @@ type SyncMetadataStore = {
   put(value: SyncMetadata): Promise<unknown>
 }
 
-async function updateHighWater(store: SyncMetadataStore, events: readonly DomainEvent[]): Promise<void> {
-  const byWorkspace = new Map<string, DomainEvent[]>()
+async function updateHighWater(store: SyncMetadataStore, events: readonly PersistedEvent[]): Promise<void> {
+  const byWorkspace = new Map<string, PersistedEvent[]>()
   events.forEach(event => byWorkspace.set(event.workspace_id, [...(byWorkspace.get(event.workspace_id) ?? []), event]))
   for (const [workspaceId, workspaceEvents] of byWorkspace) {
     const metadata = await store.get(workspaceId)
     let highWater = metadata?.high_water
-    for (const event of workspaceEvents) highWater = highWater ? observeHlc(highWater, event.hlc, Date.now()) : event.hlc
+    for (const event of workspaceEvents) {
+      const canonical = upcastEvent(event)
+      highWater = highWater ? observeHlc(highWater, canonical.hlc, Date.now()) : canonical.hlc
+    }
     await store.put({ ...(metadata ?? { workspace_id: workspaceId, cursor: 0 }), high_water: highWater })
   }
 }
 
-function maxClock(events: readonly DomainEvent[]): HybridLogicalClock | undefined {
-  return events.reduce<HybridLogicalClock | undefined>((winner, event) => {
+function maxClock(events: readonly PersistedEvent[]): HybridLogicalClock | undefined {
+  return events.map(upcastEvent).reduce<HybridLogicalClock | undefined>((winner, event) => {
     if (!winner || event.hlc.physical_ms > winner.physical_ms || (event.hlc.physical_ms === winner.physical_ms && event.hlc.logical > winner.logical)) return event.hlc
     return winner
   }, undefined)
 }
 
-function sortEvents(events: readonly DomainEvent[]): DomainEvent[] {
+function sortEvents<T extends Pick<PersistedEvent, 'event_id'>>(events: readonly T[]): T[] {
   return [...events].sort((left, right) => left.event_id.localeCompare(right.event_id))
 }
 
@@ -388,10 +402,10 @@ function sortEvents(events: readonly DomainEvent[]): DomainEvent[] {
  * of that log crosses this seam, which interprets supported history as the
  * canonical current Event shape before replay or projection.
  */
-function canonicalEventLog(events: readonly DomainEvent[]): DomainEvent[] {
+function canonicalEventLog(events: readonly PersistedEvent[]): DomainEvent[] {
   return sortEvents(events.map(upcastEvent))
 }
 
-function sameCanonicalEventContent(left: DomainEvent, right: DomainEvent): boolean {
+function sameCanonicalEventContent(left: PersistedEvent, right: PersistedEvent): boolean {
   return sameEventContent(upcastEvent(left), upcastEvent(right))
 }
