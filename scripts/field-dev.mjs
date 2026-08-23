@@ -108,9 +108,8 @@ export function developmentTarget(arguments_) {
 /**
  * Maps a Field development target to a Vite mode.
  *
- * `local` is a valid Field target but an invalid Vite mode: Vite reserves it
- * for its `.env.local` convention. Keep the caller-facing target compact while
- * giving Vite a distinct, valid mode name.
+ * Vite reserves the mode name 'local' for its `.env.local` file convention,
+ * so the 'local' target is mapped to 'field-local' mode instead.
  */
 export function viteModeForTarget(target) {
   return target === 'pilot' ? 'pilot' : 'field-local'
