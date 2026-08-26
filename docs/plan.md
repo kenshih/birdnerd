@@ -69,6 +69,18 @@ cache behavior. This is intentionally separate from Phase 32 local-auth work.
 
 ---
 
+### Backlog: Save and sync-state UX (Field)
+
+Replace Field's **Save offline** labels with simply **Save**: saving remains
+local-first while synchronization proceeds in the background. Introduce one
+small shared Field presentation component for the existing visible Sync State.
+It stays unobtrusive during normal and short-lived synchronization, then
+becomes more prominent only after an explicitly designed, evidence-backed
+threshold or when action is needed. A future delivery contract must define
+that threshold, the accessible states and wording, any user action, and the
+browser evidence; do not add a second sync model or change Event/sync
+contracts merely to change this presentation.
+
 ### Backlog: Legacy mutable Field retirement
 
 After Phase 33 supplies the event-backed Data Manager's browse, import, and

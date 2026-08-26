@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.6 — **Record-entry validation feedback and UX-regression
+  evidence.** The event-backed Banding Record editor once again shows each
+  applicable non-blocking validation warning beside its input while keeping
+  **Save offline** available. A concise critical-workflow contract, reusable
+  production feedback component and local Storybook example, direct rule
+  tests, and a Playwright workflow check keep that visible behavior covered.
 - Field 0.32.5 — **Remove obsolete Sync DB experiment.** The retired
   `apps/sync-db` workspace, its development/build/preview commands, and its
   service-worker, deployment, and pilot-runbook references are gone. The
