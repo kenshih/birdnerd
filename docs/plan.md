@@ -13,7 +13,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 | Archive | Phase span | Record |
 |---------|------------|--------|
 | v1 | 1–20 | [Completed phase summaries](archives/plan.v1.md) |
-| v2 | 21–40 (through 32.4) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
+| v2 | 21–40 (through 32.5) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
 
 ---
 
@@ -21,13 +21,12 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ### Phase 32 — Local Field development environment (Field version TBD) — **Current**
 
-Complete the remaining cleanup and regression-safety slices after Field
-0.32.0–0.32.4 delivered local-first development, a disposable operational
+Complete the remaining regression-safety slice after Field 0.32.0–0.32.5
+delivered local-first development, a disposable operational
 fixture, fixture-member local Auth, visible identity/sign-out, and separate
-local Google OAuth. Those delivered outcomes are recorded in
-[plan.v2](archives/plan.v2.md). Phase 32 now removes the obsolete
-`apps/sync-db` experiment and its commands, build paths, and documentation
-references. It also establishes a repeatable UX-regression gate: document the
+local Google OAuth, and removed the obsolete `apps/sync-db` experiment. Those
+delivered outcomes are recorded in [plan.v2](archives/plan.v2.md). Phase 32
+now establishes a repeatable UX-regression gate: document the
 critical user-visible workflows, map them to representative component and
 browser assertions, and make failures visible before a route or form
 replacement can silently drop behavior. [Delivery contract:
