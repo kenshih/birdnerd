@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { developmentTarget, fieldViteEnvironment, hostedPilotSettings, localFieldSettings, parseEnvVariables, viteModeForTarget } from './field-dev.mjs'
+import { localSupabaseEnvironment } from './local-supabase.mjs'
 
 test('parses quoted Supabase status values without evaluating shell content', () => {
   assert.deepEqual(parseEnvVariables('API_URL="http://127.0.0.1:54321"\nPUBLISHABLE_KEY=sb_publishable_local\n'), {
@@ -43,6 +44,7 @@ test('requires a non-loopback HTTPS target for the explicit hosted pilot command
 
 test('requires the package-script target and rejects an appended target override', () => {
   assert.equal(developmentTarget(['--target=local']), 'local')
+  assert.equal(developmentTarget(['--target=local-google']), 'local-google')
   assert.equal(developmentTarget(['--target=pilot']), 'pilot')
   assert.throws(
     () => developmentTarget(['--target=local', '--target=pilot']),
@@ -52,6 +54,7 @@ test('requires the package-script target and rejects an appended target override
 
 test('uses a Vite mode that does not conflict with the .env.local convention', () => {
   assert.equal(viteModeForTarget('local'), 'field-local')
+  assert.equal(viteModeForTarget('local-google'), 'field-local')
   assert.notEqual(viteModeForTarget('local'), 'local')
   assert.equal(viteModeForTarget('pilot'), 'pilot')
 })
@@ -109,4 +112,59 @@ test('hosted pilot settings clear ambient local fixture selection', () => {
     VITE_FIELD_DEVELOPMENT_TARGET: 'pilot',
     VITE_LOCAL_FIXTURE_AUTH_PROFILES: '',
   })
+})
+
+test('local Google settings clear ambient fixture selection while retaining loopback browser settings', () => {
+  const environment = fieldViteEnvironment({
+    VITE_FIELD_DEVELOPMENT_TARGET: 'local',
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: 'ambient-fixture-profiles',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: 'ambient-client-id',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: 'ambient-client-secret',
+  }, {
+    url: 'http://127.0.0.1:54321',
+    publishableKey: 'sb_publishable_local',
+  }, 'local-google')
+
+  assert.deepEqual(environment, {
+    VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
+    VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_local',
+    VITE_E2E_ACCESS: 'false',
+    VITE_FIELD_DEVELOPMENT_TARGET: 'local-google',
+    VITE_LOCAL_FIXTURE_AUTH_PROFILES: '',
+  })
+})
+
+test('passes only root .env local Google credentials to the Supabase CLI with local values taking precedence', () => {
+  const environment = localSupabaseEnvironment({
+    OTHER_SETTING: 'unchanged',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: 'ambient-client-id',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: 'ambient-client-secret',
+  }, [
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=local-client-id',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=local-client-secret',
+    'UNRELATED_SECRET=not-passed',
+  ].join('\n'), { requireGoogleOAuth: true })
+
+  assert.deepEqual(environment, {
+    OTHER_SETTING: 'unchanged',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: 'local-client-id',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: 'local-client-secret',
+  })
+})
+
+test('strips ambient Google credentials and requires both local values for the local Google command', () => {
+  const ambient = {
+    OTHER_SETTING: 'unchanged',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: 'ambient-client-id',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: 'ambient-client-secret',
+  }
+  assert.deepEqual(localSupabaseEnvironment(ambient, ''), { OTHER_SETTING: 'unchanged' })
+  assert.deepEqual(localSupabaseEnvironment(ambient, [
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=local-client-id',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=local-client-secret',
+  ].join('\n')), { OTHER_SETTING: 'unchanged' })
+  assert.throws(
+    () => localSupabaseEnvironment(ambient, 'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=local-client-id', { requireGoogleOAuth: true }),
+    /SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET/u,
+  )
 })

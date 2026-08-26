@@ -6,18 +6,19 @@
  * authenticated Event admission) so callers cannot select a database or pass
  * credentials through the command line.
  */
-import { randomBytes } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import YAML from 'yaml'
+import { authorizeLocalFixtureEmailBootstrap, clearLocalFixtureEmailBootstrap, installLocalEmailSignupGuard } from './local-auth-hook.mjs'
+import { markLoadedLocalFixture } from './local-fixture-marker.mjs'
 import { commandSucceeded, localSupabaseSettings, runLocalSupabase } from './local-supabase.mjs'
+import { withLocalFixtureProvisioner } from './local-fixture-provisioner.mjs'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const fixtureFiles = new Map([
   ['operational-workspace', resolve(rootDirectory, 'data/fixtures/operational-workspace.yaml')],
 ])
-const fixtureProvisionerRole = 'birdnerd_fixture_provisioner'
 
 /** Parses the one intentional fixture selection; file paths and arbitrary SQL are never accepted. */
 export function selectedFixtureName(arguments_) {
@@ -54,7 +55,7 @@ export function parseOperationalFixture(source, expectedName = 'operational-work
   assertExactKeys(value.operational, ['station', 'net', 'person', 'bander', 'band', 'session', 'banding_record'], 'Fixture operational data')
   const operational = parseOperational(value.operational)
 
-  return { fixture: value.fixture, workspace: { name: value.workspace.name }, members, operational }
+  return { fixture: value.fixture, version: value.version, workspace: { name: value.workspace.name }, members, operational }
 }
 
 /**
@@ -112,13 +113,20 @@ export async function loadFixture(name, dependencies = {}) {
   const database = new runtime.Client({ connectionString: settings.databaseUrl })
   await database.connect()
   try {
-    await createSyntheticAuthUsers(runtime.createClient, settings, database, fixture.members)
+    await installLocalEmailSignupGuard(database)
+    await authorizeLocalFixtureEmailBootstrap(database, fixture.members)
+    try {
+      await createSyntheticAuthUsers(runtime.createClient, settings, database, fixture.members)
+    } finally {
+      await clearLocalFixtureEmailBootstrap(database, fixture.members)
+    }
     const bootstrap = await bootstrapThroughRestrictedProvisioner(runtime, settings.databaseUrl, database, fixture)
 
     const admin = await claimFixtureMember(runtime.createClient, settings, fixture.members.find(member => member.key === 'admin'))
     const contributor = await claimFixtureMember(runtime.createClient, settings, fixture.members.find(member => member.key === 'contributor'))
     const operations = await appendOperationalFixture(runtime, fixture, bootstrap.workspace_id, admin, contributor)
     const replay = await verifyReplay(runtime, bootstrap.workspace_id, admin, contributor, fixture, operations)
+    await markLoadedLocalFixture(database, fixture, bootstrap.workspace_id)
 
     return {
       fixture: fixture.fixture,
@@ -212,29 +220,16 @@ async function createSyntheticAuthUsers(createClient, settings, database, member
 }
 
 async function bootstrapThroughRestrictedProvisioner(runtime, databaseUrl, database, fixture) {
-  const password = randomBytes(32).toString('hex')
-  try {
-    await database.query(`create role ${fixtureProvisionerRole} login nosuperuser nocreatedb nocreaterole noreplication inherit password '${password}'`)
-  } catch (error) {
-    if (error?.code !== '42710') throw error
-    await database.query(`alter role ${fixtureProvisionerRole} password '${password}'`)
-  }
-  await database.query(`grant birdnerd_provisioner to ${fixtureProvisionerRole}`)
-
-  const connection = new URL(databaseUrl)
-  connection.username = fixtureProvisionerRole
-  connection.password = password
-  const provisioner = new runtime.Client({ connectionString: connection.toString() })
-  await provisioner.connect()
-  try {
-    return await runtime.bootstrapWorkspace(provisioner, {
+  return withLocalFixtureProvisioner({
+    Client: runtime.Client,
+    databaseUrl,
+    database,
+    operation: provisioner => runtime.bootstrapWorkspace(provisioner, {
       workspace_name: fixture.workspace.name,
       provisioner_id: 'local-fixture-loader',
       members: fixture.members.map(member => ({ email: member.email, role: member.role })),
-    })
-  } finally {
-    await provisioner.end()
-  }
+    }),
+  })
 }
 
 async function claimFixtureMember(createClient, settings, member) {

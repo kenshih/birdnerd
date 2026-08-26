@@ -68,6 +68,12 @@ arbitrary credential entry, and is unavailable outside verified local
 development. See
 [ADR 0016](../../adr/0016-event-sourced-collaboration-architecture.md).
 
+The separate `npm run dev:local-google` developer command exercises the same
+Google Auth path against only the CLI-local Supabase stack and a distinct local
+Google client. It neither exposes that client secret to Field nor provisions a
+local Account or Membership; successful authentication still reaches the
+normal access boundary.
+
 After access becomes active, Field keeps the authenticated person's display
 name and email visible when available and offers a user-initiated sign-out
 action. The action ends only the current Field browser session, so a

@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.4 — **Local Google OAuth.** `npm run dev:local-google` reloads
+  only the verified Supabase CLI-local stack, then exercises Field's existing
+  Google sign-in Adapter with a separate local test client. Its uncommitted
+  root `.env` credentials reach only the trusted Supabase CLI process; Field
+  receives no secret. A first-time local Google sign-in may create its local
+  Auth identity but receives no Account, Membership, or hosted-project access;
+  direct email, SMS, and anonymous registration remain disabled. The new
+  `fixtures:invite` command safely pre-authorizes one exact real Google email
+  against an already loaded local fixture through the existing restricted
+  Provisioner, without resetting fixture data or accepting database input.
 - Field 0.32.3 — **Visible identity and local sign-out.** Active Field screens
   now identify the signed-in person and provide a provider-neutral **Sign
   out** action for both fixture-member local Auth and hosted Google Auth. The

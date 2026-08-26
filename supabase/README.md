@@ -20,6 +20,9 @@ The only supported fixture command is:
 
 ```bash
 npm run fixtures:load -- operational-workspace
+
+# note, at tail end of messaging the workspace ID is emitted...
+Loaded operational-workspace: Workspace 01a03bd1-4758-7d36-84fe-7d72cdf90400, 14 Events, 7 authenticated append receipts, replay verified.
 ```
 
 It accepts no database URL, SQL, user credential, or fixture path. The Loader
@@ -29,8 +32,12 @@ API and override-free PostgreSQL endpoints. It restarts a verified running stack
 local Auth configuration, uses `supabase db reset --local --no-seed`, then
 rechecks the same target before creating synthetic local Auth users. The secret
 key remains inside the Node Loader, never in Field or Vite.
-Public self-service Auth registration stays disabled; only the Loader's trusted
-local Admin API bootstrap creates the two synthetic fixture users.
+Public self-service email, SMS, and anonymous registration stay disabled. Local
+Auth keeps its email provider enabled so the two Admin-created fixture users can
+sign in; trusted local tooling installs its Before User Created hook after a
+verified local connection so public email registration stays rejected. A
+first-time local Google OAuth sign-in may create only a local Auth identity,
+never a BirdNerd Account, Membership, or Workspace grant.
 
 The versioned declaration in `data/fixtures/operational-workspace.yaml` creates
 one Workspace with an Admin and Contributor. The restricted Provisioner writes
@@ -39,6 +46,15 @@ access and append the Admin configuration and Contributor Session/Record
 facts through the ordinary RPCs. Both users then pull and replay the same
 declared history. This is a development fixture, not generic SQL seeding or a
 hosted reset/load mechanism.
+
+`npm run fixtures:invite -- --workspace-id <fixture-workspace-uuid> --email person@example.com --role admin`
+pre-authorizes one real Google email for that exact loaded fixture. The receipt
+from `fixtures:load` supplies the Workspace ID. The command verifies that the
+CLI's API and database URLs are loopback-only and that the target has the
+fixture's declared Workspace event before it creates or rotates the disposable
+restricted local Provisioner login. That password stays in memory; the command
+passes it only to the existing execute-only Provisioner adapter and accepts no
+database URL, SQL, or credential from its caller.
 
 Local verification:
 

@@ -22,9 +22,15 @@ resolved for Workspace access. A developer uses separate browser profiles to
 exercise the two Members concurrently. Hosted pilot and production continue to
 present only **Continue with Google**.
 
+`npm run dev:local-google` instead presents the same **Continue with Google**
+action against the verified loopback Supabase stack. It is an explicit
+developer check of the external redirect and session path, not a local
+provisioning flow: an otherwise unknown Google account reaches the existing
+no-access screen after sign-in.
+
 | Authentication state | What Field shows | Available actions |
 | --- | --- | --- |
-| Not signed in | Configured sign-in screen | Continue with Google, or local fixture Admin/Contributor actions on the verified local target |
+| Not signed in | Configured sign-in screen | Continue with Google, or fixture Admin/Contributor actions on `npm run dev` |
 | Resolving access | “Checking access…” screen | Wait; no workspace content is visible |
 | No BirdNerd account or eligible Membership | “You don’t have access to BirdNerd yet” screen, including the signed-in email | Sign out |
 | Pending Membership with matching pre-authorized email | Activation/linking progress, then the Workspace | Wait; activation is automatic and idempotent |

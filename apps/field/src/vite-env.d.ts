@@ -2,7 +2,7 @@
 /// <reference types="vite-plugin-pwa/client" />
 
 interface ImportMetaEnv {
-  /** Supplied only by Field's local/pilot development launcher. */
+  /** Supplied only by Field's local-fixture, local-Google, or pilot launcher. */
   readonly VITE_FIELD_DEVELOPMENT_TARGET?: string
   /** Launcher-derived, disposable local fixture profiles; never a hosted credential. */
   readonly VITE_LOCAL_FIXTURE_AUTH_PROFILES?: string

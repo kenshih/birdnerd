@@ -35,7 +35,10 @@ fixture and hosted Google Auth. Phase 32 also removes the obsolete
 references. It establishes a repeatable UX-regression gate: document the
 critical user-visible workflows, map them to representative component and
 browser assertions, and make failures visible before a route or form
-replacement can silently drop behavior. [Delivery contract:
+replacement can silently drop behavior. Its local Google OAuth slice uses a
+distinct local client and uncommitted secret only with the CLI-local stack;
+an invited exact email may then exercise fixture data through the normal
+Google sign-in and access-claim path. [Delivery contract:
 #17](https://github.com/kenshih/birdnerd/issues/17)
 
 ### Phase 33 — Event-backed Data Manager (Field version TBD)

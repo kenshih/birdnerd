@@ -749,11 +749,12 @@ path.
 - Database migrations via Supabase CLI or custom scripts
 - Optional: CI/CD pipeline (GitHub Actions) for testing and deployment
 
-### Local Field development and fixture Module (Field 0.32.0–0.32.2)
+### Local Field development and fixture Module (Field 0.32.0–0.32.4)
 
 The repository-level local-environment Module is implemented by
 `scripts/field-dev.mjs`. Its small Interface is `npm run dev` (or
-`npm run dev:host`) for local Field development and the separately named
+`npm run dev:host`) for local fixture development, `npm run dev:local-google`
+for the explicit local Google OAuth check, and the separately named
 `npm run dev:pilot` (or `npm run dev:pilot:host`) for an intentional hosted
 pilot session. Package scripts supply exactly one fixed target marker, so an
 appended argument cannot turn `npm run dev` into a hosted session. It keeps
@@ -768,13 +769,28 @@ an HTTP loopback URL, and supplies that URL plus the current publishable key
 Vite files. A non-loopback, missing, or malformed status value is a safe error;
 the default command never links, resets, or writes to a hosted project.
 
+Every local Field Interface starts only the CLI-local stack. When that stack is
+already running, it first verifies the loopback API URL and then stops and
+starts the same local containers so Supabase applies the selected local Auth
+configuration; `supabase stop` preserves local data volumes. Thus ordinary
+fixture development removes a prior local-Google configuration.
+`scripts/local-supabase.mjs` reads only the two local Google client variables
+from the uncommitted root `.env` file for the local-Google target and passes
+them only to that trusted Supabase CLI child process. Other local commands do
+not read or pass them. The Vite environment remains limited to the loopback URL
+and publishable key. The local-Google target selects the existing Google Auth
+Adapter only after Field rechecks the loopback URL; it does not create a new
+provider, browser secret, Account, or Membership.
+
 Hosted pilot selection is deliberately not an argument to `npm run dev`.
 `npm run dev:pilot` reads only the uncommitted
 `apps/field/.env.pilot.local` file, requires a non-loopback HTTPS URL, and
 never starts or manages a CLI stack. The release/build path still receives its
 publishable values from GitHub Actions, as documented in the deployment notes.
-`npm run fixtures:load -- operational-workspace` is the only Interface for
-the first versioned, disposable local fixture. Its Fixture Loader Module in
+`npm run fixtures:load -- operational-workspace` is the Interface that replaces
+the first versioned, disposable local fixture. `npm run fixtures:invite` is the
+separate, non-resetting Interface for pre-authorizing one real Google email
+against that loaded fixture. Its Fixture Loader Module in
 `scripts/fixture-loader.mjs` accepts only that fixed name, validates
 `data/fixtures/operational-workspace.yaml`, and owns all of the privileged
 workflow: CLI configuration reload, loopback-only reset without an ambient SQL
@@ -783,15 +799,33 @@ authenticated claim/append receipts, and server-ordered replay verification.
 Callers cannot supply a database URL, user credential, SQL fragment, or fixture
 path.
 
+`scripts/fixture-invite.mjs` requires the Loader receipt's UUIDv7 Workspace ID,
+exact email, and `admin` or `contributor` role. It verifies the CLI-local API
+and database URLs, then checks a private marker written only after the Loader
+has replay-verified the exact fixture name, version, and Workspace. It then
+delegates only to the existing Provisioner's private `invite` operation.
+`scripts/local-fixture-provisioner.mjs` owns creation or rotation of its one
+`NOSUPERUSER`, `NOCREATEDB`, `NOCREATEROLE`, `NOBYPASSRLS`, execute-only local
+login and rejects an existing login with any other inherited role; its random
+password remains in memory. No browser, command-line caller, hosted project,
+or generic database interface receives that credential.
+
 Before it resets or writes data, the Module requires the project-local CLI's
 `status --output env` API and PostgreSQL URLs to be loopback, and rejects a
 PostgreSQL URI query or fragment that could override that verified endpoint.
 It refuses a malformed or non-local result. It uses `db reset
 --local --no-seed`, then rechecks the same endpoint before it touches Auth or
 the Event Log. A committed local-only Auth configuration permits the synthetic
-email/password sessions used by the Loader; restarting the CLI-local stack
-applies that configuration, while self-service signup remains disabled. The
-secret/legacy service key is read only inside
+email/password sessions used by the Loader and first-time local Google OAuth
+to create or link a local Auth user. Trusted local tooling installs a private
+Before User Created hook only after it verifies the local database URL. Before
+each synthetic Admin bootstrap it writes that exact fixture email as a one-time
+private authorization; the hook consumes it, then rejects every other public
+email registration. Unused authorizations are removed. No hosted migration or
+Auth configuration changes. Restarting the CLI-local stack applies that
+configuration. SMS and anonymous signup remain disabled; Google Auth alone
+grants neither a BirdNerd Account nor Workspace access. The secret/legacy
+service key is read only inside
 the trusted Node process to create local synthetic users and is never passed
 to Vite, Field, or a browser.
 
@@ -816,13 +850,15 @@ arbitrary account selector. The signed-out Field screen then offers **Continue
 as Fixture Admin** and **Continue as Fixture Contributor**, which create real
 local email/password sessions. The fixture's synthetic Google identity remains
 the identity used by the existing claim and Workspace-access path. The hosted
-pilot target explicitly clears local-profile values and stays Google-only.
+pilot and local-Google targets explicitly clear local-profile values and use
+the existing Google Adapter.
 Separate browser profiles can therefore exercise the Admin and Contributor
 concurrently against real local RLS, Event admission, exchange, and sync.
 
-This slice does not add local Google OAuth, load/reset a hosted project,
-define generic SQL seeds, permit self-service signup, or add a hosted profile
-selector.
+The local-Google slice does not load/reset a hosted project, define generic
+SQL seeds, permit self-service email, SMS, or anonymous signup, add a hosted
+profile selector, or grant Workspace access to a newly authenticated Google
+user.
 
 ### Error Handling
 
@@ -857,6 +893,22 @@ changes hosted Supabase Auth nor adds a generic Field email/password screen.
 The local launcher exposes only the two known disposable fixture passwords;
 the local secret key remains confined to the trusted Loader process and Field
 never receives a database URL.
+
+### Local Google OAuth exception
+
+The committed Supabase CLI configuration enables Google only for Docker-local
+Auth and reads its separate test client ID and secret from the uncommitted
+root `.env` file. Both values are required for `npm run dev:local-google`; only
+its trusted local CLI child receives those root-file values and strips ambient
+Google credentials. Field and Vite receive neither. Every other local command
+strips ambient values and does not read the root-file values; normal `npm run
+dev` reloads local Auth without them. `npm run dev:local-google` verifies and
+reloads only the local stack before using the existing Google Auth Adapter.
+Hosted Google provider settings, production builds, Workspace authorization,
+and local fixture credentials remain unchanged. A first-time local Google OAuth
+return may create or link a local Supabase Auth user. It does not create a
+BirdNerd Account or Membership; direct email, SMS, and anonymous signup remain
+disabled.
 
 ### Compliance
 

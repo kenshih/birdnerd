@@ -1,8 +1,14 @@
 import { spawnSync } from 'node:child_process'
+import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const rootDirectory = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const localEnvPath = resolve(rootDirectory, '.env')
+const localGoogleOAuthVariables = [
+  'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID',
+  'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET',
+]
 
 /**
  * Parses the CLI-managed local Supabase stack's status output.  Both Field's
@@ -80,10 +86,34 @@ export function isLoopbackHost(hostname) {
   return hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '::1'
 }
 
+/**
+ * Supplies only local Google OAuth configuration to the trusted Supabase CLI
+ * process. The uncommitted project-root .env file never reaches Vite or Field.
+ */
+export function localSupabaseEnvironment(environment = process.env, envSource, { requireGoogleOAuth = false } = {}) {
+  const {
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: _ambientGoogleClientId,
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: _ambientGoogleClientSecret,
+    ...withoutAmbientGoogleOAuth
+  } = environment
+  if (!requireGoogleOAuth) return withoutAmbientGoogleOAuth
+
+  const localValues = parseEnvVariables(envSource ?? localEnvSource())
+  const missingGoogleOAuth = localGoogleOAuthVariables.filter(name => !localValues[name]?.trim())
+  if (missingGoogleOAuth.length > 0) {
+    throw new Error(`Local Google OAuth configuration is missing ${missingGoogleOAuth.join(' and ')} in the project-root .env file.`)
+  }
+  const localGoogleOAuth = Object.fromEntries(
+    localGoogleOAuthVariables.map(name => [name, localValues[name]]),
+  )
+  return { ...withoutAmbientGoogleOAuth, ...localGoogleOAuth }
+}
+
 /** Runs a repository-local Supabase CLI command at the one shared boundary. */
-export function runLocalSupabase(arguments_, { capture = false } = {}) {
+export function runLocalSupabase(arguments_, { capture = false, requireGoogleOAuth = false } = {}) {
   return spawnSync('npx', ['--no-install', 'supabase', ...arguments_], {
     cwd: rootDirectory,
+    env: localSupabaseEnvironment(process.env, requireGoogleOAuth ? localEnvSource() : undefined, { requireGoogleOAuth }),
     encoding: 'utf8',
     stdio: capture ? ['ignore', 'pipe', 'pipe'] : 'inherit',
   })
@@ -98,4 +128,8 @@ function unquote(value) {
     return value.slice(1, -1)
   }
   return value
+}
+
+function localEnvSource() {
+  return existsSync(localEnvPath) ? readFileSync(localEnvPath, 'utf8') : ''
 }

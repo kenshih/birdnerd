@@ -31,6 +31,20 @@ describe('Field Auth adapter selection', () => {
     })).toEqual({ kind: 'google' })
   })
 
+  it('uses the existing Google adapter only for a launcher-marked loopback local Google target', () => {
+    expect(selectFieldAuthAdapter({
+      DEV: true,
+      VITE_FIELD_DEVELOPMENT_TARGET: 'local-google',
+      VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
+      VITE_LOCAL_FIXTURE_AUTH_PROFILES: profiles,
+    })).toEqual({ kind: 'google' })
+    expect(selectFieldAuthAdapter({
+      DEV: true,
+      VITE_FIELD_DEVELOPMENT_TARGET: 'local-google',
+      VITE_SUPABASE_URL: 'https://pilot.supabase.co',
+    })).toMatchObject({ kind: 'local-unavailable' })
+  })
+
   it('refuses a launcher-marked local target when its Supabase URL is not loopback', () => {
     expect(selectFieldAuthAdapter({
       DEV: true,

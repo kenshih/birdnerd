@@ -35,6 +35,7 @@ try {
     password: 'not-a-fixture-account',
   })
   assert.ok(signupError, 'Local Auth must reject self-service signup.')
+  assert.match(signupError.message, /Email\/password registration is disabled locally/u)
   const database = new Client({ connectionString: settings.databaseUrl })
   await database.connect()
   try {
@@ -43,6 +44,7 @@ try {
         (select count(*)::integer from auth.users where email = any($1::text[])) as auth_users,
         (select count(*)::integer from auth.users) as all_auth_users,
         (select count(*)::integer from auth.identities where provider = 'google' and provider_id = any($2::text[])) as google_identities,
+        (select count(*)::integer from birdnerd_private.local_fixture_email_bootstrap) as bootstrap_authorizations,
         (select count(*)::integer from birdnerd_private.event_log) as events,
         (select count(distinct workspace_id)::integer from birdnerd_private.event_log) as workspaces,
         (select count(*)::integer from birdnerd_private.membership_index where status = 'active') as active_memberships,
@@ -53,6 +55,7 @@ try {
       auth_users: 2,
       all_auth_users: 2,
       google_identities: 2,
+      bootstrap_authorizations: 0,
       events: 14,
       workspaces: 1,
       active_memberships: 2,

@@ -11,6 +11,7 @@ Run from the repo root:
 ```bash
 npm run dev
 npm run dev:host
+npm run dev:local-google
 npm run dev:pilot
 npm run dev:pilot:host
 npm run build
@@ -27,6 +28,19 @@ separate browser profiles to test the two Members concurrently; these buttons
 create real local email/password sessions and retain the fixture's synthetic
 Google identity for the normal Workspace claim and sync path.
 
+`npm run dev:local-google` is the separate local Google OAuth check. It
+restarts only the verified CLI-local Supabase stack so the Google provider can
+read the uncommitted root `.env` test-client credentials, then starts Field
+against the same loopback endpoint. It never resets local data or manages the
+hosted pilot. Both root `.env` credentials are required; ambient credentials
+are ignored. See [Google OAuth setup](../../docs/apps/field/google-oauth-setup.md)
+for the required distinct Google client and callback URL. To give a real Google
+account access to the current disposable fixture, first run
+`npm run fixtures:invite -- --workspace-id <fixture-workspace-uuid> --email person@example.com --role admin`
+with the Workspace ID reported by `npm run fixtures:load -- operational-workspace`.
+Starting ordinary `npm run dev` reloads the verified stack without the Google
+credentials, returning it to fixture-only local Auth.
+
 Hosted pilot testing is opt-in: create the uncommitted
 `apps/field/.env.pilot.local` file containing only
 `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`, then run
@@ -39,6 +53,7 @@ Run directly in this workspace:
 
 ```bash
 npm --workspace @birdnerd/field run dev
+npm --workspace @birdnerd/field run dev:local-google
 npm --workspace @birdnerd/field run dev:pilot
 npm --workspace @birdnerd/field run build
 npm --workspace @birdnerd/field run test
