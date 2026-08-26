@@ -625,6 +625,11 @@ imports that mutable format into the Event Log.
   a disabled view with no command path; and Capture Time choices come from the
   selected Session through the pure `netCheckTimes` helper while retaining a
   projected off-cadence value.
+- The event-backed Record editor adapts its persisted snake-case field draft
+  to the established `validateRecord` semantics, then renders every applicable
+  result beside its stable input through the production `ValidationFeedback`
+  component. Rules remain pure and independent of React; the presentation
+  provides the input's accessible relationship and never disables save.
 
 See [ADR 0018](../../adr/0018-operational-event-catalog.md) for the
 catalog and admission decisions.

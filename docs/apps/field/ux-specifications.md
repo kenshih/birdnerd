@@ -12,10 +12,6 @@ keep those assets concise and coherent.
 
 ### Record entry — inline validation feedback
 
-**Status:** 0.32.6 delivery contract. Step 3 implements this behavior and
-adds the linked Storybook and browser evidence; this card does not claim that
-the current event-backed editor already renders the feedback.
-
 **User goal:** Notice a questionable partial Banding Record while continuing
 to save it for later correction.
 
@@ -45,9 +41,11 @@ subsequent sync.
 
 **Evidence:** The direct rule coverage is in
 [`validation.test.ts`](../../../apps/field/src/utils/validation.test.ts).
-Step 3 will add and link the production-component Storybook example and the
-browser proof of rendered feedback, accessible field relationship, and an
-available **Save offline** action.
+The production presentation is reviewable in
+[`ValidationFeedback.stories.tsx`](../../../apps/field/src/components/ValidationFeedback.stories.tsx),
+and the browser proof of rendered feedback, its BP relationship, and an
+available **Save offline** action is in
+[`record-validation.spec.ts`](../../../apps/field/e2e/record-validation.spec.ts).
 
 ## 0. Authentication & Access
 
