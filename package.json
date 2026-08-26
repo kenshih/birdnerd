@@ -48,7 +48,7 @@
     "preview:combined": "npm run build:combined && python3 -m http.server 4173 -d .combined-site",
     "lint": "npm --workspace @birdnerd/field run lint",
     "test:local-dev": "node --test scripts/field-dev.test.mjs",
-    "test:fixtures": "node --test scripts/fixture-loader.test.mjs scripts/local-auth-hook.test.mjs",
+    "test:fixtures": "node --test scripts/fixture-loader.test.mjs scripts/local-auth-hook.test.mjs scripts/local-fixture-marker.test.mjs",
     "test:fixtures:invite": "node --test scripts/fixture-invite.test.mjs",
     "test:fixtures:local": "npm run build:collaboration && node scripts/fixture-loader.local-test.mjs",
     "test": "npm run test:local-dev && npm run test:fixtures && npm run test:fixtures:invite && npm --workspace @birdnerd/field run test",

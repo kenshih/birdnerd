@@ -92,6 +92,9 @@ no-access screen unless a trusted local workflow has pre-authorized a matching
 Membership. Both local Google values must be in root `.env`; inherited values
 are ignored, and neither value reaches Vite or Field.
 
+Starting ordinary `npm run dev` later reloads that verified local stack without
+Google credentials, so fixture development does not retain this OAuth setup.
+
 After the invitation above, sign out of any earlier no-access session and sign
 in again through Google. Field's normal initial-access claim activates the
 pending Membership and loads the fixture Workspace; the command never creates

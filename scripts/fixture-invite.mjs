@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { parseOperationalFixture } from './fixture-loader.mjs'
+import { isMarkedLocalFixture } from './local-fixture-marker.mjs'
 import { withLocalFixtureProvisioner } from './local-fixture-provisioner.mjs'
 import { commandSucceeded, localSupabaseSettings, runLocalSupabase } from './local-supabase.mjs'
 
@@ -54,7 +55,7 @@ export async function inviteFixtureMember(options, dependencies = {}) {
   const database = new runtime.Client({ connectionString: settings.databaseUrl })
   await database.connect()
   try {
-    if (!await isDeclaredFixtureWorkspace(database, options.workspace_id, fixture.workspace.name)) {
+    if (!await isMarkedLocalFixture(database, fixture, options.workspace_id)) {
       throw new Error('Workspace ID is not the current operational fixture. Run `npm run fixtures:load -- operational-workspace` and use its receipt Workspace ID.')
     }
     return await withLocalFixtureProvisioner({
@@ -66,20 +67,6 @@ export async function inviteFixtureMember(options, dependencies = {}) {
   } finally {
     await database.end()
   }
-}
-
-async function isDeclaredFixtureWorkspace(database, workspaceId, workspaceName) {
-  const result = await database.query(
-    `select exists (
-       select 1 from birdnerd_private.event_log
-       where workspace_id = $1::uuid
-         and event_json ->> 'event_type' = 'workspace.created'
-         and event_json -> 'payload' ->> 'workspace_id' = $1::text
-         and event_json -> 'payload' ->> 'name' = $2
-     ) as fixture_workspace`,
-    [workspaceId, workspaceName],
-  )
-  return result.rows[0]?.fixture_workspace === true
 }
 
 async function loadRuntime() {

@@ -38,6 +38,8 @@ for the required distinct Google client and callback URL. To give a real Google
 account access to the current disposable fixture, first run
 `npm run fixtures:invite -- --workspace-id <fixture-workspace-uuid> --email person@example.com --role admin`
 with the Workspace ID reported by `npm run fixtures:load -- operational-workspace`.
+Starting ordinary `npm run dev` reloads the verified stack without the Google
+credentials, returning it to fixture-only local Auth.
 
 Hosted pilot testing is opt-in: create the uncommitted
 `apps/field/.env.pilot.local` file containing only

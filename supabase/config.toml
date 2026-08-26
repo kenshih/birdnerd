@@ -176,8 +176,8 @@ refresh_token_reuse_interval = 10
 # Auth user. This never creates a BirdNerd Account or Workspace Membership;
 # Field authorization remains independently gated by the claim RPC and RLS.
 # SMS/anonymous signup stays off. Email provider signup must stay enabled so
-# existing, Admin-created fixture users can use password sign-in; the local
-# Before User Created hook below rejects public email registration instead.
+# existing, Admin-created fixture users can use password sign-in. Trusted local
+# tooling issues its exact bootstrap emails one time; hook rejects all others.
 enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
@@ -226,7 +226,7 @@ web3 = 30
 # users solely to obtain real local sessions before it exercises the existing
 # Google-identity claim RPC. Keep this enabled: setting it false disables
 # password login as well as self-service registration. The hook below rejects
-# public email registration; Admin-created fixture users can still sign in.
+# public email registration; fixture users can still sign in.
 # Hosted pilot Auth remains Google-only.
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
@@ -286,9 +286,9 @@ max_frequency = "5s"
 # inactivity_timeout = "8h"
 
 # This local-only hook rejects email/password self-registration before Auth
-# writes a user. It deliberately permits Google first-login creation and the
-# trusted local Auth Admin API fixture bootstrap. Membership/RLS still gate all
-# BirdNerd access after any successful Auth login.
+# writes a user. It permits Google first-login creation and consumes only the
+# trusted Loader's one-time fixture-email authorization. Membership/RLS still
+# gate all BirdNerd access after any successful Auth login.
 [auth.hook.before_user_created]
 enabled = true
 uri = "pg-functions://postgres/birdnerd_private/birdnerd_reject_email_signup"

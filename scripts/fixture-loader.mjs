@@ -10,7 +10,8 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import YAML from 'yaml'
-import { installLocalEmailSignupGuard } from './local-auth-hook.mjs'
+import { authorizeLocalFixtureEmailBootstrap, clearLocalFixtureEmailBootstrap, installLocalEmailSignupGuard } from './local-auth-hook.mjs'
+import { markLoadedLocalFixture } from './local-fixture-marker.mjs'
 import { commandSucceeded, localSupabaseSettings, runLocalSupabase } from './local-supabase.mjs'
 import { withLocalFixtureProvisioner } from './local-fixture-provisioner.mjs'
 
@@ -54,7 +55,7 @@ export function parseOperationalFixture(source, expectedName = 'operational-work
   assertExactKeys(value.operational, ['station', 'net', 'person', 'bander', 'band', 'session', 'banding_record'], 'Fixture operational data')
   const operational = parseOperational(value.operational)
 
-  return { fixture: value.fixture, workspace: { name: value.workspace.name }, members, operational }
+  return { fixture: value.fixture, version: value.version, workspace: { name: value.workspace.name }, members, operational }
 }
 
 /**
@@ -113,13 +114,19 @@ export async function loadFixture(name, dependencies = {}) {
   await database.connect()
   try {
     await installLocalEmailSignupGuard(database)
-    await createSyntheticAuthUsers(runtime.createClient, settings, database, fixture.members)
+    await authorizeLocalFixtureEmailBootstrap(database, fixture.members)
+    try {
+      await createSyntheticAuthUsers(runtime.createClient, settings, database, fixture.members)
+    } finally {
+      await clearLocalFixtureEmailBootstrap(database, fixture.members)
+    }
     const bootstrap = await bootstrapThroughRestrictedProvisioner(runtime, settings.databaseUrl, database, fixture)
 
     const admin = await claimFixtureMember(runtime.createClient, settings, fixture.members.find(member => member.key === 'admin'))
     const contributor = await claimFixtureMember(runtime.createClient, settings, fixture.members.find(member => member.key === 'contributor'))
     const operations = await appendOperationalFixture(runtime, fixture, bootstrap.workspace_id, admin, contributor)
     const replay = await verifyReplay(runtime, bootstrap.workspace_id, admin, contributor, fixture, operations)
+    await markLoadedLocalFixture(database, fixture, bootstrap.workspace_id)
 
     return {
       fixture: fixture.fixture,

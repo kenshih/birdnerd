@@ -120,14 +120,15 @@ export function viteModeForTarget(target) {
   return target === 'pilot' ? 'pilot' : 'field-local'
 }
 
-async function localSettingsFromRunningStack({ reloadConfiguration = false } = {}) {
-  const localGoogleOptions = { requireGoogleOAuth: reloadConfiguration }
+async function localSettingsFromRunningStack({ requireGoogleOAuth = false } = {}) {
+  const localGoogleOptions = { requireGoogleOAuth }
   let status = runLocalSupabase(['status', '--output', 'env'], { capture: true, ...localGoogleOptions })
-  if (commandSucceeded(status) && reloadConfiguration) {
-    // Google provider configuration is applied only at container start. Verify
-    // this project's running authority before stopping its local containers.
+  if (commandSucceeded(status)) {
+    // Provider configuration is applied only at container start. Reload the
+    // verified local stack for every local target so ordinary fixture work
+    // removes any earlier local-Google credentials.
     localFieldSettings(status.stdout)
-    console.log('Reloading the verified local Supabase stack for Google OAuth configuration…')
+    console.log('Reloading the verified local Supabase stack for its selected development target…')
     const stop = runLocalSupabase(['stop'], localGoogleOptions)
     if (!commandSucceeded(stop)) process.exit(stop.status ?? 1)
     const start = runLocalSupabase(['start'], localGoogleOptions)
@@ -145,7 +146,7 @@ async function localSettingsFromRunningStack({ reloadConfiguration = false } = {
     process.exit(status.status ?? 1)
   }
 
-  if (!reloadConfiguration) return localFieldSettings(status.stdout)
+  if (!requireGoogleOAuth) return localFieldSettings(status.stdout)
 
   const settings = localSupabaseSettings(status.stdout, { requireDatabase: true })
   const database = new Client({ connectionString: settings.databaseUrl })
@@ -187,7 +188,7 @@ async function main() {
   const viteArgs = arguments_.filter(argument => !argument.startsWith('--target='))
   const settings = target === 'pilot'
     ? pilotSettingsFromFile()
-    : await localSettingsFromRunningStack({ reloadConfiguration: target === 'local-google' })
+    : await localSettingsFromRunningStack({ requireGoogleOAuth: target === 'local-google' })
   const mode = viteModeForTarget(target)
 
   console.log(target === 'pilot'

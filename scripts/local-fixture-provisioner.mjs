@@ -14,11 +14,11 @@ export async function withLocalFixtureProvisioner({ Client, databaseUrl, databas
   } catch (error) {
     if (error?.code !== '42710') throw error
     const existing = await database.query(
-      'select rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolcanlogin, rolinherit from pg_roles where rolname = $1',
+      'select rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls, rolcanlogin, rolinherit from pg_roles where rolname = $1',
       [fixtureProvisionerRole],
     )
     const role = existing.rows[0]
-    if (!role || role.rolsuper || role.rolcreatedb || role.rolcreaterole || role.rolreplication || !role.rolcanlogin || !role.rolinherit) {
+    if (!role || role.rolsuper || role.rolcreatedb || role.rolcreaterole || role.rolreplication || role.rolbypassrls || !role.rolcanlogin || !role.rolinherit) {
       throw new Error('Existing local Fixture Provisioner role is not restricted.')
     }
     const unexpectedMemberships = await database.query(

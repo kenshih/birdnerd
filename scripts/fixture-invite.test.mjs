@@ -46,6 +46,7 @@ test('uses only a restricted local Provisioner invite for the declared fixture W
     async end() {}
     async query(text, values = []) {
       this.queries.push([text, values])
+      if (text.includes('to_regclass')) return { rows: [{ marker_table: 'birdnerd_private.local_fixture_marker' }] }
       if (text.includes('select exists')) return { rows: [{ fixture_workspace: true }] }
       return { rows: [] }
     }
@@ -73,19 +74,20 @@ test('uses only a restricted local Provisioner invite for the declared fixture W
   assert.ok(primary)
   const fixtureQuery = primary.queries.find(([text]) => text.includes('select exists'))
   assert.ok(fixtureQuery)
-  assert.match(fixtureQuery[0], /event_json -> 'payload' ->> 'workspace_id' = \$1::text/u)
-  assert.deepEqual(fixtureQuery[1], [workspaceId, 'Cedar Creek Local Fixture'])
+  assert.match(fixtureQuery[0], /from birdnerd_private\.local_fixture_marker/u)
+  assert.deepEqual(fixtureQuery[1], [workspaceId, 'operational-workspace', 1])
   assert.ok(primary.queries.some(([text]) => text.startsWith('create role birdnerd_fixture_provisioner login nosuperuser nocreatedb nocreaterole noreplication inherit password')))
   assert.ok(primary.queries.some(([text]) => text === 'grant birdnerd_provisioner to birdnerd_fixture_provisioner'))
 })
 
-test('does not create a local Provisioner login for another Workspace', async () => {
+test('does not create a local Provisioner login for a same-named but unmarked Workspace', async () => {
   const queries = []
   class Client {
     async connect() {}
     async end() {}
     async query(text) {
       queries.push(text)
+      if (text.includes('to_regclass')) return { rows: [{ marker_table: 'birdnerd_private.local_fixture_marker' }] }
       return { rows: [{ fixture_workspace: false }] }
     }
   }
@@ -100,7 +102,7 @@ test('does not create a local Provisioner login for another Workspace', async ()
     ),
     /not the current operational fixture/u,
   )
-  assert.ok(queries.some(query => query.includes('select exists')))
+  assert.ok(queries.some(query => query.includes('from birdnerd_private.local_fixture_marker')))
   assert.ok(!queries.some(query => query.startsWith('create role')))
 })
 
@@ -115,7 +117,7 @@ test('rotates an existing restricted Provisioner password without altering its a
         throw error
       }
       if (text.includes('from pg_roles')) {
-        return { rows: [{ rolsuper: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, rolcanlogin: true, rolinherit: true }] }
+        return { rows: [{ rolsuper: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, rolbypassrls: false, rolcanlogin: true, rolinherit: true }] }
       }
       return { rows: [] }
     },
@@ -149,7 +151,7 @@ test('refuses an existing Provisioner login with an unexpected inherited role', 
         throw error
       }
       if (text.includes('from pg_roles')) {
-        return { rows: [{ rolsuper: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, rolcanlogin: true, rolinherit: true }] }
+        return { rows: [{ rolsuper: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, rolbypassrls: false, rolcanlogin: true, rolinherit: true }] }
       }
       if (text.includes('from pg_auth_members')) return { rows: [{ rolname: 'pg_read_all_data' }] }
       return { rows: [] }
@@ -172,4 +174,38 @@ test('refuses an existing Provisioner login with an unexpected inherited role', 
   assert.ok(queries.some(([text]) => text.includes('from pg_auth_members')))
   assert.ok(!queries.some(([text]) => text.startsWith('alter role')))
   assert.ok(!queries.some(([text]) => text.startsWith('grant birdnerd_provisioner')))
+})
+
+test('refuses an existing Provisioner login with BYPASSRLS', async () => {
+  const queries = []
+  const database = {
+    async query(text, values = []) {
+      queries.push([text, values])
+      if (text.startsWith('create role')) {
+        const error = new Error('already exists')
+        error.code = '42710'
+        throw error
+      }
+      if (text.includes('from pg_roles')) {
+        return { rows: [{ rolsuper: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, rolbypassrls: true, rolcanlogin: true, rolinherit: true }] }
+      }
+      return { rows: [] }
+    },
+  }
+  class Client {
+    async connect() { throw new Error('must not connect') }
+    async end() {}
+  }
+
+  await assert.rejects(
+    withLocalFixtureProvisioner({
+      Client,
+      databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
+      database,
+      operation: async () => undefined,
+    }),
+    /not restricted/u,
+  )
+  assert.ok(!queries.some(([text]) => text.includes('from pg_auth_members')))
+  assert.ok(!queries.some(([text]) => text.startsWith('alter role')))
 })

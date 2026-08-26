@@ -143,7 +143,7 @@ test('passes only root .env local Google credentials to the Supabase CLI with lo
     'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=local-client-id',
     'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=local-client-secret',
     'UNRELATED_SECRET=not-passed',
-  ].join('\n'))
+  ].join('\n'), { requireGoogleOAuth: true })
 
   assert.deepEqual(environment, {
     OTHER_SETTING: 'unchanged',
@@ -159,6 +159,10 @@ test('strips ambient Google credentials and requires both local values for the l
     SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: 'ambient-client-secret',
   }
   assert.deepEqual(localSupabaseEnvironment(ambient, ''), { OTHER_SETTING: 'unchanged' })
+  assert.deepEqual(localSupabaseEnvironment(ambient, [
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=local-client-id',
+    'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET=local-client-secret',
+  ].join('\n')), { OTHER_SETTING: 'unchanged' })
   assert.throws(
     () => localSupabaseEnvironment(ambient, 'SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID=local-client-id', { requireGoogleOAuth: true }),
     /SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET/u,

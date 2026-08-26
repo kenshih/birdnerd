@@ -67,10 +67,10 @@ client and must not change the hosted Supabase project or its provider settings.
    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET="local-web-client-secret"
    ```
 
-   Both values are required together. These names are read only by the local
-   Supabase CLI process; inherited Google credentials are ignored. Never use a
-   `VITE_*` name, commit the values, or copy either local credential to the
-   hosted project.
+   Both values are required together. Only `npm run dev:local-google` passes
+   these names to its local Supabase CLI process; inherited Google credentials
+   are ignored. Never use a `VITE_*` name, commit the values, or copy either
+   local credential to the hosted project.
 3. To exercise the real account against fixture data, first load the disposable
    fixture and keep its printed Workspace ID. This resets local fixture data:
 
@@ -88,9 +88,10 @@ client and must not change the hosted Supabase project or its provider settings.
    ```
 
    This local-only command neither creates an Auth user nor resets data. It
-   verifies the fixture Workspace and calls the existing restricted Provisioner
-   invite operation; its JSON output is the audit receipt. Use `contributor`
-   when testing only normal data entry.
+   verifies the private marker written only after the Loader has replayed the
+   declared fixture, then calls the existing restricted Provisioner invite
+   operation; its JSON output is the audit receipt. Use `contributor` when
+   testing only normal data entry.
 5. Run `npm run dev:local-google`. The command first verifies the local stack's
    loopback API URL, then stops and starts only that stack so the committed
    local provider configuration can read `.env`; it preserves local volumes and
@@ -106,7 +107,8 @@ client and must not change the hosted Supabase project or its provider settings.
 The local command exists to exercise the real Google/Supabase callback and
 Field session handling. Fixture-member testing remains `npm run dev`; hosted
 pilot and real-device testing remain `npm run dev:pilot` and never read these
-local Google credentials.
+local Google credentials. Starting ordinary `npm run dev` after the OAuth
+check reloads the verified local stack without those credentials.
 
 ## Later Phase 27 release guardrails
 
