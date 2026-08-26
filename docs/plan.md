@@ -13,30 +13,13 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 | Archive | Phase span | Record |
 |---------|------------|--------|
 | v1 | 1–20 | [Completed phase summaries](archives/plan.v1.md) |
-| v2 | 21–40 (through 32.5) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
+| v2 | 21–40 (through 32) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
 
 ---
 
 ## Current roadmap
 
-### Phase 32 — Local Field development environment (Field version TBD) — **Current**
-
-Complete the remaining regression-safety slice after Field 0.32.0–0.32.5
-delivered local-first development, a disposable operational
-fixture, fixture-member local Auth, visible identity/sign-out, and separate
-local Google OAuth, and removed the obsolete `apps/sync-db` experiment. Those
-delivered outcomes are recorded in [plan.v2](archives/plan.v2.md). Phase 32
-now establishes a repeatable UX-regression gate: document the
-critical user-visible workflows, map them to representative component and
-browser assertions, and make failures visible before a route or form
-replacement can silently drop behavior. [Delivery contract:
-#17](https://github.com/kenshih/birdnerd/issues/17)
-
-Field 0.32.6 restores event-backed record-entry validation feedback, records
-concise critical-workflow contracts, pilots a local Storybook visual catalog,
-and maps each behavior to faithful component and browser evidence.
-
-### Phase 33 — Event-backed Data Manager (Field version TBD)
+### Phase 33 — Event-backed Data Manager (Field version TBD) — **Current**
 
 Build shared browse, preview-first idempotent import of one supported
 master-sheet CSV format, and all three established agency CSV outputs (IBP
