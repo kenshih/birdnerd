@@ -20,6 +20,9 @@ The only supported fixture command is:
 
 ```bash
 npm run fixtures:load -- operational-workspace
+
+# note, at tail end of messaging the workspace ID is emitted...
+Loaded operational-workspace: Workspace 01a03bd1-4758-7d36-84fe-7d72cdf90400, 14 Events, 7 authenticated append receipts, replay verified.
 ```
 
 It accepts no database URL, SQL, user credential, or fixture path. The Loader

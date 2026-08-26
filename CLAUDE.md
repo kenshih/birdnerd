@@ -67,6 +67,7 @@ nogit/          — Hallie's source docs (not committed)
 ```bash
 npm run dev               # starts/verifies local Supabase, then Field
 npm run dev:host          # expose local Field server on LAN (Supabase remains loopback)
+npm run dev:local-google  # explicit loopback-only local Google OAuth server
 npm run dev:pilot         # explicit hosted-pilot Field server
 npm run dev:pilot:host    # explicit hosted-pilot server accessible on LAN
 npm run dev:ocr           # OCR app dev server
