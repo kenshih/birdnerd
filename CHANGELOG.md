@@ -8,6 +8,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.32.5 — **Remove obsolete Sync DB experiment.** The retired
+  `apps/sync-db` workspace, its development/build/preview commands, and its
+  service-worker, deployment, and pilot-runbook references are gone. The
+  published site remains Field and OCR only; no Supabase migration or data was
+  changed.
 - Field 0.32.4 — **Local Google OAuth.** `npm run dev:local-google` reloads
   only the verified Supabase CLI-local stack, then exercises Field's existing
   Google sign-in Adapter with a separate local test client. Its uncommitted

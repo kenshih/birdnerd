@@ -120,9 +120,7 @@ Membership management.
    change remove the unlinked legacy mutable database and DataBundle code;
    Phase 31 neither migrates nor deletes legacy data.
 
-After Pages deploy, verify `/birdnerd/` and `/birdnerd/ocr/` work and
-`/birdnerd/sync-db/` is absent. The `sync-db` experiment may be used only
-locally against a different project.
+After Pages deploy, verify `/birdnerd/` and `/birdnerd/ocr/` work.
 
 ## Phase 30 pilot evidence
 
