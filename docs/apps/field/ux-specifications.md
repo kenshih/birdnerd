@@ -8,6 +8,47 @@ keep those assets concise and coherent.
 
 ---
 
+## Critical workflow contracts
+
+### Record entry — inline validation feedback
+
+**Status:** 0.32.6 delivery contract. Step 3 implements this behavior and
+adds the linked Storybook and browser evidence; this card does not claim that
+the current event-backed editor already renders the feedback.
+
+**User goal:** Notice a questionable partial Banding Record while continuing
+to save it for later correction.
+
+**Deterministic start:** An active Workspace Member opens **Field Data**,
+selects **records**, selects an existing Session, and starts a new editable
+Banding Record with no Sex or BP value.
+
+**Before → action → result:**
+
+- **Before:** Sex and BP have no validation feedback, and **Save offline** is
+  available.
+- **Action:** Select Sex **M**, then BP **3**.
+- **Result:** `Sex=M conflicts with Brood Patch 3/4` appears inline at the BP
+  field, is programmatically associated with that field, and **Save offline**
+  remains available.
+
+**Visible promises:** Feedback reevaluates as a field changes, appears at its
+applicable stable field target, can coexist with feedback at other fields, and
+disappears when the applicable rule is resolved. It never blocks a partial or
+conflicting record from being saved.
+
+**Non-visible invariants:** The established
+[`validateRecord`](../../../apps/field/src/utils/validation.ts) semantics
+remain the source of validation rules; this workflow adds no rules. A save
+continues through the existing event-backed, local-first path before any
+subsequent sync.
+
+**Evidence:** The direct rule coverage is in
+[`validation.test.ts`](../../../apps/field/src/utils/validation.test.ts).
+Step 3 will add and link the production-component Storybook example and the
+browser proof of rendered feedback, accessible field relationship, and an
+available **Save offline** action.
+
 ## 0. Authentication & Access
 
 Google sign-in establishes an external identity; it does not by itself grant
