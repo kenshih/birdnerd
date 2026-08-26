@@ -21,6 +21,18 @@ export async function withLocalFixtureProvisioner({ Client, databaseUrl, databas
     if (!role || role.rolsuper || role.rolcreatedb || role.rolcreaterole || role.rolreplication || !role.rolcanlogin || !role.rolinherit) {
       throw new Error('Existing local Fixture Provisioner role is not restricted.')
     }
+    const unexpectedMemberships = await database.query(
+      `select parent.rolname
+       from pg_auth_members membership
+       join pg_roles parent on parent.oid = membership.roleid
+       join pg_roles member on member.oid = membership.member
+       where member.rolname = $1
+         and parent.rolname <> 'birdnerd_provisioner'`,
+      [fixtureProvisionerRole],
+    )
+    if (unexpectedMemberships.rows.length > 0) {
+      throw new Error('Existing local Fixture Provisioner role has unexpected privileges.')
+    }
     await database.query(`alter role ${fixtureProvisionerRole} password '${password}'`)
   }
   await database.query(`grant birdnerd_provisioner to ${fixtureProvisionerRole}`)

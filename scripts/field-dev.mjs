@@ -75,6 +75,8 @@ export function fieldViteEnvironment(environment, settings, target) {
     VITE_E2E_ACCESS: _e2eAccess,
     VITE_FIELD_DEVELOPMENT_TARGET: _developmentTarget,
     VITE_LOCAL_FIXTURE_AUTH_PROFILES: _fixtureProfiles,
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: _googleClientId,
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: _googleClientSecret,
     ...withoutDevelopmentAuthSettings
   } = environment
   const fixtureProfiles = target === 'local' ? JSON.stringify(localFixtureAuthProfiles()) : ''

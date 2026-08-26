@@ -137,3 +137,39 @@ test('rotates an existing restricted Provisioner password without altering its a
   assert.ok(rotation)
   assert.ok(!rotation[0].includes('noreplication'))
 })
+
+test('refuses an existing Provisioner login with an unexpected inherited role', async () => {
+  const queries = []
+  const database = {
+    async query(text, values = []) {
+      queries.push([text, values])
+      if (text.startsWith('create role')) {
+        const error = new Error('already exists')
+        error.code = '42710'
+        throw error
+      }
+      if (text.includes('from pg_roles')) {
+        return { rows: [{ rolsuper: false, rolcreatedb: false, rolcreaterole: false, rolreplication: false, rolcanlogin: true, rolinherit: true }] }
+      }
+      if (text.includes('from pg_auth_members')) return { rows: [{ rolname: 'pg_read_all_data' }] }
+      return { rows: [] }
+    },
+  }
+  class Client {
+    async connect() { throw new Error('must not connect') }
+    async end() {}
+  }
+
+  await assert.rejects(
+    withLocalFixtureProvisioner({
+      Client,
+      databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:54322/postgres',
+      database,
+      operation: async () => undefined,
+    }),
+    /unexpected privileges/u,
+  )
+  assert.ok(queries.some(([text]) => text.includes('from pg_auth_members')))
+  assert.ok(!queries.some(([text]) => text.startsWith('alter role')))
+  assert.ok(!queries.some(([text]) => text.startsWith('grant birdnerd_provisioner')))
+})

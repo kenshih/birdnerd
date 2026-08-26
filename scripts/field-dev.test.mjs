@@ -118,6 +118,8 @@ test('local Google settings clear ambient fixture selection while retaining loop
   const environment = fieldViteEnvironment({
     VITE_FIELD_DEVELOPMENT_TARGET: 'local',
     VITE_LOCAL_FIXTURE_AUTH_PROFILES: 'ambient-fixture-profiles',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID: 'ambient-client-id',
+    SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET: 'ambient-client-secret',
   }, {
     url: 'http://127.0.0.1:54321',
     publishableKey: 'sb_publishable_local',
