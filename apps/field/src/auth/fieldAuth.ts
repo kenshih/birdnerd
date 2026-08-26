@@ -19,17 +19,28 @@ export type FieldAuthSelection =
   | { kind: 'google' }
 
 /**
- * Selects an Auth Adapter from build-time configuration. Local fixture Auth is
- * intentionally available only from the development launcher marker plus a
- * loopback URL; pilot and production always retain the Google Adapter.
+ * Selects an Auth Adapter from build-time configuration. Local fixture Auth
+ * and the local Google OAuth path are available only from their development
+ * launcher markers plus a loopback URL; pilot and production retain Google.
  */
 export function selectFieldAuthAdapter(environment: FieldAuthEnvironment): FieldAuthSelection {
   // Playwright sets this only for its dedicated Vite development server.
   if (environment.DEV && environment.VITE_E2E_ACCESS === 'true') return { kind: 'e2e' }
-  if (!environment.DEV || environment.VITE_FIELD_DEVELOPMENT_TARGET !== 'local') return { kind: 'google' }
+  if (!environment.DEV) return { kind: 'google' }
+
+  const target = environment.VITE_FIELD_DEVELOPMENT_TARGET
+  if (target === 'local-google') {
+    if (!isLoopbackSupabaseUrl(environment.VITE_SUPABASE_URL)) {
+      return { kind: 'local-unavailable', message: 'Local Google OAuth requires the verified loopback Supabase target from `npm run dev:local-google`.' }
+    }
+    return { kind: 'google' }
+  }
+
+  if (target !== 'local') return { kind: 'google' }
   if (!isLoopbackSupabaseUrl(environment.VITE_SUPABASE_URL)) {
     return { kind: 'local-unavailable', message: 'Local fixture authentication requires the verified loopback Supabase target from `npm run dev`.' }
   }
+
   try {
     return { kind: 'local-fixture', profiles: parseLocalFixtureProfiles(environment.VITE_LOCAL_FIXTURE_AUTH_PROFILES) }
   } catch (error) {

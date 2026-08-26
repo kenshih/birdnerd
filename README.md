@@ -21,6 +21,7 @@ This repository is an npm workspaces monorepo. The production field app lives in
 ```bash
 npm install
 npm run dev       # starts/verifies local Supabase, then starts Field
+npm run dev:local-google  # restarts local Supabase with test Google OAuth
 npm run dev:ocr
 ```
 
@@ -43,7 +44,9 @@ This intentionally stops and restarts the repository's local Supabase stack,
 verifies its API and override-free database URL are loopback-only, then resets
 it without a generic SQL seed. It creates only synthetic local Auth users and the declared
 Workspace Event history—never a hosted project, pilot data, or browser secret.
-Self-service Auth registration remains disabled.
+Self-service email, SMS, and anonymous Auth registration remain disabled.
+First-time local Google OAuth may create only a local Auth identity; it grants
+no BirdNerd Account, Membership, or Workspace access.
 The receipt confirms that fixture Admin and Contributor sessions independently
 claimed access, appended their representative data, and replayed the same
 history. With the fixture loaded, `npm run dev` offers **Continue as Fixture
@@ -52,6 +55,47 @@ Open one normal browser profile and one private/separate browser profile to
 exercise the two Members concurrently; each holds its own real local Supabase
 session. Those two known disposable fixture passwords are the only credential
 the local browser receives—never a secret key or database URL.
+
+To test the same fixture through a real Google account, keep the Workspace ID
+printed by that load and pre-authorize the exact email with an explicit role:
+
+```bash
+npm run fixtures:invite -- \
+  --workspace-id <fixture-workspace-uuid> \
+  --email person@example.com \
+  --role admin
+```
+
+This command does not reset data. It verifies the CLI-local stack, confirms the
+Workspace is the declared fixture, and invokes only the existing restricted
+Provisioner invitation operation. It accepts no database URL, SQL, or
+credential. Use `admin` to exercise all Field configuration and operational
+actions, or `contributor` for normal operational data entry. The JSON receipt
+is idempotent: a repeated exact invitation produces no second Event.
+
+### Local Google OAuth
+
+To exercise the real Google redirect against only the CLI-local Supabase
+stack, configure the separate local test client described in
+[`docs/apps/field/google-oauth-setup.md`](docs/apps/field/google-oauth-setup.md),
+then run:
+
+```bash
+npm run dev:local-google
+```
+
+This explicit command reloads the verified local stack so its Google provider
+receives the uncommitted root `.env` credentials. It neither resets local data
+nor starts, links, or writes to the hosted pilot. Authentication alone still
+does not grant Field access: the local Google account sees the normal
+no-access screen unless a trusted local workflow has pre-authorized a matching
+Membership. Both local Google values must be in root `.env`; inherited values
+are ignored, and neither value reaches Vite or Field.
+
+After the invitation above, sign out of any earlier no-access session and sign
+in again through Google. Field's normal initial-access claim activates the
+pending Membership and loads the fixture Workspace; the command never creates
+the Google Auth user itself.
 
 ### Hosted pilot development
 

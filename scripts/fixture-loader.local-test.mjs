@@ -35,6 +35,7 @@ try {
     password: 'not-a-fixture-account',
   })
   assert.ok(signupError, 'Local Auth must reject self-service signup.')
+  assert.match(signupError.message, /Email\/password registration is disabled locally/u)
   const database = new Client({ connectionString: settings.databaseUrl })
   await database.connect()
   try {

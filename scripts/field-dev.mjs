@@ -4,14 +4,17 @@
  *
  * The default interface is local-only: it starts (or verifies) the CLI-managed
  * Docker stack, reads that stack's own published browser settings, and gives
- * those settings precedence over any uncommitted Vite env files. The separate
- * `dev:pilot` interface requires an explicitly named local env file and never
- * manages a Supabase stack.
+ * those settings precedence over any uncommitted Vite env files. The explicit
+ * `dev:local-google` path restarts that same local stack to apply its local
+ * Google-provider configuration. The separate `dev:pilot` interface requires
+ * an explicitly named local env file and never manages a Supabase stack.
  */
 import { spawnSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
+import { Client } from 'pg'
+import { installLocalEmailSignupGuard } from './local-auth-hook.mjs'
 import { commandSucceeded, isLoopbackHost, localSupabaseSettings, parseEnvVariables, runLocalSupabase } from './local-supabase.mjs'
 import { localFixtureAuthProfiles } from './local-fixture-profiles.mjs'
 
@@ -63,9 +66,9 @@ export function hostedPilotSettings(envSource) {
 }
 
 /**
- * Builds the Vite environment for either supported non-E2E Field command.
- * The local path replaces ambient profile settings with the one declared
- * fixture; the pilot path clears them so it can select only Google Auth.
+ * Builds the Vite environment for supported non-E2E Field commands. The
+ * fixture path replaces ambient profile settings with the one declared
+ * fixture; local Google and pilot paths clear them so they select Google Auth.
  */
 export function fieldViteEnvironment(environment, settings, target) {
   const {
@@ -95,12 +98,12 @@ export function fieldViteEnvironment(environment, settings, target) {
 export function developmentTarget(arguments_) {
   const targetArguments = arguments_.filter(argument => argument.startsWith('--target='))
   if (targetArguments.length !== 1) {
-    throw new Error('Exactly one development target is required. Use `npm run dev` for local or `npm run dev:pilot` for hosted pilot testing.')
+    throw new Error('Exactly one development target is required. Use `npm run dev` for fixtures, `npm run dev:local-google` for local Google OAuth, or `npm run dev:pilot` for hosted pilot testing.')
   }
 
   const target = targetArguments[0].slice('--target='.length)
-  if (target !== 'local' && target !== 'pilot') {
-    throw new Error('Development target must be `local` or `pilot`.')
+  if (target !== 'local' && target !== 'local-google' && target !== 'pilot') {
+    throw new Error('Development target must be `local`, `local-google`, or `pilot`.')
   }
   return target
 }
@@ -115,13 +118,24 @@ export function viteModeForTarget(target) {
   return target === 'pilot' ? 'pilot' : 'field-local'
 }
 
-function localSettingsFromRunningStack() {
-  let status = runLocalSupabase(['status', '--output', 'env'], { capture: true })
-  if (!commandSucceeded(status)) {
-    console.log('Local Supabase is not running; starting the CLI-managed Docker stack…')
-    const start = runLocalSupabase(['start'])
+async function localSettingsFromRunningStack({ reloadConfiguration = false } = {}) {
+  const localGoogleOptions = { requireGoogleOAuth: reloadConfiguration }
+  let status = runLocalSupabase(['status', '--output', 'env'], { capture: true, ...localGoogleOptions })
+  if (commandSucceeded(status) && reloadConfiguration) {
+    // Google provider configuration is applied only at container start. Verify
+    // this project's running authority before stopping its local containers.
+    localFieldSettings(status.stdout)
+    console.log('Reloading the verified local Supabase stack for Google OAuth configuration…')
+    const stop = runLocalSupabase(['stop'], localGoogleOptions)
+    if (!commandSucceeded(stop)) process.exit(stop.status ?? 1)
+    const start = runLocalSupabase(['start'], localGoogleOptions)
     if (!commandSucceeded(start)) process.exit(start.status ?? 1)
-    status = runLocalSupabase(['status', '--output', 'env'], { capture: true })
+    status = runLocalSupabase(['status', '--output', 'env'], { capture: true, ...localGoogleOptions })
+  } else if (!commandSucceeded(status)) {
+    console.log('Local Supabase is not running; starting the CLI-managed Docker stack…')
+    const start = runLocalSupabase(['start'], localGoogleOptions)
+    if (!commandSucceeded(start)) process.exit(start.status ?? 1)
+    status = runLocalSupabase(['status', '--output', 'env'], { capture: true, ...localGoogleOptions })
   }
 
   if (!commandSucceeded(status)) {
@@ -129,7 +143,17 @@ function localSettingsFromRunningStack() {
     process.exit(status.status ?? 1)
   }
 
-  return localFieldSettings(status.stdout)
+  if (!reloadConfiguration) return localFieldSettings(status.stdout)
+
+  const settings = localSupabaseSettings(status.stdout, { requireDatabase: true })
+  const database = new Client({ connectionString: settings.databaseUrl })
+  await database.connect()
+  try {
+    await installLocalEmailSignupGuard(database)
+  } finally {
+    await database.end()
+  }
+  return { url: settings.url, publishableKey: settings.publishableKey }
 }
 
 function pilotSettingsFromFile() {
@@ -141,7 +165,7 @@ function pilotSettingsFromFile() {
 
 function viteArguments(arguments_, mode) {
   if (arguments_.some(argument => argument === '--mode' || argument.startsWith('--mode='))) {
-    throw new Error('The Field development mode is selected by the npm command. Use `npm run dev` for local or `npm run dev:pilot` for hosted pilot testing.')
+    throw new Error('The Field development mode is selected by the npm command. Use `npm run dev`, `npm run dev:local-google`, or `npm run dev:pilot`.')
   }
   return ['--mode', mode, ...arguments_]
 }
@@ -155,11 +179,13 @@ function runVite(arguments_, environment) {
   process.exitCode = vite.status ?? 1
 }
 
-function main() {
+async function main() {
   const arguments_ = process.argv.slice(2)
   const target = developmentTarget(arguments_)
   const viteArgs = arguments_.filter(argument => !argument.startsWith('--target='))
-  const settings = target === 'pilot' ? pilotSettingsFromFile() : localSettingsFromRunningStack()
+  const settings = target === 'pilot'
+    ? pilotSettingsFromFile()
+    : await localSettingsFromRunningStack({ reloadConfiguration: target === 'local-google' })
   const mode = viteModeForTarget(target)
 
   console.log(target === 'pilot'
@@ -170,7 +196,7 @@ function main() {
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    main()
+    await main()
   } catch (error) {
     console.error(error instanceof Error ? error.message : String(error))
     process.exitCode = 1

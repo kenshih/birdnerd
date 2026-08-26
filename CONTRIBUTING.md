@@ -6,6 +6,7 @@
 npm install
 npm run dev          # starts/verifies local Supabase, then Field at localhost:5173
 npm run dev:host     # expose the local Field server on the local network
+npm run dev:local-google  # test Google OAuth against local Supabase only
 npm run dev:ocr      # start the OCR app dev server
 ```
 
@@ -19,6 +20,7 @@ stack only; it never reads a hosted target from `apps/field/.env.local`.
 |---|---|
 | `npm run dev` | Start the field app dev server from the repo root |
 | `npm run dev:host` | Expose the local Field dev server on the local network; Field still uses its loopback local Supabase target |
+| `npm run dev:local-google` | Reload the CLI-local Supabase stack with the separate local Google OAuth client, then start Field against that loopback stack |
 | `npm run dev:pilot` | Explicitly start Field against the hosted pilot configured in uncommitted `apps/field/.env.pilot.local` |
 | `npm run dev:pilot:host` | Expose the explicit hosted-pilot server on the local network for iPhone/iPad testing |
 | `npm run dev:ocr` | Start the OCR app dev server |

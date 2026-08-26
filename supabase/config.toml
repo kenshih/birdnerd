@@ -172,9 +172,13 @@ enable_refresh_token_rotation = true
 # Allows refresh tokens to be reused after expiry, up to the specified interval in seconds.
 # Requires enable_refresh_token_rotation = true.
 refresh_token_reuse_interval = 10
-# The Fixture Loader creates its two disposable accounts through the local
-# Auth Admin API. Self-service signup stays disabled, including in Docker.
-enable_signup = false
+# First-time external OAuth sign-in must be allowed to create/link a local
+# Auth user. This never creates a BirdNerd Account or Workspace Membership;
+# Field authorization remains independently gated by the claim RPC and RLS.
+# SMS/anonymous signup stays off. Email provider signup must stay enabled so
+# existing, Admin-created fixture users can use password sign-in; the local
+# Before User Created hook below rejects public email registration instead.
+enable_signup = true
 # Allow/disallow anonymous sign-ins to your project.
 enable_anonymous_sign_ins = false
 # Allow/disallow testing manual linking of accounts
@@ -220,9 +224,10 @@ web3 = 30
 [auth.email]
 # The disposable local fixture creates synthetic, confirmed email/password
 # users solely to obtain real local sessions before it exercises the existing
-# Google-identity claim RPC. The fixture loader restarts the CLI-local stack
-# so this email provider setting takes effect; `[auth].enable_signup` still
-# rejects self-service registration. Hosted pilot Auth remains Google-only.
+# Google-identity claim RPC. Keep this enabled: setting it false disables
+# password login as well as self-service registration. The hook below rejects
+# public email registration; Admin-created fixture users can still sign in.
+# Hosted pilot Auth remains Google-only.
 enable_signup = true
 # If enabled, a user will be required to confirm any email change on both the old, and new email
 # addresses. If disabled, only the new email is required to confirm.
@@ -280,10 +285,13 @@ max_frequency = "5s"
 # Force log out if the user has been inactive longer than the specified duration.
 # inactivity_timeout = "8h"
 
-# This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.
-# [auth.hook.before_user_created]
-# enabled = true
-# uri = "pg-functions://postgres/auth/before-user-created-hook"
+# This local-only hook rejects email/password self-registration before Auth
+# writes a user. It deliberately permits Google first-login creation and the
+# trusted local Auth Admin API fixture bootstrap. Membership/RLS still gate all
+# BirdNerd access after any successful Auth login.
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/birdnerd_private/birdnerd_reject_email_signup"
 
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]
@@ -338,6 +346,15 @@ url = ""
 skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
 email_optional = false
+
+# This Google provider exists only in the CLI-managed local stack. The
+# uncommitted project-root .env file supplies its separate test-client values
+# to the trusted Supabase CLI process; Vite and Field never receive the secret.
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
