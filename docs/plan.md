@@ -32,6 +32,10 @@ browser assertions, and make failures visible before a route or form
 replacement can silently drop behavior. [Delivery contract:
 #17](https://github.com/kenshih/birdnerd/issues/17)
 
+Field 0.32.6 restores event-backed record-entry validation feedback, records
+concise critical-workflow contracts, pilots a local Storybook visual catalog,
+and maps each behavior to faithful component and browser evidence.
+
 ### Phase 33 — Event-backed Data Manager (Field version TBD)
 
 Build shared browse, preview-first idempotent import of one supported
@@ -64,6 +68,14 @@ cache behavior. This is intentionally separate from Phase 32 local-auth work.
 [Tracking issue: #25](https://github.com/kenshih/birdnerd/issues/25)
 
 ---
+
+### Backlog: Legacy mutable Field retirement
+
+After Phase 33 supplies the event-backed Data Manager's browse, import, and
+agency-export replacements, explicitly decide retention, migration, and
+removal for the unlinked legacy mutable Field database and Data Manager code.
+Do not silently delete code or data, or declare the old path retired merely
+because it is unlinked.
 
 ### Backlog: Net Reconciliation, cleanup
 

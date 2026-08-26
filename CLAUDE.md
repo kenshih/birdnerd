@@ -9,6 +9,7 @@ PWA for bird banders to collect, manage, and export banding data. Offline-first,
 - [docs/apps/field/product-specifications.md](docs/apps/field/product-specifications.md) — field app product spec, open decisions (§ 8)
 - [docs/apps/field/tech-specifications.md](docs/apps/field/tech-specifications.md) — field app architecture, data model, code systems
 - [docs/apps/field/ux-specifications.md](docs/apps/field/ux-specifications.md) — field app screens, wireframes, interaction patterns
+- [docs/apps/field/ux-asset-system.md](docs/apps/field/ux-asset-system.md) — how UX contracts, local Storybook examples, and browser proof stay coherent
 - [docs/apps/field/entities.md](docs/apps/field/entities.md) — field app ER diagram + data flow
 - [docs/repo/monorepo.md](docs/repo/monorepo.md) — repo/workspace layout and responsibilities
 - [docs/repo/deployment.md](docs/repo/deployment.md) — GitHub Pages multi-app deployment notes
@@ -53,6 +54,7 @@ nogit/          — Hallie's source docs (not committed)
 
 - **All fields optional.** Partial records are valid. Soft warnings only, never block save.
 - **Update specs when changing behavior.** Product spec, tech spec, ux spec, and plan should stay in sync.
+- **Visible Field behavior:** Follow [the UX Asset System](docs/apps/field/ux-asset-system.md) so its contract, visual example, and browser proof remain coherent.
 - **Update `CHANGELOG.md` for shipped user-visible, app-version, or repo-structure changes.**
 - **Bundle schema versioning.** Bump `BUNDLE_VERSION` in `bundle-schema.ts` when adding/removing/renaming fields on bundled entities. Write a migration function.
 - **IndexedDB versioning.** Bump version in `db/index.ts` upgrade handler when adding stores or indexes.

@@ -1,6 +1,10 @@
 # BirdNerd — User Experience & Screens
 
 Overview of screens, layouts, and interaction patterns for the BirdNerd PWA.
+This document owns the current user-visible behavior contract. See the
+[Field UX Asset System](ux-asset-system.md) for how it connects to local
+Storybook examples and Playwright workflow evidence, and for the rules that
+keep those assets concise and coherent.
 
 ---
 
