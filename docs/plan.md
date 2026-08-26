@@ -13,7 +13,7 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 | Archive | Phase span | Record |
 |---------|------------|--------|
 | v1 | 1–20 | [Completed phase summaries](archives/plan.v1.md) |
-| v2 | 21–40 (through 32.1) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
+| v2 | 21–40 (through 32.4) | [Completed outcomes and recorded deferrals](archives/plan.v2.md) |
 
 ---
 
@@ -21,24 +21,16 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 ### Phase 32 — Local Field development environment (Field version TBD) — **Current**
 
-Complete the local-auth and regression-safety slices after the shipped
-local-first `npm run dev` and disposable operational fixture. A
-development-only local Auth adapter signs known fixture Members into local
-Supabase without a Google redirect, while real local RPC, RLS, Event admission,
-synchronization, and two-profile manual testing remain in use. Hosted pilot
-testing stays explicit; the fixture format may later support a separately
-approved pilot reset without making hosted data writes part of routine
-development. Field also makes the active signed-in identity visible and
-provides a user-initiated sign-out path, which work consistently with local
-fixture and hosted Google Auth. Phase 32 also removes the obsolete
+Complete the remaining cleanup and regression-safety slices after Field
+0.32.0–0.32.4 delivered local-first development, a disposable operational
+fixture, fixture-member local Auth, visible identity/sign-out, and separate
+local Google OAuth. Those delivered outcomes are recorded in
+[plan.v2](archives/plan.v2.md). Phase 32 now removes the obsolete
 `apps/sync-db` experiment and its commands, build paths, and documentation
-references. It establishes a repeatable UX-regression gate: document the
+references. It also establishes a repeatable UX-regression gate: document the
 critical user-visible workflows, map them to representative component and
 browser assertions, and make failures visible before a route or form
-replacement can silently drop behavior. Its local Google OAuth slice uses a
-distinct local client and uncommitted secret only with the CLI-local stack;
-an invited exact email may then exercise fixture data through the normal
-Google sign-in and access-claim path. [Delivery contract:
+replacement can silently drop behavior. [Delivery contract:
 #17](https://github.com/kenshih/birdnerd/issues/17)
 
 ### Phase 33 — Event-backed Data Manager (Field version TBD)
