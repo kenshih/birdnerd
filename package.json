@@ -25,6 +25,8 @@
     "kill:dev": "node scripts/stop-field-dev.mjs",
     "dev:ocr": "npm --workspace @birdnerd/ocr run dev",
     "dev:ocr:host": "npm --workspace @birdnerd/ocr run dev -- --host",
+    "storybook": "npm --workspace @birdnerd/field run storybook",
+    "build:storybook": "npm --workspace @birdnerd/field run build:storybook",
     "dev:sync": "npm --workspace @birdnerd/sync-spike run dev",
     "dev:sync:host": "npm --workspace @birdnerd/sync-spike run dev -- --host",
     "build:collaboration": "npm run check:event-bindings && npm --workspace @birdnerd/events run build && npm --workspace @birdnerd/banding run build && npm --workspace @birdnerd/sync-state run build && npm --workspace @birdnerd/provisioner run build",
