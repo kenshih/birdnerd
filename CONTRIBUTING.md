@@ -64,10 +64,31 @@ hosted URL in `.env.local`; use the explicit hosted-pilot command instead.
 
 - `docs/plan.md` is forward-looking and tracks current/future work
 - `CHANGELOG.md` is backward-looking and records shipped changes
-- Follow [Roadmap Maintenance](docs/repo/roadmap-maintenance.md) when changing
-  phase status, archives, or the active roadmap
 - Update `CHANGELOG.md` when a change is user-visible, bumps an app/package version, or meaningfully changes repo/deployment structure
 - Group changelog entries under `Field`, `OCR`, `Shared`, or `Repo` as appropriate
+
+## Human-AI Execution Process Summary
+
+This process is designed for human-review clarity at every level.
+
+Terms:
+
+- [`plan.md`](./docs/plan.md): **Plan** of high-level **Phases**.
+- **Phase** GitHub Issues are a live contract, authored when digging into phase planning. It consists of **Outcome** slices, decisions, evidence.
+- One **outcome** normally one PR. Field release normally one **patch**. (outcome ~ patch)
+- Learn during work. Split, defer, reorder, backlog.
+- **Commits** in PR show meaningful steps inside **outcome**.
+- **Phase** ends when remaining **outcomes** resolved, evidence checked, you approve closeout.
+
+Human quick guide: this summary
+
+- "Maintenance" note in [`plan.md`](./docs/plan.md)
+- [`roadmap-maintenance.md`](./docs/repo/roadmap-maintenance.md)
+
+Agent process guide:
+
+- instructions: [AGENTS.md](./AGENTS.md)
+- workflows (as skills): [`delivery-contract`](./.agents/skills/delivery-contract/), [`phase-delivery`](./.agents/skills/phase-delivery/), [`field-release`](./.agents/skills/field-release/)
 
 ## Adding a New Field
 
