@@ -5,10 +5,12 @@ description: Deliver an explicitly requested BirdNerd roadmap phase or similarly
 
 # Phase Delivery
 
-Deliver a complete, review-ready increment—not merely compiling code. An
-explicit request to use this skill authorizes creating a branch, committing the
-phase work, pushing it, and opening/updating its PR. It never authorizes
-merging, deploying, deleting user data, or declaring a roadmap phase complete.
+Deliver one complete, review-ready outcome increment—not merely compiling
+code. For a multi-outcome phase, this is normally its next unblocked outcome,
+not the entire phase. An explicit request to use this skill authorizes creating
+a branch, committing the selected work, pushing it, and opening/updating its
+PR. It never authorizes merging, deploying, deleting user data, or declaring a
+roadmap phase complete.
 
 ## 1. Establish the delivery contract
 
@@ -37,7 +39,7 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
    in the PR. Stop only for a genuinely blocking ambiguity, an unsafe or
    irreversible data/security decision, missing credentials or authority, or a
    conflict with an existing user change.
-5. Use applicable project skills. For a Field phase with an agreed target
+5. Use applicable project skills. For a Field outcome with an agreed target
    version, use `$field-release` **before opening the PR** to add the proposed
    `apps/field` version, synchronized lockfile entry, and concise
    `[Unreleased]` changelog record to the delivery branch. These release
@@ -52,6 +54,22 @@ merging, deploying, deleting user data, or declaring a roadmap phase complete.
    applies, and `$code-review` for the two-axis independent review described
    below. Honor each skill's approval gates.
 
+### Choose the outcome boundary
+
+For a phase Issue with several `Outcomes`, select its next unblocked outcome
+before branching. The default is one outcome per PR and, when that PR carries a
+Field release claim, one Field patch release. Keep the selected outcome's
+ordinary documentation, specification, changelog, and roadmap updates in the
+same PR when they arise during execution; serial merges make a separate
+documentation flow needlessly costly.
+
+Treat the outcome list as a plan that may improve with evidence. If the work
+reveals another independently valuable outcome that would otherwise enter the
+same PR, pause and ask the user whether to combine, split, defer, add, or
+reorder it. Record the resulting decision in the Phase Issue. Do not ask about
+documentation updates that accurately describe the selected outcome, or about
+work inseparable from preserving its correctness, safety, or compatibility.
+
 ### Keep long local work alive
 
 For an expected long local run, mention the host-awake preflight in the first
@@ -64,7 +82,7 @@ Do not close the lid or choose Sleep manually. Ask before starting a longer or
 indefinite keep-awake process; it consumes power. Commit/push durable
 checkpoints so an interrupted local session can resume safely.
 
-## 2. Implement in reviewable increments
+## 2. Implement the selected outcome in reviewable increments
 
 1. Work on a dedicated branch from the agreed base. Keep commits logical and
    describe the intent, not just the files changed.
@@ -146,10 +164,10 @@ Limit cleanup to the changed surface and directly affected documentation unless
 the user expands the scope. State intentional deferrals rather than leaving
 misleading comments or TODOs.
 
-## 5. Open a decision-useful PR
+## 5. Open a decision-useful outcome PR
 
-Before pushing a Field-phase PR, verify the version named by the delivery
-contract is present in `apps/field/package.json` and `package-lock.json`, and
+Before pushing a Field-outcome PR, verify the agreed version is present in
+`apps/field/package.json` and `package-lock.json`, and
 that `CHANGELOG.md` has an accurate `[Unreleased]` entry. Include these files
 in the reviewed delivery diff. Do not treat the PR as review-ready while this
 pre-merge metadata is missing.
@@ -165,14 +183,14 @@ without reconstructing the work:
 4. How can the reviewer reproduce the manual verification?
 5. What was deliberately deferred or could not be verified?
 
-Link the issue and phase/spec sources. Include screenshots or recordings when
+Link the Issue, selected outcome, and phase/spec sources. Include screenshots or recordings when
 a visual change is important to reviewing behavior. Never put secrets, local
 paths, or unverified claims in the PR.
 
-For a Field phase, state the proposed Field version and changelog entry in the
+For a Field outcome, state the proposed Field version and changelog entry in the
 PR summary so reviewers can evaluate the release claim. State separately that
-roadmap completion and deployment still require merge approval and their own
-evidence.
+the outcome's merge does not by itself complete the roadmap phase or deploy
+anything.
 
 ## 6. Obtain and answer an independent review
 
@@ -214,17 +232,20 @@ Leave the PR in a review-ready state. In the final report, give both:
 
 Start with this exact kind of status line, adapted only for the actual state:
 **Handoff state: review-ready PR — awaiting merge.** Explain that
-implementation delivery is complete, but the roadmap phase is not complete and
-no deployment has occurred. State the next decision in one sentence: for
-example, "You can review and merge PR #123 yourself, or ask me to merge it if
-authorized. If you say 'I merged,' I will do the Field release and
-roadmap-completion bookkeeping." An unqualified user statement that they
-merged is the explicit approval to perform that bookkeeping; do it promptly,
-starting with "Handoff state: merged — doing release/roadmap bookkeeping now."
+implementation delivery is complete, but the roadmap phase is not necessarily
+complete and no deployment has occurred. State whether the selected outcome
+is the phase's final remaining outcome. State the next decision in one
+sentence: for example, "You can review and merge PR #123 yourself, or ask me
+to merge it if authorized. If you say 'I merged,' I will do the Field release
+and Phase-Issue bookkeeping; roadmap completion follows only if this was the
+final outcome." An unqualified user statement that they merged is the explicit
+approval to perform that bookkeeping; do it promptly, starting with "Handoff
+state: merged — doing release/roadmap bookkeeping now."
 If their merge message includes a qualifier, follow it instead. Never make the
 user infer whether a final report means "work finished," "waiting for review,"
 or "fully released."
 
-Do not merge, deploy, or mark the roadmap phase complete. For a Field phase,
-wait for explicit approval before applying the release/roadmap-completion
-decision required by `$field-release` and Roadmap Maintenance.
+Do not merge, deploy, or mark the roadmap phase complete. For a Field outcome,
+wait for explicit approval before applying the release and Phase-Issue
+bookkeeping required by `$field-release`; apply Roadmap Maintenance only when
+the merged outcome resolves the phase.

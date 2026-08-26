@@ -7,6 +7,13 @@ description: Establish or refresh a decision-ready delivery contract in a GitHub
 
 Turn an intended delivery into a bounded, decision-ready plan before implementation. The GitHub Issue owns the working contract; ADRs and specifications own durable decisions and shipped behavior.
 
+For a phase with several independently reviewable increments, its `Outcomes`
+are an initial **outcome-slice plan**. Each outcome normally becomes one PR
+and, when it makes a Field release claim, one Field patch release. This is a
+planning default, not a promise that the original list or order is complete:
+discovery may add, split, defer, reorder, or move outcomes to another phase
+or the backlog. A one- or two-PR phase simply has one or two outcomes.
+
 ## 1. Decide whether to use this skill
 
 Use this skill when the work:
@@ -58,7 +65,9 @@ Create or update a `## Delivery contract` section in the Issue. Keep it concise 
 ## Delivery contract
 
 ### Outcomes
--
+- **<reviewable outcome>** — one coherent thing that will become true.
+  - Acceptance: observable evidence for this outcome.
+  - Defers: later outcome, phase, or backlog item, if known.
 
 ### Non-goals
 -
@@ -84,11 +93,25 @@ Create or update a `## Delivery contract` section in the Issue. Keep it concise 
 
 Do not duplicate the roadmap, ADRs, or specifications. Link to those sources and use the Issue to show the delivery-specific connections, choices, risks, and evidence.
 
+For a multi-outcome phase, keep the `Outcomes` list ordered and make each
+bullet independently reviewable; it is the live slice ledger, not a rigid
+implementation checklist. Assign a Field patch version when its outcome PR is
+being prepared, rather than reserving versions speculatively in the Issue.
+After each merged outcome, update the Issue with what shipped and every
+resulting deferral, addition, split, or reordering. The phase remains active
+until its remaining outcomes are delivered, explicitly moved, or otherwise
+resolved.
+
 ## 5. Collaborate only on material choices
 
 Make reversible, low-risk choices and record the rationale. Ask the user one narrow question when a decision is unsafe, irreversible, security- or data-loss-sensitive, or represents two materially different delivery shapes. Present the competing options, the recommended option, and the consequence of deferring the choice.
 
 Do not ask merely because the contract is incomplete: resolve factual gaps from the sources first.
+
+When implementation would combine two independently valuable outcomes in one
+PR, ask the user to decide whether to combine, split, or defer them. This does
+not apply to ordinary documentation, specification, changelog, or roadmap
+updates that arise from the selected outcome; keep those with its PR.
 
 ## 6. Hand off cleanly
 

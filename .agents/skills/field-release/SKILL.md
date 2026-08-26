@@ -6,7 +6,9 @@ description: Prepare, version, validate, and optionally commit or push a BirdNer
 # Field Release
 
 Treat a version as a release claim. Reconcile the planned phase with the code
-that actually ships before changing version numbers or release trackers.
+that actually ships before changing version numbers or release trackers. A
+phase may contain several independently reviewable outcomes: a Field patch
+release normally represents one of those outcomes, not the phase as a whole.
 
 ## Establish the release decision
 
@@ -16,15 +18,21 @@ that actually ships before changing version numbers or release trackers.
 2. Inspect `git status`, recent `git log`, and the working-tree diff. Do not
    overwrite unrelated user changes.
 3. State the evidence: current Field version, proposed version, and which
-   planned outcomes the diff does and does not implement.
+   selected outcome the diff implements and does not implement.
 4. If the target version or whether the phase is complete is unclear, ask
    before editing. A phase-numbered version does not by itself prove phase
    completion. If the user deliberately chooses a version that represents a
    narrower slice, record the shipped scope accurately.
 
-## Update release metadata before committing or opening a Field-phase PR
+Default to one outcome per Field patch release. Routine documentation,
+specification, changelog, and roadmap updates may remain in that outcome's PR.
+If a release would intentionally combine independently valuable outcomes, get
+the user's decision first and record it in the delivery Issue or PR; do not
+infer that the phase is finished.
 
-For an agreed Field phase/version, make the version, lockfile, changelog, and
+## Update release metadata before committing or opening a Field-outcome PR
+
+For an agreed Field outcome/version, make the version, lockfile, changelog, and
 specification updates on the delivery branch before the PR is opened. This
 lets reviewers assess the release claim with the implementation. Make them as
 one working-tree change before the feature commit is created when possible;
@@ -32,8 +40,8 @@ if implementation already landed without them, add a transparent corrective
 commit before review/merge. Do not defer these three release metadata files to
 post-merge bookkeeping.
 
-Keep the following post-merge: `docs/plan.md` completion/archive changes,
-tags, deployment, and any statement that the release is shipped. After merge,
+Keep the following post-merge: phase-completion/archive changes, tags,
+deployment, and any statement that the release is shipped. After merge,
 reconcile the reviewed proposed version with the merged code before marking
 the roadmap phase complete.
 
@@ -46,14 +54,18 @@ Prepare the pre-merge release metadata as follows:
   user-visible behavior, version, or repo-structure changes.
 - Update the relevant product, technical, and UX specifications when the
   shipped behavior changes them.
-- Update `docs/plan.md` only when the user agrees the phase is complete; follow
+- Update `docs/plan.md` when the selected outcome changes the phase's scope,
+  order, or remaining description; otherwise keep its routine documentation
+  with the outcome PR. Only mark a phase complete when the user agrees and
+  its remaining outcomes are resolved. Follow
   [Roadmap Maintenance](../../../docs/repo/roadmap-maintenance.md) for the
-  status, rolling-archive, and **Current**-marker steps. Add the phase outcome
-  to the existing twenty-phase archive (normally `plan.v1` for Phases 1–20,
-  `plan.v2` for Phases 21–40) rather than creating a new `plan.vN` file for a
-  release or a small batch. Keep the active plan to one concise row per
-  archive range; put release versions, patch detail, evidence, and unfinished
-  task lists in the changelog, archive, specifications, or backlog instead.
+  status, rolling-archive, and **Current**-marker steps. Add the completed
+  phase outcome to the existing twenty-phase archive (normally `plan.v1` for
+  Phases 1–20, `plan.v2` for Phases 21–40) rather than creating a new
+  `plan.vN` file for a release or a small batch. Keep the active plan to one
+  concise row per archive range; put release versions, patch detail, evidence,
+  and unfinished task lists in the changelog, delivery Issue, specifications,
+  or backlog instead.
 - Bump the bundle schema and add a migration only when bundled entity fields
   are added, removed, or renamed. Bump IndexedDB only for store/index changes.
 
@@ -83,11 +95,13 @@ still required. Use the state that matches the evidence:
   complete; the user may merge the PR themselves or ask the agent to merge it
   when authorized. It is not a deployed release or a completed roadmap phase.
 - **Handoff state: merged — doing release/roadmap bookkeeping now.** For a
-  Field phase, an unqualified user statement such as "I merged" authorizes the
-  remaining in-repository release and roadmap-completion bookkeeping. Say this
-  status line, then proceed without asking again. If the user adds a qualifier
-  (for example, "I merged, but…"), follow that direction instead. Do not infer
-  authority to deploy, tag, or perform an unrelated external action.
+  Field outcome, an unqualified user statement such as "I merged" authorizes
+  the remaining in-repository release and Phase-Issue bookkeeping. It
+  authorizes roadmap-completion bookkeeping only when that outcome resolves
+  the phase. Say this status line, then proceed without asking again. If the
+  user adds a qualifier (for example, "I merged, but…"), follow that direction
+  instead. Do not infer authority to deploy, tag, or perform an unrelated
+  external action.
 - **Handoff state: complete.** Use only after every action the user requested
   for this release has actually occurred.
 - **Handoff state: blocked — awaiting <specific decision or authority>.**

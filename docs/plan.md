@@ -4,7 +4,13 @@ See also: [ADR 0016 — collaboration architecture](adr/0016-event-sourced-colla
 
 **Maintenance:** Follow [Roadmap Maintenance](repo/roadmap-maintenance.md) for plan, archive, and changelog updates. Use the project-specific `$field-release` skill for any Field version, release, changelog, or phase-completion work.
 
-**Phase delivery:** In Codex, start a phase with `Use $phase-delivery to deliver Phase <number> as a review-ready PR.` It carries the work through implementation, proportionate testing, manual verification, documentation, and independent review; merge and phase completion still require human approval.
+**Phase delivery:** For a complex phase, establish or refresh its
+`$delivery-contract`, then use `$phase-delivery` to deliver its next
+reviewable outcome as a PR. A phase may have one outcome or several; ordinary
+documentation updates remain in the outcome PR, while a decision is required
+before combining independently valuable outcomes. It carries the work through
+implementation, proportionate testing, manual verification, documentation, and
+independent review; merge and phase completion still require human approval.
 
 ---
 

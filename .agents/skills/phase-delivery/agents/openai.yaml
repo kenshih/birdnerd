@@ -1,4 +1,4 @@
 interface:
-  display_name: "Phase Delivery"
-  short_description: "Autonomous, review-ready phase delivery"
-  default_prompt: "Use $phase-delivery to deliver the requested phase as a review-ready PR, then obtain and address an independent review."
+  display_name: "Phase Outcome Delivery"
+  short_description: "Deliver one reviewable phase outcome"
+  default_prompt: "Use $phase-delivery to deliver the next reviewable outcome of the requested phase as a PR, then obtain and address an independent review."
