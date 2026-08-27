@@ -25,7 +25,7 @@ independent review; merge and phase completion still require human approval.
 
 ## Current roadmap
 
-### Phase 33 — Event-backed Data Manager (Field version TBD) — **Current**
+### Phase 33 — Event-backed Data Manager (Field version 0.33.x) — **Current**
 
 Build shared browse, preview-first idempotent import of one supported
 master-sheet CSV format, and all three established agency CSV outputs (IBP
@@ -33,10 +33,12 @@ MAPS Master List, BBL new-banding upload, and BBL recapture upload) from
 Workspace Event projections. It proves historical intake and agency reporting
 without a legacy database. Preview makes unmatched source banders, inventory,
 and other references explicit for reviewed reconciliation rather than silently
-inventing a match. Photo attachments and the reconsidered Net Hours model
-remain later cutover work. Restore the deferred Data Manager Browse
-Records/read-only path and unskip its Phase 33 Playwright coverage as part of
-this work. [Delivery contract: #18](https://github.com/kenshih/birdnerd/issues/18)
+inventing a match. Restore the deferred Data Manager Browse Records/read-only
+path as part of this work. After these Event-backed replacements, remove the
+unlinked legacy mutable database and DataBundle code: no production legacy data
+exists, so no migration, archive, fallback, or rollback is required. Photo
+attachments and the reconsidered Net Hours model remain independent later work.
+[Delivery contract: #18](https://github.com/kenshih/birdnerd/issues/18)
 
 ### Phase 34 — Field record-quality warnings (Field version TBD)
 
@@ -69,14 +71,6 @@ threshold or when action is needed. A future delivery contract must define
 that threshold, the accessible states and wording, any user action, and the
 browser evidence; do not add a second sync model or change Event/sync
 contracts merely to change this presentation.
-
-### Backlog: Legacy mutable Field retirement
-
-After Phase 33 supplies the event-backed Data Manager's browse, import, and
-agency-export replacements, explicitly decide retention, migration, and
-removal for the unlinked legacy mutable Field database and Data Manager code.
-Do not silently delete code or data, or declare the old path retired merely
-because it is unlinked.
 
 ### Backlog: Net Reconciliation, cleanup
 
