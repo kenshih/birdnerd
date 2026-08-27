@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { deployBand, entityRow, entitySection, fieldSelect, openNewRecordForm } from './helpers'
+import { chooseFirstSession, deployBand, editFirstRecord, entityRow, entitySection, fieldSelect, openNewRecordForm } from './helpers'
 
 /** Read-only record inspection through Field Data and the Event-backed Data Manager. */
 async function makeRecord(page: Page) {
@@ -92,4 +92,20 @@ test('Data Manager retains an unresolved managed Band number snapshot', async ({
   const managedBand = fieldSelect(page, 'Managed Band')
   await expect(managedBand).toBeDisabled()
   await expect(managedBand.locator('option:checked')).toContainText(expected)
+})
+
+test('an unrelated correction preserves a raw v1 Band number', async ({ page }) => {
+  await page.goto('/birdnerd/?e2eFixture=legacy-band')
+  await expect(page.getByRole('heading', { name: 'BirdNerd', exact: true })).toBeVisible()
+  await page.getByText('Field Data').first().click()
+  await expect(page.getByRole('heading', { name: 'Field Data', exact: true })).toBeVisible()
+  await page.getByRole('button', { name: 'records', exact: true }).click()
+  await chooseFirstSession(page)
+  await editFirstRecord(page)
+
+  await expect(fieldSelect(page, 'Band selection')).toHaveValue('legacy')
+  await expect(page.getByRole('button', { name: 'Save offline', exact: true })).toBeEnabled()
+  await page.getByText('Notes', { exact: true }).locator('..').locator('textarea').fill('Corrected historical note')
+  await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(entitySection(page, 'Banding Records')).toContainText('Historical Band (unresolved) — 1154-81501')
 })
