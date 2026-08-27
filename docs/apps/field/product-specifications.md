@@ -28,7 +28,9 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 
 **Data Manager** — Browse and inspect the active Workspace's projected Banding
 Records without a command path, and export or recovery-restore its immutable
-Event Log. Import preview and agency exports remain later Phase 33 outcomes.
+Event Log. Historical raw Band numbers and unresolved managed references stay
+visible without being reclassified. Import preview and agency exports remain
+later Phase 33 outcomes.
 
 ---
 

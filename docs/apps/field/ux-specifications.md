@@ -66,7 +66,11 @@ Banding Record, then opens **Data Manager** from Home.
 
 **Visible promises:** Browse is limited to the active Workspace and represents
 the current operational projection honestly, including missing or unresolved
-values. Closing inspection returns to Data Manager.
+values. Historical raw Band numbers remain visible rather than being silently
+reclassified. In the later Field correction flow they are read-only until a
+current Band selection is explicitly chosen; unrelated corrections do not
+invent a selection or absent boolean values. Closing inspection returns to
+Data Manager.
 
 **Non-visible invariants:** Browse reads the immutable Event replica through
 its rebuildable operational projection. It neither reads the retired mutable
@@ -800,8 +804,9 @@ legacy mutable Data Manager.
 
 Data Manager lists the active Workspace's projected Records and opens the
 existing disabled Record inspector. Browse has no editing or correction path;
-closing an inspected Record returns to Data Manager. Event Bundle restore still
-exposes its validation, access, and unsynced-Event protection result before the
+historical and unresolved Band references remain visibly distinct. Closing an
+inspected Record returns to Data Manager. Event Bundle restore still exposes
+its validation, access, and unsynced-Event protection result before the
 destructive confirmation. Agency CSV exports and master-sheet import remain
 later Phase 33 work.
 

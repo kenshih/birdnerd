@@ -57,13 +57,15 @@ function operationalFixtureEvents(fixture: string | null, workspaceId: string, u
     const sessionId = '018f8c7b-0000-7000-8000-000000000010'
     return [
       createEvent({
-        event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
+        event_id: '018f8c7b-0000-7000-8000-000000000020', event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
         command_id: '018f8c7b-0000-7000-8000-000000000012', actor,
+        occurred_at: '2038-01-01T00:00:00.000Z', hlc: { physical_ms: 2_145_916_800_000, logical: 0 },
         payload: { session_id: sessionId, session_date: '2026-08-20' },
       }),
       createEvent({
-        event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
+        event_id: '018f8c7b-0000-7000-8000-000000000021', event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
         command_id: '018f8c7b-0000-7000-8000-000000000012', actor,
+        occurred_at: '2038-01-01T00:00:00.001Z', hlc: { physical_ms: 2_145_916_800_001, logical: 0 },
         payload: { record_id: '018f8c7b-0000-7000-8000-000000000011', session_id: sessionId, species_code: 'AMRO', band_number: '1154-81501' },
       }),
     ]

@@ -588,9 +588,12 @@ imports that mutable format into the Event Log.
   Lifecycle is independent: an amendment never reactivates an entity.
 - Band selection is one managed/foreign/unbanded value. Managed selection
   carries Band ID and a number snapshot; a missing local parent remains an
-  unresolved reference. Deployment is derived from active Record facts, and
-  projections surface both incompatible new-deployment claims and duplicate
-  normalized band-number claims.
+  unresolved reference. A v1 Record's raw `band_number` remains visibly
+  historical/unresolved: unrelated amendments retain that raw fact and omit
+  absent optional booleans, while a current `band_selection` is written only
+  after an explicit selection. Deployment is derived from active Record facts,
+  and projections surface both incompatible new-deployment claims and
+  duplicate normalized band-number claims.
 - `band.received` retains a structural Band ID/number plus optional `band_size`
   and `band_type`; one typed batch command emits one independently retryable
   Event per Band under one command ID. `band.fields-amended` uses field-level

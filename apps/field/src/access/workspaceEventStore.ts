@@ -10,7 +10,7 @@ import {
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
 } from '@birdnerd/banding'
-import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock, type PersistedEvent } from '@birdnerd/events'
+import { compareEventOrder, observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock, type PersistedEvent } from '@birdnerd/events'
 import {
   EventLog,
   type AppendResult,
@@ -480,8 +480,9 @@ function maxClock(events: readonly PersistedEvent[]): HybridLogicalClock | undef
   }, undefined)
 }
 
-function sortEvents<T extends Pick<PersistedEvent, 'event_id'>>(events: readonly T[]): T[] {
-  return [...events].sort((left, right) => left.event_id.localeCompare(right.event_id))
+/** Preserve raw Event bytes while using the canonical replay order everywhere. */
+function sortEvents<T extends PersistedEvent>(events: readonly T[]): T[] {
+  return [...events].sort((left, right) => compareEventOrder(upcastEvent(left), upcastEvent(right)))
 }
 
 /**
