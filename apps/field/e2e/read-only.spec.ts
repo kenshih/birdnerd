@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs'
 import { test, expect, type Page } from '@playwright/test'
 import { chooseFirstSession, deployBand, editFirstRecord, entityRow, entitySection, fieldSelect, openNewRecordForm } from './helpers'
 
@@ -107,5 +108,18 @@ test('an unrelated correction preserves a raw v1 Band number', async ({ page }) 
   await expect(page.getByRole('button', { name: 'Save offline', exact: true })).toBeEnabled()
   await page.getByText('Notes', { exact: true }).locator('..').locator('textarea').fill('Corrected historical note')
   await page.getByRole('button', { name: 'Save offline', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'New Banding Record', exact: true })).toBeVisible()
   await expect(entitySection(page, 'Banding Records')).toContainText('Historical Band (unresolved) — 1154-81501')
+  await editFirstRecord(page)
+  await expect(page.getByText('Notes', { exact: true }).locator('..').locator('textarea')).toHaveValue('Corrected historical note')
+
+  await page.getByRole('button', { name: 'Home', exact: true }).click()
+  await page.getByText('Data Manager').first().click()
+  const downloadPromise = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Export Event Bundle' }).click()
+  const path = await (await downloadPromise).path()
+  if (!path) throw new Error('Playwright did not retain the downloaded Event Bundle.')
+  const bundle = JSON.parse(readFileSync(path, 'utf8'))
+  const amendment = bundle.events.findLast((event: { event_type: string }) => event.event_type === 'banding-record.fields-amended')
+  expect(amendment?.payload.fields).toEqual({ notes: 'Corrected historical note' })
 })

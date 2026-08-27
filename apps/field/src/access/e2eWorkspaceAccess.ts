@@ -57,12 +57,12 @@ function operationalFixtureEvents(fixture: string | null, workspaceId: string, u
     const sessionId = '018f8c7b-0000-7000-8000-000000000010'
     return [
       createEvent({
-        event_id: '018f8c7b-0000-7000-8000-000000000020', event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
+        event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
         command_id: '018f8c7b-0000-7000-8000-000000000012', actor,
         payload: { session_id: sessionId, session_date: '2026-08-20' },
       }),
       createEvent({
-        event_id: '018f8c7b-0000-7000-8000-000000000021', event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
+        event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
         command_id: '018f8c7b-0000-7000-8000-000000000012', actor,
         payload: { record_id: '018f8c7b-0000-7000-8000-000000000011', session_id: sessionId, species_code: 'AMRO', band_number: '1154-81501' },
       }),

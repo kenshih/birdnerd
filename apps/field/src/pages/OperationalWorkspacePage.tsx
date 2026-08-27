@@ -20,7 +20,7 @@ import { legacyBandLabel, recordBandReference, unresolvedManagedBandLabel, type 
 
 type Tab = 'sessions' | 'records' | 'inventory' | 'configuration'
 type BandMode = RecordBandMode
-type Draft = Record<string, string | boolean>
+type Draft = Record<string, string | boolean | undefined>
 type Code = { code: string; label: string }
 
 const SESSION_KEYS = ['session_date', 'station_id', 'protocol', 'maps_period', 'open_time', 'close_time', 'master_bander_id', 'weather_open_temp', 'weather_open_wind', 'weather_open_cloud', 'weather_open_precip', 'weather_close_temp', 'weather_close_wind', 'weather_close_cloud', 'weather_close_precip', 'notes'] as const
@@ -305,7 +305,7 @@ export default function OperationalWorkspacePage({ onHome, initialRecordId, onCl
         <FormSection title="Identity"><FormRow><TextField label="Species code"><input value={text(recordDraft.species_code)} onChange={event => updateRecord('species_code', event.target.value.toUpperCase())} /></TextField><SelectField label="Capture code" value={text(recordDraft.capture_code)} onChange={value => updateRecord('capture_code', value)} options={CAPTURE_STATUS_CODES} feedback={recordFeedback(recordWarnings, 'capture_code')} /></FormRow>
           <SelectField label="Band selection" value={bandMode} onChange={value => selectBandMode(value as BandMode)} options={[{ code: 'unbanded', label: 'Unbanded' }, { code: 'foreign', label: 'Foreign recapture' }, { code: 'managed', label: 'Managed inventory' }, ...(bandMode === 'legacy' ? [{ code: 'legacy', label: 'Historical raw Band number (unresolved)' }] : [])]} />
           {bandMode === 'foreign' && <TextField label="Foreign band number"><input value={foreignBandNumber} onChange={event => setForeignBandNumber(event.target.value)} /></TextField>}
-          {bandMode === 'legacy' && <TextField label="Historical band number"><input value={foreignBandNumber} onChange={event => setForeignBandNumber(event.target.value)} /></TextField>}
+          {bandMode === 'legacy' && <TextField label="Historical band number"><input value={foreignBandNumber} readOnly /></TextField>}
           {bandMode === 'managed' && <><SelectField label="Managed Band" value={managedBandId} onChange={selectManagedBand} options={[...recordViewBands.filter(band => ['available', 'deployed'].includes(projection.band_inventory.get(band.id)?.status ?? '') || band.id === managedBandId).map(band => ({ code: band.id, label: `${text(band.fields.band_number)} — ${projection.band_inventory.get(band.id)?.status ?? 'unresolved'}${band.active ? '' : ' (inactive Band)'}` })), ...(viewingRecordId && managedBandId && recordViewManagedBand?.kind !== 'band' ? [{ code: managedBandId, label: unresolvedManagedBandLabel(foreignBandNumber, managedBandId) }] : [])]} feedback={recordFeedback(recordWarnings, 'managed_band')} />{!managedBandId && <p style={styles.warning}>Choose a known inventory Band. Do not classify an unavailable local Band as foreign; sync or correct it later.</p>}</>}
           {bandMode === 'legacy' && !viewingRecordId && <p style={styles.warning}>This historical raw Band number will be preserved unless you choose a current Band selection.</p>}
           {text(recordDraft.capture_code) === 'R' && <FormRow><SelectField label="Present Condition" value={text(recordDraft.present_condition)} onChange={value => updateRecord('present_condition', value)} options={PRESENT_CONDITION_CODES} /><TextField label="Replaced Band #"><input value={text(recordDraft.replaced_band_number)} onChange={event => updateRecord('replaced_band_number', event.target.value)} /></TextField></FormRow>}
@@ -366,8 +366,24 @@ function BandHistory({ band, onCorrectRecord }: { band: BandInventoryItem; onCor
 function EntityList({ title, entities, detail, onDeactivate, onCorrect, onView }: { title: string; entities: readonly OperationalEntity[]; detail: (entity: OperationalEntity) => string; onDeactivate: (entity: OperationalEntity) => void; onCorrect?: (id: string) => void; onView?: (id: string) => void }) { return <section style={styles.card}><h2>{title}</h2>{entities.length === 0 ? <p>None yet.</p> : entities.map(entity => <div key={entity.id} style={styles.row}><span>{detail(entity)}{entity.active ? '' : ' (inactive)'}</span><span style={styles.actions}>{onView && <button type="button" onClick={() => onView(entity.id)}>View</button>}{onCorrect && entity.active && <button type="button" onClick={() => onCorrect(entity.id)}>Correct</button>}<button type="button" onClick={() => onDeactivate(entity)}>{entity.active ? 'Deactivate' : 'Reactivate'}</button></span></div>)}</section> }
 function ConflictPanels({ projection, bands, onCorrect }: { projection: ReturnType<typeof projectOperationalEvents>; bands: readonly OperationalEntity[]; onCorrect: (id: string) => void }) { return <>{projection.band_number_conflicts.map(conflict => <section style={styles.warning} key={`number-${conflict.band_number}`}><strong>Band-number conflict: {conflict.band_number}</strong><p>Both offline inventory facts remain. A Contributor can deactivate or amend the incorrect inventory Band; no history is deleted.</p>{conflict.band_ids.map(id => <span key={id} style={styles.actions}>{text(bands.find(band => band.id === id)?.fields.band_number) || id}</span>)}</section>)}{projection.band_allocation_conflicts.map(conflict => <section style={styles.warning} key={`allocation-${conflict.band_id}`}><strong>Band allocation conflict: {text(bands.find(band => band.id === conflict.band_id)?.fields.band_number) || conflict.band_id}</strong><p>Both new-deployment facts remain. Correct one record with an amendment or deactivate it; a recapture does not conflict.</p>{conflict.record_ids.map(id => <button type="button" key={id} onClick={() => onCorrect(id)}>Correct record {id.slice(0, 8)}</button>)}</section>)}</> }
 function currentBandSelection(mode: BandMode, foreign: string, managedId: string, bands: readonly OperationalEntity[]) { if (mode === 'legacy') return undefined; if (mode === 'foreign') return { kind: 'foreign', band_number: foreign.trim() }; if (mode === 'managed') { const band = bands.find(item => item.id === managedId); return { kind: 'managed', band_id: managedId, band_number: text(band?.fields.band_number) } } return { kind: 'unbanded' } }
-function draftFrom(fields: Record<string, unknown>, keys: readonly string[]): Draft { return Object.fromEntries(keys.map(key => [key, BOOLEAN_KEYS.has(key) ? Boolean(fields[key]) : text(fields[key])])) }
-function eventFields(draft: Draft, keys: readonly string[]): Record<string, unknown> { return Object.fromEntries(keys.map(key => { const value = draft[key]; if (BOOLEAN_KEYS.has(key)) return [key, Boolean(value)]; if (text(value) === '') return [key, null]; return [key, NUMBER_KEYS.has(key) ? Number(value) : value] })) }
+function draftFrom(fields: Record<string, unknown>, keys: readonly string[]): Draft {
+  const draft: Draft = {}
+  for (const key of keys) {
+    if (BOOLEAN_KEYS.has(key) && fields[key] === undefined) continue
+    draft[key] = BOOLEAN_KEYS.has(key) ? Boolean(fields[key]) : text(fields[key])
+  }
+  return draft
+}
+function eventFields(draft: Draft, keys: readonly string[]): Record<string, unknown> {
+  const fields: Record<string, unknown> = {}
+  for (const key of keys) {
+    const value = draft[key]
+    if (BOOLEAN_KEYS.has(key)) {
+      if (value !== undefined) fields[key] = Boolean(value)
+    } else fields[key] = text(value) === '' ? null : NUMBER_KEYS.has(key) ? Number(value) : value
+  }
+  return fields
+}
 function changedFields(current: Record<string, unknown>, candidate: Record<string, unknown>): Record<string, unknown> { return Object.fromEntries(Object.entries(candidate).filter(([key, value]) => JSON.stringify(current[key] ?? null) !== JSON.stringify(value))) }
 function compact(fields: Record<string, unknown>): Record<string, unknown> { return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== null && value !== undefined && value !== '')) }
 function text(value: unknown): string { return value === undefined || value === null ? '' : String(value) }
