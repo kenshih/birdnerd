@@ -29,6 +29,28 @@ describe('EventLog', () => {
 
     expect(() => new EventLog([event], () => ({ accepted: false, reason: 'Not admitted.' }))).toThrow('Initial Event Log entry was rejected')
   })
+
+  it('hydrates accepted history without re-admitting it', () => {
+    const event = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000001',
+      event_type: 'workspace.created',
+      workspace_id: '018f8c7b-0000-7000-8000-000000000001',
+      command_id: '018f8c7b-0000-7000-8000-000000000002',
+      actor: { kind: 'restricted-provisioner', provisioner_id: 'local-admin' },
+      payload: { workspace_id: '018f8c7b-0000-7000-8000-000000000001', name: 'Cedar Creek' },
+    })
+    const log = EventLog.fromAccepted([event], () => ({ accepted: false, reason: 'Not admitted.' }))
+
+    expect(log.snapshot()).toEqual([event])
+    expect(log.append(createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000003',
+      event_type: 'workspace.created',
+      workspace_id: '018f8c7b-0000-7000-8000-000000000003',
+      command_id: '018f8c7b-0000-7000-8000-000000000004',
+      actor: { kind: 'restricted-provisioner', provisioner_id: 'local-admin' },
+      payload: { workspace_id: '018f8c7b-0000-7000-8000-000000000003', name: 'Willow Creek' },
+    }))).toMatchObject({ kind: 'rejected', reason: 'Not admitted.' })
+  })
 })
 
 describe('SyncCoordinator', () => {

@@ -99,7 +99,7 @@ export class WorkspaceEventStore implements DurableReplica {
   async appendAll(events: readonly DomainEvent[]): Promise<readonly AppendResult[]> {
     return this.exclusive(async () => {
       const current = await this.snapshot()
-      const candidateLog = new EventLog(current, admitWorkspaceEvent)
+      const candidateLog = EventLog.fromAccepted(current, admitWorkspaceEvent)
       const rawById = new Map(events.map(event => [event.event_id, event]))
       const results = candidateLog.appendAll(events.map(upcastEvent))
       const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')

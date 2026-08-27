@@ -380,16 +380,16 @@ describe('WorkspaceEventStore replica exchange', () => {
   })
 
   it('rehydrates raw Phase 30 Events in HLC order before accepting a later correction', async () => {
-    const historicSessionId = '018f8c7b-0000-7000-8000-000000000020'
-    const historicRecordId = '018f8c7b-0000-7000-8000-000000000021'
+    const historicSessionId = '018f8c7b-0000-7000-8000-000000000010'
+    const historicRecordId = '018f8c7b-0000-7000-8000-000000000011'
     const historicSession = createEvent({
-      event_id: historicSessionId, event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
+      event_id: '018f8c7b-0000-7000-8000-000000000021', event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
       command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
       occurred_at: '2038-01-01T00:00:00.000Z', hlc: { physical_ms: 2_145_916_800_000, logical: 0 },
       payload: { session_id: historicSessionId, session_date: '2026-08-20' },
     })
     const historicRecord = createEvent({
-      event_id: historicRecordId, event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
+      event_id: '018f8c7b-0000-7000-8000-000000000020', event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
       command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
       occurred_at: '2038-01-01T00:00:00.001Z', hlc: { physical_ms: 2_145_916_800_001, logical: 0 },
       payload: { record_id: historicRecordId, session_id: historicSessionId, species_code: 'AMRO', band_number: '1154-81501' },
@@ -402,9 +402,13 @@ describe('WorkspaceEventStore replica exchange', () => {
     resetWorkspaceEventStore()
     const reopened = new WorkspaceEventStore()
     reopened.activateWorkspace(workspaceId)
-    await reopened.snapshot()
+    const hydrated = await reopened.snapshot()
+    expect(hydrated.findIndex(event => event.event_id === historicSession.event_id)).toBeLessThan(hydrated.findIndex(event => event.event_id === historicRecord.event_id))
+    const hydratedDatabase = await openDB('birdnerd-event-core', 3)
+    expect(await hydratedDatabase.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
+    hydratedDatabase.close()
     const correction = createEvent({
-      event_id: '018f8c7b-0000-7000-8000-000000000022', event_type: 'banding-record.fields-amended', workspace_id: workspaceId,
+      event_id: '018f8c7b-0000-7000-8000-000000000019', event_type: 'banding-record.fields-amended', workspace_id: workspaceId,
       command_id: '018f8c7b-0000-7000-8000-000000000023', actor: { kind: 'user-account', user_account_id: userId },
       occurred_at: '2038-01-01T00:00:00.002Z', hlc: { physical_ms: 2_145_916_800_002, logical: 0 },
       payload: { record_id: historicRecordId, fields: { notes: 'Corrected historical note' } },
@@ -413,6 +417,13 @@ describe('WorkspaceEventStore replica exchange', () => {
     await expect(reopened.appendAll([correction])).resolves.toEqual([
       expect.objectContaining({ kind: 'accepted', event: correction }),
     ])
+
+    resetWorkspaceEventStore()
+    const reloaded = new WorkspaceEventStore()
+    reloaded.activateWorkspace(workspaceId)
+    const replayed = await reloaded.snapshot()
+    expect(replayed.findIndex(event => event.event_id === historicSession.event_id)).toBeLessThan(replayed.findIndex(event => event.event_id === historicRecord.event_id))
+    expect(replayed.findIndex(event => event.event_id === historicRecord.event_id)).toBeLessThan(replayed.findIndex(event => event.event_id === correction.event_id))
   })
 
   it('exports and restores raw Phase 30 Event JSON while canonical replay catches up safely', async () => {
