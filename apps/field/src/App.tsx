@@ -36,6 +36,7 @@ type AppView =
   | { mode: 'about' }
   | { mode: 'diagnostics' }
   | { mode: 'event-bundle' }
+  | { mode: 'event-bundle-record'; recordId: string }
   | { mode: 'band-history-from-record'; band: Band; returnSession: Session }
 
 export default function App() {
@@ -56,7 +57,9 @@ export default function App() {
   } else if (view.mode === 'diagnostics') {
     page = <EventPipelinePage onHome={goHome} />
   } else if (view.mode === 'event-bundle') {
-    page = <WorkspaceEventBundlePage onHome={goHome} />
+    page = <WorkspaceEventBundlePage onHome={goHome} onViewRecord={recordId => setView({ mode: 'event-bundle-record', recordId })} />
+  } else if (view.mode === 'event-bundle-record') {
+    page = <OperationalWorkspacePage onHome={goHome} initialRecordId={view.recordId} onCloseRecordView={() => setView({ mode: 'event-bundle' })} />
   } else if (view.mode === 'session') {
     page = (
       <SessionView

@@ -1,6 +1,6 @@
 import { validateRecord } from './validation'
 
-export type OperationalRecordDraft = Readonly<Record<string, string | boolean>>
+export type OperationalRecordDraft = Readonly<Record<string, string | boolean | undefined>>
 
 export type OperationalRecordValidationContext = {
   band_status?: string

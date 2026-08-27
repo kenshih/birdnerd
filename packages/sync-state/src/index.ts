@@ -30,6 +30,21 @@ export class EventLog {
     }
   }
 
+  /** Hydrate immutable history that its durable owner already admitted. */
+  static fromAccepted(initialEvents: readonly DomainEvent[], admit: EventAdmission): EventLog {
+    const log = new EventLog([], admit)
+    for (const event of initialEvents) {
+      assertEvent(event)
+      const existing = log.events.find(candidate => candidate.event_id === event.event_id)
+      if (existing) {
+        if (!sameEventContent(existing, event)) throw new Error('Accepted Event Log entries conflict on immutable Event ID.')
+        continue
+      }
+      log.events.push(event)
+    }
+    return log
+  }
+
   snapshot(): readonly DomainEvent[] {
     return [...this.events]
   }

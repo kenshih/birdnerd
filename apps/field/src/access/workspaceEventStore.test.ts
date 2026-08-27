@@ -295,6 +295,26 @@ describe('WorkspaceEventStore replica exchange', () => {
     expect(await store.snapshot()).toContainEqual(canonical)
   })
 
+  it('retains the first accepted raw Event from a duplicate or conflicting local batch', async () => {
+    const raw = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000042', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000043', session_date: '2026-08-13' },
+    })
+    const canonical = upcastEvent(raw)
+    const conflict = createEvent({ ...raw, payload: { session_id: '018f8c7b-0000-7000-8000-000000000044', session_date: '2026-08-14' } })
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+
+    await expect(store.appendAll([raw, canonical, conflict])).resolves.toMatchObject([
+      { kind: 'accepted' }, { kind: 'duplicate' }, { kind: 'rejected' },
+    ])
+    const database = await openDB('birdnerd-event-core', 3)
+    expect(await database.get('event_log', raw.event_id)).toEqual(raw)
+    database.close()
+  })
+
   it('does not carry a deferred retry from Workspace A into Workspace B sync metadata', async () => {
     const workspaceB = '018f8c7b-0000-7000-8000-000000000007'
     const store = new WorkspaceEventStore()
@@ -333,7 +353,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const historicRecord = createEvent({
       event_id: '018f8c7b-0000-7000-8000-000000000043', event_type: 'banding-record.created', event_schema_version: 1,
       workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
-      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSessionId, species_code: 'AMRO' },
+      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSessionId, species_code: 'AMRO', band_number: '1154-81501' },
     })
 
     const initializingStore = new WorkspaceEventStore()
@@ -363,20 +383,67 @@ describe('WorkspaceEventStore replica exchange', () => {
     const hydratedDatabase = await openDB('birdnerd-event-core', 3)
     expect(await hydratedDatabase.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
     expect((await hydratedDatabase.get('projection_cache', 'workspace-current-state'))?.banding_records)
-      .toEqual(expect.arrayContaining([expect.objectContaining({ record_id: '018f8c7b-0000-7000-8000-000000000044', species_code: 'AMRO' })]))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ record_id: '018f8c7b-0000-7000-8000-000000000044', species_code: 'AMRO', band_number: '1154-81501' })]))
     hydratedDatabase.close()
     const newer = sessionEvent('018f8c7b-0000-7000-8000-000000000045')
     await store.commit({ receipts: [], pulled: [{ event: newer, server_sequence: 1 }], cursor: 1 })
     expect(await store.snapshot()).toEqual(expect.arrayContaining([
-      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO' }) }) }),
+      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO', band_number: '1154-81501' }) }) }),
     ]))
 
     resetWorkspaceEventStore()
     const reopened = new WorkspaceEventStore()
     reopened.activateWorkspace(workspaceId)
     expect(await reopened.snapshot()).toEqual(expect.arrayContaining([
-      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO' }) }) }),
+      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO', band_number: '1154-81501' }) }) }),
     ]))
+  })
+
+  it('rehydrates raw Phase 30 Events in HLC order before accepting a later correction', async () => {
+    const historicSessionId = '018f8c7b-0000-7000-8000-000000000010'
+    const historicRecordId = '018f8c7b-0000-7000-8000-000000000011'
+    const historicSession = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000021', event_schema_version: 1, event_type: 'session.created', workspace_id: workspaceId,
+      command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      occurred_at: '2038-01-01T00:00:00.000Z', hlc: { physical_ms: 2_145_916_800_000, logical: 0 },
+      payload: { session_id: historicSessionId, session_date: '2026-08-20' },
+    })
+    const historicRecord = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000020', event_schema_version: 1, event_type: 'banding-record.created', workspace_id: workspaceId,
+      command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      occurred_at: '2038-01-01T00:00:00.001Z', hlc: { physical_ms: 2_145_916_800_001, logical: 0 },
+      payload: { record_id: historicRecordId, session_id: historicSessionId, species_code: 'AMRO', band_number: '1154-81501' },
+    })
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+    await store.appendAll([historicSession, historicRecord])
+
+    resetWorkspaceEventStore()
+    const reopened = new WorkspaceEventStore()
+    reopened.activateWorkspace(workspaceId)
+    const hydrated = await reopened.snapshot()
+    expect(hydrated.findIndex(event => event.event_id === historicSession.event_id)).toBeLessThan(hydrated.findIndex(event => event.event_id === historicRecord.event_id))
+    const hydratedDatabase = await openDB('birdnerd-event-core', 3)
+    expect(await hydratedDatabase.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
+    hydratedDatabase.close()
+    const correction = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000019', event_type: 'banding-record.fields-amended', workspace_id: workspaceId,
+      command_id: '018f8c7b-0000-7000-8000-000000000023', actor: { kind: 'user-account', user_account_id: userId },
+      occurred_at: '2038-01-01T00:00:00.002Z', hlc: { physical_ms: 2_145_916_800_002, logical: 0 },
+      payload: { record_id: historicRecordId, fields: { notes: 'Corrected historical note' } },
+    })
+
+    await expect(reopened.appendAll([correction])).resolves.toEqual([
+      expect.objectContaining({ kind: 'accepted', event: correction }),
+    ])
+
+    resetWorkspaceEventStore()
+    const reloaded = new WorkspaceEventStore()
+    reloaded.activateWorkspace(workspaceId)
+    const replayed = await reloaded.snapshot()
+    expect(replayed.findIndex(event => event.event_id === historicSession.event_id)).toBeLessThan(replayed.findIndex(event => event.event_id === historicRecord.event_id))
+    expect(replayed.findIndex(event => event.event_id === historicRecord.event_id)).toBeLessThan(replayed.findIndex(event => event.event_id === correction.event_id))
   })
 
   it('exports and restores raw Phase 30 Event JSON while canonical replay catches up safely', async () => {

@@ -10,7 +10,7 @@ import {
   projectWorkspaceEvents,
   snapshotWorkspaceProjection,
 } from '@birdnerd/banding'
-import { observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock, type PersistedEvent } from '@birdnerd/events'
+import { compareEventOrder, observeHlc, sameEventContent, tickHlc, upcastEvent, type DomainEvent, type HybridLogicalClock, type PersistedEvent } from '@birdnerd/events'
 import {
   EventLog,
   type AppendResult,
@@ -99,12 +99,12 @@ export class WorkspaceEventStore implements DurableReplica {
   async appendAll(events: readonly DomainEvent[]): Promise<readonly AppendResult[]> {
     return this.exclusive(async () => {
       const current = await this.snapshot()
-      const candidateLog = new EventLog(current, admitWorkspaceEvent)
-      const rawById = new Map(events.map(event => [event.event_id, event]))
-      const results = candidateLog.appendAll(events.map(upcastEvent))
-      const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')
-      if (accepted.length === 0) return results
-      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => rawById.get(result.event.event_id) ?? result.event))
+      const candidateLog = EventLog.fromAccepted(current, admitWorkspaceEvent)
+      const candidates = events.map(raw => ({ raw, event: upcastEvent(raw) }))
+      const results = candidateLog.appendAll(candidates.map(candidate => candidate.event))
+      const acceptedRawEvents = results.flatMap((result, index) => result.kind === 'accepted' ? [candidates[index]!.raw] : [])
+      if (acceptedRawEvents.length === 0) return results
+      await this.persistLocal(candidateLog.snapshot(), acceptedRawEvents)
       this.log = new EventLog(candidateLog.snapshot(), () => ({ accepted: true }))
       return results
     })
@@ -480,8 +480,9 @@ function maxClock(events: readonly PersistedEvent[]): HybridLogicalClock | undef
   }, undefined)
 }
 
-function sortEvents<T extends Pick<PersistedEvent, 'event_id'>>(events: readonly T[]): T[] {
-  return [...events].sort((left, right) => left.event_id.localeCompare(right.event_id))
+/** Preserve raw Event bytes while using the canonical replay order everywhere. */
+function sortEvents<T extends PersistedEvent>(events: readonly T[]): T[] {
+  return [...events].sort((left, right) => compareEventOrder(upcastEvent(left), upcastEvent(right)))
 }
 
 /**

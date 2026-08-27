@@ -47,6 +47,38 @@ and the browser proof of rendered feedback, its BP relationship, and an
 available **Save offline** action is in
 [`record-validation.spec.ts`](../../../apps/field/e2e/record-validation.spec.ts).
 
+### Data Manager — browse a projected Record
+
+**User goal:** Find a Record in the active Workspace and inspect its current
+Event-backed state without risking an edit.
+
+**Deterministic start:** An active Workspace Member has a projected Session and
+Banding Record, then opens **Data Manager** from Home.
+
+**Before → action → result:**
+
+- **Before:** Data Manager shows its Workspace Event Bundle recovery actions.
+- **Action:** Open **Browse Records** and choose **View** for a displayed
+  Record.
+- **Result:** The Record opens in the established disabled **View Record**
+  inspector. Its projected values remain visible, and no save or correction
+  action is offered.
+
+**Visible promises:** Browse is limited to the active Workspace and represents
+the current operational projection honestly, including missing or unresolved
+values. Historical raw Band numbers remain visible rather than being silently
+reclassified. In the later Field correction flow they are read-only until a
+current Band selection is explicitly chosen; unrelated corrections do not
+invent a selection or absent boolean values. Closing inspection returns to
+Data Manager.
+
+**Non-visible invariants:** Browse reads the immutable Event replica through
+its rebuildable operational projection. It neither reads the retired mutable
+database nor appends, amends, deactivates, or reactivates Events.
+
+**Evidence:** The Event-backed browser journey is covered by
+[`read-only.spec.ts`](../../../apps/field/e2e/read-only.spec.ts).
+
 ## 0. Authentication & Access
 
 Google sign-in establishes an external identity; it does not by itself grant
@@ -162,10 +194,10 @@ acceptance; they neither receive Event-backed writes nor provide a normal-path
 fallback. The acceptance result governs their later removal without a legacy
 data migration.
 
-Home also links to a focused **Data Manager** recovery screen for exporting or
-restoring the active Workspace's immutable Event Bundle. It does not expose the
-legacy mutable Data Manager; projection-backed browsing, import, and agency
-exports are Phase 33 work.
+Home also links to **Data Manager** for Event-backed Record browsing and
+Workspace Event Bundle export or recovery restore. It does not expose the
+legacy mutable Data Manager; import and agency exports remain later Phase 33
+work.
 
 All observational fields remain optional. Remove actions become role-aware
 deactivation with explicit reactivation, preserve historical references, and
@@ -212,14 +244,14 @@ initialization below describe the legacy workflow and do not ship on the Phase
 ```
 
 Buttons are grouped with subtle dividers: **field activities** (Field Data and
-recovery-only Data Manager), **diagnostics** (Event Pipeline in development
-builds), and **meta** (Feedback and About). Field Data itself contains the
-event-backed Session, Record, Inventory, and Admin configuration tabs.
+Data Manager), **diagnostics** (Event Pipeline in development builds), and
+**meta** (Feedback and About). Field Data itself contains the event-backed
+Session, Record, Inventory, and Admin configuration tabs.
 
 | Button | Purpose | Leads To |
 |--------|---------|----------|
 | **Field Data** | Create, correct, synchronize, and inspect shared Event-backed Sessions, Records, inventory, and configuration | Field Data |
-| **Data Manager** | Export or recovery-restore the active Workspace's immutable Event Bundle | Workspace Event Bundle |
+| **Data Manager** | Browse projected Records, or export and recovery-restore the active Workspace's immutable Event Bundle | Data Manager |
 | **Event Pipeline** *(development only)* | Inspect local Events, projections, queue/cursor/retry state, receipts, and errors | Event Pipeline |
 | **Report Bugs / Feedback** | Send feedback via email | Email client |
 | **About** | App version, credits, links | About Page |
@@ -738,18 +770,22 @@ Accessible from the **Edit Session** form via a "Manage Nets" button (placed at 
 
 ### 7.0 Overview
 
-Phase 31's Home-reachable Data Manager is a focused **Workspace Event Bundle**
-recovery screen. It validates container integrity, every Event, and the target
-Workspace before touching local data; requires active access to that Workspace;
-protects unsynced Events; and only then replaces, rebuilds, and catches up
-through authenticated sync. Event Bundle export and restore retain compatible
-historical Event JSON exactly as received; canonical replay is an internal
-interpretation step, not a history rewrite. It does not mount the legacy
-mutable Data Manager.
+Data Manager is an Event-backed workspace screen. It browses and opens the
+active Workspace's projected Banding Records read-only, alongside **Workspace
+Event Bundle** recovery. Recovery validates container integrity, every Event,
+and the target Workspace before touching local data; requires active access to
+that Workspace; protects unsynced Events; and only then replaces, rebuilds, and
+catches up through authenticated sync. Event Bundle export and restore retain
+compatible historical Event JSON exactly as received; canonical replay is an
+internal interpretation step, not a history rewrite. It does not mount the
+legacy mutable Data Manager.
 
 ```
 ┌──────────────────────────────────────┐
 │  🏠 Data Manager                     │
+│                                      │
+│  ── Browse Records ────────────────  │
+│  Session / Record projection  [View] │
 │                                      │
 │  ── Workspace Event Bundle ───────── │
 │                                      │
@@ -766,10 +802,13 @@ mutable Data Manager.
 
 ### 7.1 Data Manager Layout
 
-The Phase 31 Data Manager contains only Workspace Event Bundle recovery. Restore
-exposes its validation, access, and unsynced-Event protection result before the
-destructive confirmation. There is no record browsing or filtering;
-record-level views are accessed through the Session list.
+Data Manager lists the active Workspace's projected Records and opens the
+existing disabled Record inspector. Browse has no editing or correction path;
+historical and unresolved Band references remain visibly distinct. Closing an
+inspected Record returns to Data Manager. Event Bundle restore still exposes
+its validation, access, and unsynced-Event protection result before the
+destructive confirmation. Agency CSV exports and master-sheet import remain
+later Phase 33 work.
 
 See § 7.0 wireframe above for the full layout.
 

@@ -8,6 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.33.0 — **Event-backed Data Manager browsing.** Data Manager now
+  browses the active Workspace's projected Banding Records and opens each in
+  the existing disabled, read-only inspector. Historical raw Band numbers and
+  unresolved managed references remain visibly distinct, including through
+  unrelated corrections. Event Bundle recovery remains available; CSV import
+  and agency exports remain Phase 33 follow-up outcomes.
 - Field 0.32.6 — **Record-entry validation feedback and UX-regression
   evidence.** The event-backed Banding Record editor once again shows each
   applicable non-blocking validation warning beside its input while keeping
