@@ -33,12 +33,20 @@ const ROLE_ORDER: Record<string, number> = { 'Master Bander': 0, 'Sub-permittee'
  * projection and appends commands to the durable Event replica; it never
  * reads or writes the legacy mutable IndexedDB stores.
  */
-export default function OperationalWorkspacePage({ onHome }: { onHome: () => void }) {
+interface Props {
+  onHome: () => void
+  /** Opens this projected Record in the existing disabled inspector. */
+  initialRecordId?: string
+  /** Data Manager supplies this so Close returns to its record browser. */
+  onCloseRecordView?: () => void
+}
+
+export default function OperationalWorkspacePage({ onHome, initialRecordId, onCloseRecordView }: Props) {
   const access = useWorkspaceAccess()
   const { store, sync } = useMemo(getFieldCollaboration, [])
   const [projection, setProjection] = useState(() => projectOperationalEvents([]))
   const [status, setStatus] = useState<SyncStatus>(sync?.getState() ?? { kind: 'offline', message: 'Sync is not configured.', retry_at: 0 })
-  const [tab, setTab] = useState<Tab>('sessions')
+  const [tab, setTab] = useState<Tab>(() => initialRecordId ? 'records' : 'sessions')
   const [error, setError] = useState<string>()
   const [saving, setSaving] = useState(false)
   const [sessionId, setSessionId] = useState('')
@@ -46,6 +54,7 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const [plannedCrew, setPlannedCrew] = useState<Set<string>>(new Set())
   const [editingRecordId, setEditingRecordId] = useState('')
   const [viewingRecordId, setViewingRecordId] = useState('')
+  const [openedInitialRecordId, setOpenedInitialRecordId] = useState('')
   const [sessionDraft, setSessionDraft] = useState<Draft>(() => ({ session_date: today() }))
   const [recordDraft, setRecordDraft] = useState<Draft>({ feather_pull: false, blood_sample: false })
   const [bandMode, setBandMode] = useState<BandMode>('unbanded')
@@ -77,6 +86,10 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   const refresh = useCallback(async () => setProjection(projectOperationalEvents(await store.snapshot(access.workspace_id))), [access.workspace_id, store])
   const synchronize = useCallback(async (force = false) => { if (sync) await sync.synchronize({ force }); await refresh() }, [refresh, sync])
   useEffect(() => {
+    if (onCloseRecordView) {
+      void refresh()
+      return
+    }
     store.activateWorkspace(access.workspace_id)
     void refresh()
     const unsubscribe = sync?.subscribe(setStatus)
@@ -84,7 +97,7 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
     window.addEventListener('online', online)
     void synchronize()
     return () => { unsubscribe?.(); window.removeEventListener('online', online) }
-  }, [access.workspace_id, refresh, store, sync, synchronize])
+  }, [access.workspace_id, onCloseRecordView, refresh, store, sync, synchronize])
 
   const entities = [...projection.entities.values()]
   const active = (kind: OperationalEntityKind) => entities.filter(entity => entity.kind === kind && entity.active)
@@ -194,12 +207,21 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
     const selection = record.fields.band_selection as { kind?: BandMode; band_number?: string; band_id?: string } | null
     setEditingRecordId(id); setRecordDraft(draftFrom(record.fields, RECORD_KEYS)); setBandMode(selection?.kind ?? 'unbanded'); setForeignBandNumber(selection?.band_number ?? ''); setManagedBandId(selection?.band_id ?? '')
   }
-  function beginRecordView(id: string) {
+  const beginRecordView = useCallback((id: string) => {
     const record = projection.entities.get(id)
     if (!record) return
     const selection = record.fields.band_selection as { kind?: BandMode; band_number?: string; band_id?: string } | null
     setTab('records'); setSessionId(text(record.fields.session_id)); setEditingRecordId(''); setViewingRecordId(id); setRecordDraft(draftFrom(record.fields, RECORD_KEYS)); setBandMode(selection?.kind ?? 'unbanded'); setForeignBandNumber(selection?.band_number ?? ''); setManagedBandId(selection?.band_id ?? '')
+  }, [projection])
+  function closeRecordView() {
+    if (onCloseRecordView) { onCloseRecordView(); return }
+    resetRecord()
   }
+  useEffect(() => {
+    if (!initialRecordId || openedInitialRecordId === initialRecordId || !projection.entities.has(initialRecordId)) return
+    beginRecordView(initialRecordId)
+    setOpenedInitialRecordId(initialRecordId)
+  }, [beginRecordView, initialRecordId, openedInitialRecordId, projection])
   function createStation(event: FormEvent) { event.preventDefault(); void perform(async () => { if (editingStationId) await decide({ kind: 'amend', entity_kind: 'station', entity_id: editingStationId, fields: { name: stationName.trim() || null } }); else await decide({ kind: 'create', entity_kind: 'station', fields: compact({ name: stationName.trim() }) }); setStationName(''); setEditingStationId('') }) }
   function createNet(event: FormEvent) { event.preventDefault(); if (!netStationId) return; void perform(async () => { if (editingNetId) await decide({ kind: 'amend', entity_kind: 'net', entity_id: editingNetId, fields: { label: netLabel.trim() || null, station_id: netStationId } }); else await decide({ kind: 'create', entity_kind: 'net', station_id: netStationId, fields: compact({ label: netLabel.trim() }) }); setNetLabel(''); setNetStationId(''); setEditingNetId('') }) }
   function receiveBand(event: FormEvent) {
@@ -249,10 +271,10 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
   }
 
   return <main style={styles.page}>
-    <PageHeader title="Field Data" onHome={onHome} />
-    <section style={styles.status}><strong>{access.workspace_name}</strong><span>{formatSyncStatus(status)}</span><button type="button" style={styles.syncButton} onClick={() => void synchronize(true)}>Sync now</button></section>
+    <PageHeader title={onCloseRecordView ? 'View Record' : 'Field Data'} onHome={onHome} />
+    {!onCloseRecordView && <section style={styles.status}><strong>{access.workspace_name}</strong><span>{formatSyncStatus(status)}</span><button type="button" style={styles.syncButton} onClick={() => void synchronize(true)}>Sync now</button></section>}
     {error && <p style={styles.error}>{error}</p>}
-    <nav style={styles.tabs}>{(['sessions', 'records', 'inventory', 'configuration'] as const).map(item => <button key={item} type="button" onClick={() => setTab(item)} style={tab === item ? styles.selected : styles.tab}>{item}</button>)}</nav>
+    {!onCloseRecordView && <nav style={styles.tabs}>{(['sessions', 'records', 'inventory', 'configuration'] as const).map(item => <button key={item} type="button" onClick={() => setTab(item)} style={tab === item ? styles.selected : styles.tab}>{item}</button>)}</nav>}
     {tab === 'sessions' && <>
       <section style={styles.card}><label>Edit existing Session<select value={editingSessionId} onChange={event => beginSessionEdit(event.target.value)}><option value="">New Session</option>{sessions.map(session => <option key={session.id} value={session.id}>{sessionLabel(session, stations)}</option>)}</select></label></section>
       <form style={styles.card} onSubmit={createSession}><h2>{editingSessionId ? 'Amend Session' : 'New Session'}</h2>
@@ -268,8 +290,8 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
       <EntityList title="Sessions" entities={entities.filter(entity => entity.kind === 'session')} detail={entity => sessionSummary(entity, stations, recordCountBySession.get(entity.id) ?? 0)} onDeactivate={entity => void perform(() => decide({ kind: entity.active ? 'deactivate' : 'reactivate', entity_kind: 'session', entity_id: entity.id }))} />
     </>}
     {tab === 'records' && <>
-      <section style={styles.card}><h2>Session</h2><select value={sessionId} onChange={event => { setSessionId(event.target.value); resetRecord() }}><option value="">Choose a Session</option>{sessions.map(session => <option key={session.id} value={session.id}>{sessionLabel(session, stations)}</option>)}</select></section>
-      {sessionId && <><section style={styles.card}><label>Edit existing Record<select value={editingRecordId} onChange={event => beginRecordEdit(event.target.value)}><option value="">New Banding Record</option>{sessionRecords.map(record => <option key={record.id} value={record.id}>{recordLabel(record, bands)}</option>)}</select></label></section>
+      {!onCloseRecordView && <section style={styles.card}><h2>Session</h2><select value={sessionId} onChange={event => { setSessionId(event.target.value); resetRecord() }}><option value="">Choose a Session</option>{sessions.map(session => <option key={session.id} value={session.id}>{sessionLabel(session, stations)}</option>)}</select></section>}
+      {(sessionId || viewingRecordId) && <>{!onCloseRecordView && <section style={styles.card}><label>Edit existing Record<select value={editingRecordId} onChange={event => beginRecordEdit(event.target.value)}><option value="">New Banding Record</option>{sessionRecords.map(record => <option key={record.id} value={record.id}>{recordLabel(record, bands)}</option>)}</select></label></section>}
       <form style={styles.card} onSubmit={createRecord}><fieldset disabled={Boolean(viewingRecordId)} style={styles.formFields}><h2>{viewingRecordId ? 'View Record' : editingRecordId ? 'Amend Banding Record' : 'New Banding Record'}</h2>
         <FormSection title="Identity"><FormRow><TextField label="Species code"><input value={text(recordDraft.species_code)} onChange={event => updateRecord('species_code', event.target.value.toUpperCase())} /></TextField><SelectField label="Capture code" value={text(recordDraft.capture_code)} onChange={value => updateRecord('capture_code', value)} options={CAPTURE_STATUS_CODES} feedback={recordFeedback(recordWarnings, 'capture_code')} /></FormRow>
           <SelectField label="Band selection" value={bandMode} onChange={value => selectBandMode(value as BandMode)} options={[{ code: 'unbanded', label: 'Unbanded' }, { code: 'foreign', label: 'Foreign recapture' }, { code: 'managed', label: 'Managed inventory' }]} />
@@ -282,10 +304,10 @@ export default function OperationalWorkspacePage({ onHome }: { onHome: () => voi
         <FormSection title="Molt Limits & Plumage"><CodeGrid draft={recordDraft} update={updateRecord} /></FormSection>
         <FormSection title="Morphometrics & Status"><FormRow><NumberField label="Wing (mm)" field="wing" draft={recordDraft} update={updateRecord} feedback={recordFeedback(recordWarnings, 'wing')} /><NumberField label="Tail (mm)" field="tail" draft={recordDraft} update={updateRecord} feedback={recordFeedback(recordWarnings, 'tail')} /></FormRow><FormRow><NumberField label="Tarsus (mm)" field="tarsus" draft={recordDraft} update={updateRecord} step="0.01" /><NumberField label="Exp. Culmen (mm)" field="exposed_culmen" draft={recordDraft} update={updateRecord} step="0.01" /></FormRow><FormRow><NumberField label="Body Mass (g)" field="body_mass" draft={recordDraft} update={updateRecord} step="0.1" feedback={recordFeedback(recordWarnings, 'body_mass')} /><NumberField label="Other measurement" field="other_measurement" draft={recordDraft} update={updateRecord} step="0.01" /></FormRow><FormRow><SelectField label="Status" value={text(recordDraft.status)} onChange={value => updateRecord('status', value)} options={BIRD_STATUS_CODES} feedback={recordFeedback(recordWarnings, 'status')} /><SelectField label="Disposition" value={text(recordDraft.disposition)} onChange={value => updateRecord('disposition', value)} options={DISPOSITION_CODES} feedback={recordFeedback(recordWarnings, 'disposition')} /></FormRow></FormSection>
         <FormSection title="Additional"><FormRow><SelectField label="Capture Time" value={selectedCaptureTime} onChange={value => updateRecord('capture_time', value)} options={captureTimeOptions.map(time => ({ code: time, label: time }))} /><TextField label="Release Time"><input type="time" value={text(recordDraft.release_time)} onChange={event => updateRecord('release_time', event.target.value)} /></TextField></FormRow><FormRow><SelectField label="Net (active at this Session's Station)" value={text(recordDraft.net_id)} onChange={value => updateRecord('net_id', value)} options={stationNets.map(net => ({ code: net.id, label: text(net.fields.label) || net.id }))} /><SelectField label="Bander" value={text(recordDraft.bander_id)} onChange={value => updateRecord('bander_id', value)} options={banders.map(bander => ({ code: bander.id, label: banderLabel(bander, people) }))} /></FormRow><label style={styles.check}><input type="checkbox" checked={Boolean(recordDraft.feather_pull)} onChange={event => updateRecord('feather_pull', event.target.checked)} />Feather Pull</label><label style={styles.check}><input type="checkbox" checked={Boolean(recordDraft.blood_sample)} onChange={event => updateRecord('blood_sample', event.target.checked)} />Blood Sample</label><TextField label="Notes" feedback={recordFeedback(recordWarnings, 'notes')}><textarea rows={2} value={text(recordDraft.notes)} onChange={event => updateRecord('notes', event.target.value)} aria-describedby={recordFeedback(recordWarnings, 'notes')?.id} /></TextField></FormSection>
-        <p style={styles.hint}>Every field is optional and soft warnings do not block saving. Empty amended fields are recorded as explicit clears.</p></fieldset>{viewingRecordId ? <button type="button" onClick={resetRecord}>Close view</button> : <><button disabled={saving || (bandMode === 'managed' && !managedBandId)}>Save offline</button>{editingRecordId && <button type="button" onClick={resetRecord}>Cancel amendment</button>}</>}
+        <p style={styles.hint}>Every field is optional and soft warnings do not block saving. Empty amended fields are recorded as explicit clears.</p></fieldset>{viewingRecordId ? <button type="button" onClick={closeRecordView}>Close view</button> : <><button disabled={saving || (bandMode === 'managed' && !managedBandId)}>Save offline</button>{editingRecordId && <button type="button" onClick={resetRecord}>Cancel amendment</button>}</>}
       </form></>}
-      <EntityList title="Banding Records" entities={entities.filter(entity => entity.kind === 'banding-record' && (!sessionId || text(entity.fields.session_id) === sessionId))} detail={entity => recordLabel(entity, bands)} onDeactivate={entity => void perform(() => decide({ kind: entity.active ? 'deactivate' : 'reactivate', entity_kind: 'banding-record', entity_id: entity.id }))} onView={beginRecordView} onCorrect={correctRecord} />
-      <ConflictPanels projection={projection} bands={bands} onCorrect={correctRecord} />
+      {!onCloseRecordView && <><EntityList title="Banding Records" entities={entities.filter(entity => entity.kind === 'banding-record' && (!sessionId || text(entity.fields.session_id) === sessionId))} detail={entity => recordLabel(entity, bands)} onDeactivate={entity => void perform(() => decide({ kind: entity.active ? 'deactivate' : 'reactivate', entity_kind: 'banding-record', entity_id: entity.id }))} onView={beginRecordView} onCorrect={correctRecord} />
+      <ConflictPanels projection={projection} bands={bands} onCorrect={correctRecord} /></>}
     </>}
     {tab === 'inventory' && <>
       <form style={styles.card} onSubmit={receiveBand}><h2>{editingBandId ? 'Amend Band' : 'Receive Band'}</h2>

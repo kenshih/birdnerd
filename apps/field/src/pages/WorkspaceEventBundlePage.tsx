@@ -1,4 +1,5 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { projectOperationalEvents, type OperationalEntity } from '@birdnerd/banding'
 import PageHeader from '../components/PageHeader'
 import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
 import { getFieldCollaboration } from '../sync/fieldCollaboration'
@@ -10,13 +11,33 @@ import {
 
 interface Props {
   onHome: () => void
+  onViewRecord: (recordId: string) => void
 }
 
-export default function WorkspaceEventBundlePage({ onHome }: Props) {
+export default function WorkspaceEventBundlePage({ onHome, onViewRecord }: Props) {
   const access = useWorkspaceAccess()
   const { store, sync } = getFieldCollaboration()
   const fileRef = useRef<HTMLInputElement>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [projection, setProjection] = useState(() => projectOperationalEvents([]))
+  const [browseError, setBrowseError] = useState<string | null>(null)
+
+  const refreshRecords = useCallback(async () => {
+    const events = await store.snapshot(access.workspace_id)
+    setProjection(projectOperationalEvents(events))
+    setBrowseError(null)
+  }, [access.workspace_id, store])
+
+  useEffect(() => {
+    let mounted = true
+    void refreshRecords()
+      .catch(cause => { if (mounted) setBrowseError(cause instanceof Error ? cause.message : 'Could not load projected Records.') })
+    return () => { mounted = false }
+  }, [refreshRecords])
+
+  const entities = [...projection.entities.values()]
+  const records = entities.filter(entity => entity.kind === 'banding-record')
+  const recordGroups = groupRecordsBySession(records, projection.entities)
 
   async function exportBundle() {
     try {
@@ -52,6 +73,7 @@ export default function WorkspaceEventBundlePage({ onHome }: Props) {
       setStatus('Restoring and rebuilding this Workspace replica…')
       const result = await store.restoreWorkspace(access.workspace_id, bundle.events)
       const restored = `Restored ${bundle.events.length} Events and protected ${result.protected_pending} unsynced local Event${result.protected_pending === 1 ? '' : 's'}.`
+      await refreshRecords()
 
       if (!sync) {
         setStatus(`${restored} Sync catch-up will begin when collaboration is connected.`)
@@ -59,6 +81,7 @@ export default function WorkspaceEventBundlePage({ onHome }: Props) {
       }
 
       const syncStatus = await sync.synchronize()
+      await refreshRecords()
       setStatus(syncStatus.kind === 'offline'
         ? `${restored} Sync catch-up will retry automatically.`
         : syncStatus.kind === 'attention'
@@ -71,7 +94,7 @@ export default function WorkspaceEventBundlePage({ onHome }: Props) {
 
   return (
     <main style={styles.page}>
-      <PageHeader title="Workspace Event Bundle" onHome={onHome} />
+      <PageHeader title="Data Manager" onHome={onHome} />
 
       <section style={styles.panel}>
         <p style={styles.description}>
@@ -100,15 +123,78 @@ export default function WorkspaceEventBundlePage({ onHome }: Props) {
 
         {status && <p role="status" style={styles.status}>{status}</p>}
       </section>
+
+      <section style={styles.panel}>
+        <h2 style={styles.heading}>Browse Records</h2>
+        <p style={styles.description}>Inspect the current projected Workspace Records. Viewing a Record is read-only and does not change the Event Log.</p>
+        {browseError
+          ? <p role="status" style={styles.error}>{browseError}</p>
+          : recordGroups.length === 0
+            ? <p style={styles.empty}>No projected Records yet.</p>
+            : recordGroups.map(group => (
+              <section key={group.sessionId} style={styles.recordGroup}>
+                <h3 style={styles.groupHeading}>{group.label}</h3>
+                {group.records.map(record => (
+                  <div key={record.id} style={styles.recordRow}>
+                    <div>
+                      <strong>{recordSummary(record, projection.entities)}</strong>
+                      <div style={styles.recordState}>{record.active ? 'Active Record' : 'Inactive Record'}</div>
+                    </div>
+                    <button type="button" onClick={() => onViewRecord(record.id)} style={styles.secondaryButton}>View</button>
+                  </div>
+                ))}
+              </section>
+            ))}
+      </section>
     </main>
   )
 }
+
+function groupRecordsBySession(records: readonly OperationalEntity[], entities: ReadonlyMap<string, OperationalEntity>) {
+  const groups = new Map<string, OperationalEntity[]>()
+  for (const record of records) {
+    const sessionId = text(record.fields.session_id) || 'unresolved-session'
+    const group = groups.get(sessionId) ?? []
+    group.push(record)
+    groups.set(sessionId, group)
+  }
+  return [...groups].map(([sessionId, group]) => ({
+    sessionId,
+    label: sessionLabel(sessionId, entities),
+    records: group.sort((a, b) => recordSummary(a, entities).localeCompare(recordSummary(b, entities))),
+  })).sort((a, b) => b.label.localeCompare(a.label))
+}
+
+function sessionLabel(sessionId: string, entities: ReadonlyMap<string, OperationalEntity>): string {
+  const session = entities.get(sessionId)
+  if (!session || session.kind !== 'session') return `Unresolved Session — ${sessionId === 'unresolved-session' ? 'not recorded' : sessionId}`
+  const date = text(session.fields.session_date) || 'Date not entered'
+  return `${date}${session.active ? '' : ' (inactive Session)'}`
+}
+
+function recordSummary(record: OperationalEntity, entities: ReadonlyMap<string, OperationalEntity>): string {
+  const selection = record.fields.band_selection as { kind?: string; band_id?: string; band_number?: string } | undefined
+  let band = 'Band not entered'
+  if (selection?.kind === 'unbanded') band = 'Unbanded'
+  if (selection?.kind === 'foreign') band = selection.band_number || 'Foreign Band not entered'
+  if (selection?.kind === 'managed') {
+    const managed = selection.band_id ? entities.get(selection.band_id) : undefined
+    band = !managed || managed.kind !== 'band'
+      ? `Unresolved managed Band${selection?.band_id ? ` — ${selection.band_id}` : ''}`
+      : `${text(managed.fields.band_number) || managed.id}${managed.active ? '' : ' (inactive Band)'}`
+  }
+  const capture = text(record.fields.capture_code)
+  return [text(record.fields.species_code) || 'Species not entered', band, capture ? `Capture ${capture}` : 'Capture code not entered'].join(' · ')
+}
+
+function text(value: unknown): string { return value === undefined || value === null ? '' : String(value) }
 
 const styles: Record<string, React.CSSProperties> = {
   page: {
     minHeight: '100dvh',
     display: 'flex',
     flexDirection: 'column',
+    gap: '1rem',
     padding: '1rem 1.5rem',
     background: '#f5f5f5',
     color: '#1b4332',
@@ -120,6 +206,10 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '1rem',
     background: '#fff',
     borderRadius: '8px',
+  },
+  heading: {
+    margin: 0,
+    fontSize: '1.1rem',
   },
   description: {
     margin: 0,
@@ -156,6 +246,40 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: '0.8rem',
     opacity: 0.65,
     fontStyle: 'italic',
+  },
+  empty: {
+    margin: 0,
+    color: '#555',
+  },
+  error: {
+    margin: 0,
+    padding: '0.5rem 0.75rem',
+    background: '#f8d7da',
+    borderRadius: '6px',
+    fontSize: '0.85rem',
+    color: '#721c24',
+  },
+  recordGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  groupHeading: {
+    margin: 0,
+    fontSize: '0.9rem',
+  },
+  recordRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '0.75rem',
+    paddingTop: '0.6rem',
+    borderTop: '1px solid #d8f3dc',
+  },
+  recordState: {
+    marginTop: '0.2rem',
+    fontSize: '0.8rem',
+    color: '#555',
   },
   status: {
     margin: 0,
