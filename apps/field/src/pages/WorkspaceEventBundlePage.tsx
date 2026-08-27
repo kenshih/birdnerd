@@ -30,10 +30,17 @@ export default function WorkspaceEventBundlePage({ onHome, onViewRecord }: Props
 
   useEffect(() => {
     let mounted = true
-    void refreshRecords()
-      .catch(cause => { if (mounted) setBrowseError(cause instanceof Error ? cause.message : 'Could not load projected Records.') })
+    void (async () => {
+      try {
+        store.activateWorkspace(access.workspace_id)
+        if (sync) await sync.synchronize()
+        if (mounted) await refreshRecords()
+      } catch (cause) {
+        if (mounted) setBrowseError(cause instanceof Error ? cause.message : 'Could not load projected Records.')
+      }
+    })()
     return () => { mounted = false }
-  }, [refreshRecords])
+  }, [access.workspace_id, refreshRecords, store, sync])
 
   const entities = [...projection.entities.values()]
   const records = entities.filter(entity => entity.kind === 'banding-record')
@@ -222,6 +229,8 @@ const styles: Record<string, React.CSSProperties> = {
     gap: '0.5rem',
   },
   primaryButton: {
+    minHeight: 44,
+    minWidth: 44,
     padding: '0.7rem',
     background: '#2d6a4f',
     color: '#fff',
@@ -232,6 +241,8 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: 600,
   },
   secondaryButton: {
+    minHeight: 44,
+    minWidth: 44,
     padding: '0.7rem',
     background: '#fff',
     color: '#2d6a4f',
