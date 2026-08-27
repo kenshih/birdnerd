@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { entitySection, fieldSelect, openNewRecordForm } from './helpers'
+import { deployBand, entityRow, entitySection, fieldSelect, openNewRecordForm } from './helpers'
 
 /** Read-only record inspection through Field Data and the Event-backed Data Manager. */
 async function makeRecord(page: Page) {
@@ -50,4 +50,19 @@ test('Data Manager Browse Records opens a projected Record read-only', async ({ 
   expect((await close.boundingBox())?.height).toBeGreaterThanOrEqual(44)
   await close.click()
   await expect(page.getByRole('heading', { name: 'Browse Records', exact: true })).toBeVisible()
+})
+
+test('Data Manager inspector preserves an inactive managed Band', async ({ page }) => {
+  const band = await deployBand(page)
+  await page.getByRole('button', { name: 'inventory', exact: true }).click()
+  await entityRow(page, 'Inventory', band).getByRole('button', { name: 'Deactivate', exact: true }).click()
+
+  await page.getByRole('button', { name: 'Home', exact: true }).click()
+  await page.getByText('Data Manager').first().click()
+  await page.getByRole('button', { name: 'View', exact: true }).click()
+
+  const managedBand = fieldSelect(page, 'Managed Band')
+  await expect(managedBand).toBeDisabled()
+  await expect(managedBand.locator('option:checked')).toContainText(band)
+  await expect(managedBand.locator('option:checked')).toContainText('inactive Band')
 })

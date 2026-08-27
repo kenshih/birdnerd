@@ -42,6 +42,13 @@ export default function WorkspaceEventBundlePage({ onHome, onViewRecord }: Props
     return () => { mounted = false }
   }, [access.workspace_id, refreshRecords, store, sync])
 
+  useEffect(() => {
+    if (!sync) return
+    return sync.subscribe(() => {
+      void refreshRecords().catch(cause => setBrowseError(cause instanceof Error ? cause.message : 'Could not load projected Records.'))
+    })
+  }, [refreshRecords, sync])
+
   const entities = [...projection.entities.values()]
   const records = entities.filter(entity => entity.kind === 'banding-record')
   const recordGroups = groupRecordsBySession(records, projection.entities)
