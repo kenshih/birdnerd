@@ -333,7 +333,7 @@ describe('WorkspaceEventStore replica exchange', () => {
     const historicRecord = createEvent({
       event_id: '018f8c7b-0000-7000-8000-000000000043', event_type: 'banding-record.created', event_schema_version: 1,
       workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
-      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSessionId, species_code: 'AMRO' },
+      payload: { record_id: '018f8c7b-0000-7000-8000-000000000044', session_id: historicSessionId, species_code: 'AMRO', band_number: '1154-81501' },
     })
 
     const initializingStore = new WorkspaceEventStore()
@@ -363,19 +363,19 @@ describe('WorkspaceEventStore replica exchange', () => {
     const hydratedDatabase = await openDB('birdnerd-event-core', 3)
     expect(await hydratedDatabase.get('event_log', historicRecord.event_id)).toEqual(historicRecord)
     expect((await hydratedDatabase.get('projection_cache', 'workspace-current-state'))?.banding_records)
-      .toEqual(expect.arrayContaining([expect.objectContaining({ record_id: '018f8c7b-0000-7000-8000-000000000044', species_code: 'AMRO' })]))
+      .toEqual(expect.arrayContaining([expect.objectContaining({ record_id: '018f8c7b-0000-7000-8000-000000000044', species_code: 'AMRO', band_number: '1154-81501' })]))
     hydratedDatabase.close()
     const newer = sessionEvent('018f8c7b-0000-7000-8000-000000000045')
     await store.commit({ receipts: [], pulled: [{ event: newer, server_sequence: 1 }], cursor: 1 })
     expect(await store.snapshot()).toEqual(expect.arrayContaining([
-      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO' }) }) }),
+      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO', band_number: '1154-81501' }) }) }),
     ]))
 
     resetWorkspaceEventStore()
     const reopened = new WorkspaceEventStore()
     reopened.activateWorkspace(workspaceId)
     expect(await reopened.snapshot()).toEqual(expect.arrayContaining([
-      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO' }) }) }),
+      expect.objectContaining({ event_id: historicRecord.event_id, event_schema_version: 2, payload: expect.objectContaining({ fields: expect.objectContaining({ species_code: 'AMRO', band_number: '1154-81501' }) }) }),
     ]))
   })
 

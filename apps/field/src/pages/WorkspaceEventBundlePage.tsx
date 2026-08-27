@@ -3,6 +3,7 @@ import { projectOperationalEvents, type OperationalEntity } from '@birdnerd/band
 import PageHeader from '../components/PageHeader'
 import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
 import { getFieldCollaboration } from '../sync/fieldCollaboration'
+import { legacyBandLabel, recordBandReference, unresolvedManagedBandLabel } from '../utils/recordReference'
 import {
   createWorkspaceEventBundle,
   downloadWorkspaceEventBundle,
@@ -187,14 +188,15 @@ function sessionLabel(sessionId: string, entities: ReadonlyMap<string, Operation
 }
 
 function recordSummary(record: OperationalEntity, entities: ReadonlyMap<string, OperationalEntity>): string {
-  const selection = record.fields.band_selection as { kind?: string; band_id?: string; band_number?: string } | undefined
+  const reference = recordBandReference(record.fields)
   let band = 'Band not entered'
-  if (selection?.kind === 'unbanded') band = 'Unbanded'
-  if (selection?.kind === 'foreign') band = selection.band_number || 'Foreign Band not entered'
-  if (selection?.kind === 'managed') {
-    const managed = selection.band_id ? entities.get(selection.band_id) : undefined
+  if (reference.mode === 'unbanded') band = 'Unbanded'
+  if (reference.mode === 'foreign') band = reference.bandNumber || 'Foreign Band not entered'
+  if (reference.mode === 'legacy') band = legacyBandLabel(reference.bandNumber)
+  if (reference.mode === 'managed') {
+    const managed = reference.bandId ? entities.get(reference.bandId) : undefined
     band = !managed || managed.kind !== 'band'
-      ? `Unresolved managed Band${selection?.band_id ? ` — ${selection.band_id}` : ''}`
+      ? unresolvedManagedBandLabel(reference.bandNumber, reference.bandId)
       : `${text(managed.fields.band_number) || managed.id}${managed.active ? '' : ' (inactive Band)'}`
   }
   const capture = text(record.fields.capture_code)

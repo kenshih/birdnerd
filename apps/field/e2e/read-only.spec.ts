@@ -66,3 +66,30 @@ test('Data Manager inspector preserves an inactive managed Band', async ({ page 
   await expect(managedBand.locator('option:checked')).toContainText(band)
   await expect(managedBand.locator('option:checked')).toContainText('inactive Band')
 })
+
+test('Data Manager preserves a raw v1 Band number as historical and read-only', async ({ page }) => {
+  await page.goto('/birdnerd/?e2eFixture=legacy-band')
+  await expect(page.getByRole('heading', { name: 'BirdNerd', exact: true })).toBeVisible()
+  await page.getByText('Data Manager').first().click()
+
+  await expect(page.getByText('Historical Band (unresolved) — 1154-81501')).toBeVisible()
+  await page.getByRole('button', { name: 'View', exact: true }).click()
+  await expect(fieldSelect(page, 'Band selection')).toHaveValue('legacy')
+  const historicNumber = page.getByLabel('Historical band number', { exact: true })
+  await expect(historicNumber).toBeDisabled()
+  await expect(historicNumber).toHaveValue('1154-81501')
+  await expect(page.getByRole('button', { name: 'Save offline', exact: true })).toHaveCount(0)
+})
+
+test('Data Manager retains an unresolved managed Band number snapshot', async ({ page }) => {
+  await page.goto('/birdnerd/?e2eFixture=unresolved-managed-band')
+  await expect(page.getByRole('heading', { name: 'BirdNerd', exact: true })).toBeVisible()
+  await page.getByText('Data Manager').first().click()
+
+  const expected = 'Unresolved managed Band — 1154-81502 (ID: 018f8c7b-0000-7000-8000-000000000031)'
+  await expect(page.getByText(expected)).toBeVisible()
+  await page.getByRole('button', { name: 'View', exact: true }).click()
+  const managedBand = fieldSelect(page, 'Managed Band')
+  await expect(managedBand).toBeDisabled()
+  await expect(managedBand.locator('option:checked')).toContainText(expected)
+})
