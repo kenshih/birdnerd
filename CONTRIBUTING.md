@@ -4,6 +4,7 @@
 
 ```bash
 npm install
+npm run fixtures:load -- operational-workspace  # required after a new local database; resets it and loads the two fixture Members
 npm run dev          # starts/verifies local Supabase, then Field at localhost:5173
 npm run dev:host     # expose the local Field server on the local network
 npm run dev:local-google  # test Google OAuth against local Supabase only
@@ -11,8 +12,21 @@ npm run dev:ocr      # start the OCR app dev server
 ```
 
 The default Field workflow requires Docker Desktop (or another Docker-compatible
-runtime). It uses the checked-in Supabase CLI configuration and local Docker
-stack only; it never reads a hosted target from `apps/field/.env.local`.
+runtime). `npm run dev` uses the checked-in Supabase CLI configuration and the
+local Docker stack only. It reads that running stack's loopback URL and current
+publishable key itself, so routine local development does **not** need an
+`apps/field/.env.local` file.
+
+`npm run dev` preserves the existing local database; it does not create the
+fixture logins. Run `npm run fixtures:load -- operational-workspace` after
+creating a new local database (including after deleting Docker volumes), or
+whenever you want to replace local data with the disposable fixture. It creates
+the **Fixture Admin** and **Fixture Contributor** accounts used by the signed-out
+screen. The loader resets local data, so do not use it when you need to keep
+your current local work.
+
+Hosted-pilot testing is separate: put its settings only in the uncommitted
+`apps/field/.env.pilot.local` file and use `npm run dev:pilot`.
 
 ## Commands
 
