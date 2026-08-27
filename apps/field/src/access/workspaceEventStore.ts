@@ -100,11 +100,11 @@ export class WorkspaceEventStore implements DurableReplica {
     return this.exclusive(async () => {
       const current = await this.snapshot()
       const candidateLog = EventLog.fromAccepted(current, admitWorkspaceEvent)
-      const rawById = new Map(events.map(event => [event.event_id, event]))
-      const results = candidateLog.appendAll(events.map(upcastEvent))
-      const accepted = results.filter((result): result is Extract<AppendResult, { kind: 'accepted' }> => result.kind === 'accepted')
-      if (accepted.length === 0) return results
-      await this.persistLocal(candidateLog.snapshot(), accepted.map(result => rawById.get(result.event.event_id) ?? result.event))
+      const candidates = events.map(raw => ({ raw, event: upcastEvent(raw) }))
+      const results = candidateLog.appendAll(candidates.map(candidate => candidate.event))
+      const acceptedRawEvents = results.flatMap((result, index) => result.kind === 'accepted' ? [candidates[index]!.raw] : [])
+      if (acceptedRawEvents.length === 0) return results
+      await this.persistLocal(candidateLog.snapshot(), acceptedRawEvents)
       this.log = new EventLog(candidateLog.snapshot(), () => ({ accepted: true }))
       return results
     })

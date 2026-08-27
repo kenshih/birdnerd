@@ -295,6 +295,26 @@ describe('WorkspaceEventStore replica exchange', () => {
     expect(await store.snapshot()).toContainEqual(canonical)
   })
 
+  it('retains the first accepted raw Event from a duplicate or conflicting local batch', async () => {
+    const raw = createEvent({
+      event_id: '018f8c7b-0000-7000-8000-000000000042', event_type: 'session.created', event_schema_version: 1,
+      workspace_id: workspaceId, command_id: commandId, actor: { kind: 'user-account', user_account_id: userId },
+      payload: { session_id: '018f8c7b-0000-7000-8000-000000000043', session_date: '2026-08-13' },
+    })
+    const canonical = upcastEvent(raw)
+    const conflict = createEvent({ ...raw, payload: { session_id: '018f8c7b-0000-7000-8000-000000000044', session_date: '2026-08-14' } })
+    const store = new WorkspaceEventStore()
+    store.activateWorkspace(workspaceId)
+    await seedAccess(store)
+
+    await expect(store.appendAll([raw, canonical, conflict])).resolves.toMatchObject([
+      { kind: 'accepted' }, { kind: 'duplicate' }, { kind: 'rejected' },
+    ])
+    const database = await openDB('birdnerd-event-core', 3)
+    expect(await database.get('event_log', raw.event_id)).toEqual(raw)
+    database.close()
+  })
+
   it('does not carry a deferred retry from Workspace A into Workspace B sync metadata', async () => {
     const workspaceB = '018f8c7b-0000-7000-8000-000000000007'
     const store = new WorkspaceEventStore()
