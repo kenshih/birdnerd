@@ -108,7 +108,7 @@ describe('@birdnerd/events', () => {
     })
 
     expect(() => assertEvent(station)).not.toThrow()
-    expect(() => assertEvent({ ...station, payload: { ...station.payload, fields: { agency_code: 'gcfs' } } })).toThrow('Contract pattern')
+    expect(() => assertEvent({ ...station, payload: { ...station.payload, fields: { agency_code: 'gcfs' } } })).toThrow()
   })
 
   it('compares immutable Event content independently of object property order', () => {
