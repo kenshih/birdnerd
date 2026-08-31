@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Added
 
+- Field 0.33.1 — **Event-backed agency CSV exports.** Data Manager exports
+  the established 49-column IBP MAPS Master List, 58-column BBL new-banding,
+  and 60-column BBL recapture CSVs from the active Workspace projection. An
+  Admin configures each Station's optional four-letter agency code for the
+  required IBP Station / BBL Location value; historical Stations without one
+  export a blank cell. Exports have explicit all-Session or selected-Session
+  scope and never change Field data.
 - Field 0.33.0 — **Event-backed Data Manager browsing.** Data Manager now
   browses the active Workspace's projected Banding Records and opens each in
   the existing disabled, read-only inspector. Historical raw Band numbers and

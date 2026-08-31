@@ -79,6 +79,40 @@ database nor appends, amends, deactivates, or reactivates Events.
 **Evidence:** The Event-backed browser journey is covered by
 [`read-only.spec.ts`](../../../apps/field/e2e/read-only.spec.ts).
 
+### Data Manager — export an agency CSV
+
+**User goal:** Download an agency-ready report from the active Workspace
+without re-entering or changing Record data.
+
+**Deterministic start:** An Admin has configured a Station's optional
+four-letter agency code, and the active Workspace has a Session with an active
+projected Banding Record.
+
+**Before → action → result:**
+
+- **Before:** Data Manager shows the agency format and Session controls.
+- **Action:** Choose an agency format, choose all or individual Sessions, and
+  select **Export**.
+- **Result:** Field downloads the corresponding IBP, BBL new-banding, or BBL
+  recapture CSV. The selected Station's agency code appears in its
+  Station/Location column.
+
+**Visible promises:** Formats are clearly named; Session scope is explicit;
+only active Records are reportable. A Station without a configured code leaves
+that CSV cell blank rather than substituting its display name or blocking other
+field work. Buttons remain touch-sized.
+
+**Non-visible invariants:** Data Manager reads the active Workspace's rebuilt
+Event projection and never reads legacy IndexedDB, an Event Bundle, or raw
+Events for CSV rows. It does not append or amend Events. Format rendering
+retains the established 49-column IBP output (without untracked `BBL submit?`),
+58-column BBL new-banding output, and 60-column BBL recapture output.
+
+**Evidence:** Browser coverage is in
+[`agency-export.spec.ts`](../../../apps/field/e2e/agency-export.spec.ts); the
+format golden files are asserted by
+[`projectionAgencyExport.test.ts`](../../../apps/field/src/utils/projectionAgencyExport.test.ts).
+
 ## 0. Authentication & Access
 
 Google sign-in establishes an external identity; it does not by itself grant
@@ -194,10 +228,10 @@ acceptance; they neither receive Event-backed writes nor provide a normal-path
 fallback. The acceptance result governs their later removal without a legacy
 data migration.
 
-Home also links to **Data Manager** for Event-backed Record browsing and
-Workspace Event Bundle export or recovery restore. It does not expose the
-legacy mutable Data Manager; import and agency exports remain later Phase 33
-work.
+Home also links to **Data Manager** for Event-backed Record browsing,
+Workspace Event Bundle export or recovery restore, and established agency CSV
+exports. It does not expose the legacy mutable Data Manager; master-sheet
+import remains later Phase 33 work.
 
 All observational fields remain optional. Remove actions become role-aware
 deactivation with explicit reactivation, preserve historical references, and
@@ -805,25 +839,36 @@ legacy mutable Data Manager.
 Data Manager lists the active Workspace's projected Records and opens the
 existing disabled Record inspector. Browse has no editing or correction path;
 historical and unresolved Band references remain visibly distinct. Closing an
-inspected Record returns to Data Manager. Event Bundle restore still exposes
-its validation, access, and unsynced-Event protection result before the
-destructive confirmation. Agency CSV exports and master-sheet import remain
-later Phase 33 work.
+inspected Record returns to Data Manager. It also offers the three established
+agency CSV formats and an explicit all-Session or selected-Session scope;
+formats include active Records only. Event Bundle restore still exposes its
+validation, access, and unsynced-Event protection result before the destructive
+confirmation. Master-sheet import remains later Phase 33 work.
 
 See § 7.0 wireframe above for the full layout.
 
 ### 7.2 Agency Export Formats (Phase 33)
 
-The Event-backed replacement is deferred to Phase 33. The intended formats are:
+The Event-backed Data Manager queries current Workspace projections, not an
+Event Bundle or legacy mutable store. The available formats are:
 
-**IBP (MAPS master list)** — 50 columns matching Hallie's MASTER sheet. Includes both IBP and BBL code columns. All records (new bandings, recaptures, destroyed, unbanded).
+**IBP (MAPS master list)** — 49 columns matching BirdNerd's established
+export. It includes both IBP and BBL code columns and intentionally omits
+Hallie's source sheet's untracked `BBL submit?` column. Active new bandings,
+recaptures, destroyed, and unbanded Records are included.
 
-**BBL Upload** — 58 columns per BBL spec. New bandings only (Code = N/1). IBP codes translated to BBL equivalents. `how_obtained` defaults to "Mist net".
+**BBL Upload** — 58 columns per BBL spec. Active new bandings only (Code =
+N/1). IBP codes translate to BBL equivalents. `how_obtained` defaults to
+"Mist net".
 
-**BBL Recapture Upload** — 60 columns per BBL spec. Recaptures only (Code = R, F, 4, 5, 6, 8). Adds `How Obtained`, `Present Condition` columns. `how_obtained` defaults to "Mist net".
+**BBL Recapture Upload** — 60 columns per BBL spec. Active recaptures only
+(Code = R, F, 4, 5, 6, 8). Adds `How Obtained`, `Present Condition` columns.
+`how_obtained` defaults to "Mist net".
 
-The Phase 33 implementation will query Event-backed projections (not the Event
-Bundle) and support Session or all-Session scope.
+Each format supports all-Session or selected-Session scope. An Admin configures
+the Station's optional four-letter agency code in Field Data; it supplies the
+IBP Station and BBL Location values. A missing code is visibly not substituted
+with the Station name and exports as an empty cell.
 
 ---
 

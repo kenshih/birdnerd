@@ -12,8 +12,8 @@ describe('operational Module', () => {
   it('gives immediate role feedback and creates immutable configuration facts', () => {
     const empty = projectOperationalEvents([])
     expect(() => decideOperationalCommand(empty, { ...context, role: 'contributor' }, { kind: 'create', entity_kind: 'station', entity_id: station_id, fields: { name: 'North' } })).toThrow('Admin')
-    const decision = decideOperationalCommand(empty, context, { kind: 'create', entity_kind: 'station', entity_id: station_id, fields: { name: 'North' } })
-    expect(decision.events[0]).toMatchObject({ event_type: 'station.created', payload: { station_id, fields: { name: 'North' } } })
+    const decision = decideOperationalCommand(empty, context, { kind: 'create', entity_kind: 'station', entity_id: station_id, fields: { name: 'North', agency_code: 'GCFS' } })
+    expect(decision.events[0]).toMatchObject({ event_type: 'station.created', payload: { station_id, fields: { name: 'North', agency_code: 'GCFS' } } })
   })
 
   it('emits required structural references instead of hiding them inside fields', () => {
@@ -51,9 +51,9 @@ describe('operational Module', () => {
   it('replays fields by HLC/event ID without letting an amendment reactivate an entity', () => {
     const created = createEvent({ ...eventContext, event_id: '018f8c7b-0000-7000-8000-000000000010', event_type: 'station.created', payload: { station_id, fields: { name: 'North' } } })
     const deactivated = createEvent({ ...eventContext, event_id: '018f8c7b-0000-7000-8000-000000000011', hlc: { physical_ms: 1002, logical: 0 }, event_type: 'station.deactivated', payload: { station_id } })
-    const amended = createEvent({ ...eventContext, event_id: '018f8c7b-0000-7000-8000-000000000012', hlc: { physical_ms: 1003, logical: 0 }, event_type: 'station.fields-amended', payload: { station_id, fields: { name: 'South' } } })
+    const amended = createEvent({ ...eventContext, event_id: '018f8c7b-0000-7000-8000-000000000012', hlc: { physical_ms: 1003, logical: 0 }, event_type: 'station.fields-amended', payload: { station_id, fields: { name: 'South', agency_code: 'GCFS' } } })
     const projection = projectOperationalEvents([amended, created, deactivated])
-    expect(projection.entities.get(station_id)).toMatchObject({ active: false, fields: { name: 'South' } })
+    expect(projection.entities.get(station_id)).toMatchObject({ active: false, fields: { name: 'South', agency_code: 'GCFS' } })
   })
 
   it('retains an unresolved parent reference rather than guessing its kind', () => {

@@ -34,7 +34,9 @@ Workspace Event projections. It proves historical intake and agency reporting
 without a legacy database. Preview makes unmatched source banders, inventory,
 and other references explicit for reviewed reconciliation rather than silently
 inventing a match. Restore the deferred Data Manager Browse Records/read-only
-path as part of this work. After these Event-backed replacements, remove the
+path as part of this work. Station agency codes are Admin-configured Workspace
+facts so each export retains its required Station/Location value. After these
+Event-backed replacements, remove the
 unlinked legacy mutable database and DataBundle code: no production legacy data
 exists, so no migration, archive, fallback, or rollback is required. Photo
 attachments and the reconsidered Net Hours model remain independent later work.

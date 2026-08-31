@@ -29,8 +29,9 @@ BirdNerd is a progressive web app for bird banders to collect, manage, and expor
 **Data Manager** — Browse and inspect the active Workspace's projected Banding
 Records without a command path, and export or recovery-restore its immutable
 Event Log. Historical raw Band numbers and unresolved managed references stay
-visible without being reclassified. Import preview and agency exports remain
-later Phase 33 outcomes.
+visible without being reclassified. It also exports the established IBP and
+BBL CSVs from those projections; import preview remains a later Phase 33
+outcome.
 
 ---
 
@@ -119,7 +120,8 @@ part of this delivery.
 
 Contributor is the normal field role and may enter, correct, deactivate, and
 reactivate operational data and resolve Band conflicts. Admin additionally
-configures Stations, Nets, the roster, and User Account-to-Person links.
+configures Stations (including their optional four-letter agency codes), Nets,
+the roster, and User Account-to-Person links.
 Membership invitation, role change, deactivation, and reactivation remain out
 of Field and use the trusted Provisioner CLI. See
 [ADR 0018](../../adr/0018-operational-event-catalog.md).

@@ -100,6 +100,17 @@ describe('@birdnerd/events', () => {
     expect(() => assertEvent({ ...record, event_schema_version: 2, payload: { ...v2Payload, fields: { ...fields, band_selection: { kind: 'managed', band_id: 'not-a-uuid', band_number: '1234-56789' } } } })).toThrow('must match exactly one')
   })
 
+  it('accepts a canonical optional Station agency code and rejects malformed values', () => {
+    const actor = { kind: 'user-account' as const, user_account_id: '018f8c7b-0000-7000-8000-000000000003' }
+    const station = createEvent({
+      event_type: 'station.created', workspace_id: workspaceId, command_id: '018f8c7b-0000-7000-8000-000000000002', actor,
+      payload: { station_id: '018f8c7b-0000-7000-8000-000000000004', fields: { name: 'Galindo Creek', agency_code: 'GCFS' } },
+    })
+
+    expect(() => assertEvent(station)).not.toThrow()
+    expect(() => assertEvent({ ...station, payload: { ...station.payload, fields: { agency_code: 'gcfs' } } })).toThrow('Contract pattern')
+  })
+
   it('compares immutable Event content independently of object property order', () => {
     const event = workspaceCreatedEvent()
     const reordered = { ...event, payload: { name: event.payload.name, workspace_id: event.payload.workspace_id } }

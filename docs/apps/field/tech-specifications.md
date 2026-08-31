@@ -244,11 +244,16 @@ The master spreadsheet reveals that many fields have **IBP** and **BBL** code va
 
 ### Agency Export Formats
 
-Three export formats, all implemented in `apps/field/src/utils/agencyExport.ts`.
+Three export formats are rendered by `apps/field/src/utils/agencyExport.ts`.
+`generateProjectionAgencyRows()` is the current Event-projection Interface;
+the retained legacy adapter is not used by Field's production Data Manager.
 
 #### IBP (MAPS Master List) — 49 columns
 
-Matches Hallie's MASTER sheet layout. Requires reverse-mapping from BBL → IBP for several fields:
+Matches the established BirdNerd master-list output. It deliberately omits
+Hallie's source sheet's 50th `BBL submit?` column because BirdNerd does not
+store submission state. It requires reverse-mapping from BBL → IBP for several
+fields:
 
 | Field | App stores | IBP wants | Transformation |
 |-------|-----------|-----------|----------------|
@@ -260,7 +265,7 @@ Matches Hallie's MASTER sheet layout. Requires reverse-mapping from BBL → IBP 
 | Band Number | XXXX-XXXXX | XXXXXXXXX | Strip hyphen |
 | Capture Time | HH:MM | Numeric (710) | Strip colon, parseInt |
 | Bander | Bander FK ID | Initials | FK chain: bander → person → initials |
-| Station | Session FK | Location code | FK chain: session → location → banderLocationId |
+| Station | Session FK | Agency code | FK chain: session → station → `agency_code` |
 | Feather Pull / Blood Sample | boolean | Y/N | `boolToYN()` |
 
 IBP export includes dual columns (IBP + BBL) for: Code, How Aged, How Sexed, Body Molt, FF Molt.
@@ -277,7 +282,7 @@ Matches the "BBL UPLOAD" sheet in Hallie's spreadsheet. Simpler than IBP because
 | Capture Time | HH:MM | HH:MM | No conversion (unlike IBP numeric) |
 | Feather Pull / Blood Sample | boolean | Y/N | `boolToYN()` |
 | Bander | Bander FK ID | Initials | FK chain: bander → person → initials |
-| Station | Session FK | Location code | FK chain: session → location → banderLocationId |
+| Station | Session FK | Agency code | FK chain: session → station → `agency_code` |
 
 Hardcoded values: How Captured = "Mist net", Banded Leg = "R".
 
@@ -297,6 +302,14 @@ Matches the "R UPLOAD" sheet. Nearly identical layout to BBL Upload with two ext
 | _(not present)_ | Present Condition (col 12) | From `presentCondition` (H/I/S/D) |
 
 Only recaptures (bbpCode `R`, `F`, `4`, `5`, `6`, `8`) are included.
+
+The event-backed export reads only active projected Records; it retains
+inactive referenced Stations, Nets, Bands, Banders, and People as lookup
+context for those active Records. An Admin configures a Station's optional
+four-letter uppercase `agency_code`; old Station Events decode unchanged and a
+missing code emits an empty Station/Location cell. The projection adapter owns
+this lookup and the existing format renderer owns all row, code, and escaping
+rules.
 
 ### Code Tables
 

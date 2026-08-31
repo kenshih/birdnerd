@@ -37,6 +37,7 @@ export async function createSession(
 ) {
   const date = fields.date ?? '2026-08-21'
   await page.getByLabel('Date', { exact: true }).fill(date)
+  await expect(page.getByLabel('Date', { exact: true })).toHaveValue(date)
   if (fields.protocol) await fieldSelect(page, 'Protocol').selectOption(fields.protocol)
   if (fields.mapsPeriod) await page.getByLabel('MAPS Period', { exact: true }).fill(fields.mapsPeriod)
   await page.getByRole('button', { name: 'Save offline', exact: true }).click()
