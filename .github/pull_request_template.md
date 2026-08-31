@@ -40,7 +40,6 @@
 ## Release and operations
 
 - Required action before merge:
-- Required action after merge / before deployment:
-- Copy/paste command(s), if any:
+- Required action after merge / before deployment (include copy/paste commands if an operator must act):
 - Verification after release action:
 - Rollback / recovery:
