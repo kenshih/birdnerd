@@ -40,8 +40,14 @@ if (process.argv.includes('--print-fingerprint')) {
   process.exit(0)
 }
 
-const migrationFiles = (await readdir(migrationDirectory)).filter(file => /_phase_(30_event_exchange|31_operational_catalog)\.sql$/.test(file)).sort()
-if (migrationFiles.length !== 2) throw new Error(`Expected Phase 30 and Phase 31 Event-exchange migrations; found ${migrationFiles.length}.`)
+// The Event Contract is introduced by the Phase 30/31 catalog migrations and
+// may be expanded by later additive admission migrations. Concatenating the
+// ordered history means the last validator/function definition and fingerprint
+// are the deployed current contract, without rewriting historical migrations.
+const migrationFiles = (await readdir(migrationDirectory)).filter(file => file.endsWith('.sql')).sort()
+if (!migrationFiles.some(file => /_phase_30_event_exchange\.sql$/.test(file)) || !migrationFiles.some(file => /_phase_31_operational_catalog\.sql$/.test(file))) {
+  throw new Error('The Phase 30 and Phase 31 Event-exchange migrations are required.')
+}
 const sql = (await Promise.all(migrationFiles.map(file => readFile(resolve(migrationDirectory, file), 'utf8')))).join('\n')
 const errors = []
 const marker = [...sql.matchAll(/event-contract-sha256:\s*([0-9a-f]{64})/g)].at(-1)?.[1]

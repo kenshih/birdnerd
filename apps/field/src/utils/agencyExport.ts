@@ -1,4 +1,5 @@
-import type { BirdRecord, Session, Location, Band, Person, Bander } from '@birdnerd/shared'
+import type { BirdRecord } from '@birdnerd/shared'
+import type { OperationalEntity, OperationalProjection } from '@birdnerd/banding'
 import { isNewBanding, isRecapture } from '../data/codes'
 import { SPECIES_LIST } from '../data/species'
 
@@ -88,7 +89,7 @@ function num(n: number | undefined): string {
 
 // Split a record's date (falling back to its session) into the agency export's
 // year / month / day columns — month & day with no leading zero.
-function dateParts(rec: BirdRecord, session: Session | undefined): { year: string; month: string; day: string } {
+function dateParts(rec: AgencyRecord, session: ExportSession | undefined): { year: string; month: string; day: string } {
   const [year, month, day] = (rec.date ?? session?.date ?? '').split('-')
   const noZero = (v: string | undefined) => (v ? String(parseInt(v, 10)) : '')
   return { year: year ?? '', month: noZero(month), day: noZero(day) }
@@ -96,13 +97,27 @@ function dateParts(rec: BirdRecord, session: Session | undefined): { year: strin
 
 // ── Lookup helpers ─────────────────────────────────────────────────
 
+interface ExportSession { id: string; locationId: string; date?: string }
+interface ExportLocation { id: string; banderLocationId?: string }
+interface ExportBand { id: string; bandSize?: string }
+interface ExportPerson { id: string; initials?: string }
+interface ExportBander { id: string; personId: string }
+
 interface ExportContext {
-  sessions: Session[]
-  locations: Location[]
-  bands: Band[]
-  people: Person[]
-  banders: Bander[]
+  sessions: ExportSession[]
+  locations: ExportLocation[]
+  bands: ExportBand[]
+  people: ExportPerson[]
+  banders: ExportBander[]
 }
+
+type AgencyRecord = Pick<BirdRecord,
+  'sessionId' | 'bandId' | 'bandNumber' | 'speciesCode' | 'age' | 'howAged' | 'howAged2' | 'wrp' | 'sex' | 'howSexed' | 'howSexed2'
+  | 'skull' | 'cp' | 'bp' | 'fat' | 'bodyMolt' | 'ffMolt' | 'ffWear' | 'juvBodyPlumage'
+  | 'moltLimitsPCovs' | 'moltLimitsSCovs' | 'moltLimitsPP' | 'moltLimitsSS' | 'moltLimitsTert' | 'moltLimitsRec' | 'moltLimitsBodyPlum' | 'moltLimitsNonFeather'
+  | 'wing' | 'tail' | 'tarsus' | 'exposedCulmen' | 'bodyMass' | 'status' | 'date' | 'captureTime' | 'station' | 'net'
+  | 'disposition' | 'notes' | 'featherPull' | 'bloodSample' | 'bbpCode' | 'replacedBandNumber' | 'presentCondition' | 'bander'
+>
 
 /**
  * Pre-indexed view of an ExportContext. Built once per export so row builders
@@ -110,18 +125,18 @@ interface ExportContext {
  * `.find()` scan per record (a multi-season export can be thousands of rows).
  */
 interface IndexedContext {
-  sessionById: Map<string, Session>
-  locationById: Map<string, Location>
-  bandById: Map<string, Band>
+  sessionById: Map<string, ExportSession>
+  locationById: Map<string, ExportLocation>
+  bandById: Map<string, ExportBand>
   initialsByBander: Map<string, string>
 }
 
 function indexContext(ctx: ExportContext): IndexedContext {
-  const personById = new Map(ctx.people.map((p): [string, Person] => [p.id, p]))
+  const personById = new Map(ctx.people.map((p): [string, ExportPerson] => [p.id, p]))
   return {
-    sessionById: new Map(ctx.sessions.map((s): [string, Session] => [s.id, s])),
-    locationById: new Map(ctx.locations.map((l): [string, Location] => [l.id, l])),
-    bandById: new Map(ctx.bands.map((b): [string, Band] => [b.id, b])),
+    sessionById: new Map(ctx.sessions.map((s): [string, ExportSession] => [s.id, s])),
+    locationById: new Map(ctx.locations.map((l): [string, ExportLocation] => [l.id, l])),
+    bandById: new Map(ctx.bands.map((b): [string, ExportBand] => [b.id, b])),
     initialsByBander: new Map(
       ctx.banders.map((b): [string, string] => [b.id, personById.get(b.personId)?.initials ?? '']),
     ),
@@ -158,7 +173,7 @@ const IBP_HEADERS = [
   'Feather Pull', 'Feather Pull BBL', 'Blood Sample BBL',
 ]
 
-function recordToIBPRow(rec: BirdRecord, idx: IndexedContext): string[] {
+function recordToIBPRow(rec: AgencyRecord, idx: IndexedContext): string[] {
   const session = idx.sessionById.get(rec.sessionId)
   const location = session ? idx.locationById.get(session.locationId) : undefined
   const band = rec.bandId ? idx.bandById.get(rec.bandId) : undefined
@@ -244,7 +259,7 @@ const BBL_HEADERS = [
   'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5',
 ]
 
-function recordToBBLRow(rec: BirdRecord, idx: IndexedContext): string[] {
+function recordToBBLRow(rec: AgencyRecord, idx: IndexedContext): string[] {
   const session = idx.sessionById.get(rec.sessionId)
   const location = session ? idx.locationById.get(session.locationId) : undefined
   const { year, month, day } = dateParts(rec, session)
@@ -337,7 +352,7 @@ const BBL_RECAP_HEADERS = [
   'User Field 1', 'User Field 2', 'User Field 3', 'User Field 4', 'User Field 5',
 ]
 
-function recordToBBLRecapRow(rec: BirdRecord, idx: IndexedContext): string[] {
+function recordToBBLRecapRow(rec: AgencyRecord, idx: IndexedContext): string[] {
   const session = idx.sessionById.get(rec.sessionId)
   const location = session ? idx.locationById.get(session.locationId) : undefined
   const { year, month, day } = dateParts(rec, session)
@@ -415,12 +430,21 @@ function escapeCSV(value: string): string {
   return value
 }
 
-function downloadCSV(filename: string, headers: string[], rows: string[][]) {
-  const lines = [
+export interface AgencyRows {
+  headers: string[]
+  rows: string[][]
+}
+
+/** Render a generated agency table as a CSV string without triggering a download. */
+export function agencyCsvText({ headers, rows }: AgencyRows): string {
+  return [
     headers.map(escapeCSV).join(','),
     ...rows.map(row => row.map(escapeCSV).join(',')),
-  ]
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' })
+  ].join('\n')
+}
+
+function downloadCSV(filename: string, headers: string[], rows: string[][]) {
+  const blob = new Blob([agencyCsvText({ headers, rows })], { type: 'text/csv' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -435,13 +459,149 @@ function downloadRows(prefix: string, { headers, rows }: { headers: string[]; ro
   downloadCSV(`${prefix}_${date}.csv`, headers, rows)
 }
 
+export type ProjectionAgencyFormat = 'ibp' | 'bbl' | 'bbl-recap'
+
+/**
+ * Build an established agency CSV from current Workspace projection facts.
+ * Only active Records are reportable; reference entities remain resolvable
+ * regardless of lifecycle so a historical Record never loses its context.
+ */
+export function generateProjectionAgencyRows(
+  projection: OperationalProjection,
+  format: ProjectionAgencyFormat,
+  sessionIds?: ReadonlySet<string>,
+): AgencyRows {
+  const { records, context } = projectionExportSource(projection, sessionIds)
+  if (format === 'ibp') return generateIBPRows(records, context)
+  if (format === 'bbl') return generateBBLRows(records, context)
+  return generateBBLRecapRows(records, context)
+}
+
+/** Download already-generated Event-projection rows using the established filename pattern. */
+export function downloadProjectionAgencyRows(format: ProjectionAgencyFormat, rows: AgencyRows): void {
+  const prefix = format === 'ibp' ? 'birdnerd-ibp' : format === 'bbl' ? 'birdnerd-bbl' : 'birdnerd-bbl-recap'
+  downloadRows(prefix, rows)
+}
+
+function projectionExportSource(
+  projection: OperationalProjection,
+  sessionIds: ReadonlySet<string> | undefined,
+): { records: AgencyRecord[]; context: ExportContext } {
+  const entities = projection.entities
+  const sessions = [...entities.values()]
+    .filter(entity => entity.kind === 'session')
+    .map(entity => ({ id: entity.id, locationId: stringOrEmpty(entity.fields.station_id), date: stringOrUndefined(entity.fields.session_date) }))
+  const context: ExportContext = {
+    sessions,
+    locations: [...entities.values()]
+      .filter(entity => entity.kind === 'station')
+      .map(entity => ({ id: entity.id, banderLocationId: stringOrUndefined(entity.fields.agency_code) })),
+    bands: [...entities.values()]
+      .filter(entity => entity.kind === 'band')
+      .map(entity => ({ id: entity.id, bandSize: stringOrUndefined(entity.fields.band_size) })),
+    people: [...entities.values()]
+      .filter(entity => entity.kind === 'person')
+      .map(entity => ({ id: entity.id, initials: stringOrUndefined(entity.fields.initials) })),
+    banders: [...entities.values()]
+      .filter(entity => entity.kind === 'bander')
+      .map(entity => ({ id: entity.id, personId: stringOrEmpty(entity.fields.person_id) })),
+  }
+  const sessionById = new Map(context.sessions.map(session => [session.id, session]))
+  const records = [...entities.values()]
+    .filter(entity => entity.kind === 'banding-record' && entity.active)
+    .filter(entity => !sessionIds || sessionIds.has(stringOrEmpty(entity.fields.session_id)))
+    .sort((left, right) => (sessionById.get(stringOrEmpty(right.fields.session_id))?.date ?? '').localeCompare(sessionById.get(stringOrEmpty(left.fields.session_id))?.date ?? '') || left.id.localeCompare(right.id))
+    .map(entity => projectedAgencyRecord(entity, entities))
+  return { records, context }
+}
+
+function projectedAgencyRecord(entity: OperationalEntity, entities: ReadonlyMap<string, OperationalEntity>): AgencyRecord {
+  const fields = entity.fields
+  const band = projectionBandReference(fields)
+  const net = entities.get(stringOrEmpty(fields.net_id))
+  return {
+    sessionId: stringOrEmpty(fields.session_id),
+    bandId: band.bandId,
+    bandNumber: band.bandNumber,
+    speciesCode: stringOrUndefined(fields.species_code),
+    age: stringOrUndefined(fields.age),
+    howAged: stringOrUndefined(fields.how_aged),
+    howAged2: stringOrUndefined(fields.how_aged_2),
+    wrp: stringOrUndefined(fields.wrp),
+    sex: stringOrUndefined(fields.sex),
+    howSexed: stringOrUndefined(fields.how_sexed),
+    howSexed2: stringOrUndefined(fields.how_sexed_2),
+    skull: stringOrUndefined(fields.skull),
+    cp: stringOrUndefined(fields.cp),
+    bp: stringOrUndefined(fields.bp),
+    fat: stringOrUndefined(fields.fat),
+    bodyMolt: stringOrUndefined(fields.body_molt),
+    ffMolt: stringOrUndefined(fields.ff_molt),
+    ffWear: stringOrUndefined(fields.ff_wear),
+    juvBodyPlumage: stringOrUndefined(fields.juv_body_plumage),
+    moltLimitsPCovs: stringOrUndefined(fields.molt_limits_p_covs),
+    moltLimitsSCovs: stringOrUndefined(fields.molt_limits_s_covs),
+    moltLimitsPP: stringOrUndefined(fields.molt_limits_pp),
+    moltLimitsSS: stringOrUndefined(fields.molt_limits_ss),
+    moltLimitsTert: stringOrUndefined(fields.molt_limits_tert),
+    moltLimitsRec: stringOrUndefined(fields.molt_limits_rec),
+    moltLimitsBodyPlum: stringOrUndefined(fields.molt_limits_body_plum),
+    moltLimitsNonFeather: stringOrUndefined(fields.molt_limits_non_feather),
+    wing: numericOrUndefined(fields.wing),
+    tail: numericOrUndefined(fields.tail),
+    tarsus: numericOrUndefined(fields.tarsus),
+    exposedCulmen: numericOrUndefined(fields.exposed_culmen),
+    bodyMass: numericOrUndefined(fields.body_mass),
+    status: stringOrUndefined(fields.status),
+    captureTime: stringOrUndefined(fields.capture_time),
+    net: net?.kind === 'net' ? stringOrUndefined(net.fields.label) : undefined,
+    disposition: stringOrUndefined(fields.disposition),
+    notes: stringOrUndefined(fields.notes),
+    featherPull: booleanOrUndefined(fields.feather_pull),
+    bloodSample: booleanOrUndefined(fields.blood_sample),
+    bbpCode: stringOrUndefined(fields.capture_code),
+    replacedBandNumber: stringOrUndefined(fields.replaced_band_number),
+    presentCondition: stringOrUndefined(fields.present_condition),
+    bander: stringOrUndefined(fields.bander_id),
+  }
+}
+
+function projectionBandReference(fields: Record<string, unknown>): { bandId?: string; bandNumber?: string } {
+  const selection = fields.band_selection
+  if (isRecord(selection) && selection.kind === 'managed') return { bandId: stringOrUndefined(selection.band_id), bandNumber: stringOrUndefined(selection.band_number) }
+  if (isRecord(selection) && selection.kind === 'foreign') return { bandNumber: stringOrUndefined(selection.band_number) }
+  return { bandNumber: stringOrUndefined(fields.band_number) }
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function stringOrEmpty(value: unknown): string {
+  return stringOrUndefined(value) ?? ''
+}
+
+function stringOrUndefined(value: unknown): string | undefined {
+  return typeof value === 'string' && value !== '' ? value : undefined
+}
+
+function numericOrUndefined(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value !== '' && Number.isFinite(Number(value))) return Number(value)
+  return undefined
+}
+
+function booleanOrUndefined(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
+}
+
 // ── Public API ─────────────────────────────────────────────────────
 
 /** Generate IBP rows without triggering download (for testing) */
 export function generateIBPRows(
-  records: BirdRecord[],
+  records: AgencyRecord[],
   ctx: ExportContext,
-): { headers: string[]; rows: string[][] } {
+): AgencyRows {
   const idx = indexContext(ctx)
   return { headers: IBP_HEADERS, rows: records.map(r => recordToIBPRow(r, idx)) }
 }
@@ -456,9 +616,9 @@ export function exportIBP(
 
 /** Generate BBL Upload rows (new bandings only) without triggering download */
 export function generateBBLRows(
-  records: BirdRecord[],
+  records: AgencyRecord[],
   ctx: ExportContext,
-): { headers: string[]; rows: string[][] } {
+): AgencyRows {
   const idx = indexContext(ctx)
   const newBandings = records.filter(r => isNewBanding(r.bbpCode))
   return { headers: BBL_HEADERS, rows: newBandings.map(r => recordToBBLRow(r, idx)) }
@@ -474,9 +634,9 @@ export function exportBBL(
 
 /** Generate BBL Recapture Upload rows without triggering download */
 export function generateBBLRecapRows(
-  records: BirdRecord[],
+  records: AgencyRecord[],
   ctx: ExportContext,
-): { headers: string[]; rows: string[][] } {
+): AgencyRows {
   const idx = indexContext(ctx)
   const recaps = records.filter(r => isRecapture(r.bbpCode))
   return { headers: BBL_RECAP_HEADERS, rows: recaps.map(r => recordToBBLRecapRow(r, idx)) }

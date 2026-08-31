@@ -5,6 +5,11 @@ import { useWorkspaceAccess } from '../components/WorkspaceAccessGate'
 import { getFieldCollaboration } from '../sync/fieldCollaboration'
 import { legacyBandLabel, recordBandReference, unresolvedManagedBandLabel } from '../utils/recordReference'
 import {
+  downloadProjectionAgencyRows,
+  generateProjectionAgencyRows,
+  type ProjectionAgencyFormat,
+} from '../utils/agencyExport'
+import {
   createWorkspaceEventBundle,
   downloadWorkspaceEventBundle,
   parseWorkspaceEventBundle,
@@ -22,6 +27,8 @@ export default function WorkspaceEventBundlePage({ onHome, onViewRecord }: Props
   const [status, setStatus] = useState<string | null>(null)
   const [projection, setProjection] = useState(() => projectOperationalEvents([]))
   const [browseError, setBrowseError] = useState<string | null>(null)
+  const [agencyFormat, setAgencyFormat] = useState<ProjectionAgencyFormat>('ibp')
+  const [agencyScope, setAgencyScope] = useState<Set<string>>(() => new Set(['all']))
 
   const refreshRecords = useCallback(async () => {
     const events = await store.snapshot(access.workspace_id)
@@ -53,6 +60,29 @@ export default function WorkspaceEventBundlePage({ onHome, onViewRecord }: Props
   const entities = [...projection.entities.values()]
   const records = entities.filter(entity => entity.kind === 'banding-record')
   const recordGroups = groupRecordsBySession(records, projection.entities)
+  const sessions = entities.filter(entity => entity.kind === 'session')
+  const selectedSessionIds = agencyScope.has('all') ? undefined : agencyScope
+  const selectedAgencyRows = generateProjectionAgencyRows(projection, agencyFormat, selectedSessionIds)
+  const selectedRecordCount = selectedAgencyRows.rows.length
+
+  function toggleAgencyScope(sessionId: string) {
+    setAgencyScope(current => {
+      if (sessionId === 'all') return current.has('all') ? new Set() : new Set(['all'])
+      const next = current.has('all') ? new Set(sessions.map(session => session.id)) : new Set(current)
+      if (next.has(sessionId)) next.delete(sessionId)
+      else next.add(sessionId)
+      return sessions.length > 0 && sessions.every(session => next.has(session.id)) ? new Set(['all']) : next
+    })
+  }
+
+  function exportAgencyCsv() {
+    if (selectedAgencyRows.rows.length === 0) {
+      setStatus('No active Records match the selected Sessions and agency format.')
+      return
+    }
+    downloadProjectionAgencyRows(agencyFormat, selectedAgencyRows)
+    setStatus(`Downloaded ${selectedAgencyRows.rows.length} ${agencyFormatLabel(agencyFormat)} row${selectedAgencyRows.rows.length === 1 ? '' : 's'}.`)
+  }
 
   async function exportBundle() {
     try {
@@ -140,6 +170,30 @@ export default function WorkspaceEventBundlePage({ onHome, onViewRecord }: Props
       </section>
 
       <section style={styles.panel}>
+        <h2 style={styles.heading}>Agency CSV export</h2>
+        <p style={styles.description}>Export active projected Records in the established agency layouts. Station agency codes are configured by an Admin in Field Data; a missing code remains blank in the CSV.</p>
+
+        <div style={styles.radioList}>
+          <label style={styles.checkLabel}><input type="radio" name="agency-format" checked={agencyFormat === 'ibp'} onChange={() => setAgencyFormat('ibp')} />IBP MAPS Master List</label>
+          <label style={styles.checkLabel}><input type="radio" name="agency-format" checked={agencyFormat === 'bbl'} onChange={() => setAgencyFormat('bbl')} />BBL upload (new bandings)</label>
+          <label style={styles.checkLabel}><input type="radio" name="agency-format" checked={agencyFormat === 'bbl-recap'} onChange={() => setAgencyFormat('bbl-recap')} />BBL recapture upload</label>
+        </div>
+
+        <div style={styles.scopeList}>
+          <strong>Sessions</strong>
+          <label style={styles.checkLabel}><input type="checkbox" checked={agencyScope.has('all')} onChange={() => toggleAgencyScope('all')} />All Sessions</label>
+          {sessions.map(session => {
+            const count = records.filter(record => record.active && text(record.fields.session_id) === session.id).length
+            return <label key={session.id} style={styles.checkLabel}><input type="checkbox" checked={agencyScope.has('all') || agencyScope.has(session.id)} onChange={() => toggleAgencyScope(session.id)} />{agencySessionLabel(session, projection.entities)} ({count} active Record{count === 1 ? '' : 's'})</label>
+          })}
+        </div>
+
+        <button type="button" onClick={exportAgencyCsv} disabled={selectedRecordCount === 0} style={styles.primaryButton}>
+          ↓ Export {selectedRecordCount} active Record{selectedRecordCount === 1 ? '' : 's'}
+        </button>
+      </section>
+
+      <section style={styles.panel}>
         <h2 style={styles.heading}>Browse Records</h2>
         <p style={styles.description}>Inspect the current projected Workspace Records. Viewing a Record is read-only and does not change the Event Log.</p>
         {browseError
@@ -185,6 +239,17 @@ function sessionLabel(sessionId: string, entities: ReadonlyMap<string, Operation
   if (!session || session.kind !== 'session') return `Unresolved Session — ${sessionId === 'unresolved-session' ? 'not recorded' : sessionId}`
   const date = text(session.fields.session_date) || 'Date not entered'
   return `${date}${session.active ? '' : ' (inactive Session)'}`
+}
+
+function agencySessionLabel(session: OperationalEntity, entities: ReadonlyMap<string, OperationalEntity>): string {
+  const station = entities.get(text(session.fields.station_id))
+  const code = station?.kind === 'station' ? text(station.fields.agency_code) : ''
+  const name = station?.kind === 'station' ? text(station.fields.name) : ''
+  return [code || name, text(session.fields.session_date) || 'Date not entered'].filter(Boolean).join(' · ')
+}
+
+function agencyFormatLabel(format: ProjectionAgencyFormat): string {
+  return format === 'ibp' ? 'IBP MAPS Master List' : format === 'bbl' ? 'BBL upload' : 'BBL recapture upload'
 }
 
 function recordSummary(record: OperationalEntity, entities: ReadonlyMap<string, OperationalEntity>): string {
@@ -236,6 +301,22 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     flexDirection: 'column',
     gap: '0.5rem',
+  },
+  radioList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  scopeList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+  },
+  checkLabel: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    fontSize: '0.9rem',
   },
   primaryButton: {
     minHeight: 44,

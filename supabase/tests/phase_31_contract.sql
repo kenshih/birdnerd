@@ -1,5 +1,5 @@
 begin;
-select plan(29);
+select plan(31);
 
 select has_table('birdnerd_private', 'entity_reference_index', 'private entity-reference admission index exists');
 select ok((select relrowsecurity from pg_class where oid = 'birdnerd_private.entity_reference_index'::regclass), 'entity-reference index uses RLS defense in depth');
@@ -146,6 +146,16 @@ select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_bu
   'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000235','occurred_at','2026-08-21T12:00:01.000Z','hlc',jsonb_build_object('physical_ms',1787313601000,'logical',0),
   'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('station_id','018f8c7b-0000-7000-8000-000000000233','fields',jsonb_build_object('name','South'))
 )))), 'accepted', 'browser admission accepts a reviewed Station amendment');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000250','event_type','station.fields-amended','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000251','occurred_at','2026-08-21T12:00:01.001Z','hlc',jsonb_build_object('physical_ms',1787313601001,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('station_id','018f8c7b-0000-7000-8000-000000000233','fields',jsonb_build_object('agency_code','GCFS'))
+)))), 'accepted', 'browser admission accepts a four-letter Station agency code');
+select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
+  'event_id','018f8c7b-0000-7000-8000-000000000252','event_type','station.fields-amended','event_schema_version',1,'event_envelope_version',2,
+  'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000253','occurred_at','2026-08-21T12:00:01.002Z','hlc',jsonb_build_object('physical_ms',1787313601002,'logical',0),
+  'actor',jsonb_build_object('kind','user-account','user_account_id',(select user_account_id from phase31_fixture)),'payload',jsonb_build_object('station_id','018f8c7b-0000-7000-8000-000000000233','fields',jsonb_build_object('agency_code','gcfs'))
+)))), 'rejected', 'browser admission rejects a noncanonical Station agency code');
 select is((select receipt ->> 'kind' from public.birdnerd_append_events(jsonb_build_array(jsonb_build_object(
   'event_id','018f8c7b-0000-7000-8000-000000000236','event_type','net.created','event_schema_version',1,'event_envelope_version',2,
   'workspace_id',(select workspace_id from phase31_fixture),'command_id','018f8c7b-0000-7000-8000-000000000237','occurred_at','2026-08-21T12:00:02.000Z','hlc',jsonb_build_object('physical_ms',1787313602000,'logical',0),
