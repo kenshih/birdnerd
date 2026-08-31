@@ -15,6 +15,14 @@
 - Changed public or persistent interfaces, including compatibility/migration notes:
 - Documentation updated:
 
+## Release and operations
+
+- Proposed version / release scope:
+- Required action before merge:
+- Required action after merge / before deployment:
+- Verification after release action:
+- Rollback / recovery:
+
 ## Verification
 
 - Test strategy: selected layers, behavior covered, and omitted layers with rationale
